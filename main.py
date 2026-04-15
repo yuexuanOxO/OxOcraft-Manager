@@ -3,7 +3,7 @@ import subprocess
 from backend.death_rules import parse_death_message,location_pattern
 from datetime import datetime
 
-BASE_DIR = Path(__file__).resolve().parent          # MineControl/
+BASE_DIR = Path(__file__).resolve().parent          # OxOcraft-Manager/
 SERVER_DIR = BASE_DIR.parent                        # MinecraftServer/
 SERVER_JAR = SERVER_DIR / "server.jar"              # your server file name
 
@@ -41,7 +41,7 @@ for line in proc.stdout:
 
     result = parse_death_message(line)
     if result:
-        print(f"[{now}] [OxO_MCServerManager DEATH DETECTED]: player: {result['player']}, killer:{result['killer']}, item:{result['item']}")
+        print(f"[{now}] [OxOcraft Manager DEATH DETECTED]: player: {result['player']}, killer:{result['killer']}, item:{result['item']}")
         #print("type:", result["type"])
         send_command(f"data get entity {result['player']} LastDeathLocation")#使用指令/data get entity <player> LastDeathLocation
 
@@ -56,6 +56,6 @@ for line in proc.stdout:
         z = int(location_match.group("z"))
         dimension = location_match.group("dimension")
 
-        print(f"[{now}] [OxO_MCServerManager DEATH LOCATION DETECTED]: Player: {player} XYZ:{x}, {y}, {z} dimension:{dimension}")
+        print(f"[{now}] [OxOcraft Manager DEATH LOCATION DETECTED]: Player: {player} XYZ:{x}, {y}, {z} dimension:{dimension}")
         
 

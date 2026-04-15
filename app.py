@@ -2,10 +2,15 @@ from pathlib import Path
 from flask import Flask, render_template, jsonify
 import socket
 
+
 app = Flask(__name__)
 
-# 這裡先改成你的 latest.log 實際路徑
-LOG_FILE = Path(r"..\logs\latest.log")
+BASE_DIR = Path(__file__).resolve().parent
+SERVER_ROOT = BASE_DIR.parent
+
+
+SERVER_PROPERTIES_PATH = SERVER_ROOT / "server.properties"
+LOG_FILE = SERVER_ROOT / "logs" / "latest.log"
 
 
 def is_server_online(host="127.0.0.1", port=25565, timeout=1):

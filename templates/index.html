@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OxO_MCServerManager</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>OxO_MCServerManager</h1>
+        <p class="subtitle">Minecraft Server Log Viewer</p>
+
+        <div class="panel">
+            <div class="panel-header">
+                <span>latest.log</span>
+            </div>
+            <pre id="logBox">{{ logs }}</pre>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+</html>

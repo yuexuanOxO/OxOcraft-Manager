@@ -1,3 +1,6 @@
+
+let isTransitioning = false;
+
 async function updateLog() {
     try {
         const response = await fetch("/log", { cache: "no-store" });
@@ -26,6 +29,11 @@ async function updateStatus() {
         const statusText = document.getElementById("statusText");
         const powerBtn = document.getElementById("powerBtn");
 
+        // 切換中時，不讓輪詢覆蓋畫面
+        if (isTransitioning) {
+            return;
+        }
+
         if (data.online) {
             statusLight.classList.remove("offline");
             statusLight.classList.add("online");
@@ -44,11 +52,6 @@ async function updateStatus() {
                 powerBtn.classList.remove("online");
                 powerBtn.classList.add("offline");
             }
-        }
-
-        // 如果正在 loading，就不要覆蓋文字
-        if (powerBtn && powerBtn.classList.contains("loading")) {
-            return;
         }
 
     } catch (error) {
@@ -106,7 +109,7 @@ async function sendCommand() {
 async function toggleServer() {
     const powerBtn = document.getElementById("powerBtn");
 
-    if (powerBtn && powerBtn.disabled) {
+    if (isTransitioning || (powerBtn && powerBtn.disabled)) {
         return;
     }
 
@@ -115,14 +118,21 @@ async function toggleServer() {
         const statusData = await statusRes.json();
 
         let url = "";
+        let targetOnline = false;
+        let actionText = "";
 
         if (statusData.online) {
             url = "/api/server/stop";
-            setPowerButtonLoading(true, "關閉中...");
+            targetOnline = false;
+            actionText = "關閉中...";
         } else {
             url = "/api/server/start";
-            setPowerButtonLoading(true, "啟動中...");
+            targetOnline = true;
+            actionText = "啟動中...";
         }
+
+        isTransitioning = true;
+        setPowerButtonLoading(true, actionText);
 
         const response = await fetch(url, {
             method: "POST"
@@ -131,21 +141,28 @@ async function toggleServer() {
         const data = await response.json();
 
         if (!data.success) {
-            alert(data.message);
+            alert(data.message || "操作失敗");
+            isTransitioning = false;
             setPowerButtonLoading(false);
             updateStatus();
             return;
         }
 
-        // 等一下讓 server 狀態有時間更新
-        setTimeout(() => {
-            updateStatus();
-            updateLog();
-            setPowerButtonLoading(false);
-        }, 1000);
+        const reachedTarget = await waitForServerStatus(targetOnline, 30000, 1000);
+
+        isTransitioning = false;
+        setPowerButtonLoading(false);
+
+        await updateStatus();
+        await updateLog();
+
+        if (!reachedTarget) {
+            alert(targetOnline ? "伺服器啟動逾時，請查看 log。" : "伺服器關閉逾時，請查看 log。");
+        }
 
     } catch (error) {
         console.error("切換 server 失敗:", error);
+        isTransitioning = false;
         setPowerButtonLoading(false);
         updateStatus();
     }
@@ -167,6 +184,27 @@ function setPowerButtonLoading(isLoading, actionText = "") {
         powerBtn.disabled = false;
         powerBtn.classList.remove("loading");
     }
+}
+
+async function waitForServerStatus(targetOnline, timeoutMs = 30000, intervalMs = 1000) {
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < timeoutMs) {
+        try {
+            const response = await fetch("/status", { cache: "no-store" });
+            const data = await response.json();
+
+            if (data.online === targetOnline) {
+                return true;
+            }
+        } catch (error) {
+            console.error("等待 server 狀態時發生錯誤:", error);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, intervalMs));
+    }
+
+    return false;
 }
 
 

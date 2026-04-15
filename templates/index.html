@@ -17,6 +17,16 @@
                 <span id="statusText">{{ '在線' if server_online else '離線' }}</span>
             </div>
             <pre id="logBox">{{ logs }}</pre>
+
+            <div class="command-bar">
+                <input
+                    type="text"
+                    id="commandInput"
+                    placeholder="輸入Minecraft指令"
+                    autocomplete="off"
+                >
+                <button id="sendCommandBtn" type="button">送出</button>
+            </div>
         </div>
     </div>
 

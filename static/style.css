@@ -64,3 +64,44 @@ h1 {
     background-color: #111;
     color: #d4d4d4;
 }
+
+.command-bar {
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px;
+    background-color: #1b1b1b;
+    border-top: 1px solid #444;
+}
+
+#commandInput {
+    flex: 1;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid #555;
+    border-radius: 6px;
+    background-color: #0f0f0f;
+    color: #f5f5f5;
+    font-size: 14px;
+    outline: none;
+}
+
+#commandInput:focus {
+    border-color: #33cc66;
+    box-shadow: 0 0 0 2px rgba(51, 204, 102, 0.2);
+}
+
+#sendCommandBtn {
+    min-width: 88px;
+    height: 40px;
+    padding: 0 16px;
+    border: 1px solid #555;
+    border-radius: 6px;
+    background-color: #2f2f2f;
+    color: #fff;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#sendCommandBtn:hover {
+    background-color: #3b3b3b;
+}

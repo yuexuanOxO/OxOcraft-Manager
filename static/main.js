@@ -1,9 +1,11 @@
 
 let isTransitioning = false;
 let logPollingTimer = null;
+let statusPollingTimer = null;
+let backendDisconnected = false;
 
 function startLogPolling() {
-    if (logPollingTimer !== null) {
+    if (logPollingTimer !== null || backendDisconnected) {
         return;
     }
 
@@ -17,6 +19,39 @@ function stopLogPolling() {
         clearInterval(logPollingTimer);
         logPollingTimer = null;
     }
+}
+
+function stopAllPolling() {
+    if (logPollingTimer !== null) {
+        clearInterval(logPollingTimer);
+        logPollingTimer = null;
+    }
+
+    if (statusPollingTimer !== null) {
+        clearInterval(statusPollingTimer);
+        statusPollingTimer = null;
+    }
+}
+
+function handleBackendDisconnected() {
+    if (backendDisconnected) return;
+
+    backendDisconnected = true;
+    stopAllPolling();
+
+    const statusText = document.getElementById("statusText");
+    const powerBtn = document.getElementById("powerBtn");
+
+    if (statusText) {
+        statusText.textContent = "管理介面已中斷";
+    }
+
+    if (powerBtn) {
+        powerBtn.disabled = true;
+        powerBtn.classList.add("loading");
+    }
+
+    console.error("Flask 後端已失聯，已停止輪詢。");
 }
 
 async function updateLog() {
@@ -35,6 +70,7 @@ async function updateLog() {
         }
     } catch (error) {
         console.error("更新 log 失敗:", error);
+        handleBackendDisconnected();
     }
 }
 
@@ -82,6 +118,7 @@ async function updateStatus() {
     } catch (error) {
         stopLogPolling();
         console.error("更新狀態失敗:", error);
+        handleBackendDisconnected();
     }
 }
 
@@ -262,7 +299,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
 
     // ===== 定時更新 =====
-    setInterval(updateStatus, 2000);
+    statusPollingTimer = setInterval(updateStatus, 2000);
 
     // ===== 初始化 =====
     updateLog();

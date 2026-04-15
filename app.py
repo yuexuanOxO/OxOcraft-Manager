@@ -1,12 +1,10 @@
-from __future__ import annotations
-
 import json
 import socket
 from pathlib import Path
 from typing import Dict
-
 from flask import Flask, render_template, jsonify, request
 from mcrcon import MCRcon
+from main import start_server,stop_server
 
 
 app = Flask(__name__)
@@ -202,6 +200,25 @@ def api_command():
             "success": False,
             "message": str(error),
         }), 500
+    
+
+@app.route("/api/server/start", methods=["POST"])
+def api_server_start():
+    success, message = start_server()
+
+    status_code = 200 if success else 400
+    return jsonify({
+        "success": success,
+        "message": message
+    }), status_code
+
+@app.route("/api/server/stop", methods=["POST"])
+def api_server_stop():
+    success, message = stop_server()
+    return jsonify({
+        "success": success,
+        "message": message
+    })
 
 
 if __name__ == "__main__":

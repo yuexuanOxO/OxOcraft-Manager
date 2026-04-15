@@ -10,12 +10,19 @@
     <div class="container">
         <h1>OxO_MCServerManager</h1>
         <p class="subtitle">Minecraft Server Log Viewer</p>
+        <div class="top-actions">
+        </div>
 
         <div class="panel">
             <div class="panel-header">
-                <span id="statusLight" class="status-light {{ 'online' if server_online else 'offline' }}"></span>
-                <span id="statusText">{{ '在線' if server_online else '離線' }}</span>
+
+                <div class="status-group">
+                    <span id="statusLight" class="status-light {{ 'online' if server_online else 'offline' }}"></span>
+                    <span id="statusText">{{ '在線' if server_online else '離線' }}</span>
+                </div>
+                <button id="powerBtn" class="power-btn" title="啟動 / 關閉伺服器">⏻</button>
             </div>
+            
             <pre id="logBox">{{ logs }}</pre>
 
             <div class="command-bar">

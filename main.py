@@ -1,61 +1,60 @@
-from pathlib import Path
+from __future__ import annotations
+
 import subprocess
-from backend.death_rules import parse_death_message,location_pattern
-from datetime import datetime
+from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent          # OxOcraft-Manager/
-SERVER_DIR = BASE_DIR.parent                        # MinecraftServer/
-SERVER_JAR = SERVER_DIR / "server.jar"              # your server file name
+BASE_DIR = Path(__file__).resolve().parent
+SERVER_ROOT = BASE_DIR.parent
+SERVER_JAR_PATH = SERVER_ROOT / "server.jar"
 
-print("SERVER_DIR =", SERVER_DIR)
-print("SERVER_JAR =", SERVER_JAR)
-
-now = datetime.now().strftime("%H:%M:%S")
-
-proc = subprocess.Popen(
-    ["java", "-Xms2G", "-Xmx4G", "-jar", str(SERVER_JAR), "nogui"],
-    cwd=str(SERVER_DIR),
-    stdin=subprocess.PIPE,
-    stdout=subprocess.PIPE,
-    stderr=subprocess.STDOUT,
-    text=True,
-    bufsize=1,
-    encoding="utf-8",
-    errors="replace"
-)
+server_process: subprocess.Popen | None = None
 
 
-
-def send_command(cmd: str):
-    if proc.stdin:
-        proc.stdin.write(cmd + "\n")
-        proc.stdin.flush()
+def is_server_running() -> bool:
+    global server_process
+    return server_process is not None and server_process.poll() is None
 
 
+def start_server() -> tuple[bool, str]:
+    global server_process
 
-print("Server starting...\n")
+    if is_server_running():
+        return False, "伺服器已經在執行中"
 
-for line in proc.stdout:
-    line = line.strip()
-    print(line)
+    if not SERVER_JAR_PATH.exists():
+        return False, f"找不到 server.jar：{SERVER_JAR_PATH}"
 
-    result = parse_death_message(line)
-    if result:
-        print(f"[{now}] [OxOcraft Manager DEATH DETECTED]: player: {result['player']}, killer:{result['killer']}, item:{result['item']}")
-        #print("type:", result["type"])
-        send_command(f"data get entity {result['player']} LastDeathLocation")#使用指令/data get entity <player> LastDeathLocation
+    command = [
+        "java",
+        "-jar",
+        str(SERVER_JAR_PATH),
+        "nogui",
+    ]
 
-        
-            
+    try:
+        server_process = subprocess.Popen(
+            command,
+            cwd=SERVER_ROOT,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            text=True,
+        )
+        return True, "伺服器啟動成功"
+    except Exception as error:
+        return False, f"伺服器啟動失敗：{error}"
+    
 
-    location_match = location_pattern.search(line)
-    if location_match:
-        player = location_match.group("player")
-        x = int(location_match.group("x"))
-        y = int(location_match.group("y"))
-        z = int(location_match.group("z"))
-        dimension = location_match.group("dimension")
+def stop_server() -> tuple[bool, str]:
+    global server_process
 
-        print(f"[{now}] [OxOcraft Manager DEATH LOCATION DETECTED]: Player: {player} XYZ:{x}, {y}, {z} dimension:{dimension}")
-        
+    if not is_server_running():
+        return False, "伺服器未運行"
 
+    try:
+        if server_process.stdin:
+            server_process.stdin.write("stop\n")
+            server_process.stdin.flush()
+        return True, "正在關閉伺服器"
+    except Exception as error:
+        return False, str(error)

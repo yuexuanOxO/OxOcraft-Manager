@@ -24,6 +24,7 @@ async function updateStatus() {
 
         const statusLight = document.getElementById("statusLight");
         const statusText = document.getElementById("statusText");
+        const powerBtn = document.getElementById("powerBtn");
 
         if (data.online) {
             statusLight.classList.remove("offline");
@@ -34,6 +35,22 @@ async function updateStatus() {
             statusLight.classList.add("offline");
             statusText.textContent = "離線";
         }
+
+        if (powerBtn) {
+            if (data.online) {
+                powerBtn.classList.remove("offline");
+                powerBtn.classList.add("online");
+            } else {
+                powerBtn.classList.remove("online");
+                powerBtn.classList.add("offline");
+            }
+        }
+
+        // 如果正在 loading，就不要覆蓋文字
+        if (powerBtn && powerBtn.classList.contains("loading")) {
+            return;
+        }
+
     } catch (error) {
         console.error("更新狀態失敗:", error);
     }
@@ -85,22 +102,106 @@ async function sendCommand() {
     }
 }
 
+
+async function toggleServer() {
+    const powerBtn = document.getElementById("powerBtn");
+
+    if (powerBtn && powerBtn.disabled) {
+        return;
+    }
+
+    try {
+        const statusRes = await fetch("/status", { cache: "no-store" });
+        const statusData = await statusRes.json();
+
+        let url = "";
+
+        if (statusData.online) {
+            url = "/api/server/stop";
+            setPowerButtonLoading(true, "關閉中...");
+        } else {
+            url = "/api/server/start";
+            setPowerButtonLoading(true, "啟動中...");
+        }
+
+        const response = await fetch(url, {
+            method: "POST"
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            alert(data.message);
+            setPowerButtonLoading(false);
+            updateStatus();
+            return;
+        }
+
+        // 等一下讓 server 狀態有時間更新
+        setTimeout(() => {
+            updateStatus();
+            updateLog();
+            setPowerButtonLoading(false);
+        }, 1000);
+
+    } catch (error) {
+        console.error("切換 server 失敗:", error);
+        setPowerButtonLoading(false);
+        updateStatus();
+    }
+}
+
+function setPowerButtonLoading(isLoading, actionText = "") {
+    const powerBtn = document.getElementById("powerBtn");
+    const statusText = document.getElementById("statusText");
+
+    if (!powerBtn || !statusText) return;
+
+    if (isLoading) {
+        powerBtn.disabled = true;
+        powerBtn.classList.add("loading");
+        if (actionText) {
+            statusText.textContent = actionText;
+        }
+    } else {
+        powerBtn.disabled = false;
+        powerBtn.classList.remove("loading");
+    }
+}
+
+
 document.addEventListener("DOMContentLoaded", () => {
+    // ===== 啟動server按鈕 =====
+    const powerBtn = document.getElementById("powerBtn");
+    if (powerBtn) {
+        powerBtn.addEventListener("click", toggleServer);
+    }
+
+
+    // ===== 指令輸入 =====
     const input = document.getElementById("commandInput");
     const button = document.getElementById("sendCommandBtn");
 
-    button.addEventListener("click", sendCommand);
+    if (button) {
+        button.addEventListener("click", sendCommand);
+    }
 
-    input.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            sendCommand();
-        }
-    });
+    if (input) {
+        input.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                sendCommand();
+            }
+        });
+    }
 
+    
+
+    // ===== 定時更新 =====
     setInterval(updateLog, 2000);
     setInterval(updateStatus, 2000);
 
+    // ===== 初始化 =====
     updateLog();
     updateStatus();
 });

@@ -43,11 +43,10 @@ for line in proc.stdout:
     if result:
         print(f"[{now}] [OxO_MCServerManager DEATH DETECTED]: player: {result['player']}, killer:{result['killer']}, item:{result['item']}")
         #print("type:", result["type"])
-        
+        send_command(f"data get entity {result['player']} LastDeathLocation")#使用指令/data get entity <player> LastDeathLocation
 
-        # 之後你可以在這裡接查詢死亡座標
-        if result["player"]:
-            send_command(f"data get entity {result['player']} LastDeathLocation")
+        
+            
 
     location_match = location_pattern.search(line)
     if location_match:

@@ -1,5 +1,23 @@
 
 let isTransitioning = false;
+let logPollingTimer = null;
+
+function startLogPolling() {
+    if (logPollingTimer !== null) {
+        return;
+    }
+
+    logPollingTimer = setInterval(() => {
+        updateLog();
+    }, 2000);
+}
+
+function stopLogPolling() {
+    if (logPollingTimer !== null) {
+        clearInterval(logPollingTimer);
+        logPollingTimer = null;
+    }
+}
 
 async function updateLog() {
     try {
@@ -54,7 +72,15 @@ async function updateStatus() {
             }
         }
 
+        // 根據狀態控制 log 輪詢
+        if (data.online) {
+            startLogPolling();
+        } else {
+            stopLogPolling();
+        }
+
     } catch (error) {
+        stopLogPolling();
         console.error("更新狀態失敗:", error);
     }
 }
@@ -236,7 +262,6 @@ document.addEventListener("DOMContentLoaded", () => {
     
 
     // ===== 定時更新 =====
-    setInterval(updateLog, 2000);
     setInterval(updateStatus, 2000);
 
     // ===== 初始化 =====

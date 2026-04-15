@@ -20,6 +20,35 @@ h1 {
     color: #bdbdbd;
 }
 
+.status-panel{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    width: fit-content;
+}
+
+.status-light{
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-light.online{
+    background-color: #33cc66;
+    box-shadow: 0 0 8px #33cc66;
+}
+
+.status-light.offline{
+    background-color: #ff4d4f;
+    box-shadow: 0 0 8px #ff4d4f;
+}
+
 .panel {
     background-color: #2a2a2a;
     border: 1px solid #444;

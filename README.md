@@ -1,2 +1,2 @@
-# OxO_MCServerManager
+# OxOcraft Manager
 用來控制Minecraft Server的WebUI,目標是為了讓user能更方便使用

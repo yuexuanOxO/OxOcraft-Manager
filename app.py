@@ -270,20 +270,36 @@ def api_server_stop():
         "message": message
     })
 
-# @app.route("/players-test")
-# def players_test():
-#     try:
-#         result = send_rcon_command("list")
-#         return jsonify({
-#             "success": True,
-#             "raw_result": result,
-#             "raw_result_repr": repr(result)
-#         })
-#     except Exception as error:
-#         return jsonify({
-#             "success": False,
-#             "message": str(error)
-#         }), 500
+@app.route("/api/player/action", methods=["POST"])
+def api_player_action():
+    data = request.get_json(silent=True) or {}
+    action = str(data.get("action", "")).strip()
+    player = str(data.get("player", "")).strip()
+
+    if not action or not player:
+        return jsonify({
+            "success": False,
+            "message": "缺少必要參數"
+        }), 400
+
+    try:
+        if action == "kick":
+            result = send_rcon_command(f'kick {player}')
+        else:
+            return jsonify({
+                "success": False,
+                "message": "不支援的操作"
+            }), 400
+
+        return jsonify({
+            "success": True,
+            "result": result
+        })
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error)
+        }), 500
 
 
 if __name__ == "__main__":

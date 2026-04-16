@@ -166,27 +166,41 @@ h1 {
 
 .players-panel {
     width: 260px;
-    min-height: 600px;
     background-color: #2a2a2a;
     border: 1px solid #444;
     border-radius: 8px;
     padding: 12px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
 }
 
 .players-list {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    flex: 1;
 }
 
 .player-item {
     display: flex;
     align-items: center;
     gap: 12px;
+    padding: 10px 12px;
+    background-color: #1f1f1f;
+    border: 1px solid #444;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+.player-item:hover {
+    background-color: #292929;
+    border-color: #666;
 }
 
 .player-name {
     font-size: 16px;
+    color: #f5f5f5;
 }
 
 .players-header {
@@ -202,9 +216,95 @@ h1 {
 .layout {
     display: flex;
     gap: 24px;
-    align-items: flex-start;
+    align-items: stretch;
 }
 
 .panel {
     flex: 1;
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+
+.player-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    background-color: #1f1f1f;
+    border: 1px solid #444;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+.player-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 1;
+}
+
+.player-name {
+    font-size: 16px;
+    color: #f5f5f5;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.player-menu-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.player-menu-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background-color: transparent;
+    color: #bbb;
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 1;
+}
+
+.player-menu-btn:hover {
+    background-color: #333;
+    color: #fff;
+}
+
+.player-menu {
+    position: absolute;
+    top: 36px;
+    right: 0;
+    min-width: 140px;
+    background-color: #2b2b2b;
+    border: 1px solid #555;
+    border-radius: 8px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    padding: 6px;
+    z-index: 20;
+}
+
+.player-menu-item {
+    width: 100%;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 6px;
+    background-color: transparent;
+    color: #f5f5f5;
+    text-align: left;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.player-menu-item:hover {
+    background-color: #3a3a3a;
 }

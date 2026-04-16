@@ -2,6 +2,8 @@ let isTransitioning = false;
 let logPollingTimer = null;
 let statusPollingTimer = null;
 let backendDisconnected = false;
+let lastLogText = "";
+let wasServerOnline = false;
 
 function startLogPolling() {
     if (logPollingTimer !== null || backendDisconnected) {
@@ -54,19 +56,45 @@ function handleBackendDisconnected() {
 }
 
 async function updateLog() {
+    if (!wasServerOnline) {
+        return;
+    }
+
     try {
         const response = await fetch("/log", { cache: "no-store" });
         const data = await response.json();
 
+        const newLogText = data.logs;
         const logBox = document.getElementById("logBox");
+
+        if (!logBox) return;
+
+        if (newLogText.length < lastLogText.length) {
+            lastLogText = "";
+        }
+
+        if (newLogText !== lastLogText) {
+            const newPart = newLogText.slice(lastLogText.length);
+
+            if (
+                newPart.includes("joined the game") ||
+                newPart.includes("left the game")
+            ) {
+                updatePlayers();
+            }
+
+            lastLogText = newLogText;
+        }
+
         const wasNearBottom =
             logBox.scrollTop + logBox.clientHeight >= logBox.scrollHeight - 20;
 
-        logBox.textContent = data.logs;
+        logBox.textContent = newLogText;
 
         if (wasNearBottom) {
             logBox.scrollTop = logBox.scrollHeight;
         }
+
     } catch (error) {
         console.error("更新 log 失敗:", error);
         handleBackendDisconnected();
@@ -81,41 +109,50 @@ async function updateStatus() {
         const statusLight = document.getElementById("statusLight");
         const statusText = document.getElementById("statusText");
         const powerBtn = document.getElementById("powerBtn");
+        const logBox = document.getElementById("logBox");
 
-        // 切換中時，不讓輪詢覆蓋畫面
-        if (isTransitioning) {
-            return;
-        }
-
-        if (data.online) {
-            statusLight.classList.remove("offline");
-            statusLight.classList.add("online");
-            statusText.textContent = "在線";
-        } else {
-            statusLight.classList.remove("online");
-            statusLight.classList.add("offline");
-            statusText.textContent = "離線";
-        }
-
-        if (powerBtn) {
+        if (!isTransitioning) {
             if (data.online) {
-                powerBtn.classList.remove("offline");
-                powerBtn.classList.add("online");
+                statusLight.classList.remove("offline");
+                statusLight.classList.add("online");
+                statusText.textContent = "在線";
             } else {
-                powerBtn.classList.remove("online");
-                powerBtn.classList.add("offline");
+                statusLight.classList.remove("online");
+                statusLight.classList.add("offline");
+                statusText.textContent = "離線";
+            }
+
+            if (powerBtn) {
+                if (data.online) {
+                    powerBtn.classList.remove("offline");
+                    powerBtn.classList.add("online");
+                } else {
+                    powerBtn.classList.remove("online");
+                    powerBtn.classList.add("offline");
+                }
             }
         }
 
-        // 根據狀態控制 log 輪詢
-        if (data.online) {
+        // server 剛上線
+        if (data.online && !wasServerOnline) {
+            lastLogText = "";
             startLogPolling();
-        } else {
-            stopLogPolling();
+            updateLog();
+            updatePlayers();
         }
 
+        // server 剛離線
+        if (!data.online && wasServerOnline) {
+            stopLogPolling();
+            lastLogText = "";
+            if (logBox) {
+                logBox.textContent = "伺服器尚未啟動";
+            }
+        }
+
+        wasServerOnline = data.online;
+
     } catch (error) {
-        stopLogPolling();
         console.error("更新狀態失敗:", error);
         handleBackendDisconnected();
     }
@@ -432,14 +469,15 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    
+    const logBox = document.getElementById("logBox");
+    if (logBox) {
+        logBox.textContent = "伺服器尚未啟動";
+    }
 
     // ===== 定時更新 =====
     statusPollingTimer = setInterval(updateStatus, 2000);
-    setInterval(updatePlayers, 2000);
+
 
     // ===== 初始化 =====
-    updateLog();
-    updateStatus();
     updatePlayers();
 });

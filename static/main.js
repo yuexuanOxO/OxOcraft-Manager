@@ -1,4 +1,3 @@
-
 let isTransitioning = false;
 let logPollingTimer = null;
 let statusPollingTimer = null;
@@ -121,6 +120,45 @@ async function updateStatus() {
         handleBackendDisconnected();
     }
 }
+
+
+async function updatePlayers() {
+    try {
+        const response = await fetch("/players", { cache: "no-store" });
+        const data = await response.json();
+
+        const playersList = document.getElementById("playersList");
+        if (!playersList) return;
+
+        playersList.innerHTML = "";
+
+        if (!data.success || !data.players || data.players.length === 0) {
+            playersList.innerHTML = "<div class='no-player'>目前沒有玩家在線</div>";
+            return;
+        }
+
+        data.players.forEach(player => {
+            const item = document.createElement("div");
+            item.className = "player-item";
+
+            const avatar = document.createElement("img");
+            avatar.className = "player-avatar";
+            avatar.src = `https://mc-heads.net/avatar/${player}`;
+
+            const name = document.createElement("span");
+            name.className = "player-name";
+            name.textContent = player;
+
+            item.appendChild(avatar);
+            item.appendChild(name);
+            playersList.appendChild(item);
+        });
+
+    } catch (error) {
+        console.error("更新玩家列表失敗:", error);
+    }
+}
+
 
 async function sendCommand() {
     const input = document.getElementById("commandInput");
@@ -300,8 +338,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ===== 定時更新 =====
     statusPollingTimer = setInterval(updateStatus, 2000);
+    setInterval(updatePlayers, 2000);
 
     // ===== 初始化 =====
     updateLog();
     updateStatus();
+    updatePlayers();
 });

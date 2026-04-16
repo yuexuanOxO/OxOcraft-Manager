@@ -13,28 +13,34 @@
         <div class="top-actions">
         </div>
 
-        <div class="panel">
-            <div class="panel-header">
+        <div class="layout">
 
-                <div class="status-group">
-                    <span id="statusLight" class="status-light {{ 'online' if server_online else 'offline' }}"></span>
-                    <span id="statusText">{{ '在線' if server_online else '離線' }}</span>
+            <!-- 左邊 Players -->
+            <div class="players-panel">
+                <div class="players-header">Players</div>
+                <div id="playersList" class="players-list"></div>
+            </div>
+
+            <!-- 右邊 Log -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="status-group">
+                        <span id="statusLight" class="status-light {{ 'online' if server_online else 'offline' }}"></span>
+                        <span id="statusText">{{ '在線' if server_online else '離線' }}</span>
+                    </div>
+                    <button id="powerBtn" class="power-btn">⏻</button>
                 </div>
-                <button id="powerBtn" class="power-btn" title="啟動 / 關閉伺服器">⏻</button>
-            </div>
-            
-            <pre id="logBox">{{ logs }}</pre>
 
-            <div class="command-bar">
-                <input
-                    type="text"
-                    id="commandInput"
-                    placeholder="輸入Minecraft指令"
-                    autocomplete="off"
-                >
-                <button id="sendCommandBtn" type="button">送出</button>
+                <pre id="logBox">{{ logs }}</pre>
+
+                <div class="command-bar">
+                    <input id="commandInput" placeholder="輸入Minecraft指令">
+                    <button id="sendCommandBtn">送出</button>
+                </div>
             </div>
+
         </div>
+
     </div>
 
     <script src="{{ url_for('static', filename='main.js') }}"></script>

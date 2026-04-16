@@ -5,7 +5,9 @@ from typing import Dict
 from flask import Flask, render_template, jsonify, request
 from mcrcon import MCRcon
 from main import start_server,stop_server
-
+import webbrowser
+import threading
+import re
 
 app = Flask(__name__)
 
@@ -134,6 +136,38 @@ def send_rcon_command(command: str) -> str:
 
     return result
 
+def get_online_players() -> list[str]:
+    result = send_rcon_command("list")
+
+    if  not result:
+        return []
+    
+    # 用正則抓玩家數量
+    match = re.search(r"There are (\d+) of a max of (\d+) players online",result)
+    if not match:
+        return []
+    
+    player_count = int(match.group(1))
+
+    # 沒玩家直接回空
+    if player_count == 0:
+        return []
+    
+    # 解析玩家名稱
+    if ":" not in result:
+        return []
+    
+    players_part = result.split(":",1)[1].strip()
+
+    if not players_part:
+        return []
+    
+    return [name.strip() for name in players_part.split(",") if name.strip()]
+
+
+def open_browser():
+    webbrowser.open("http://127.0.0.1:5000", new=2)
+
 
 @app.route("/")
 def index():
@@ -158,6 +192,22 @@ def get_log():
     })
     response.headers["Cache-Control"] = "no-store"
     return response
+
+
+@app.route("/players")
+def get_players():
+    try:
+        players = get_online_players()
+        return jsonify({
+            "success":True,
+            "players":players
+        })
+    except Exception as error:
+        return jsonify({
+            "success":False,
+            "players":[],
+            "message":str(error)
+        })
 
 
 @app.route("/api/rcon/test")
@@ -220,6 +270,21 @@ def api_server_stop():
         "message": message
     })
 
+# @app.route("/players-test")
+# def players_test():
+#     try:
+#         result = send_rcon_command("list")
+#         return jsonify({
+#             "success": True,
+#             "raw_result": result,
+#             "raw_result_repr": repr(result)
+#         })
+#     except Exception as error:
+#         return jsonify({
+#             "success": False,
+#             "message": str(error)
+#         }), 500
+
 
 if __name__ == "__main__":
     try:
@@ -229,4 +294,5 @@ if __name__ == "__main__":
     except Exception as error:
         print(f"初始化失敗：{error}")
 
-    app.run(debug=True)
+    threading.Timer(1, open_browser).start()
+    app.run(debug=False)

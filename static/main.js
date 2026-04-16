@@ -148,6 +148,8 @@ async function updateStatus() {
             if (logBox) {
                 logBox.textContent = "伺服器尚未啟動";
             }
+
+            clearPlayersList();
         }
 
         wasServerOnline = data.online;
@@ -227,6 +229,12 @@ async function updatePlayers() {
     }
 }
 
+function clearPlayersList() {
+    const playersList = document.getElementById("playersList");
+    if (!playersList) return;
+
+    playersList.innerHTML = "<div class='no-player'>目前沒有玩家在線</div>";
+}
 
 async function sendCommand() {
     const input = document.getElementById("commandInput");
@@ -480,4 +488,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ===== 初始化 =====
     updatePlayers();
+    updateStatus();
 });

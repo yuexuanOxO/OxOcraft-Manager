@@ -15,13 +15,31 @@
 
         <div class="layout">
 
-            <!-- 左邊 Players -->
-            <div class="players-panel">
-                <div class="players-header">Players</div>
-                <div id="playersList" class="players-list"></div>
+            <!-- 左邊功能區 -->
+            <div class="side-panel">
+                <div class="feature-grid">
+
+                    <div class="feature-item">
+                        <button class="feature-btn" type="button">
+                            <img src="{{ url_for('static', filename='icons/Recovery Compass.gif') }}" alt="死亡紀錄">
+                        </button>
+
+                        <div class="feature-hover-card">
+                            <div class="feature-hover-head">
+                                <div class="feature-hover-title">死亡紀錄</div>
+                            </div>
+
+                            <div class="feature-hover-desc">
+                                紀錄玩家死亡時的位置、死亡原因、攻擊者，以及當時使用的武器或相關資訊。
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
             </div>
 
-            <!-- 右邊 Log -->
+           
+            <!-- 中間 Log -->
             <div class="panel">
                 <div class="panel-header">
                     <div class="status-group">
@@ -37,6 +55,12 @@
                     <input id="commandInput" placeholder="輸入Minecraft指令">
                     <button id="sendCommandBtn">送出</button>
                 </div>
+            </div>
+
+             <!-- 右邊 Players -->
+            <div class="players-panel">
+                <div class="players-header">Players</div>
+                <div id="playersList" class="players-list"></div>
             </div>
 
         </div>

@@ -319,13 +319,22 @@ h1 {
 /* 左側功能表 */
 
 .side-panel {
-    width: 220px;
+    width: 300px;
     background: linear-gradient(180deg, #2b2b2b 0%, #1e1e1e 100%);
     border: 2px solid #4a4a4a;
     border-radius: 8px;
     padding: 14px 12px;
     box-sizing: border-box;
     box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+}
+
+.feature-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background-color: #333;
+    font-weight: bold;
 }
 
 .feature-item {
@@ -337,23 +346,35 @@ h1 {
     width: 74px;
     height: 74px;
     padding: 0;
-    border: 3px solid #7a5a00;
-    border-radius: 10px;
-    background: linear-gradient(180deg, #d7aa2f 0%, #a87900 100%);
+    border: none;
+    background: transparent;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow:
-        inset 0 0 0 2px rgba(255,255,255,0.08),
-        0 4px 10px rgba(0,0,0,0.35);
-    transition: transform 0.12s ease, filter 0.12s ease;
     position: relative;
     z-index: 3;
 }
 
+.feature-btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: url("/static/icons/Advancement-plain-raw.png") no-repeat center center;
+    background-size: 100% 100%;
+    z-index: 1;
+}
+
+.feature-btn img {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    position: relative;
+    z-index: 2;
+}
+
 .feature-btn:hover {
-    transform: translateY(-1px);
     filter: brightness(1.06);
 }
 
@@ -367,10 +388,10 @@ h1 {
 .feature-hover-card {
     position: absolute;
     top: 3px;
-    left: -10px;              /* 關鍵：從原本按鈕後面接出去 */
+    left: -15px;              /* 關鍵：從原本按鈕後面接出去 */
     width: 300px;
     background: #111;
-    border: 2px solid #6b4b00;
+    border: 4px solid black;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
@@ -393,7 +414,7 @@ h1 {
     min-height: 60px;
     padding: 0 16px 0 96px;  /* 左邊留一點空間，像是從按鈕後延伸 */
     background: #0f6f98;
-    border-bottom: 2px solid #6b4b00;
+    border-bottom: 4px solid black;
 }
 
 .feature-hover-title {
@@ -407,9 +428,9 @@ h1 {
     padding: 12px 14px;
     font-size: 15px;
     line-height: 1.6;
-    color: #ff3b3b;
+    color: #f5f5f5;
     white-space: normal;
     overflow-wrap: break-word;
     word-break: break-word;
-    background: #111;
+    background: #262626;
 }

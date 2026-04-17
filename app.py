@@ -8,6 +8,7 @@ from main import start_server,stop_server
 import webbrowser
 import threading
 import re
+from database import init_db, get_recent_player_deaths
 
 app = Flask(__name__)
 
@@ -302,8 +303,24 @@ def api_player_action():
         }), 500
 
 
+@app.route("/api/deaths")
+def api_deaths():
+    try:
+        deaths = get_recent_player_deaths(limit=10)
+        return jsonify({
+            "success": True,
+            "deaths": deaths
+        })
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error)
+        }), 500
+
+
 if __name__ == "__main__":
     try:
+        init_db()
         init_rcon_config()
         print("RCON 設定已同步到 server.properties")
         print("請確認 Minecraft server 已重啟，否則新的 RCON 設定不會生效。")

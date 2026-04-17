@@ -158,12 +158,19 @@ def parse_death_message(line: str):
         match = rule["pattern"].search(line)
         if match:
             data = match.groupdict()
+
+            death_text = line
+            prefix_match = re.search(LOG_PREFIX + r"(?P<death_text>.+)$", line)
+            if prefix_match:
+                death_text = prefix_match.group("death_text")
+
             return {
                 "type": rule["type"],
                 "player": data.get("player"),
                 "killer": data.get("killer"),
                 "item": data.get("item"),
-                "message": line,
+                "message": line,           # 原始整行 log
+                "death_text": death_text,  # 純死亡句子
             }
     return None
 

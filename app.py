@@ -321,6 +321,8 @@ def api_deaths():
 if __name__ == "__main__":
     try:
         init_db()
+        print("SQLite 資料庫初始化完成")
+        
         init_rcon_config()
         print("RCON 設定已同步到 server.properties")
         print("請確認 Minecraft server 已重啟，否則新的 RCON 設定不會生效。")

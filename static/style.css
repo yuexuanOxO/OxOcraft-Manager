@@ -434,3 +434,156 @@ h1 {
     word-break: break-word;
     background: #262626;
 }
+
+
+.death-book-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.death-book-panel {
+    position: relative;
+    width: 620px;
+    height: 760px;
+    background: url("/static/icons/book/death_book_bg.png") no-repeat center center;
+    background-size: 100% 100%;
+}
+
+.death-book-close-btn {
+    position: absolute;
+    top: 26px;
+    right: 26px;
+    border: none;
+    background: transparent;
+    color: #5a2e12;
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.death-book-inner {
+    position: absolute;
+    inset: 52px 44px 56px 56px;
+    display: flex;
+    flex-direction: column;
+    color: #c93b34;
+}
+
+.death-book-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 26px;
+}
+
+.death-book-player-block {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.death-book-avatar {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    image-rendering: pixelated;
+    border: 4px solid #ff4d4d;
+    background: #fff;
+}
+
+.death-book-player-name {
+    font-size: 24px;
+    font-weight: bold;
+    line-height: 1.2;
+}
+
+.death-book-page-info {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.death-book-content {
+    flex: 1;
+    overflow: hidden;
+}
+
+.death-book-section {
+    margin-bottom: 28px;
+}
+
+.death-book-label {
+    font-size: 21px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.death-book-text {
+    font-size: 20px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.death-book-killer-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.death-book-killer-icon {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    flex-shrink: 0;
+}
+
+.death-book-nav {
+    display: flex;
+    justify-content: center;
+    gap: 56px;
+    padding-top: 10px;
+}
+
+.death-book-page-btn {
+    width: 98px;
+    height: 52px;
+    border: none;
+    background-color: transparent;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    cursor: pointer;
+    padding: 0;
+}
+
+.death-book-page-btn.prev {
+    background-image: url("/static/icons/book/page_prev.png");
+}
+
+.death-book-page-btn.prev:hover:not(:disabled) {
+    background-image: url("/static/icons/book/page_prev_hover.png");
+}
+
+.death-book-page-btn.next {
+    background-image: url("/static/icons/book/page_next.png");
+}
+
+.death-book-page-btn.next:hover:not(:disabled) {
+    background-image: url("/static/icons/book/page_next_hover.png");
+}
+
+.death-book-page-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.hidden {
+    display: none !important;
+}

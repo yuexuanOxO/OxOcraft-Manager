@@ -477,7 +477,7 @@ function formatDimensionName(dimension) {
         "minecraft:the_end": "終界"
     };
 
-    return map[dimension] || dimension;
+    return `${map[dimension]}：` || dimension;
 }
 
 function formatDeathTime(value) {
@@ -527,7 +527,7 @@ function renderDeathRecordPage() {
     if (!deathRecords.length) {
         document.getElementById("deathPlayerAvatar").src = "";
         document.getElementById("deathPlayerName").textContent = "目前沒有死亡紀錄";
-        document.getElementById("deathPageInfo").textContent = "第0頁/第0頁";
+        document.getElementById("deathPageInfo").textContent = "第 0 頁 / 第 0 頁";
         document.getElementById("deathText").textContent = "目前沒有資料";
         document.getElementById("deathLocation").textContent = "";
         document.getElementById("deathTime").textContent = "";
@@ -542,7 +542,7 @@ function renderDeathRecordPage() {
         `https://mc-heads.net/avatar/${encodeURIComponent(record.player_name)}`;
     document.getElementById("deathPlayerName").textContent = record.player_name;
     document.getElementById("deathPageInfo").textContent =
-        `第${currentDeathPage + 1}頁/第${deathRecords.length}頁`;
+        `第 ${currentDeathPage + 1} 頁 / 第 ${deathRecords.length} 頁`;
 
     document.getElementById("deathText").textContent =
         record.death_text || "未知死因";

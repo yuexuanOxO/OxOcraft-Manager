@@ -1,3 +1,9 @@
+@font-face {
+    font-family: "MinecraftUI";
+    src: url("/static/fonts/Minecraftia.ttf") format("truetype");
+}
+
+
 body {
     margin: 0;
     font-family: Arial, "Microsoft JhengHei", sans-serif;
@@ -361,7 +367,9 @@ h1 {
     position: absolute;
     inset: 0;
     background: url("/static/icons/Advancement-plain-raw.png") no-repeat center center;
-    background-size: 100% 100%;
+    background-size: contain;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
     z-index: 1;
 }
 
@@ -387,15 +395,13 @@ h1 {
 
 .feature-hover-card {
     position: absolute;
-    top: 3px;
-    left: -15px;              /* 關鍵：從原本按鈕後面接出去 */
-    width: 300px;
-    background: #111;
-    border: 4px solid black;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
-    z-index: 2;
+    top: -4px;
+    left: -15px;
+    width: 320px;
+    z-index: 1;
+
+    display: flex;
+    flex-direction: column;
 
     opacity: 0;
     pointer-events: none;
@@ -403,36 +409,144 @@ h1 {
     transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
-.feature-item:hover .feature-hover-card {
-    opacity: 1;
-    transform: translateX(0);
+
+.feature-title-box {
+    position: relative;
+    height: 82px;
+    z-index: 2;
 }
 
-.feature-hover-head {
-    display: flex;
-    align-items: center;
-    min-height: 60px;
-    padding: 0 16px 0 96px;  /* 左邊留一點空間，像是從按鈕後延伸 */
-    background: #0f6f98;
-    border-bottom: 4px solid black;
+.feature-title-left,
+.feature-title-right {
+    position: absolute;
+    top: 0;
+    width: 24px;   /* 依你的素材邊框寬度調整 */
+    height: 100%;
+    background-size: auto 100%;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
 }
 
-.feature-hover-title {
-    font-size: 18px;
-    font-weight: bold;
-    color: #f5f5f5;
-    line-height: 1.2;
+.feature-title-left {
+    left: 0;
+    background-image: url("/static/icons/box_unobtained_left.png");
+    background-position: left top;
 }
 
-.feature-hover-desc {
-    padding: 12px 14px;
+.feature-title-right {
+    right: 0;
+    background-image: url("/static/icons/box_unobtained_right.png");
+    background-position: right top;
+}
+
+.feature-title-center {
+    position: absolute;
+    top: 0;
+    left: 24px;
+    right: 24px;
+    height: 100%;
+    background-image: url("/static/icons/box_unobtained_center.png");
+    background-repeat: repeat-x;
+    background-size: auto 100%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+
+
+.feature-desc-box {
+    position: relative;
+    margin-top: -35px;
+    height: 98px;
+    z-index: 1;
+}
+
+/* 左右固定邊框 */
+
+.feature-desc-left,
+.feature-desc-right {
+    position: absolute;
+    top: 0;
+    width: 24px;        /* 邊框寬度，可微調 */
+    height: 100%;
+
+    background-size: auto 100%;
+    background-repeat: no-repeat;
+
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+/* 左邊 */
+
+.feature-desc-left {
+    left: 0;
+    background-image: url("/static/icons/title_box_left.png");
+    background-position: left top;
+}
+
+/* 右邊 */
+
+.feature-desc-right {
+    right: 0;
+    background-image: url("/static/icons/title_box_right.png");
+    background-position: right top;
+}
+
+/* 中間延伸 */
+
+.feature-desc-center {
+    position: absolute;
+    top: 0;
+    left: 24px;
+    right: 24px;
+    height: 100%;
+
+    background-image: url("/static/icons/title_box_center.png");
+    background-repeat: repeat-x;
+    background-size: auto 100%;
+
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+/* 文字層 */
+
+.feature-desc-text {
+    position: relative;
+    z-index: 2;
+
+    padding: 30px 16px 12px 16px;
+
+    color: #69ff4f;
     font-size: 15px;
-    line-height: 1.6;
-    color: #f5f5f5;
+    line-height: 1.45;
+
     white-space: normal;
     overflow-wrap: break-word;
     word-break: break-word;
-    background: #262626;
+}
+
+
+.feature-title-text {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding-left: 98px;
+    padding-right: 18px;
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+    box-sizing: border-box;
+}
+
+
+.feature-item:hover .feature-hover-card {
+    opacity: 1;
+    transform: translateX(0);
 }
 
 
@@ -447,31 +561,24 @@ h1 {
 }
 
 .death-book-panel {
+    font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+    color: #111;
     position: relative;
     width: 620px;
     height: 760px;
     background: url("/static/icons/book/death_book_bg.png") no-repeat center center;
-    background-size: 100% 100%;
+    background-size: contain;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
 }
 
-.death-book-close-btn {
-    position: absolute;
-    top: 26px;
-    right: 26px;
-    border: none;
-    background: transparent;
-    color: #5a2e12;
-    font-size: 24px;
-    cursor: pointer;
-    z-index: 2;
-}
 
 .death-book-inner {
     position: absolute;
-    inset: 52px 44px 56px 56px;
+    inset: 62px 70px 46px 56px;
     display: flex;
     flex-direction: column;
-    color: #c93b34;
+    color: black;
 }
 
 .death-book-top {
@@ -488,23 +595,24 @@ h1 {
 }
 
 .death-book-avatar {
-    width: 72px;
-    height: 72px;
+    width: 52px;
+    height: 52px;
     object-fit: cover;
     image-rendering: pixelated;
-    border: 4px solid #ff4d4d;
     background: #fff;
 }
 
 .death-book-player-name {
-    font-size: 24px;
-    font-weight: bold;
+    font-size: 28px;
+    font-weight: 600;
     line-height: 1.2;
+    color: #111;
 }
 
 .death-book-page-info {
     font-size: 20px;
-    font-weight: bold;
+    font-weight: 500;
+    color: #111;
 }
 
 .death-book-content {
@@ -517,17 +625,16 @@ h1 {
 }
 
 .death-book-label {
-    font-size: 21px;
-    font-weight: bold;
-    margin-bottom: 10px;
-    line-height: 1.4;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    line-height: 1.35;
 }
 
 .death-book-text {
     font-size: 20px;
-    line-height: 1.6;
-    white-space: pre-wrap;
-    word-break: break-word;
+    line-height: 1.45;
+    color: #111;
 }
 
 .death-book-killer-row {
@@ -547,8 +654,8 @@ h1 {
 .death-book-nav {
     display: flex;
     justify-content: center;
-    gap: 56px;
-    padding-top: 10px;
+    gap: 240px;
+    padding-bottom: 0px;
 }
 
 .death-book-page-btn {

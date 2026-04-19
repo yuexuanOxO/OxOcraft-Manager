@@ -8,6 +8,8 @@
 </head>
 <body>
 
+    <div id="globalFeatureCard" class="global-feature-card hidden"></div>
+    <div id="globalFeatureBtnClone" class="global-feature-btn-clone hidden"></div>
 
     <div id="deathBookModal" class="death-book-modal hidden">
         <div class="death-book-panel">
@@ -66,39 +68,369 @@
         <div class="layout">
 
             <!-- 左邊功能區 -->
-            <div class="side-panel">
+             <div class="side-panel">
+
+                <!-- 其他功能 -->
                 <div class="feature-grid">
-                    <div class="feature-header">功能</div>
+                    <div class="feature-header">其他功能</div>
 
-                    <div class="feature-item">
-                        <button id="deathRecordBtn" class="feature-btn" type="button">
-                            <img src="{{ url_for('static', filename='icons/Recovery Compass.gif') }}" alt="死亡紀錄">
-                        </button>
+                    <div class="feature-list">
 
-                        <div class="feature-hover-card">
+                        <div class="feature-item">
+                            <button id="deathRecordBtn" class="feature-btn" type="button">
+                                <img src="{{ url_for('static', filename='icons/btn/Recovery Compass.gif') }}" alt="死亡紀錄">
+                            </button>
 
-                            <div class="feature-title-box">
-                                <div class="feature-title-left"></div>
-                                <div class="feature-title-center"></div>
-                                <div class="feature-title-right"></div>
-                                <div class="feature-title-text">死亡紀錄</div>
-                            </div>
+                            <div class="feature-label">死亡紀錄</div>
 
-                            <div class="feature-desc-box">
-                                <div class="feature-desc-left"></div>
-                                <div class="feature-desc-center"></div>
-                                <div class="feature-desc-right"></div>
+                            <div class="feature-hover-card">
+                                <div class="feature-title-box">
+                                    <div class="feature-title-left"></div>
+                                    <div class="feature-title-center"></div>
+                                    <div class="feature-title-right"></div>
+                                    <div class="feature-title-text">死亡紀錄</div>
+                                </div>
 
-                                <div class="feature-desc-text">
-                                    紀錄玩家死亡時的位置、死亡原因、攻擊者，以及當時使用的武器或相關資訊。
+                                <div class="feature-desc-box">
+                                    <div class="feature-desc-left"></div>
+                                    <div class="feature-desc-center"></div>
+                                    <div class="feature-desc-right"></div>
+
+                                    <div class="feature-desc-text">
+                                        紀錄玩家死亡時的位置、死亡原因、攻擊者，以及當時使用的武器或相關資訊。
+                                    </div>
                                 </div>
                             </div>
-
                         </div>
-                    </div>
 
+
+                        <div class="feature-item">
+                            <button id="deathRecordBtn" class="feature-btn" type="button">
+                                <img src="{{ url_for('static', filename='icons/btn/Recovery Compass.gif') }}" alt="死亡紀錄2">
+                            </button>
+
+                            <div class="feature-label">死亡紀錄2</div>
+
+                            <div class="feature-hover-card">
+                                <div class="feature-title-box">
+                                    <div class="feature-title-left"></div>
+                                    <div class="feature-title-center"></div>
+                                    <div class="feature-title-right"></div>
+                                    <div class="feature-title-text">死亡紀錄2</div>
+                                </div>
+
+                                <div class="feature-desc-box">
+                                    <div class="feature-desc-left"></div>
+                                    <div class="feature-desc-center"></div>
+                                    <div class="feature-desc-right"></div>
+
+                                    <div class="feature-desc-text">
+                                        紀錄玩家死亡時的位置、死亡原因、攻擊者，以及當時使用的武器或相關資訊。
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="feature-item">
+                            <button id="deathRecordBtn" class="feature-btn" type="button">
+                                <img src="{{ url_for('static', filename='icons/btn/Recovery Compass.gif') }}" alt="死亡紀錄2">
+                            </button>
+
+                            <div class="feature-label">死亡紀錄2</div>
+
+                            <div class="feature-hover-card">
+                                <div class="feature-title-box">
+                                    <div class="feature-title-left"></div>
+                                    <div class="feature-title-center"></div>
+                                    <div class="feature-title-right"></div>
+                                    <div class="feature-title-text">死亡紀錄2</div>
+                                </div>
+
+                                <div class="feature-desc-box">
+                                    <div class="feature-desc-left"></div>
+                                    <div class="feature-desc-center"></div>
+                                    <div class="feature-desc-right"></div>
+
+                                    <div class="feature-desc-text">
+                                        紀錄玩家死亡時的位置、死亡原因、攻擊者，以及當時使用的武器或相關資訊。
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="feature-item">
+                            <button id="deathRecordBtn" class="feature-btn" type="button">
+                                <img src="{{ url_for('static', filename='icons/btn/Recovery Compass.gif') }}" alt="死亡紀錄2">
+                            </button>
+
+                            <div class="feature-label">死亡紀錄2</div>
+
+                            <div class="feature-hover-card">
+                                <div class="feature-title-box">
+                                    <div class="feature-title-left"></div>
+                                    <div class="feature-title-center"></div>
+                                    <div class="feature-title-right"></div>
+                                    <div class="feature-title-text">死亡紀錄2</div>
+                                </div>
+
+                                <div class="feature-desc-box">
+                                    <div class="feature-desc-left"></div>
+                                    <div class="feature-desc-center"></div>
+                                    <div class="feature-desc-right"></div>
+
+                                    <div class="feature-desc-text">
+                                        紀錄玩家死亡時的位置、死亡原因、攻擊者，以及當時使用的武器或相關資訊。
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="feature-item">
+                            <button id="deathRecordBtn" class="feature-btn" type="button">
+                                <img src="{{ url_for('static', filename='icons/btn/Recovery Compass.gif') }}" alt="死亡紀錄2">
+                            </button>
+
+                            <div class="feature-label">死亡紀錄2</div>
+
+                            <div class="feature-hover-card">
+                                <div class="feature-title-box">
+                                    <div class="feature-title-left"></div>
+                                    <div class="feature-title-center"></div>
+                                    <div class="feature-title-right"></div>
+                                    <div class="feature-title-text">死亡紀錄2</div>
+                                </div>
+
+                                <div class="feature-desc-box">
+                                    <div class="feature-desc-left"></div>
+                                    <div class="feature-desc-center"></div>
+                                    <div class="feature-desc-right"></div>
+
+                                    <div class="feature-desc-text">
+                                        紀錄玩家死亡時的位置、死亡原因、攻擊者，以及當時使用的武器或相關資訊。
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="feature-item">
+                            <button id="deathRecordBtn" class="feature-btn" type="button">
+                                <img src="{{ url_for('static', filename='icons/btn/Recovery Compass.gif') }}" alt="死亡紀錄2">
+                            </button>
+
+                            <div class="feature-label">死亡紀錄2</div>
+
+                            <div class="feature-hover-card">
+                                <div class="feature-title-box">
+                                    <div class="feature-title-left"></div>
+                                    <div class="feature-title-center"></div>
+                                    <div class="feature-title-right"></div>
+                                    <div class="feature-title-text">死亡紀錄2</div>
+                                </div>
+
+                                <div class="feature-desc-box">
+                                    <div class="feature-desc-left"></div>
+                                    <div class="feature-desc-center"></div>
+                                    <div class="feature-desc-right"></div>
+
+                                    <div class="feature-desc-text">
+                                        紀錄玩家死亡時的位置、死亡原因、攻擊者，以及當時使用的武器或相關資訊。
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </div>
                 </div>
+
+
+                <!-- 一般功能 -->
+                <div class="feature-grid">
+                    <div class="feature-header">一般功能</div>
+
+                    <div class="feature-list">
+
+                        <div class="feature-item">
+                            <button id="serverSettingBtn" class="feature-btn" type="button">
+                                <img src="{{ url_for('static', filename='icons/btn/setting.png') }}" alt="伺服器設定">
+                            </button>
+
+                            <div class="feature-label">伺服器設定</div>
+
+                            <div class="feature-hover-card">
+                                <div class="feature-title-box">
+                                    <div class="feature-title-left"></div>
+                                    <div class="feature-title-center"></div>
+                                    <div class="feature-title-right"></div>
+                                    <div class="feature-title-text">伺服器設定</div>
+                                </div>
+
+                                <div class="feature-desc-box">
+                                    <div class="feature-desc-left"></div>
+                                    <div class="feature-desc-center"></div>
+                                    <div class="feature-desc-right"></div>
+
+                                    <div class="feature-desc-text">
+                                        更改伺服器的基本參數：遊戲難度、最大玩家數等...。
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 功能二預計位置 -->
+                        <div class="feature-item">
+                            <button id="serverSettingBtn" class="feature-btn" type="button">
+                                <img src="{{ url_for('static', filename='icons/btn/setting.png') }}" alt="伺服器設定2">
+                            </button>
+
+                            <div class="feature-label">伺服器設定2</div>
+
+                            <div class="feature-hover-card">
+                                <div class="feature-title-box">
+                                    <div class="feature-title-left"></div>
+                                    <div class="feature-title-center"></div>
+                                    <div class="feature-title-right"></div>
+                                    <div class="feature-title-text">伺服器設定2</div>
+                                </div>
+
+                                <div class="feature-desc-box">
+                                    <div class="feature-desc-left"></div>
+                                    <div class="feature-desc-center"></div>
+                                    <div class="feature-desc-right"></div>
+
+                                    <div class="feature-desc-text">
+                                        更改伺服器的基本參數：遊戲難度、最大玩家數等...。
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- 功能三預計位置 -->
+                        <div class="feature-item">
+                            <button id="serverSettingBtn" class="feature-btn" type="button">
+                                <img src="{{ url_for('static', filename='icons/btn/setting.png') }}" alt="伺服器設定">
+                            </button>
+
+                            <div class="feature-label">伺服器設定3</div>
+
+                            <div class="feature-hover-card">
+                                <div class="feature-title-box">
+                                    <div class="feature-title-left"></div>
+                                    <div class="feature-title-center"></div>
+                                    <div class="feature-title-right"></div>
+                                    <div class="feature-title-text">伺服器設定3</div>
+                                </div>
+
+                                <div class="feature-desc-box">
+                                    <div class="feature-desc-left"></div>
+                                    <div class="feature-desc-center"></div>
+                                    <div class="feature-desc-right"></div>
+
+                                    <div class="feature-desc-text">
+                                        更改伺服器的基本參數：遊戲難度、最大玩家數等...。
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- 功能三預計位置 -->
+                        <div class="feature-item">
+                            <button id="serverSettingBtn" class="feature-btn" type="button">
+                                <img src="{{ url_for('static', filename='icons/btn/setting.png') }}" alt="伺服器設定">
+                            </button>
+
+                            <div class="feature-label">伺服器設定3</div>
+
+                            <div class="feature-hover-card">
+                                <div class="feature-title-box">
+                                    <div class="feature-title-left"></div>
+                                    <div class="feature-title-center"></div>
+                                    <div class="feature-title-right"></div>
+                                    <div class="feature-title-text">伺服器設定3</div>
+                                </div>
+
+                                <div class="feature-desc-box">
+                                    <div class="feature-desc-left"></div>
+                                    <div class="feature-desc-center"></div>
+                                    <div class="feature-desc-right"></div>
+
+                                    <div class="feature-desc-text">
+                                        更改伺服器的基本參數：遊戲難度、最大玩家數等...。
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- 功能三預計位置 -->
+                        <div class="feature-item">
+                            <button id="serverSettingBtn" class="feature-btn" type="button">
+                                <img src="{{ url_for('static', filename='icons/btn/setting.png') }}" alt="伺服器設定">
+                            </button>
+
+                            <div class="feature-label">伺服器設定3</div>
+
+                            <div class="feature-hover-card">
+                                <div class="feature-title-box">
+                                    <div class="feature-title-left"></div>
+                                    <div class="feature-title-center"></div>
+                                    <div class="feature-title-right"></div>
+                                    <div class="feature-title-text">伺服器設定3</div>
+                                </div>
+
+                                <div class="feature-desc-box">
+                                    <div class="feature-desc-left"></div>
+                                    <div class="feature-desc-center"></div>
+                                    <div class="feature-desc-right"></div>
+
+                                    <div class="feature-desc-text">
+                                        更改伺服器的基本參數：遊戲難度、最大玩家數等...。
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- 功能三預計位置 -->
+                        <div class="feature-item">
+                            <button id="serverSettingBtn" class="feature-btn" type="button">
+                                <img src="{{ url_for('static', filename='icons/btn/setting.png') }}" alt="伺服器設定">
+                            </button>
+
+                            <div class="feature-label">伺服器設定3</div>
+
+                            <div class="feature-hover-card">
+                                <div class="feature-title-box">
+                                    <div class="feature-title-left"></div>
+                                    <div class="feature-title-center"></div>
+                                    <div class="feature-title-right"></div>
+                                    <div class="feature-title-text">伺服器設定3</div>
+                                </div>
+
+                                <div class="feature-desc-box">
+                                    <div class="feature-desc-left"></div>
+                                    <div class="feature-desc-center"></div>
+                                    <div class="feature-desc-right"></div>
+
+                                    <div class="feature-desc-text">
+                                        更改伺服器的基本參數：遊戲難度、最大玩家數等...。
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </div>
+                </div>
+
             </div>
+            
 
            
             <!-- 中間 Log -->

@@ -28,6 +28,15 @@ DEFAULT_CONFIG = {
 
 
 def is_server_online(host: str = "127.0.0.1", port: int = 25565, timeout: int = 1) -> bool:
+    #讀取server.properties設定值的port
+    server_properties = read_properties_file()
+    query_port = "query.port"
+
+    #根據server.properties的port動態修改,用正確的port檢查
+    if query_port in server_properties:
+        port = server_properties[query_port]
+    #備註讓user在使用UI操作server不要再去手動修改server.properties以免發生錯誤,需手動修改請在OxOcraft-Manager關閉時操作
+
     """檢查 Minecraft server 是否在線。"""
     try:
         with socket.create_connection((host, port), timeout=timeout):
@@ -366,5 +375,5 @@ if __name__ == "__main__":
     except Exception as error:
         print(f"初始化失敗：{error}")
 
-    # threading.Timer(1, open_browser).start()
+    threading.Timer(1, open_browser).start()
     app.run(debug=False)

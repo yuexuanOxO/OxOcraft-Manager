@@ -622,6 +622,79 @@ function showNextDeathPage() {
 }
 
 
+// 功能卡顯示
+function setupGlobalFeatureCard() {
+    const globalCard = document.getElementById("globalFeatureCard");
+    const globalBtnClone = document.getElementById("globalFeatureBtnClone");
+    const featureItems = document.querySelectorAll(".feature-item");
+
+    if (!globalCard || !globalBtnClone || !featureItems.length) return;
+
+    let hideTimer = null;
+
+    function showCard(item) {
+        const sourceCard = item.querySelector(".feature-hover-card");
+        const btn = item.querySelector(".feature-btn");
+
+        if (!sourceCard || !btn) return;
+
+        if (hideTimer) {
+            clearTimeout(hideTimer);
+            hideTimer = null;
+        }
+
+        const rect = btn.getBoundingClientRect();
+
+        // 1. 顯示全域 card
+        globalCard.innerHTML = sourceCard.innerHTML;
+        globalCard.classList.remove("hidden");
+
+        const cardLeft = rect.left - 15;
+        const cardTop = rect.top - 4;
+
+        globalCard.style.left = `${cardLeft}px`;
+        globalCard.style.top = `${cardTop}px`;
+
+        // 2. 顯示「自己按鈕的前景複製層」
+        const btnCloneHtml = `
+            <button class="feature-btn" type="button" tabindex="-1" aria-hidden="true">
+                ${btn.innerHTML}
+            </button>
+        `;
+
+        globalBtnClone.innerHTML = btnCloneHtml;
+        globalBtnClone.classList.remove("hidden");
+        globalBtnClone.style.left = `${rect.left}px`;
+        globalBtnClone.style.top = `${rect.top}px`;
+    }
+
+    function hideCard() {
+        hideTimer = setTimeout(() => {
+            globalCard.classList.add("hidden");
+            globalBtnClone.classList.add("hidden");
+            globalCard.innerHTML = "";
+            globalBtnClone.innerHTML = "";
+        }, 40);
+    }
+
+    featureItems.forEach((item) => {
+        item.addEventListener("mouseenter", () => showCard(item));
+        item.addEventListener("mouseleave", hideCard);
+    });
+
+    window.addEventListener("scroll", () => {
+        globalCard.classList.add("hidden");
+        globalBtnClone.classList.add("hidden");
+    }, true);
+
+    window.addEventListener("resize", () => {
+        globalCard.classList.add("hidden");
+        globalBtnClone.classList.add("hidden");
+    });
+}
+
+
+
 document.addEventListener("DOMContentLoaded", () => {
     // ===== 啟動server按鈕 =====
     const powerBtn = document.getElementById("powerBtn");
@@ -688,4 +761,5 @@ document.addEventListener("DOMContentLoaded", () => {
     // ===== 初始化 =====
     updatePlayers();
     updateStatus();
+    setupGlobalFeatureCard();
 });

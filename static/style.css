@@ -45,12 +45,7 @@ h1 {
     box-shadow: 0 0 8px #ff4d4f;
 }
 
-.panel {
-    background-color: #2a2a2a;
-    border: 1px solid #444;
-    border-radius: 8px;
-    overflow: hidden;
-}
+
 
 .panel-header {
     display: flex;
@@ -225,10 +220,12 @@ h1 {
 
 
 
-.layout {
+.layout{
     display: flex;
     gap: 24px;
     align-items: flex-start;
+    position: relative;
+    overflow: visible;
 }
 
 .panel {
@@ -324,29 +321,51 @@ h1 {
 
 /* 左側功能表 */
 
-.side-panel {
-    width: 300px;
-    background: linear-gradient(180deg, #2b2b2b 0%, #1e1e1e 100%);
-    border: 2px solid #4a4a4a;
-    border-radius: 8px;
-    padding: 14px 12px;
-    box-sizing: border-box;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
-}
-
-.feature-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    background-color: #333;
-    font-weight: bold;
-}
-
-.feature-item {
+.side-panel{
+    width: 320px;
+    height: calc(100vh - 120px);
+    padding: 10px;
+    overflow-y: auto;
+    overflow-x: visible;
+    background: rgba(20,20,20,.88);
+    border: 3px solid #2d2d2d;
     position: relative;
-    display: inline-block;
+    z-index: 50;
 }
+
+.feature-grid{
+    margin-bottom: 16px;
+    border: 2px solid #2f2f2f;
+    background: rgba(0,0,0,.18);
+    overflow: visible;
+}
+
+.feature-header{
+    text-align: center;
+    padding: 8px 0;
+    font-size: 22px;
+    color: #e8e8e8;
+    background: rgba(70,70,70,.7);
+    border-bottom: 2px solid #2a2a2a;
+}
+
+.feature-list{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px 10px;
+    padding: 12px;
+    overflow: visible;
+}
+
+.feature-item{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: visible;
+    z-index: 1;
+}
+
 
 .feature-btn {
     width: 74px;
@@ -361,6 +380,13 @@ h1 {
     position: relative;
     z-index: 3;
 }
+
+.feature-label{
+    position: relative;
+    z-index: 3;   /* 功能名稱也留在 card 上面 */
+}
+
+
 
 .feature-btn::before {
     content: "";
@@ -386,19 +412,19 @@ h1 {
     filter: brightness(1.06);
 }
 
-.feature-btn img {
+/* .feature-btn img {
     width: 42px;
     height: 42px;
     object-fit: contain;
     image-rendering: pixelated;
-}
+} */
 
-.feature-hover-card {
+/* .feature-hover-card {
     position: absolute;
     top: -4px;
     left: -15px;
     width: 320px;
-    z-index: 1;
+    z-index: 9999;
 
     display: flex;
     flex-direction: column;
@@ -407,8 +433,26 @@ h1 {
     pointer-events: none;
     transform: translateX(6px);
     transition: opacity 0.15s ease, transform 0.15s ease;
+} */
+
+/* 原本每個按鈕內建的說明卡，改成只當資料來源，不直接顯示 */
+.feature-hover-card{
+    display: none !important;
 }
 
+/* 全域浮動卡片 */
+.global-feature-card{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 320px;
+    z-index: 99999;
+    pointer-events: none;
+}
+
+.global-feature-card.hidden{
+    display: none !important;
+}
 
 .feature-title-box {
     position: relative;
@@ -544,10 +588,41 @@ h1 {
 }
 
 
-.feature-item:hover .feature-hover-card {
+.global-feature-card{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 320px;
+    z-index: 99998;
+    pointer-events: none;
+}
+
+.global-feature-btn-clone{
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 99999;
+    pointer-events: none;
+}
+
+.global-feature-btn-clone.hidden,
+.global-feature-card.hidden{
+    display: none !important;
+}
+
+
+
+/* .feature-item:hover{
+    z-index: 10000;
+} */
+
+/* .feature-item:hover .feature-hover-card {
     opacity: 1;
     transform: translateX(0);
-}
+} */
+
+
+
 
 
 .death-book-modal {

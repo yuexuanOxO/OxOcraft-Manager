@@ -16,26 +16,26 @@
                 <div class="death-book-top">
                     <div class="death-book-player-block">
                         <img id="deathPlayerAvatar" class="death-book-avatar" src="" alt="player avatar">
-                        <div id="deathPlayerName" class="death-book-player-name">玩家名稱</div>
+                        <div id="deathPlayerName" class="death-book-player-name">Player</div>
                     </div>
 
-                    <div id="deathPageInfo" class="death-book-page-info">第 1 頁 / 第 1 頁</div>
+                    <div id="deathPageInfo" class="death-book-page-info">Page 1 of 1 </div>
                 </div>
 
                 <div class="death-book-content">
                     <div class="death-book-section">
-                        <div class="death-book-label">最近死亡：</div>
+                        <div class="death-book-label">Recent death：</div>
                         <div id="deathText" class="death-book-text"></div>
                     </div>
 
                     <div class="death-book-section">
-                        <div class="death-book-label">死亡地點：</div>
+                        <div class="death-book-label">Location of death：</div>
                         <div id="deathLocation" class="death-book-text"></div>
                         <div id="deathTime" class="death-book-text"></div>
                     </div>
 
                     <div id="deathKillerSection" class="death-book-section">
-                        <div class="death-book-label">擊殺者：</div>
+                        <div class="death-book-label">killer：</div>
                         <div class="death-book-killer-row">
                             <img id="deathKillerIcon" class="death-book-killer-icon hidden" src="" alt="killer icon">
                             <div id="deathKillerText" class="death-book-text"></div>
@@ -43,14 +43,14 @@
                     </div>
 
                     <div id="deathWeaponSection" class="death-book-section">
-                        <div class="death-book-label">使用兇器：</div>
+                        <div class="death-book-label">item：</div>
                         <div id="deathWeaponText" class="death-book-text"></div>
                     </div>
                 </div>
 
                 <div class="death-book-nav">
-                    <button id="deathPrevBtn" class="death-book-page-btn prev" type="button" aria-label="上一頁"></button>
-                    <button id="deathNextBtn" class="death-book-page-btn next" type="button" aria-label="下一頁"></button>
+                    <button id="deathPrevBtn" class="death-book-page-btn prev" type="button" aria-label="Previous Page"></button>
+                    <button id="deathNextBtn" class="death-book-page-btn next" type="button" aria-label="Next page"></button>
                 </div>
             </div>
         </div>
@@ -68,11 +68,11 @@
             <!-- 左邊功能區 -->
             <div class="side-panel">
                 <div class="feature-grid">
-                    <div class="feature-header">功能</div>
+                    <div class="feature-header">Function</div>
 
                     <div class="feature-item">
                         <button id="deathRecordBtn" class="feature-btn" type="button">
-                            <img src="{{ url_for('static', filename='icons/Recovery Compass.gif') }}" alt="死亡紀錄">
+                            <img src="{{ url_for('static', filename='icons/Recovery Compass.gif') }}" alt="Death Record">
                         </button>
 
                         <div class="feature-hover-card">
@@ -81,7 +81,7 @@
                                 <div class="feature-title-left"></div>
                                 <div class="feature-title-center"></div>
                                 <div class="feature-title-right"></div>
-                                <div class="feature-title-text">死亡紀錄</div>
+                                <div class="feature-title-text">Death Record</div>
                             </div>
 
                             <div class="feature-desc-box">
@@ -90,7 +90,7 @@
                                 <div class="feature-desc-right"></div>
 
                                 <div class="feature-desc-text">
-                                    紀錄玩家死亡時的位置、死亡原因、攻擊者，以及當時使用的武器或相關資訊。
+                                    Records information when a player dies.
                                 </div>
                             </div>
 
@@ -106,7 +106,7 @@
                 <div class="panel-header">
                     <div class="status-group">
                         <span id="statusLight" class="status-light {{ 'online' if server_online else 'offline' }}"></span>
-                        <span id="statusText">{{ '在線' if server_online else '離線' }}</span>
+                        <span id="statusText">{{ 'online' if server_online else 'offline' }}</span>
                     </div>
                     <button id="powerBtn" class="power-btn">⏻</button>
                 </div>
@@ -115,7 +115,7 @@
 
                 <div class="command-bar">
                     <input id="commandInput" placeholder="輸入Minecraft指令">
-                    <button id="sendCommandBtn">送出</button>
+                    <button id="sendCommandBtn">Send</button>
                 </div>
             </div>
 
@@ -129,6 +129,6 @@
 
     </div>
 
-    <script src="{{ url_for('static', filename='main.js') }}"></script>
+    <script src="{{ url_for('static', filename='main_en.js') }}"></script>
 </body>
 </html>

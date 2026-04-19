@@ -26,6 +26,7 @@ DEFAULT_CONFIG = {
 }
 
 
+
 def is_server_online(host: str = "127.0.0.1", port: int = 25565, timeout: int = 1) -> bool:
     """檢查 Minecraft server 是否在線。"""
     try:
@@ -65,43 +66,74 @@ def save_config(config: Dict) -> None:
         json.dump(config, file, ensure_ascii=False, indent=4)
 
 
-def write_properties_file(file_path: Path, updates: Dict[str, str]) -> None:
-    """
-    保留原本內容順序，僅更新指定 key；
-    若 key 原本不存在，補到最後。
-    """
+def read_properties_file():
+    file_path:Path =SERVER_PROPERTIES_PATH
+
     if not file_path.exists():
         raise FileNotFoundError(f"找不到 server.properties：{file_path}")
 
     with file_path.open("r", encoding="utf-8", errors="replace") as file:
         lines = file.readlines()
-
-    updated_keys = set()
+        #print(f"lines:{lines}")
+        
     new_lines: list[str] = []
+    server_properties = {}
 
     for raw_line in lines:
         stripped = raw_line.strip()
+        # print(repr(raw_line))
+        
 
+        #過濾掉server.properties的空白&註解
         if not stripped or stripped.startswith("#") or "=" not in raw_line:
             new_lines.append(raw_line)
             continue
 
-        key, _ = raw_line.split("=", 1)
+        key, value = stripped.split("=", 1)
         key = key.strip()
+        value = value.strip()
 
-        if key in updates:
-            new_lines.append(f"{key}={updates[key]}\n")
-            updated_keys.add(key)
-        else:
-            new_lines.append(raw_line)
+        server_properties[key] = value
+        # print(f"{key}={value}")
+        # print(stripped)
+        
+    #print(server_properties)
+        
+    return server_properties
 
-    for key, value in updates.items():
-        if key not in updated_keys:
-            new_lines.append(f"{key}={value}\n")
 
-    with file_path.open("w", encoding="utf-8", errors="replace") as file:
-        file.writelines(new_lines)
 
+def properties_Format_recovery(update_server_properties):
+    original_Format_server_properties: list[str] = []
+
+    for key in update_server_properties:
+        original_Format_server_properties.append(f"{key}={update_server_properties[key]}\n") 
+        
+    return write_properties_file(original_Format_server_properties)
+
+
+
+def write_properties_file(original_Format_server_properties):
+
+    with SERVER_PROPERTIES_PATH.open("w", encoding="utf-8", errors="replace") as file:
+        file.writelines(original_Format_server_properties)
+
+
+
+def Test1():
+    update_key = "max-players"
+    update_value = 6
+    
+    server_properties = read_properties_file()
+    if update_key in server_properties:
+        server_properties[update_key] = update_value
+        print(f"max-players已修改")
+
+    print(server_properties)
+
+    return properties_Format_recovery(server_properties)
+
+    
 
 def sync_rcon_to_server_properties(config: Dict) -> None:
     """把 config.json 的 RCON 設定同步到 server.properties。"""
@@ -110,7 +142,12 @@ def sync_rcon_to_server_properties(config: Dict) -> None:
         "rcon.port": str(config["rcon_port"]),
         "rcon.password": str(config["rcon_password"]),
     }
-    write_properties_file(SERVER_PROPERTIES_PATH, updates)
+
+    server_properties = read_properties_file()
+    server_properties.update(updates)
+
+    return properties_Format_recovery(server_properties)
+            
 
 
 def init_rcon_config() -> Dict:
@@ -174,7 +211,7 @@ def open_browser():
 def index():
     logs = "".join(read_last_lines(LOG_FILE, max_lines=100))
     server_online = is_server_online()
-    return render_template("index.html", logs=logs, server_online=server_online)
+    return render_template("index_zh.html", logs=logs, server_online=server_online)
 
 
 @app.route("/status")
@@ -329,5 +366,5 @@ if __name__ == "__main__":
     except Exception as error:
         print(f"初始化失敗：{error}")
 
-    threading.Timer(1, open_browser).start()
+    # threading.Timer(1, open_browser).start()
     app.run(debug=False)

@@ -66,7 +66,8 @@ h1 {
 #logBox {
     margin: 0;
     padding: 16px;
-    height: 600px;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     white-space: pre-wrap;
     word-break: break-word;
@@ -223,12 +224,12 @@ h1 {
 .layout{
     display: flex;
     gap: 24px;
-    align-items: flex-start;
+    align-items: stretch;
     position: relative;
     overflow: visible;
 }
 
-.panel {
+.panel{
     flex: 1;
     min-width: 0;
     background-color: #2a2a2a;
@@ -323,7 +324,6 @@ h1 {
 
 .side-panel{
     width: 320px;
-    height: calc(100vh - 120px);
     padding: 10px;
     overflow-y: auto;
     overflow-x: visible;
@@ -334,11 +334,14 @@ h1 {
 }
 
 .feature-grid{
-    margin-bottom: 16px;
+    margin-bottom: 0;
     border: 2px solid #2f2f2f;
     background: rgba(0,0,0,.18);
     overflow: visible;
+    display: flex;
+    flex-direction: column;
 }
+
 
 .feature-header{
     text-align: center;
@@ -354,7 +357,11 @@ h1 {
     grid-template-columns: repeat(3, 1fr);
     gap: 14px 10px;
     padding: 12px;
-    overflow: visible;
+    overflow-x: visible;
+    overflow-y: auto;
+
+    max-height: 310px;
+
 }
 
 .feature-item{

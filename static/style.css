@@ -407,8 +407,8 @@ h1 {
 }
 
 .feature-btn img {
-    width: 42px;
-    height: 42px;
+    width: 48px;
+    height: 48px;
     object-fit: contain;
     image-rendering: pixelated;
     position: relative;
@@ -416,31 +416,11 @@ h1 {
 }
 
 .feature-btn:hover {
-    filter: brightness(1.06);
+    /* filter: brightness(1.06); */
+    filter: none;
 }
 
-/* .feature-btn img {
-    width: 42px;
-    height: 42px;
-    object-fit: contain;
-    image-rendering: pixelated;
-} */
 
-/* .feature-hover-card {
-    position: absolute;
-    top: -4px;
-    left: -15px;
-    width: 320px;
-    z-index: 9999;
-
-    display: flex;
-    flex-direction: column;
-
-    opacity: 0;
-    pointer-events: none;
-    transform: translateX(6px);
-    transition: opacity 0.15s ease, transform 0.15s ease;
-} */
 
 /* 原本每個按鈕內建的說明卡，改成只當資料來源，不直接顯示 */
 .feature-hover-card{

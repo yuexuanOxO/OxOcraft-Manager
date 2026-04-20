@@ -644,13 +644,15 @@ function setupGlobalFeatureCard() {
         }
 
         const rect = btn.getBoundingClientRect();
+        const roundedLeft = Math.round(rect.left);
+        const roundedTop = Math.round(rect.top);
 
         // 1. 顯示全域 card
         globalCard.innerHTML = sourceCard.innerHTML;
         globalCard.classList.remove("hidden");
 
-        const cardLeft = rect.left - 15;
-        const cardTop = rect.top - 4;
+        const cardLeft = roundedLeft - 15;
+        const cardTop = roundedTop - 4;
 
         globalCard.style.left = `${cardLeft}px`;
         globalCard.style.top = `${cardTop}px`;
@@ -664,8 +666,8 @@ function setupGlobalFeatureCard() {
 
         globalBtnClone.innerHTML = btnCloneHtml;
         globalBtnClone.classList.remove("hidden");
-        globalBtnClone.style.left = `${rect.left}px`;
-        globalBtnClone.style.top = `${rect.top}px`;
+        globalBtnClone.style.left = `${roundedLeft}px`;
+        globalBtnClone.style.top = `${roundedTop}px`;
     }
 
     function hideCard() {

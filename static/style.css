@@ -235,9 +235,11 @@ h1 {
     background-color: #2a2a2a;
     border: 1px solid #444;
     border-radius: 8px;
-    overflow: hidden;
+    overflow: visible;
     display: flex;
     flex-direction: column;
+    position: relative;
+    z-index: 1;
 }
 
 
@@ -325,8 +327,7 @@ h1 {
 .side-panel{
     width: 320px;
     padding: 10px;
-    overflow-y: auto;
-    overflow-x: visible;
+    overflow: visible;
     background: rgba(20,20,20,.88);
     border: 3px solid #2d2d2d;
     position: relative;
@@ -340,6 +341,8 @@ h1 {
     overflow: visible;
     display: flex;
     flex-direction: column;
+    position: relative;
+    z-index: 1;
 }
 
 
@@ -357,11 +360,9 @@ h1 {
     grid-template-columns: repeat(3, 1fr);
     gap: 14px 10px;
     padding: 12px;
-    overflow-x: visible;
+    overflow-x: hidden;
     overflow-y: auto;
-
     max-height: 310px;
-
 }
 
 .feature-item{
@@ -374,7 +375,7 @@ h1 {
 }
 
 
-.feature-btn {
+.feature-btn{
     width: 74px;
     height: 74px;
     padding: 0;
@@ -390,7 +391,7 @@ h1 {
 
 .feature-label{
     position: relative;
-    z-index: 3;   /* 功能名稱也留在 card 上面 */
+    z-index: 1;   /* 功能名稱也留在 card 上面 */
 }
 
 
@@ -420,26 +421,79 @@ h1 {
     filter: none;
 }
 
+/* 
+.feature-hover-card {
+    position: absolute;
+    top: -4px;
+    left: -15px;
+    width: 320px;
+    z-index: 2;
 
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(6px);
+}
 
-/* 原本每個按鈕內建的說明卡，改成只當資料來源，不直接顯示 */
+.feature-item:hover .feature-hover-card {
+    opacity: 1;
+    transform: translateX(0);
+} */
+
 .feature-hover-card{
     display: none !important;
 }
 
-/* 全域浮動卡片 */
 .global-feature-card{
     position: fixed;
     top: 0;
     left: 0;
     width: 320px;
-    z-index: 99999;
+    z-index: 9998;
     pointer-events: none;
 }
 
 .global-feature-card.hidden{
     display: none !important;
 }
+
+
+.global-feature-card{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 320px;
+    z-index: 9998;
+    pointer-events: none;
+}
+
+.global-feature-button-host{
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    pointer-events: none;
+}
+
+.global-feature-card.hidden,
+.global-feature-button-host.hidden{
+    display: none !important;
+}
+
+
+.feature-btn-placeholder{
+    width: 74px;
+    height: 74px;
+    flex-shrink: 0;
+}
+
+/* 
+.feature-item:hover{
+    z-index: 9999;
+} */
+
+
 
 .feature-title-box {
     position: relative;
@@ -573,43 +627,6 @@ h1 {
     font-weight: bold;
     box-sizing: border-box;
 }
-
-
-.global-feature-card{
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 320px;
-    z-index: 99998;
-    pointer-events: none;
-}
-
-.global-feature-btn-clone{
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 99999;
-    pointer-events: none;
-}
-
-.global-feature-btn-clone.hidden,
-.global-feature-card.hidden{
-    display: none !important;
-}
-
-
-
-/* .feature-item:hover{
-    z-index: 10000;
-} */
-
-/* .feature-item:hover .feature-hover-card {
-    opacity: 1;
-    transform: translateX(0);
-} */
-
-
-
 
 
 .death-book-modal {
@@ -756,3 +773,4 @@ h1 {
 .hidden {
     display: none !important;
 }
+

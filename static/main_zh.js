@@ -625,12 +625,32 @@ function showNextDeathPage() {
 // 功能卡顯示
 function setupGlobalFeatureCard() {
     const globalCard = document.getElementById("globalFeatureCard");
-    const globalBtnClone = document.getElementById("globalFeatureBtnClone");
+    const globalButtonHost = document.getElementById("globalFeatureButtonHost");
     const featureItems = document.querySelectorAll(".feature-item");
 
-    if (!globalCard || !globalBtnClone || !featureItems.length) return;
+    if (!globalCard || !globalButtonHost || !featureItems.length) return;
 
     let hideTimer = null;
+    let activeButton = null;
+    let activePlaceholder = null;
+    let activeOriginalParent = null;
+
+    function restoreButton() {
+        if (activeButton && activeOriginalParent) {
+            if (activePlaceholder && activePlaceholder.parentNode) {
+                activePlaceholder.parentNode.replaceChild(activeButton, activePlaceholder);
+            } else {
+                activeOriginalParent.appendChild(activeButton);
+            }
+        }
+
+        activeButton = null;
+        activePlaceholder = null;
+        activeOriginalParent = null;
+
+        globalButtonHost.classList.add("hidden");
+        globalButtonHost.innerHTML = "";
+    }
 
     function showCard(item) {
         const sourceCard = item.querySelector(".feature-hover-card");
@@ -643,11 +663,12 @@ function setupGlobalFeatureCard() {
             hideTimer = null;
         }
 
+        restoreButton();
+
         const rect = btn.getBoundingClientRect();
         const roundedLeft = Math.round(rect.left);
         const roundedTop = Math.round(rect.top);
 
-        // 1. 顯示全域 card
         globalCard.innerHTML = sourceCard.innerHTML;
         globalCard.classList.remove("hidden");
 
@@ -657,25 +678,26 @@ function setupGlobalFeatureCard() {
         globalCard.style.left = `${cardLeft}px`;
         globalCard.style.top = `${cardTop}px`;
 
-        // 2. 顯示「自己按鈕的前景複製層」
-        const btnCloneHtml = `
-            <button class="feature-btn" type="button" tabindex="-1" aria-hidden="true">
-                ${btn.innerHTML}
-            </button>
-        `;
+        activeButton = btn;
+        activeOriginalParent = btn.parentNode;
 
-        globalBtnClone.innerHTML = btnCloneHtml;
-        globalBtnClone.classList.remove("hidden");
-        globalBtnClone.style.left = `${roundedLeft}px`;
-        globalBtnClone.style.top = `${roundedTop}px`;
+        const placeholder = document.createElement("div");
+        placeholder.className = "feature-btn-placeholder";
+        activePlaceholder = placeholder;
+
+        activeOriginalParent.replaceChild(placeholder, btn);
+
+        globalButtonHost.classList.remove("hidden");
+        globalButtonHost.style.left = `${roundedLeft}px`;
+        globalButtonHost.style.top = `${roundedTop}px`;
+        globalButtonHost.appendChild(btn);
     }
 
     function hideCard() {
         hideTimer = setTimeout(() => {
             globalCard.classList.add("hidden");
-            globalBtnClone.classList.add("hidden");
             globalCard.innerHTML = "";
-            globalBtnClone.innerHTML = "";
+            restoreButton();
         }, 40);
     }
 
@@ -686,12 +708,14 @@ function setupGlobalFeatureCard() {
 
     window.addEventListener("scroll", () => {
         globalCard.classList.add("hidden");
-        globalBtnClone.classList.add("hidden");
+        globalCard.innerHTML = "";
+        restoreButton();
     }, true);
 
     window.addEventListener("resize", () => {
         globalCard.classList.add("hidden");
-        globalBtnClone.classList.add("hidden");
+        globalCard.innerHTML = "";
+        restoreButton();
     });
 }
 
@@ -764,4 +788,5 @@ document.addEventListener("DOMContentLoaded", () => {
     updatePlayers();
     updateStatus();
     setupGlobalFeatureCard();
+    
 });

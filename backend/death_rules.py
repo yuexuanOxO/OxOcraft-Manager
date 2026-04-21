@@ -76,7 +76,7 @@ player_only_messages = [
     "withered away",
     # 額外保留你原本有用到的常見 fall 訊息
     "fell from a high place",
-    "was killed by Ender Dragon using magic",
+    
 ]
 
 
@@ -123,6 +123,7 @@ player_killer_messages = [
     r"fell too far and was finished by (?P<killer>\S+)",
     # 你提供的額外句型
     r"was doomed to fall by (?P<killer>\S+)",
+
     
 ]
 

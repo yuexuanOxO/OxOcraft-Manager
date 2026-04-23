@@ -389,6 +389,8 @@ h1 {
     z-index: 3;
 }
 
+
+
 .feature-label{
     position: relative;
     z-index: 1;   /* 功能名稱也留在 card 上面 */
@@ -421,25 +423,7 @@ h1 {
     filter: none;
 }
 
-/* 
-.feature-hover-card {
-    position: absolute;
-    top: -4px;
-    left: -15px;
-    width: 320px;
-    z-index: 2;
 
-    display: flex;
-    flex-direction: column;
-    opacity: 0;
-    pointer-events: none;
-    transform: translateX(6px);
-}
-
-.feature-item:hover .feature-hover-card {
-    opacity: 1;
-    transform: translateX(0);
-} */
 
 .feature-hover-card{
     display: none !important;
@@ -473,7 +457,7 @@ h1 {
     top: 0;
     left: 0;
     z-index: 9999;
-    pointer-events: none;
+    pointer-events:auto;
 }
 
 .global-feature-card.hidden,
@@ -487,12 +471,6 @@ h1 {
     height: 74px;
     flex-shrink: 0;
 }
-
-/* 
-.feature-item:hover{
-    z-index: 9999;
-} */
-
 
 
 .feature-title-box {

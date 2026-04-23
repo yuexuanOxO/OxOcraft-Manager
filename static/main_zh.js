@@ -634,6 +634,14 @@ function setupGlobalFeatureCard() {
     let activeButton = null;
     let activePlaceholder = null;
     let activeOriginalParent = null;
+    let activeItem = null;
+
+    function cancelHide() {
+        if (hideTimer) {
+            clearTimeout(hideTimer);
+            hideTimer = null;
+        }
+    }
 
     function restoreButton() {
         if (activeButton && activeOriginalParent) {
@@ -647,9 +655,20 @@ function setupGlobalFeatureCard() {
         activeButton = null;
         activePlaceholder = null;
         activeOriginalParent = null;
+        activeItem = null;
 
         globalButtonHost.classList.add("hidden");
         globalButtonHost.innerHTML = "";
+
+        globalCard.classList.add("hidden");
+        globalCard.innerHTML = "";
+    }
+
+    function scheduleHide() {
+        cancelHide();
+        hideTimer = setTimeout(() => {
+            restoreButton();
+        }, 80);
     }
 
     function showCard(item) {
@@ -658,12 +677,17 @@ function setupGlobalFeatureCard() {
 
         if (!sourceCard || !btn) return;
 
-        if (hideTimer) {
-            clearTimeout(hideTimer);
-            hideTimer = null;
+        cancelHide();
+
+        // 如果已經是目前這顆，就不要重複搬移，避免一直重置
+        if (activeItem === item) {
+            return;
         }
 
-        restoreButton();
+        // 如果目前已有其他顆在外層，先還原
+        if (activeButton) {
+            restoreButton();
+        }
 
         const rect = btn.getBoundingClientRect();
         const roundedLeft = Math.round(rect.left);
@@ -671,15 +695,12 @@ function setupGlobalFeatureCard() {
 
         globalCard.innerHTML = sourceCard.innerHTML;
         globalCard.classList.remove("hidden");
-
-        const cardLeft = roundedLeft - 15;
-        const cardTop = roundedTop - 4;
-
-        globalCard.style.left = `${cardLeft}px`;
-        globalCard.style.top = `${cardTop}px`;
+        globalCard.style.left = `${roundedLeft - 15}px`;
+        globalCard.style.top = `${roundedTop - 4}px`;
 
         activeButton = btn;
         activeOriginalParent = btn.parentNode;
+        activeItem = item;
 
         const placeholder = document.createElement("div");
         placeholder.className = "feature-btn-placeholder";
@@ -690,31 +711,51 @@ function setupGlobalFeatureCard() {
         globalButtonHost.classList.remove("hidden");
         globalButtonHost.style.left = `${roundedLeft}px`;
         globalButtonHost.style.top = `${roundedTop}px`;
+        globalButtonHost.innerHTML = "";
         globalButtonHost.appendChild(btn);
     }
 
-    function hideCard() {
-        hideTimer = setTimeout(() => {
-            globalCard.classList.add("hidden");
-            globalCard.innerHTML = "";
-            restoreButton();
-        }, 40);
-    }
-
     featureItems.forEach((item) => {
-        item.addEventListener("mouseenter", () => showCard(item));
-        item.addEventListener("mouseleave", hideCard);
+        item.addEventListener("mouseenter", () => {
+            showCard(item);
+        });
+
+        item.addEventListener("mouseleave", (event) => {
+            const toElement = event.relatedTarget;
+
+            // 如果滑鼠是移到外層按鈕 host，不要關閉
+            if (toElement && globalButtonHost.contains(toElement)) {
+                return;
+            }
+
+            scheduleHide();
+        });
+    });
+
+    globalButtonHost.addEventListener("mouseenter", () => {
+        cancelHide();
+    });
+
+    globalButtonHost.addEventListener("mouseleave", (event) => {
+        const toElement = event.relatedTarget;
+
+        // 如果滑鼠從外層按鈕又回到原本某個 feature-item，就不要關閉
+        const movedToFeatureItem = Array.from(featureItems).some((item) => {
+            return toElement && item.contains(toElement);
+        });
+
+        if (movedToFeatureItem) {
+            return;
+        }
+
+        scheduleHide();
     });
 
     window.addEventListener("scroll", () => {
-        globalCard.classList.add("hidden");
-        globalCard.innerHTML = "";
         restoreButton();
     }, true);
 
     window.addEventListener("resize", () => {
-        globalCard.classList.add("hidden");
-        globalCard.innerHTML = "";
         restoreButton();
     });
 }
@@ -751,7 +792,7 @@ document.addEventListener("DOMContentLoaded", () => {
         logBox.textContent = "伺服器尚未啟動";
     }
 
-        const deathRecordBtn = document.getElementById("deathRecordBtn");
+    const deathRecordBtn = document.getElementById("deathRecordBtn");
     if (deathRecordBtn) {
         deathRecordBtn.addEventListener("click", openDeathBook);
     }

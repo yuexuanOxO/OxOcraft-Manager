@@ -457,7 +457,7 @@ h1 {
     top: 0;
     left: 0;
     z-index: 9999;
-    pointer-events:auto;
+    pointer-events: auto;
 }
 
 .global-feature-card.hidden,

@@ -465,7 +465,9 @@ const mobIconMap = {
     ghast: "/static/icons/mobs/ghast.png",
     drowned: "/static/icons/mobs/drowned.png",
     husk: "/static/icons/mobs/husk.png",
-    stray: "/static/icons/mobs/stray.png"
+    stray: "/static/icons/mobs/stray.png",
+    bogged:"/static/icons/mobs/bogged.png",
+    phantom:"/static/icons/mobs/phantom.png"
 };
 
 function formatDimensionName(dimension) {

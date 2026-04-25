@@ -752,3 +752,66 @@ h1 {
     display: none !important;
 }
 
+
+/* server設定頁面 */
+.settings-modal{
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.72);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 30000;
+}
+
+.settings-panel{
+    width: 760px;
+    max-width: 92vw;
+    height: 620px;
+    max-height: 90vh;
+
+    background: #111;
+    border: 3px solid #6b6b6b;
+    box-shadow: 0 0 0 3px #2d2d2d;
+
+    display: flex;
+    flex-direction: column;
+    padding: 18px;
+    box-sizing: border-box;
+}
+
+.settings-title{
+    font-size: 32px;
+    color: white;
+    font-weight: bold;
+    margin-bottom: 16px;
+}
+
+.settings-body{
+    flex: 1;
+    overflow-y: auto;
+    border: 2px solid #333;
+    padding: 14px;
+    background: #0a0a0a;
+}
+
+.settings-placeholder{
+    color: #65ff65;
+    font-size: 18px;
+}
+
+.settings-footer{
+    margin-top: 16px;
+    text-align: center;
+}
+
+#serverSettingsApplyBtn{
+    min-width: 180px;
+    height: 52px;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.hidden{
+    display: none !important;
+}

@@ -9,6 +9,14 @@ import webbrowser
 import threading
 import re
 from database import init_db, get_recent_player_deaths
+from server_properties import (
+    DEFAULT_SERVER_PROPERTIES,
+    read_properties_file,
+    get_effective_server_properties,
+    format_properties_for_write,
+    write_properties_file,
+)
+
 
 app = Flask(__name__)
 
@@ -26,10 +34,9 @@ DEFAULT_CONFIG = {
 }
 
 
-
 def is_server_online(host: str = "127.0.0.1", port: int = 25565, timeout: int = 1) -> bool:
     #讀取server.properties設定值的port
-    server_properties = read_properties_file()
+    server_properties = read_properties_file(SERVER_PROPERTIES_PATH)
     server_port = "server-port"
 
     #根據server.properties的port動態修改,用正確的port檢查
@@ -75,65 +82,12 @@ def save_config(config: Dict) -> None:
         json.dump(config, file, ensure_ascii=False, indent=4)
 
 
-def read_properties_file():
-    file_path:Path =SERVER_PROPERTIES_PATH
-
-    if not file_path.exists():
-        raise FileNotFoundError(f"找不到 server.properties：{file_path}")
-
-    with file_path.open("r", encoding="utf-8", errors="replace") as file:
-        lines = file.readlines()
-        #print(f"lines:{lines}")
-        
-    new_lines: list[str] = []
-    server_properties = {}
-
-    for raw_line in lines:
-        stripped = raw_line.strip()
-        # print(repr(raw_line))
-        
-
-        #過濾掉server.properties的空白&註解
-        if not stripped or stripped.startswith("#") or "=" not in raw_line:
-            new_lines.append(raw_line)
-            continue
-
-        key, value = stripped.split("=", 1)
-        key = key.strip()
-        value = value.strip()
-
-        server_properties[key] = value
-        # print(f"{key}={value}")
-        # print(stripped)
-        
-    #print(server_properties)
-        
-    return server_properties
-
-
-
-def properties_Format_recovery(update_server_properties):
-    original_Format_server_properties: list[str] = []
-
-    for key in update_server_properties:
-        original_Format_server_properties.append(f"{key}={update_server_properties[key]}\n") 
-        
-    return write_properties_file(original_Format_server_properties)
-
-
-
-def write_properties_file(original_Format_server_properties):
-
-    with SERVER_PROPERTIES_PATH.open("w", encoding="utf-8", errors="replace") as file:
-        file.writelines(original_Format_server_properties)
-
-
 
 # def Test1():
 #     update_key = "max-players"
 #     update_value = 6
     
-#     server_properties = read_properties_file()
+#     server_properties = read_properties_file(SERVER_PROPERTIES_PATH)
 #     if update_key in server_properties:
 #         server_properties[update_key] = update_value
 #         print(f"max-players已修改")
@@ -145,17 +99,17 @@ def write_properties_file(original_Format_server_properties):
     
 
 def sync_rcon_to_server_properties(config: Dict) -> None:
-    """把 config.json 的 RCON 設定同步到 server.properties。"""
     updates = {
         "enable-rcon": "true",
         "rcon.port": str(config["rcon_port"]),
         "rcon.password": str(config["rcon_password"]),
     }
 
-    server_properties = read_properties_file()
+    server_properties = read_properties_file(SERVER_PROPERTIES_PATH)
     server_properties.update(updates)
 
-    return properties_Format_recovery(server_properties)
+    lines = format_properties_for_write(server_properties)
+    write_properties_file(SERVER_PROPERTIES_PATH, lines)
             
 
 
@@ -356,6 +310,36 @@ def api_deaths():
         return jsonify({
             "success": True,
             "deaths": deaths
+        })
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error)
+        }), 500
+    
+
+@app.route("/api/server/properties")
+def api_get_server_properties():
+    try:
+        current_props = read_properties_file(SERVER_PROPERTIES_PATH)
+        effective_props = get_effective_server_properties(SERVER_PROPERTIES_PATH)
+
+        missing_keys = [
+            key for key in DEFAULT_SERVER_PROPERTIES
+            if key not in current_props
+        ]
+
+        unknown_keys = [
+            key for key in current_props
+            if key not in DEFAULT_SERVER_PROPERTIES
+        ]
+
+        return jsonify({
+            "success": True,
+            "properties": effective_props,
+            "current_properties": current_props,
+            "missing_keys": missing_keys,
+            "unknown_keys": unknown_keys,
         })
     except Exception as error:
         return jsonify({

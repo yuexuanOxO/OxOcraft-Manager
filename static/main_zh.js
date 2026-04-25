@@ -628,7 +628,7 @@ function showNextDeathPage() {
 }
 
 
-// 功能卡顯示
+// 成就功能卡顯示
 function setupGlobalFeatureCard() {
     const globalCard = document.getElementById("globalFeatureCard");
     const globalButtonHost = document.getElementById("globalFeatureButtonHost");
@@ -767,6 +767,56 @@ function setupGlobalFeatureCard() {
 }
 
 
+// server設定頁面
+function setupServerSettingsModal() {
+    const modal = document.getElementById("serverSettingsModal");
+    const openBtn = document.getElementById("serverSettingBtn");
+
+    if (!modal || !openBtn) return;
+
+    openBtn.addEventListener("click", () => {
+        modal.classList.remove("hidden");
+        loadServerSettings();
+    });
+
+    modal.addEventListener("click", (event) => {
+        if (event.target === modal) {
+            modal.classList.add("hidden");
+        }
+    });
+}
+
+
+async function loadServerSettings() {
+    const body = document.querySelector(".settings-body");
+    if (!body) return;
+
+    body.innerHTML = "讀取中...";
+
+    try {
+        const response = await fetch("/api/server/properties");
+        const data = await response.json();
+
+        if (!data.success) {
+            body.innerHTML = "讀取失敗";
+            return;
+        }
+
+        const props = data.properties;
+
+        body.innerHTML = `
+            <div>server-port：${props["server-port"] || ""}</div>
+            <div>max-players：${props["max-players"] || ""}</div>
+            <div>motd：${props["motd"] || ""}</div>
+            <div>pvp：${props["pvp"] || ""}</div>
+            <div>enable-query：${props["enable-query"] || ""}</div>
+        `;
+
+    } catch (error) {
+        body.innerHTML = "讀取失敗";
+    }
+}
+
 
 document.addEventListener("DOMContentLoaded", () => {
     // ===== 啟動server按鈕 =====
@@ -835,5 +885,6 @@ document.addEventListener("DOMContentLoaded", () => {
     updatePlayers();
     updateStatus();
     setupGlobalFeatureCard();
+    setupServerSettingsModal();
     
 });

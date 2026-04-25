@@ -6,6 +6,9 @@ let lastLogText = "";
 let wasServerOnline = false;
 let deathRecords = [];
 let currentDeathPage = 0;
+let serverSettingKeyword = "";
+let serverSettingsServerOnline = false;
+
 
 function startLogPolling() {
     if (logPollingTimer !== null || backendDisconnected) {
@@ -772,6 +775,7 @@ function setupServerSettingsModal() {
     const modal = document.getElementById("serverSettingsModal");
     const openBtn = document.getElementById("serverSettingBtn");
     const applyBtn = document.getElementById("serverSettingsApplyBtn");
+    const restartBtn = document.getElementById("serverSettingsRestartBtn");
 
     if (!modal || !openBtn) return;
 
@@ -779,6 +783,7 @@ function setupServerSettingsModal() {
         modal.classList.remove("hidden");
 
         try {
+            await updateServerSettingsFooterMode();
             await loadServerSettingFields();
             await loadServerSettings();
         } catch (error) {
@@ -792,6 +797,10 @@ function setupServerSettingsModal() {
 
     if (applyBtn) {
         applyBtn.addEventListener("click", saveServerSettings);
+    }
+
+    if (restartBtn) {
+        restartBtn.addEventListener("click", saveAndRestartServer);
     }
 
     modal.addEventListener("click", (event) => {
@@ -1032,7 +1041,7 @@ function updateServerSettingsModifiedTime(commentText) {
 
 
 // 伺服器參數頁面搜尋欄
-let serverSettingKeyword = "";
+
 
 function setupServerSettingSearch(){
 
@@ -1063,11 +1072,11 @@ function setupServerSettingSearch(){
 }
 
 
-async function saveServerSettings() {
+async function saveServerSettings(showAlert = true) {
     const applyBtn = document.getElementById("serverSettingsApplyBtn");
+
     if (applyBtn) {
         applyBtn.disabled = true;
-        applyBtn.textContent = "儲存中...";
     }
 
     try {
@@ -1085,23 +1094,142 @@ async function saveServerSettings() {
 
         if (!data.success) {
             alert("儲存失敗：" + (data.message || "未知錯誤"));
-            return;
+            return false;
         }
 
-        alert(data.message || "設定已儲存");
+        if (showAlert) {
+            if (serverSettingsServerOnline) {
+                alert("此次變更已保留，將在下次開啟伺服器時套用。");
+            } else {
+                alert("參數修改完成。");
+            }
+        }
 
         await loadServerSettings();
+        return true;
 
     } catch (error) {
         console.error("儲存 server.properties 失敗:", error);
         alert("儲存失敗，請查看 console。");
+        return false;
+
     } finally {
         if (applyBtn) {
             applyBtn.disabled = false;
-            applyBtn.textContent = "確定套用";
         }
     }
 }
+
+
+async function updateServerSettingsFooterMode() {
+    const applyBtn = document.getElementById("serverSettingsApplyBtn");
+    const restartBtn = document.getElementById("serverSettingsRestartBtn");
+
+    if (!applyBtn || !restartBtn) return;
+
+    try {
+        const response = await fetch("/status", { cache: "no-store" });
+        const data = await response.json();
+
+        serverSettingsServerOnline = !!data.online;
+
+        if (serverSettingsServerOnline) {
+            applyBtn.textContent = "僅保留變更";
+            restartBtn.classList.remove("hidden");
+        } else {
+            applyBtn.textContent = "確定套用";
+            restartBtn.classList.add("hidden");
+        }
+
+    } catch (error) {
+        console.error("讀取伺服器狀態失敗:", error);
+        serverSettingsServerOnline = false;
+        applyBtn.textContent = "確定套用";
+        restartBtn.classList.add("hidden");
+    }
+}
+
+
+async function saveAndRestartServer() {
+    const ok = confirm("若要變動立即生效，須重啟伺服器。\n請問是否要重啟伺服器？");
+
+    if (!ok) {
+        return;
+    }
+
+    const restartBtn = document.getElementById("serverSettingsRestartBtn");
+    const applyBtn = document.getElementById("serverSettingsApplyBtn");
+
+    if (restartBtn) {
+        restartBtn.disabled = true;
+        restartBtn.textContent = "重啟中...";
+    }
+
+    if (applyBtn) {
+        applyBtn.disabled = true;
+    }
+
+    try {
+        const saved = await saveServerSettings(false);
+        if (!saved) return;
+
+        let response = await fetch("/api/server/stop", {
+            method: "POST"
+        });
+
+        let data = await response.json();
+
+        if (!data.success) {
+            alert(data.message || "關閉伺服器失敗");
+            return;
+        }
+
+        const stopped = await waitForServerStatus(false, 30000, 1000);
+        if (!stopped) {
+            alert("伺服器關閉逾時，請查看 log。");
+            return;
+        }
+
+        response = await fetch("/api/server/start", {
+            method: "POST"
+        });
+
+        data = await response.json();
+
+        if (!data.success) {
+            alert(data.message || "啟動伺服器失敗");
+            return;
+        }
+
+        const started = await waitForServerStatus(true, 30000, 1000);
+
+        await updateStatus();
+        await updateLog();
+
+        if (started) {
+            alert("設定已套用，伺服器已重啟。");
+        } else {
+            alert("伺服器啟動逾時，請查看 log。");
+        }
+
+    } catch (error) {
+        console.error("套用並重啟失敗:", error);
+        alert("套用並重啟失敗，請查看 console。");
+
+    } finally {
+        if (restartBtn) {
+            restartBtn.disabled = false;
+            restartBtn.textContent = "套用後並重啟";
+        }
+
+        if (applyBtn) {
+            applyBtn.disabled = false;
+        }
+
+        await updateServerSettingsFooterMode();
+    }
+}
+
 
 
 document.addEventListener("DOMContentLoaded", () => {

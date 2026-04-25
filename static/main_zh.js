@@ -774,9 +774,19 @@ function setupServerSettingsModal() {
 
     if (!modal || !openBtn) return;
 
-    openBtn.addEventListener("click", () => {
+    openBtn.addEventListener("click", async () => {
         modal.classList.remove("hidden");
-        loadServerSettings();
+
+        try {
+            await loadServerSettingFields();
+            await loadServerSettings();
+        } catch (error) {
+            console.error(error);
+            const body = document.getElementById("serverSettingsBody");
+            if (body) {
+                body.innerHTML = "<div class='settings-placeholder'>讀取設定欄位失敗</div>";
+            }
+        }
     });
 
     modal.addEventListener("click", (event) => {
@@ -787,35 +797,178 @@ function setupServerSettingsModal() {
 }
 
 
+let serverSettingFields = [];
+let serverSettingsState = {};
+
+async function loadServerSettingFields() {
+    if (serverSettingFields.length > 0) return;
+
+    const response = await fetch("/static/data/server_properties_fields.json", {
+        cache: "no-store"
+    });
+
+    if (!response.ok) {
+        throw new Error("讀取 server_properties_fields.json 失敗");
+    }
+
+    serverSettingFields = await response.json();
+}
+
+
 async function loadServerSettings() {
-    const body = document.querySelector(".settings-body");
+    const body = document.getElementById("serverSettingsBody");
     if (!body) return;
 
-    body.innerHTML = "讀取中...";
+    body.innerHTML = "<div class='settings-placeholder'>讀取中...</div>";
 
     try {
-        const response = await fetch("/api/server/properties");
+        const response = await fetch("/api/server/properties", { cache: "no-store" });
         const data = await response.json();
 
         if (!data.success) {
-            body.innerHTML = "讀取失敗";
+            body.innerHTML = `<div class="settings-placeholder">讀取失敗：${data.message || "未知錯誤"}</div>`;
             return;
         }
 
-        const props = data.properties;
-
-        body.innerHTML = `
-            <div>server-port：${props["server-port"] || ""}</div>
-            <div>max-players：${props["max-players"] || ""}</div>
-            <div>motd：${props["motd"] || ""}</div>
-            <div>pvp：${props["pvp"] || ""}</div>
-            <div>enable-query：${props["enable-query"] || ""}</div>
-        `;
+        serverSettingsState = data.properties || {};
+        renderServerSettings();
 
     } catch (error) {
-        body.innerHTML = "讀取失敗";
+        body.innerHTML = "<div class='settings-placeholder'>讀取失敗，請查看 console。</div>";
+        console.error("讀取 server.properties 失敗:", error);
     }
 }
+
+function renderServerSettings() {
+    const body = document.getElementById("serverSettingsBody");
+    if (!body) return;
+
+    body.innerHTML = "";
+
+    serverSettingFields.forEach((field) => {
+        if (field.dependsOn) {
+            const parentValue = serverSettingsState[field.dependsOn.key];
+            if (parentValue !== field.dependsOn.value) {
+                return;
+            }
+        }
+
+        const row = document.createElement("div");
+        row.className = "setting-row";
+        if (field.dependsOn) {
+            row.classList.add("setting-child-row");
+        }
+
+        const label = document.createElement("div");
+        label.className = "setting-label";
+        label.innerHTML = `
+            <div class="setting-label-main">
+                <span>${field.label}</span>
+                <button class="setting-help-btn" type="button" data-key="${field.key}">?</button>
+            </div>
+            <div class="setting-label-key">(${field.key})</div>
+        `;
+
+        const valueWrap = document.createElement("div");
+        valueWrap.className = "setting-value";
+
+        if (field.type === "boolean") {
+
+            const boolWrap = document.createElement("div");
+            boolWrap.className = "setting-bool-wrap";
+
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "setting-bool-btn";
+            btn.dataset.key = field.key;
+
+            const value = String(serverSettingsState[field.key] || "false").toLowerCase();
+
+            btn.textContent = value === "true" ? "True" : "False";
+            btn.classList.toggle("true", value === "true");
+            btn.classList.toggle("false", value !== "true");
+
+            btn.addEventListener("click", () => {
+                serverSettingsState[field.key] =
+                    value === "true" ? "false" : "true";
+
+                renderServerSettings();
+            });
+
+            const defaultText = document.createElement("div");
+            defaultText.className = "setting-default-text";
+
+            const defaultValue =
+                field.default !== undefined && field.default !== ""
+                    ? field.default
+                    : "無";
+
+            defaultText.textContent = `預設值:${defaultValue}`;
+
+            boolWrap.appendChild(btn);
+            boolWrap.appendChild(defaultText);
+
+            valueWrap.appendChild(boolWrap);
+
+        } else if (field.type === "select") {
+            const select = document.createElement("select");
+            select.className = "setting-input";
+            select.dataset.key = field.key;
+
+            const currentValue = serverSettingsState[field.key] || "";
+
+            (field.options || []).forEach((option) => {
+                const opt = document.createElement("option");
+                opt.value = option.value;
+                opt.textContent = option.label;
+                opt.selected = option.value === currentValue;
+                select.appendChild(opt);
+            });
+
+            select.addEventListener("change", () => {
+                serverSettingsState[field.key] = select.value;
+            });
+
+            valueWrap.appendChild(select);
+        } else {
+            const input = document.createElement("input");
+            input.className = "setting-input";
+            input.dataset.key = field.key;
+            input.type = field.type === "number" ? "number" : "text";
+            input.value = serverSettingsState[field.key] || "";
+
+            const defaultValue =
+                field.default !== undefined && field.default !== ""
+                    ? field.default
+                    : "無";
+
+            input.placeholder = `預設值:${defaultValue}`;
+
+            input.addEventListener("input", () => {
+                serverSettingsState[field.key] = input.value;
+            });
+
+            valueWrap.appendChild(input);
+        }
+
+        row.appendChild(label);
+        row.appendChild(valueWrap);
+        body.appendChild(row);
+    });
+}
+
+
+document.addEventListener("click", (event) => {
+    const helpBtn = event.target.closest(".setting-help-btn");
+    if (!helpBtn) return;
+
+    const key = helpBtn.dataset.key;
+    const field = serverSettingFields.find(item => item.key === key);
+    if (!field) return;
+
+    alert(`${field.label} (${field.key})\n\n${field.description || "目前沒有說明。"}`);
+});
+
 
 
 document.addEventListener("DOMContentLoaded", () => {

@@ -1,0 +1,425 @@
+[
+  {
+    "key": "server-port",
+    "label": "伺服器連線埠",
+    "type": "number",
+    "default": "25565",
+    "description": "改變伺服器（監聽的）埠號。如果伺服器在使用NAT的網路中執行，該埠必須被轉發（在你有家用路由器/防火牆的前提下）。"
+  },
+  {
+    "key": "server-ip",
+    "label": "綁定 IP",
+    "type": "text",
+    "default": "",
+    "description": "將伺服器與一個特定IP綁定。強烈建議留空該屬性值！\n留空，或是填入你想讓伺服器綁定（監聽）的IP。"
+  },
+  {
+    "key": "motd",
+    "label": "伺服器介紹",
+    "type": "text",
+    "default": "A Minecraft Server",
+    "description": "本屬性值是玩家用戶端的多人遊戲伺服器列表中顯示的伺服器資訊，顯示於名稱下方。\nMOTD 支持樣式代碼。\nMOTD 支持特殊符號，比如\"♥\"。然而，這些符號需要轉換為Unicode轉義字元。你可以在這裡找到一個轉換器。\n如果MOTD超過59個字元，伺服器列表很可能會返回「通訊錯誤」。"
+  },
+  {
+    "key": "max-players",
+    "label": "最大玩家數",
+    "type": "number",
+    "default": "20",
+    "description": "伺服器同時能容納的最大玩家數量。請注意，線上玩家越多，對伺服器造成的負擔也就越大。同樣注意，伺服器的OP具有在人滿的情況下強行進入伺服器的能力：找到在伺服器根目錄下叫ops.json的檔案並打開，將需要此能力的OP下的bypassesPlayerLimit選項設定為true即可（預設值為false），這意味著OP將不需要在伺服器人滿時等待有玩家離開後再加入。過大的數值會使用戶端顯示的玩家列表崩壞。"
+  },
+  {
+    "key": "online-mode",
+    "label": "正版驗證",
+    "type": "boolean",
+    "default": "true",
+    "description": "是否讓伺服器對比Minecraft帳號資料庫驗證登入資訊。只有在你的伺服器並未與Internet連接時，才將這個值設為false。如果設為false，駭客就能夠使用任意假帳號連接伺服器！如果minecraft.net伺服器宕機或不可訪問，那麼該值設為true的伺服器會因為無法驗證玩家身份而拒絕所有玩家加入。通常，這個值設為true的伺服器被稱為「正版伺服器」。故意設定該變數為false的伺服器稱為「破解伺服器」（也稱離線伺服器），這類伺服器允許擁有未授權的Minecraft副本的玩家加入。\ntrue - 啟用。伺服器會認為自己具有Internet連接，並檢查每一位連入的玩家。\nfalse - 停用。伺服器不會嘗試檢查玩家。"
+  },
+  {
+    "key": "enable-status",
+    "label": "允許狀態查詢",
+    "type": "boolean",
+    "default": "true",
+    "description": "使伺服器在伺服器列表中看起來是「線上」的。"
+  },
+  {
+    "key": "hide-online-players",
+    "label": "隱藏線上玩家",
+    "type": "boolean",
+    "default": "false",
+    "description": "如果設為 true，伺服器端在響應用戶端狀態請求時不會返回線上玩家列表。"
+  },
+  {
+    "key": "player-idle-timeout",
+    "label": "閒置踢出時間",
+    "type": "number",
+    "default": "0",
+    "description": "如果不為0，伺服器將在玩家的空閒時間達到設定的時間（單位為分鐘）時將玩家踢出伺服器\n註：當伺服器接受到下列資料包之一時將會重設空閒時間：\n點擊窗口\n附魔物品\n更新告示牌\n玩家挖掘方塊\n玩家放置方塊\n更換拿著的物品\n動畫（揮動手臂）\n實體動作\n用戶端狀態\n聊天資訊\n使用實體"
+  },
+  {
+    "key": "difficulty",
+    "label": "遊戲難度",
+    "type": "select",
+    "default": "easy",
+    "options": [
+      { "value": "peaceful", "label": "和平 (peaceful)" },
+      { "value": "easy", "label": "簡單 (easy)" },
+      { "value": "normal", "label": "普通 (normal)" },
+      { "value": "hard", "label": "困難 (hard)" }
+    ],
+    "description": "定義伺服器的遊戲難易度（例如生物對玩家造成的傷害，飢餓和中毒對玩家的影響方式等）。\n如果設定了舊的數字ID，則會自動轉化為英文的難易度名稱。\npeaceful (0) - 和平\neasy (1) - 簡單\nnormal (2) - 普通\nhard (3) - 困難"
+  },
+  {
+    "key": "gamemode",
+    "label": "預設遊戲模式",
+    "type": "select",
+    "default": "survival",
+    "options": [
+      { "value": "survival", "label": "生存模式 (survival)" },
+      { "value": "creative", "label": "創造模式 (creative)" },
+      { "value": "adventure", "label": "冒險模式 (adventure)" },
+      { "value": "spectator", "label": "觀察者模式 (spectator)" }
+    ],
+    "description": "定義預設遊戲模式。\n如果值是舊用的數字，會靜默轉換為對應遊戲模式的英文名稱。\nsurvival (0) - 生存模式\ncreative (1) - 創造模式\nadventure (2) - 冒險模式\nspectator (3) - 旁觀者模式"
+  },
+  {
+    "key": "force-gamemode",
+    "label": "強制遊戲模式",
+    "type": "boolean",
+    "default": "false",
+    "description": "強制玩家加入時為預設遊戲模式。\nfalse - 玩家將以退出前的遊戲模式加入\ntrue - 玩家總是以預設遊戲模式加入"
+  },
+  {
+    "key": "hardcore",
+    "label": "極限模式",
+    "type": "boolean",
+    "default": "false",
+    "description": "如果設為 true，伺服器難易度的設定會被忽略並且設為hard（困難），玩家在死後會自動切換至旁觀者模式。"
+  },
+  {
+    "key": "pvp",
+    "label": "允許玩家互相傷害",
+    "type": "boolean",
+    "default": "true",
+    "description": "是否允許PvP。也只有在允許PvP時玩家自己的箭才會受到傷害。\ntrue - 玩家可以互相傷害。\nfalse - 玩家無法互相造成傷害（也稱作玩家對戰環境（PvE））。\n註：由玩家造成的間接傷害（例如熔岩，火，TNT等，某種程度上還有水，沙和礫石）還是會傷害其他玩家。"
+  },
+  {
+    "key": "allow-flight",
+    "label": "允許飛行",
+    "type": "boolean",
+    "default": "false",
+    "description": "允許玩家在安裝加入飛行功能的mod前提下在生存模式下飛行。\n允許飛行可能會使惡意破壞者更加常見，因為此設定會使他們更容易達成目的。在創造模式下無作用。\nfalse - 不允許飛行。懸空超過5秒的玩家會被踢出伺服器。\ntrue - 允許飛行。玩家得以使用任何能飛行的mod飛行。"
+  },
+  {
+    "key": "allow-nether",
+    "label": "允許進入地獄",
+    "type": "boolean",
+    "default": "true",
+    "description": "允許玩家進入地獄。\nfalse - 地獄傳送門不會生效。\ntrue - 玩家可以透過地獄傳送門前往地獄。"
+  },
+  {
+    "key": "level-name",
+    "label": "世界名稱",
+    "type": "text",
+    "default": "world",
+    "description": "「level-name」的值將作為世界名稱及其資料夾名。你也可以把你已生成的世界存檔複製過來，然後讓這個值與那個資料夾的名字保持一致，伺服器就可以載入該存檔。\n部分字元，例如 ' （單引號）可能需要在前面加反斜槓號 \\ 才能被正常應用。"
+  },
+  {
+    "key": "level-seed",
+    "label": "世界種子",
+    "type": "text",
+    "default": "",
+    "description": "與單人遊戲類似，為你的世界定義一個種子。\n這裡有一些例子：minecraft，404，1a2b3c。"
+  },
+  {
+    "key": "level-type",
+    "label": "世界類型",
+    "type": "text",
+    "default": "minecraft:normal",
+    "description": "使用世界預設ID，確定地圖所生成的類型。\n使用世界預設ID時，需要在其中的「:」前加「\\」轉義。原版世界預設ID可以省略其前面的「minecraft:」（即命名空間）。\nminecraft:normal - 帶有丘陵、河谷、海洋等的標準的世界。\nminecraft:flat - 一個沒有特性的平坦世界，可用generator-settings修改。\nminecraft:large_biomes - 如同預設的世界，但所有生態域都更大。\nminecraft:amplified - 如同預設的世界，但世界生成高度提高。\nminecraft:single_biome_surface - 單一生態域世界，可用generator-settings修改。"
+  },
+  {
+    "key": "generator-settings",
+    "label": "世界生成設定",
+    "type": "text",
+    "default": "{}",
+    "description": "本屬性質用於自訂世界的生成。詳見超平坦世界和自訂了解正確的設定及例子。"
+  },
+  {
+    "key": "generate-structures",
+    "label": "生成結構",
+    "type": "boolean",
+    "default": "true",
+    "description": "定義是否能生成結構（例如村莊）。\nfalse - 新生成的區塊中將不包含結構。\ntrue - 新生成的區塊中將包含結構。\n註：由於地牢和沙漠水井在技術上屬於地物，因而即使此項設為false，其仍然會生成。"
+  },
+  {
+    "key": "max-world-size",
+    "label": "世界最大範圍",
+    "type": "number",
+    "default": "29999984",
+    "description": "設定可讓世界邊界獲得的最大半徑值，單位為方塊。透過成功執行的指令能把世界邊界設定得更大，但不會超過這裡設定的最大方塊限制。如果設定的max-world-size超過預設值的大小，那將不會起任何效果。\n例如：\n設定 max-world-size為1000將會有2000×2000的地圖邊界。\n設定 max-world-size為4000將會有8000×8000的地圖邊界。"
+  },
+  {
+    "key": "spawn-protection",
+    "label": "重生點保護範圍",
+    "type": "number",
+    "default": "16",
+    "description": "透過將該值進行2x+1的運算來決定重生點的保護半徑。設定為1會保護以重生點為中心的3×3方塊的區域，2會保護5×5方塊的區域，3會保護7×7方塊的區域，以此類推。這個選項不在第一次伺服器啟動時生成，只會在第一個玩家加入伺服器時出現。如果伺服器沒有設定OP，這個選項會自動停用。設定為0將不會停用重生點保護，但會保護位於重生點的那一個方塊（13w05a前）。\n設定為0會停用重生點保護（13w05a起，參見MC-666）。"
+  },
+  {
+    "key": "spawn-monsters",
+    "label": "生成怪物",
+    "type": "boolean",
+    "default": "true",
+    "description": "決定攻擊型生物（怪物）是否可以生成。\ntrue - 啟用。怪物會生成於夜晚和黑暗處。\nfalse - 停用。不會有任何怪物。\n如果difficulty=0（即難易度設定為和平）的話，該屬性值不會有任何影響。\n提示：如果你有嚴重的卡頓，可以設為false。"
+  },
+  {
+    "key": "spawn-animals",
+    "label": "生成動物",
+    "type": "boolean",
+    "default": "true",
+    "description": "決定動物是否可以生成。\ntrue - 動物可以正常生成。\nfalse - 動物生成後會立即消失。\n提示：如果你有嚴重的卡頓，可以設為false。"
+  },
+  {
+    "key": "spawn-npcs",
+    "label": "生成村民",
+    "type": "boolean",
+    "default": "true",
+    "description": "決定是否生成村民。\ntrue - 啟用。生成村民。\nfalse - 停用。不生成村民。"
+  },
+  {
+    "key": "view-distance",
+    "label": "視野距離",
+    "type": "number",
+    "default": "10",
+    "description": "設定伺服器端發送給用戶端的世界資料量，也就是設定玩家各個方向上的區塊數量（是以玩家為中心的半徑，不是直徑）。它決定了伺服器端的可視距離。（另見顯示距離）\n預設/推薦設定為10，如果有嚴重卡頓的話，減少該數值。"
+  },
+  {
+    "key": "simulation-distance",
+    "label": "模擬距離",
+    "type": "number",
+    "default": "10",
+    "description": "設定伺服器端可更新實體範圍的最大值，即玩家各個方向上的區塊數量（是以玩家為中心的半徑，不是直徑）。超出此範圍的實體不會被更新，對玩家也不可見。\n預設/推薦設定為10，如果有嚴重卡頓的話，減少該數值。"
+  },
+  {
+    "key": "entity-broadcast-range-percentage",
+    "label": "實體同步範圍百分比",
+    "type": "number",
+    "default": "100",
+    "description": "此選項控制實體需要距離玩家有多近才會將資料包發送給用戶端。更高的數值意味著實體可以在更遠的地方就被繪製，同時也可能提高增加延遲的機率。\n這個值是以預設值的百分比來表示的。例如：將此值設為50，表示將繪製正常情況下一半距離以內的生物。\n此功能模仿了用戶端顯示設定中的功能，而不像用戶端的顯示距離設定一樣只能在伺服器設定的限制下調整顯示距離。"
+  },
+  {
+    "key": "white-list",
+    "label": "啟用白名單",
+    "type": "boolean",
+    "default": "false",
+    "description": "啟用伺服器的白名單。\n當啟用時，只有白名單上的使用者才能連接伺服器。白名單主要用於私人伺服器，例如提供給相識的朋友、透過應用流程謹慎選擇的陌生人等。\nfalse - 不使用白名單。\ntrue - 從whitelist.json檔案載入白名單。\n注: OP會自動被視為在白名單上，所以無需再將OP加入白名單。"
+  },
+  {
+    "key": "enforce-whitelist",
+    "label": "強制白名單",
+    "type": "boolean",
+    "default": "false",
+    "description": "在伺服器上強制執行白名單。\n當啟用後，不在白名單（前提是啟用）中的使用者將在伺服器重新載入白名單檔案後從伺服器踢出。\ntrue - 不在白名單上的使用者會被踢出。\nfalse - 不在白名單上的線上使用者不會被踢出。"
+  },
+  {
+    "key": "enable-query",
+    "label": "啟用 Query",
+    "type": "boolean",
+    "default": "false",
+    "description": "允許使用GameSpy4協議的伺服器監聽器。用於取得伺服器資訊。"
+  },
+  {
+    "key": "query.port",
+    "label": "Query 連線埠",
+    "type": "number",
+    "default": "25565",
+    "description": "設定監聽伺服器的埠號（參見 enable-query）。",
+    "dependsOn": {
+      "key": "enable-query",
+      "value": "true"
+    }
+  },
+  {
+    "key": "enable-rcon",
+    "label": "啟用 RCON",
+    "type": "boolean",
+    "default": "true",
+    "description": "是否允許遠程訪問伺服器控制台。\n由於RCON協議傳輸資料時沒有加密，所以不建議把RCON暴露在網際網路上。RCON用戶端和伺服器端交換的所有資料（包括RCON密碼）都會洩露給正在監聽此連接的人。\n但是OxOcraft-Manager需要使用所以會開啟方便UI對伺服器進行操作,若關閉大部分功能都將受影響。"
+  },
+  {
+    "key": "rcon.port",
+    "label": "RCON 連線埠",
+    "type": "number",
+    "default": "25575",
+    "description": "設定RCON遠程訪問的埠號。",
+    "dependsOn": {
+      "key": "enable-rcon",
+      "value": "true"
+    }
+  },
+  {
+    "key": "rcon.password",
+    "label": "RCON 密碼",
+    "type": "text",
+    "default": "OxO123456",
+    "description": "設定RCON遠程訪問的密碼（參見enable-rcon）。RCON：能允許其他應用程式透過網際網路與Minecraft伺服器連接並互動的遠程控制台協議。",
+    "dependsOn": {
+      "key": "enable-rcon",
+      "value": "true"
+    }
+  },
+  {
+    "key": "broadcast-rcon-to-ops",
+    "label": "RCON 訊息廣播給 OP",
+    "type": "boolean",
+    "default": "true",
+    "description": "向所有線上OP發送透過RCON執行的指令的輸出。"
+  },
+  {
+    "key": "enable-command-block",
+    "label": "啟用命令方塊",
+    "type": "boolean",
+    "default": "false",
+    "description": "是否啟用指令方塊。"
+  },
+  {
+    "key": "op-permission-level",
+    "label": "OP 權限等級",
+    "type": "number",
+    "default": "4",
+    "description": "設定使用/op指令時OP的權限等級。所有存檔會從之前的存檔繼承能力和指令。\n1 - OP可以繞過重生點保護。\n2 - OP可以使用所有單人遊戲作弊指令（除了/publish，因為不能在伺服器上使用；/debug也是）並使用指令方塊。指令方塊和領域服服主/管理員有此等級權限。\n3 - OP可以使用大多數多人遊戲中獨有的指令，包括 /debug，以及管理玩家的指令（/ban，/op等等）。\n4 - OP可以使用所有指令，包括 /stop, /save-all, /save-on 和 /save-off。"
+  },
+  {
+    "key": "function-permission-level",
+    "label": "函式權限等級",
+    "type": "number",
+    "default": "2",
+    "description": "設定函數的預設權限等級。\n4個等級的詳情見 #op-permission-level。"
+  },
+  {
+    "key": "broadcast-console-to-ops",
+    "label": "控制台訊息廣播給 OP",
+    "type": "boolean",
+    "default": "true",
+    "description": "向所有線上OP發送所執行指令的輸出。"
+  },
+  {
+    "key": "network-compression-threshold",
+    "label": "網路壓縮門檻",
+    "type": "number",
+    "default": "256",
+    "description": "預設會允許n-1位元組的資料包正常發送, 如果資料包為n字節或更大時會進行壓縮。所以，更低的數值會使得更多的資料包被壓縮，但是如果被壓縮的資料包字節太小將反而使壓縮後字節更大。\n-1 - 完全停用資料包壓縮\n0 - 壓縮全部資料包\n註：乙太網規範要求把小於64位元組的資料包填充為64位元組。因此，設定一個低於64的值可能沒有什麼好處。也不推薦讓設定的值超過MTU（通常為1500位元組）。"
+  },
+  {
+    "key": "rate-limit",
+    "label": "封包速率限制",
+    "type": "number",
+    "default": "0",
+    "description": "設定玩家被踢出伺服器前，可以發送的資料包數量。\n設定為0表示關閉此功能。"
+  },
+  {
+    "key": "prevent-proxy-connections",
+    "label": "防止代理連線",
+    "type": "boolean",
+    "default": "false",
+    "description": "如果伺服器發送的ISP/AS和Mojang的驗證伺服器的不一樣，玩家將會被踢出。\ntrue - 啟用。伺服器將會禁止玩家使用虛擬專用網路或代理。\nfalse - 停用。伺服器將不會禁止玩家使用虛擬專用網路或代理。"
+  },
+  {
+    "key": "enforce-secure-profile",
+    "label": "強制安全玩家檔案",
+    "type": "boolean",
+    "default": "true",
+    "description": "要求玩家必須具有Mojang簽名的公鑰才能進入伺服器。\ntrue - 不具有Mojang簽名的公鑰的玩家不能進入伺服器。\nfalse - 不具有Mojang簽名的公鑰的玩家也可進入伺服器。"
+  },
+  {
+    "key": "sync-chunk-writes",
+    "label": "同步寫入區塊",
+    "type": "boolean",
+    "default": "true",
+    "description": "啟用後區塊檔案以同步模式寫入。"
+  },
+  {
+    "key": "use-native-transport",
+    "label": "使用原生網路傳輸",
+    "type": "boolean",
+    "default": "true",
+    "description": "是否使用針對Linux平台的資料包收發最佳化。此選項僅會在Linux平台上生成。\ntrue - 啟用。啟用Linux資料包收發最佳化。\nfalse - 停用。停用Linux資料包收發最佳化。"
+  },
+  {
+    "key": "enable-jmx-monitoring",
+    "label": "啟用 JMX 監控",
+    "type": "boolean",
+    "default": "false",
+    "description": "暴露一個具有對象名net.minecraft.server:type=Server的MBean和兩個屬性averageTickTime和tickTimes用於暴露以毫秒為單位的tick時間。\n為了啟用JRE的JMX，你需要加入在此處所述的一些JVM標誌。"
+  },
+  {
+    "key": "log-ips",
+    "label": "記錄玩家 IP",
+    "type": "boolean",
+    "default": "true",
+    "description": "是否在有新玩家加入遊戲時，在伺服器日誌中記錄其IP位址。\ntrue - 在日誌中記錄新加入玩家的IP位址。\nfalse - 在日誌中隱藏新加入玩家的IP位址。"
+  },
+  {
+    "key": "max-tick-time",
+    "label": "最大 Tick 時間",
+    "type": "number",
+    "default": "60000",
+    "description": "設定每個tick花費的最大毫秒數。超過該毫秒數時，伺服器watchdog外掛將停止伺服器程式並附帶上資訊：伺服器的一個tick花費了60.00秒（最長也應該只有0.05秒）；判定伺服器已崩潰，它將被強制關閉。遇到這種情況的時候，它會調用 System.exit(1)。\n譯者註：如果你監測服務程式的返回代碼，此時返回代碼會為1。（習慣上，程式正常退出應當返回0）\n-1 - 完全停用watchdog外掛（這個停用選項在14w32a快照中加入）"
+  },
+  {
+    "key": "max-chained-neighbor-updates",
+    "label": "最大連鎖方塊更新",
+    "type": "number",
+    "default": "1000000",
+    "description": "限制連鎖NC更新的數量，超過此數量的連鎖NC更新會被跳過。若為負數則無限制。"
+  },
+  {
+    "key": "resource-pack",
+    "label": "資源包網址",
+    "type": "text",
+    "default": "",
+    "description": "可選選項，可輸入指向一個資源包的URI。玩家可選擇是否使用該資源包。\n注意若該值含\":\"和\"=\"字元，需要在其前加上反斜線(\\)，例如 http\\://somedomain.com/somepack.zip?someparam\\=somevalue 資源包大小理應不能超過\n50 MiB（1.15-pre5前）\n100 MiB（1.15-pre5到1.18-pre8）\n250 MiB（1.18-rc1起）\n注意，下載成功或失敗由用戶端記錄，而非伺服器。"
+  },
+  {
+    "key": "resource-pack-sha1",
+    "label": "資源包 SHA-1",
+    "type": "text",
+    "default": "",
+    "description": "資源包的SHA-1值，必須為小寫十六進制，建議填寫它。這還沒有用於驗證資源包的完整性，但是它提高了資源包快取的有效性和可靠性。"
+  },
+  {
+    "key": "resource-pack-prompt",
+    "label": "資源包提示文字",
+    "type": "text",
+    "default": "",
+    "description": "可選，用於在使用require-resource-pack時在資源包提示介面顯示自訂資訊。\n與聊天組件語法一致，可以包含多行文字。"
+  },
+  {
+    "key": "require-resource-pack",
+    "label": "強制使用資源包",
+    "type": "boolean",
+    "default": "false",
+    "description": "當此選項啟用（設為true）時，玩家會被提示作出選擇（是否啟用伺服器資源包）。如果玩家拒絕則會被伺服器斷開連接。\n但是，若玩家使用Linux系統加入伺服器，遊戲目錄內的server-resource-packs沒有寫權限，則會提示「無法應用伺服器資源包」「所有依賴自訂資源包的功能都有可能不按預期工作」，並提示玩家「繼續」或「斷開連接」。若玩家選擇「繼續」，則仍可在此伺服器中遊戲。"
+  },
+  {
+    "key": "initial-enabled-packs",
+    "label": "預設啟用資料包",
+    "type": "text",
+    "default": "vanilla",
+    "description": "需要在建立世界過程中啟用的資料包名稱，以逗號分隔。特別地，功能資料包必須在此指定才能生效。"
+  },
+  {
+    "key": "initial-disabled-packs",
+    "label": "預設停用資料包",
+    "type": "text",
+    "default": "",
+    "description": "需要在建立世界過程中停用的資料包名稱，以逗號分隔。"
+  },
+  {
+    "key": "text-filtering-config",
+    "label": "文字過濾設定",
+    "type": "text",
+    "default": "",
+    "description": "伺服器中需要被屏蔽的文字。[需要測試]"
+  }
+]

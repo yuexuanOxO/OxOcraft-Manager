@@ -767,8 +767,8 @@ h1 {
 .settings-panel{
     width: 760px;
     max-width: 92vw;
-    height: 620px;
-    max-height: 90vh;
+    height: 760px;
+    max-height: 92vh;
 
     background: #111;
     border: 3px solid #6b6b6b;
@@ -789,6 +789,7 @@ h1 {
 
 .settings-body{
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     border: 2px solid #333;
     padding: 14px;
@@ -814,4 +815,111 @@ h1 {
 
 .hidden{
     display: none !important;
+}
+
+.setting-row{
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.setting-child-row{
+    margin-left: 34px;
+    padding-left: 18px;
+    border-left: 3px solid #555;
+}
+
+.setting-label{
+    width: 240px;
+    color: white;
+}
+
+.setting-value{
+    flex: 1;
+}
+
+.setting-input{
+    width: 220px;
+    height: 34px;
+    padding: 0 8px;
+    background: #050505;
+    border: 2px solid #555;
+    color: #fff;
+    font-size: 16px;
+}
+
+.setting-bool-btn{
+    min-width: 86px;
+    height: 34px;
+    border: none;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.setting-bool-btn.true{
+    background: #22aa44;
+}
+
+.setting-bool-btn.false{
+    background: #cc2222;
+}
+
+.setting-label-main{
+    font-size: 18px;
+    line-height: 1.2;
+}
+
+.setting-label-key{
+    font-size: 12px;
+    color: #777;
+    margin-top: 2px;
+}
+
+
+.setting-label-main{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 18px;
+    line-height: 1.2;
+}
+
+.setting-help-btn{
+    width: 22px;
+    height: 22px;
+    border: 1px solid #ff3344;
+    border-radius: 50%;
+    background: transparent;
+    color: #ff3344;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.setting-help-btn:hover{
+    background: #ff3344;
+    color: #111;
+}
+
+.setting-input::placeholder{
+    color: #666;
+    opacity: 1;
+}
+
+.setting-input.changed{
+    border-color: #ffd000;
+}
+
+.setting-bool-wrap{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.setting-default-text{
+    font-size: 13px;
+    color: #777;
+    white-space: nowrap;
 }

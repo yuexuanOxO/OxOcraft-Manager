@@ -929,6 +929,7 @@ h1 {
     align-items: center;
     justify-content: space-between;
     margin-bottom: 16px;
+    position:relative;
 }
 
 #serverSettingSearch{
@@ -968,4 +969,15 @@ h1 {
     display: flex;
     align-items: stretch;
     margin-left: auto;
+}
+
+.settings-modified-time{
+    color: #ff3b3b;
+    padding: 6px 12px;
+    font-size: 14px;
+    line-height: 1.4;
+    white-space: pre-line;
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
 }

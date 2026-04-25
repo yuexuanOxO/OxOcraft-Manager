@@ -842,6 +842,10 @@ async function loadServerSettings() {
         }
 
         serverSettingsState = data.properties || {};
+
+        // 更新最近修改時間
+        updateServerSettingsModifiedTime(data.modified_comment);
+
         renderServerSettings();
 
     } catch (error) {
@@ -996,6 +1000,35 @@ document.addEventListener("click", (event) => {
     alert(`${field.label} (${field.key})\n\n${field.description || "目前沒有說明。"}`);
 });
 
+
+function updateServerSettingsModifiedTime(commentText) {
+    const box = document.getElementById("serverSettingsModifiedTime");
+    if (!box) return;
+
+    if (!commentText) {
+        box.textContent = "最近修改：未知";
+        return;
+    }
+
+    const parts = commentText.split(/\s+/);
+
+    if (parts.length >= 6) {
+        const monthMap = {
+            Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6,
+            Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12
+        };
+
+        const month = monthMap[parts[1]] || parts[1];
+        const day = Number(parts[2]);
+        const time = parts[3];
+        const year = parts[5];
+
+        box.textContent = `最近修改：${year}/${month}/${day} ${time}`;
+        return;
+    }
+
+    box.textContent = `最近修改：${commentText}`;
+}
 
 
 // 伺服器參數頁面搜尋欄

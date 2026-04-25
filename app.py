@@ -15,6 +15,7 @@ from server_properties import (
     get_effective_server_properties,
     format_properties_for_write,
     write_properties_file,
+    read_properties_modified_comment,
 )
 
 
@@ -323,6 +324,7 @@ def api_get_server_properties():
     try:
         current_props = read_properties_file(SERVER_PROPERTIES_PATH)
         effective_props = get_effective_server_properties(SERVER_PROPERTIES_PATH)
+        modified_comment = read_properties_modified_comment(SERVER_PROPERTIES_PATH)
 
         missing_keys = [
             key for key in DEFAULT_SERVER_PROPERTIES
@@ -340,6 +342,7 @@ def api_get_server_properties():
             "current_properties": current_props,
             "missing_keys": missing_keys,
             "unknown_keys": unknown_keys,
+            "modified_comment": modified_comment,
         })
     except Exception as error:
         return jsonify({

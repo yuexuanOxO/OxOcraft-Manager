@@ -792,6 +792,12 @@ function setupServerSettingsModal() {
     modal.addEventListener("click", (event) => {
         if (event.target === modal) {
             modal.classList.add("hidden");
+            serverSettingKeyword = "";
+
+            const searchInput = document.getElementById("serverSettingSearch");
+            if (searchInput) {
+                searchInput.value = "";
+            }
         }
     });
 }
@@ -846,6 +852,22 @@ function renderServerSettings() {
     body.innerHTML = "";
 
     serverSettingFields.forEach((field) => {
+
+        const keyword = serverSettingKeyword;
+
+        if(keyword){
+
+            const searchText = `
+                ${field.key}
+                ${field.label}
+                ${field.description || ""}
+            `.toLowerCase();
+
+            if(!searchText.includes(keyword)){
+                return;
+            }
+        }
+
         if (field.dependsOn) {
             const parentValue = serverSettingsState[field.dependsOn.key];
             if (parentValue !== field.dependsOn.value) {
@@ -971,6 +993,39 @@ document.addEventListener("click", (event) => {
 
 
 
+// 伺服器參數頁面搜尋欄
+let serverSettingKeyword = "";
+
+function setupServerSettingSearch(){
+
+    const input = document.getElementById("serverSettingSearch");
+    const btn = document.getElementById("serverSettingSearchBtn");
+
+    if (!input || !btn) return;
+
+    function doSearch(){
+        serverSettingKeyword = input.value.trim().toLowerCase();
+        renderServerSettings();
+    }
+
+    btn.addEventListener("click", doSearch);
+
+    input.addEventListener("keydown", (e)=>{
+        if(e.key === "Enter"){
+            doSearch();
+        }
+    });
+
+    input.addEventListener("input", ()=>{
+        if(input.value.trim() === ""){
+            serverSettingKeyword = "";
+            renderServerSettings();
+        }
+    });
+}
+
+
+
 document.addEventListener("DOMContentLoaded", () => {
     // ===== 啟動server按鈕 =====
     const powerBtn = document.getElementById("powerBtn");
@@ -1039,5 +1094,6 @@ document.addEventListener("DOMContentLoaded", () => {
     updateStatus();
     setupGlobalFeatureCard();
     setupServerSettingsModal();
+    setupServerSettingSearch();
     
 });

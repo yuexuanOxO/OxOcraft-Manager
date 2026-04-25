@@ -459,15 +459,19 @@ const mobIconMap = {
     spider: "/static/icons/mobs/spider.png",
     enderman: "/static/icons/mobs/enderman.png",
     wither: "/static/icons/mobs/wither.png",
-    warden: "/static/icons/mobs/warden.png",
-    slime: "/static/icons/mobs/slime.png",
+    warden: "/static/icons/mobs/Warden.png",
+    Slime: "/static/icons/mobs/slime.png",
     blaze: "/static/icons/mobs/blaze.png",
     ghast: "/static/icons/mobs/ghast.png",
     drowned: "/static/icons/mobs/drowned.png",
     husk: "/static/icons/mobs/husk.png",
     stray: "/static/icons/mobs/stray.png",
     bogged:"/static/icons/mobs/bogged.png",
-    phantom:"/static/icons/mobs/phantom.png"
+    phantom:"/static/icons/mobs/phantom.png",
+    evoker:"/static/icons/mobs/Evoker.png",
+    vex:"/static/icons/mobs/Vex.png",
+    shulker:"/static/icons/mobs/Shulker.png"
+
 };
 
 function formatDimensionName(dimension) {

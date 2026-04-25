@@ -348,6 +348,42 @@ def api_get_server_properties():
         }), 500
 
 
+@app.route("/api/server/properties", methods=["POST"])
+def api_update_server_properties():
+    data = request.get_json(silent=True) or {}
+    updates = data.get("properties", {})
+
+    if not isinstance(updates, dict):
+        return jsonify({
+            "success": False,
+            "message": "properties 格式錯誤"
+        }), 400
+
+    try:
+        current_props = read_properties_file(SERVER_PROPERTIES_PATH)
+
+        for key, value in updates.items():
+            if key not in DEFAULT_SERVER_PROPERTIES:
+                continue
+
+            current_props[key] = str(value)
+
+        lines = format_properties_for_write(current_props)
+        write_properties_file(SERVER_PROPERTIES_PATH, lines)
+
+        return jsonify({
+            "success": True,
+            "message": "設定已儲存。部分設定需要重啟伺服器後才會生效。"
+        })
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error)
+        }), 500
+
+
+
 if __name__ == "__main__":
     try:
         init_db()

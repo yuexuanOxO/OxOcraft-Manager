@@ -771,6 +771,7 @@ function setupGlobalFeatureCard() {
 function setupServerSettingsModal() {
     const modal = document.getElementById("serverSettingsModal");
     const openBtn = document.getElementById("serverSettingBtn");
+    const applyBtn = document.getElementById("serverSettingsApplyBtn");
 
     if (!modal || !openBtn) return;
 
@@ -788,6 +789,10 @@ function setupServerSettingsModal() {
             }
         }
     });
+
+    if (applyBtn) {
+        applyBtn.addEventListener("click", saveServerSettings);
+    }
 
     modal.addEventListener("click", (event) => {
         if (event.target === modal) {
@@ -1024,6 +1029,46 @@ function setupServerSettingSearch(){
     });
 }
 
+
+async function saveServerSettings() {
+    const applyBtn = document.getElementById("serverSettingsApplyBtn");
+    if (applyBtn) {
+        applyBtn.disabled = true;
+        applyBtn.textContent = "儲存中...";
+    }
+
+    try {
+        const response = await fetch("/api/server/properties", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                properties: serverSettingsState
+            })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            alert("儲存失敗：" + (data.message || "未知錯誤"));
+            return;
+        }
+
+        alert(data.message || "設定已儲存");
+
+        await loadServerSettings();
+
+    } catch (error) {
+        console.error("儲存 server.properties 失敗:", error);
+        alert("儲存失敗，請查看 console。");
+    } finally {
+        if (applyBtn) {
+            applyBtn.disabled = false;
+            applyBtn.textContent = "確定套用";
+        }
+    }
+}
 
 
 document.addEventListener("DOMContentLoaded", () => {

@@ -473,7 +473,8 @@ const mobIconMap = {
     phantom:"/static/icons/mobs/phantom.png",
     evoker:"/static/icons/mobs/Evoker.png",
     vex:"/static/icons/mobs/Vex.png",
-    shulker:"/static/icons/mobs/Shulker.png"
+    shulker:"/static/icons/mobs/Shulker.png",
+    zoglin:"/static/icons/mobs/Zoglin.png"
 
 };
 
@@ -1099,9 +1100,17 @@ async function saveServerSettings(showAlert = true) {
 
         if (showAlert) {
             if (serverSettingsServerOnline) {
-                alert("此次變更已保留，將在下次開啟伺服器時套用。");
+                alert(`
+                此次變更已保留。
+
+                若設定值不符合格式，
+                伺服器重啟後將自動修正或恢復預設值。`);
             } else {
-                alert("參數修改完成。");
+                alert(`
+                參數已修改。
+
+                若設定值不符合格式，
+                伺服器啟動時將自動修正或恢復預設值。`);
             }
         }
 

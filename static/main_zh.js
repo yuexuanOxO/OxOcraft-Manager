@@ -303,6 +303,13 @@ async function toggleServer() {
         let targetOnline = false;
         let actionText = "";
 
+        if (!statusData.online) {
+            const eulaOk = await ensureEulaAcceptedBeforeStart();
+            if (!eulaOk) {
+                return;
+            }
+        }
+
         if (statusData.online) {
             url = "/api/server/stop";
             targetOnline = false;
@@ -1240,6 +1247,134 @@ async function saveAndRestartServer() {
 }
 
 
+async function checkEulaStatus() {
+    try {
+        const response = await fetch("/api/eula/status", { cache: "no-store" });
+        const data = await response.json();
+
+        if (!data.success) {
+            console.error("讀取 EULA 失敗:", data.message);
+            return;
+        }
+
+        if (data.accepted) {
+            return;
+        }
+
+        showEulaModal(data);
+
+    } catch (error) {
+        console.error("檢查 EULA 失敗:", error);
+    }
+}
+
+function showEulaModal(data) {
+    const modal = document.getElementById("eulaModal");
+    const message = document.getElementById("eulaMessage");
+    const link = document.getElementById("eulaLink");
+    const date = document.getElementById("eulaDate");
+
+    if (!modal) return;
+
+    if (message) {
+        message.textContent = data.message_zh || "你必須同意 Minecraft EULA 才能繼續使用伺服器。";
+    }
+
+    if (link) {
+        link.href = data.url || "https://aka.ms/MinecraftEULA";
+        link.textContent = data.url || "https://aka.ms/MinecraftEULA";
+    }
+
+    if (date) {
+        date.textContent = data.date ? `檔案建立時間：${data.date}` : "";
+    }
+
+    modal.classList.remove("hidden");
+}
+
+function setupEulaModal() {
+    const acceptBtn = document.getElementById("eulaAcceptBtn");
+    const declineBtn = document.getElementById("eulaDeclineBtn");
+    const modal = document.getElementById("eulaModal");
+
+    if (acceptBtn) {
+        acceptBtn.addEventListener("click", async () => {
+            try {
+                const response = await fetch("/api/eula/accept", {
+                    method: "POST"
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    alert(data.message || "同意 EULA 失敗");
+                    return;
+                }
+
+                if (modal) {
+                    modal.classList.add("hidden");
+                }
+
+                alert("已同意 EULA，可以繼續使用。");
+
+            } catch (error) {
+                console.error("同意 EULA 失敗:", error);
+                alert("同意 EULA 失敗");
+            }
+        });
+    }
+
+    if (declineBtn) {
+        declineBtn.addEventListener("click", async () => {
+            try {
+                await fetch("/api/app/shutdown", {
+                    method: "POST"
+                });
+            } catch (error) {
+                console.error("關閉 OxOcraft-Manager 失敗:", error);
+            }
+
+            const panel = document.querySelector(".eula-panel");
+            if (panel) {
+                panel.innerHTML = `
+                    <div class="eula-title">OxOcraft-Manager 已關閉</div>
+                    <div class="eula-message eula-closed-message">
+                        未同意 Minecraft EULA，無法繼續使用管理介面。<br>
+                        請手動關閉此瀏覽器分頁。
+                    </div>
+                `;
+            }
+        });
+    }
+}
+
+
+async function ensureEulaAcceptedBeforeStart() {
+    try {
+        const response = await fetch("/api/eula/status", { cache: "no-store" });
+        const data = await response.json();
+
+        if (!data.success) {
+            alert("檢查 EULA 狀態失敗：" + (data.message || "未知錯誤"));
+            return false;
+        }
+
+        if (data.accepted) {
+            return true;
+        }
+
+        showEulaModal(data);
+        alert("請先同意 Minecraft EULA 後再啟動伺服器。");
+        return false;
+
+    } catch (error) {
+        console.error("檢查 EULA 狀態失敗:", error);
+        alert("檢查 EULA 狀態失敗，請查看 console。");
+        return false;
+    }
+}
+
+
 
 document.addEventListener("DOMContentLoaded", () => {
     // ===== 啟動server按鈕 =====
@@ -1310,5 +1445,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setupGlobalFeatureCard();
     setupServerSettingsModal();
     setupServerSettingSearch();
+    setupEulaModal();
+    checkEulaStatus();
     
 });

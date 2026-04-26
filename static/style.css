@@ -1016,3 +1016,73 @@ h1 {
     font-size: 24px;
     cursor: pointer;
 }
+
+
+
+
+
+.eula-modal{
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.78);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50000;
+}
+
+.eula-panel{
+    width: 560px;
+    background: #111;
+    border: 3px solid #777;
+    box-shadow: 0 0 0 3px #2d2d2d;
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+.eula-title{
+    font-size: 28px;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 18px;
+}
+
+.eula-message{
+    color: #ddd;
+    font-size: 16px;
+    line-height: 1.7;
+    margin-bottom: 16px;
+}
+
+.eula-link{
+    color: #66ccff;
+    display: inline-block;
+    margin-bottom: 12px;
+}
+
+.eula-date{
+    color: #888;
+    font-size: 14px;
+    margin-bottom: 22px;
+}
+
+.eula-actions{
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+}
+
+#eulaAcceptBtn,
+#eulaDeclineBtn{
+    min-width: 120px;
+    height: 44px;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.eula-closed-message{
+    font-size: 22px;
+    color: #ff5555;
+    text-align: center;
+    padding: 40px 0;
+}

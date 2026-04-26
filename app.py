@@ -27,6 +27,7 @@ SERVER_ROOT = BASE_DIR.parent
 SERVER_PROPERTIES_PATH = SERVER_ROOT / "server.properties"
 LOG_FILE = SERVER_ROOT / "logs" / "latest.log"
 CONFIG_PATH = BASE_DIR / "config.json"
+EULA_PATH = SERVER_ROOT / "eula.txt"
 
 DEFAULT_CONFIG = {
     "rcon_host": "127.0.0.1",
@@ -167,8 +168,53 @@ def get_online_players() -> list[str]:
     return [name.strip() for name in players_part.split(",") if name.strip()]
 
 
+def read_eula_file() -> dict:
+    if not EULA_PATH.exists():
+        return {
+            "exists": False,
+            "accepted": False,
+            "url": "",
+            "date": "",
+            "raw_lines": []
+        }
+
+    lines = EULA_PATH.read_text(encoding="utf-8", errors="replace").splitlines()
+
+    accepted = False
+    url = ""
+    date = ""
+
+    for line in lines:
+        stripped = line.strip()
+
+        if "https://" in stripped or "http://" in stripped:
+            match = re.search(r"https?://[^\s)]+", stripped)
+            if match:
+                url = match.group(0)
+
+        elif stripped.startswith("#") and not date:
+            # 第二行通常是日期，第一行通常是說明
+            pass
+
+        if stripped.startswith("#") and "CST" in stripped:
+            date = stripped.lstrip("#").strip()
+
+        if stripped.lower().startswith("eula="):
+            value = stripped.split("=", 1)[1].strip().lower()
+            accepted = value == "true"
+
+    return {
+        "exists": True,
+        "accepted": accepted,
+        "url": url,
+        "date": date,
+        "raw_lines": lines
+    }
+
+
 def open_browser():
     webbrowser.open("http://127.0.0.1:5000", new=2)
+
 
 
 @app.route("/")
@@ -385,6 +431,80 @@ def api_update_server_properties():
             "message": str(error)
         }), 500
 
+
+@app.route("/api/eula/status")
+def api_eula_status():
+    try:
+        info = read_eula_file()
+
+        return jsonify({
+            "success": True,
+            "exists": info["exists"],
+            "accepted": info["accepted"],
+            "url": info["url"],
+            "date": info["date"],
+            "message_zh": "若要繼續使用 Minecraft 伺服器，你必須同意 Minecraft 使用者授權合約（EULA）。同意後，系統會將 eula.txt 中的 eula 設為 true。"
+        })
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error)
+        }), 500
+
+
+#新增同意 API
+@app.route("/api/eula/accept", methods=["POST"])
+def api_eula_accept():
+    try:
+        info = read_eula_file()
+
+        if not info["exists"]:
+            return jsonify({
+                "success": False,
+                "message": "找不到 eula.txt"
+            }), 404
+
+        output_lines = []
+
+        for line in info["raw_lines"]:
+            if line.strip().lower().startswith("eula="):
+                output_lines.append("eula=true")
+            else:
+                output_lines.append(line)
+
+        EULA_PATH.write_text(
+            "\n".join(output_lines) + "\n",
+            encoding="utf-8"
+        )
+
+        return jsonify({
+            "success": True,
+            "message": "已同意 EULA"
+        })
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error)
+        }), 500
+
+
+#不同意關閉程式 API
+@app.route("/api/app/shutdown", methods=["POST"])
+def api_app_shutdown():
+    def shutdown_later():
+        import os
+        import time
+        time.sleep(0.5)
+        os._exit(0)
+
+    threading.Thread(target=shutdown_later, daemon=True).start()
+
+    return jsonify({
+        "success": True,
+        "message": "OxOcraft-Manager 即將關閉"
+    })
 
 
 if __name__ == "__main__":

@@ -11,6 +11,29 @@
     <div id="globalFeatureCard" class="global-feature-card hidden"></div>
     <div id="globalFeatureButtonHost" class="global-feature-button-host hidden"></div>
 
+
+    <div id="eulaModal" class="eula-modal hidden">
+        <div class="eula-panel">
+            <div class="eula-title">Minecraft 使用者授權合約</div>
+
+            <div id="eulaMessage" class="eula-message">
+                讀取中...
+            </div>
+
+            <a id="eulaLink" class="eula-link" href="#" target="_blank">
+                開啟 Minecraft EULA
+            </a>
+
+            <div id="eulaDate" class="eula-date"></div>
+
+            <div class="eula-actions">
+                <button id="eulaAcceptBtn" type="button">同意</button>
+                <button id="eulaDeclineBtn" type="button">不同意</button>
+            </div>
+        </div>
+    </div>
+
+
     {% include "components/server_settings_modal.html" %}
 
     <div id="deathBookModal" class="death-book-modal hidden">

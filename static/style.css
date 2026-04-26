@@ -908,17 +908,17 @@ h1 {
 .setting-help-btn{
     width: 22px;
     height: 22px;
-    border: 1px solid #ff3344;
+    border: 1px solid #5d5c5c99;
     border-radius: 50%;
     background: transparent;
-    color: #ff3344;
+    color: #5d5c5c99;
     font-weight: bold;
     cursor: pointer;
     line-height: 1;
 }
 
 .setting-help-btn:hover{
-    background: #ff3344;
+    background: #5d5c5c99;
     color: #111;
 }
 

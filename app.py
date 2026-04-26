@@ -26,13 +26,15 @@ SERVER_ROOT = BASE_DIR.parent
 
 SERVER_PROPERTIES_PATH = SERVER_ROOT / "server.properties"
 LOG_FILE = SERVER_ROOT / "logs" / "latest.log"
-CONFIG_PATH = BASE_DIR / "config.json"
+CONFIG_PATH = BASE_DIR / "static" / "data" / "config.json"
 EULA_PATH = SERVER_ROOT / "eula.txt"
 
 DEFAULT_CONFIG = {
     "rcon_host": "127.0.0.1",
     "rcon_port": 25575,
     "rcon_password": "OxO123456",
+    "java_xms": "2G",
+    "java_xmx": "4G",
 }
 
 
@@ -68,14 +70,25 @@ def read_last_lines(file_path: Path, max_lines: int = 100) -> list[str]:
 
 
 def load_or_create_config() -> Dict:
-    """讀取 config.json；若不存在就建立預設檔。"""
+    CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+
     if not CONFIG_PATH.exists():
-        with CONFIG_PATH.open("w", encoding="utf-8") as file:
-            json.dump(DEFAULT_CONFIG, file, ensure_ascii=False, indent=4)
+        save_config(DEFAULT_CONFIG.copy())
         return DEFAULT_CONFIG.copy()
 
     with CONFIG_PATH.open("r", encoding="utf-8") as file:
-        return json.load(file)
+        config = json.load(file)
+
+    changed = False
+    for key, value in DEFAULT_CONFIG.items():
+        if key not in config:
+            config[key] = value
+            changed = True
+
+    if changed:
+        save_config(config)
+
+    return config
 
 
 def save_config(config: Dict) -> None:
@@ -210,6 +223,28 @@ def read_eula_file() -> dict:
         "date": date,
         "raw_lines": lines
     }
+
+
+#讀取config.json
+def load_config():
+    if not CONFIG_PATH.exists():
+        default_config = {
+            "java_xms": "1G",
+            "java_xmx": "4G"
+        }
+
+        save_config(default_config)
+        return default_config
+
+    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+#儲存config.json
+def save_config(data):
+    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
 
 
 def open_browser():
@@ -505,6 +540,56 @@ def api_app_shutdown():
         "success": True,
         "message": "OxOcraft-Manager 即將關閉"
     })
+
+
+@app.route("/api/server/runtime-config")
+def api_get_runtime_config():
+    try:
+        config = load_or_create_config()
+        return jsonify({
+            "success": True,
+            "config": {
+                "java_xms": config.get("java_xms", "1G"),
+                "java_xmx": config.get("java_xmx", "4G"),
+            }
+        })
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error)
+        }), 500
+
+
+@app.route("/api/server/runtime-config", methods=["POST"])
+def api_update_runtime_config():
+    data = request.get_json(silent=True) or {}
+    updates = data.get("config", {})
+
+    if not isinstance(updates, dict):
+        return jsonify({
+            "success": False,
+            "message": "config 格式錯誤"
+        }), 400
+
+    try:
+        config = load_or_create_config()
+
+        for key in ["java_xms", "java_xmx"]:
+            if key in updates:
+                config[key] = str(updates[key])
+
+        save_config(config)
+
+        return jsonify({
+            "success": True,
+            "message": "啟動記憶體設定已儲存"
+        })
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error)
+        }), 500
 
 
 if __name__ == "__main__":

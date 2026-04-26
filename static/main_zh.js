@@ -858,7 +858,17 @@ async function loadServerSettings() {
             return;
         }
 
+        const runtimeResponse = await fetch("/api/server/runtime-config", { cache: "no-store" });
+        const runtimeData = await runtimeResponse.json();
+
         serverSettingsState = data.properties || {};
+
+        if (runtimeData.success) {
+            serverSettingsState = {
+                ...serverSettingsState,
+                ...runtimeData.config
+            };
+        }
 
         // 更新最近修改時間
         updateServerSettingsModifiedTime(data.modified_comment);
@@ -1082,6 +1092,18 @@ function setupServerSettingSearch(){
 
 async function saveServerSettings(showAlert = true) {
     const applyBtn = document.getElementById("serverSettingsApplyBtn");
+    const propertiesPayload = {};
+    const runtimeConfigPayload = {};
+
+    serverSettingFields.forEach((field) => {
+        const value = serverSettingsState[field.key];
+
+        if (field.source === "config") {
+            runtimeConfigPayload[field.key] = value;
+        } else {
+            propertiesPayload[field.key] = value;
+        }
+    });
 
     if (applyBtn) {
         applyBtn.disabled = true;
@@ -1094,7 +1116,7 @@ async function saveServerSettings(showAlert = true) {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                properties: serverSettingsState
+                properties: propertiesPayload
             })
         });
 
@@ -1102,6 +1124,23 @@ async function saveServerSettings(showAlert = true) {
 
         if (!data.success) {
             alert("儲存失敗：" + (data.message || "未知錯誤"));
+            return false;
+        }
+
+        const runtimeResponse = await fetch("/api/server/runtime-config", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                config: runtimeConfigPayload
+            })
+        });
+
+        const runtimeData = await runtimeResponse.json();
+
+        if (!runtimeData.success) {
+            alert("記憶體設定儲存失敗：" + (runtimeData.message || "未知錯誤"));
             return false;
         }
 

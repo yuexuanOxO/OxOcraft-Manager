@@ -1,5 +1,21 @@
 [
   {
+    "key": "java_xms",
+    "label": "伺服器可用初始記憶體",
+    "type": "text",
+    "default": "2G",
+    "source": "config",
+    "description": "Java 啟動時預先配置的記憶體，例如 512M、1G。"
+  },
+  {
+    "key": "java_xmx",
+    "label": "伺服器可用最大記憶體",
+    "type": "text",
+    "default": "4G",
+    "source": "config",
+    "description": "Minecraft Server 可使用的最大記憶體，例如 2G、4G、8G。"
+  },
+  {
     "key": "server-port",
     "label": "伺服器連線埠",
     "type": "number",
@@ -93,7 +109,7 @@
     "label": "極限模式",
     "type": "boolean",
     "default": "false",
-    "description": "如果設為 true，伺服器難易度的設定會被忽略並且設為hard（困難），玩家在死後會自動切換至旁觀者模式。"
+    "description": "如果設為 true，伺服器難易度的設定會被忽略並且設為hard（困難），玩家在死後會自動切換至旁觀者模式，\n若要此參數生效需要重新建立世界或是修改世界名稱(level-name)建立新世界。"
   },
   {
     "key": "pvp",

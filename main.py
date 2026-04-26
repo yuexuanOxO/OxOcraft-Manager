@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import subprocess
 import threading
+import json
 from pathlib import Path
 
 from backend.death_rules import parse_death_message, location_pattern
@@ -10,6 +11,7 @@ from database import insert_player_death
 BASE_DIR = Path(__file__).resolve().parent
 SERVER_ROOT = BASE_DIR.parent
 SERVER_JAR_PATH = SERVER_ROOT / "server.jar"
+CONFIG_PATH = BASE_DIR / "static" / "data" / "config.json"
 
 server_process: subprocess.Popen | None = None
 
@@ -122,3 +124,13 @@ def stop_server() -> tuple[bool, str]:
         return True, "正在關閉伺服器"
     except Exception as error:
         return False, str(error)
+    
+def load_runtime_config() -> dict:
+    if not CONFIG_PATH.exists():
+        return {
+            "java_xms": "1G",
+            "java_xmx": "4G",
+        }
+
+    with CONFIG_PATH.open("r", encoding="utf-8") as file:
+        return json.load(file)

@@ -5,6 +5,8 @@ from flask import Flask, render_template, jsonify, request
 from backend.server_runtime import start_server,stop_server
 import webbrowser
 import threading
+from backend.routes.death_routes import death_bp
+
 from backend.db import init_db, get_recent_player_deaths
 from backend.server_status import is_server_online
 from backend.rcon_service import send_rcon_command, get_online_players
@@ -33,6 +35,8 @@ from backend.config_files import (
 
 
 app = Flask(__name__)
+
+app.register_blueprint(death_bp)
 
 BASE_DIR = Path(__file__).resolve().parent
 SERVER_ROOT = BASE_DIR.parent
@@ -189,20 +193,6 @@ def api_player_action():
         }), 500
 
 
-@app.route("/api/deaths")
-def api_deaths():
-    try:
-        deaths = get_recent_player_deaths(limit=10)
-        return jsonify({
-            "success": True,
-            "deaths": deaths
-        })
-    except Exception as error:
-        return jsonify({
-            "success": False,
-            "message": str(error)
-        }), 500
-    
 
 @app.route("/api/server/properties")
 def api_get_server_properties():

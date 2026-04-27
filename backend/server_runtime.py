@@ -9,11 +9,6 @@ from backend.death_record.death_rules import parse_death_message, location_patte
 from backend.db import insert_player_death
 from backend.paths import SERVER_JAR_PATH, CONFIG_PATH, MC_ROOT
 
-# BASE_DIR = Path(__file__).resolve().parent
-# PROJECT_ROOT = BASE_DIR.parent
-# SERVER_ROOT = PROJECT_ROOT.parent
-# SERVER_JAR_PATH = SERVER_ROOT / "server.jar"
-# CONFIG_PATH = PROJECT_ROOT / "static" / "data" / "config.json"
 SERVER_ROOT = MC_ROOT
 
 server_process: subprocess.Popen | None = None

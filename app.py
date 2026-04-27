@@ -10,6 +10,7 @@ from backend.routes.page_routes import page_bp
 from backend.routes.status_routes import status_bp
 from backend.routes.command_routes import command_bp
 from backend.routes.player_routes import player_bp
+from backend.routes.server_routes import server_bp
 
 from backend.db import init_db, get_recent_player_deaths
 from backend.server_status import is_server_online
@@ -45,6 +46,7 @@ app.register_blueprint(page_bp)
 app.register_blueprint(status_bp)
 app.register_blueprint(command_bp)
 app.register_blueprint(player_bp)
+app.register_blueprint(server_bp)
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -67,27 +69,6 @@ def save_config(data):
 def open_browser():
     webbrowser.open("http://127.0.0.1:5000", new=2)
 
-
-
-
-
-@app.route("/api/server/start", methods=["POST"])
-def api_server_start():
-    success, message = start_server()
-
-    status_code = 200 if success else 400
-    return jsonify({
-        "success": success,
-        "message": message
-    }), status_code
-
-@app.route("/api/server/stop", methods=["POST"])
-def api_server_stop():
-    success, message = stop_server()
-    return jsonify({
-        "success": success,
-        "message": message
-    })
 
 
 

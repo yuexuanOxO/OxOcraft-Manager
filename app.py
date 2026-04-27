@@ -7,6 +7,7 @@ import webbrowser
 import threading
 from backend.routes.death_routes import death_bp
 from backend.routes.page_routes import page_bp
+from backend.routes.status_routes import status_bp
 
 from backend.db import init_db, get_recent_player_deaths
 from backend.server_status import is_server_online
@@ -39,6 +40,8 @@ app = Flask(__name__)
 
 app.register_blueprint(death_bp)
 app.register_blueprint(page_bp)
+app.register_blueprint(status_bp)
+
 
 BASE_DIR = Path(__file__).resolve().parent
 SERVER_ROOT = BASE_DIR.parent
@@ -60,24 +63,6 @@ def save_config(data):
 def open_browser():
     webbrowser.open("http://127.0.0.1:5000", new=2)
 
-
-
-@app.route("/status")
-def get_status():
-    response = jsonify({
-        "online": is_server_online()
-    })
-    response.headers["Cache-Control"] = "no-store"
-    return response
-
-
-@app.route("/log")
-def get_log():
-    response = jsonify({
-        "logs": "".join(read_last_lines(LOG_FILE_PATH, max_lines=100))
-    })
-    response.headers["Cache-Control"] = "no-store"
-    return response
 
 
 @app.route("/players")

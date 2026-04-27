@@ -8,6 +8,7 @@ import threading
 from backend.db import init_db, get_recent_player_deaths
 from backend.server_status import is_server_online
 from backend.rcon_service import send_rcon_command, get_online_players
+from backend.server_config_sync import init_rcon_config
 from backend.log_reader import read_last_lines
 from backend.server_settings.server_properties import (
     DEFAULT_SERVER_PROPERTIES,
@@ -41,31 +42,6 @@ CONFIG_PATH = BASE_DIR / "static" / "data" / "config.json"
 EULA_PATH = SERVER_ROOT / "eula.txt"
 
 
-
-def sync_rcon_to_server_properties(config: Dict) -> None:
-    updates = {
-        "enable-rcon": "true",
-        "rcon.port": str(config["rcon_port"]),
-        "rcon.password": str(config["rcon_password"]),
-    }
-
-    server_properties = read_properties_file(SERVER_PROPERTIES_PATH)
-    server_properties.update(updates)
-
-    lines = format_properties_for_write(server_properties)
-    write_properties_file(SERVER_PROPERTIES_PATH, lines)
-            
-
-
-def init_rcon_config() -> Dict:
-    """
-    啟動 Flask 時做：
-    1. 建立或載入 config.json
-    2. 同步 RCON 到 server.properties
-    """
-    config = load_or_create_config()
-    sync_rcon_to_server_properties(config)
-    return config
 
 
 #儲存config.json

@@ -6,6 +6,7 @@ from backend.server_runtime import start_server,stop_server
 import webbrowser
 import threading
 from backend.routes.death_routes import death_bp
+from backend.routes.page_routes import page_bp
 
 from backend.db import init_db, get_recent_player_deaths
 from backend.server_status import is_server_online
@@ -37,6 +38,7 @@ from backend.config_files import (
 app = Flask(__name__)
 
 app.register_blueprint(death_bp)
+app.register_blueprint(page_bp)
 
 BASE_DIR = Path(__file__).resolve().parent
 SERVER_ROOT = BASE_DIR.parent
@@ -58,13 +60,6 @@ def save_config(data):
 def open_browser():
     webbrowser.open("http://127.0.0.1:5000", new=2)
 
-
-
-@app.route("/")
-def index():
-    logs = "".join(read_last_lines(LOG_FILE_PATH, max_lines=100))
-    server_online = is_server_online()
-    return render_template("index_zh.html", logs=logs, server_online=server_online)
 
 
 @app.route("/status")

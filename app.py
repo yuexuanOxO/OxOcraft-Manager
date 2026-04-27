@@ -8,6 +8,7 @@ import threading
 from backend.db import init_db, get_recent_player_deaths
 from backend.server_status import is_server_online
 from backend.rcon_service import send_rcon_command, get_online_players
+from backend.log_reader import read_last_lines
 from backend.server_settings.server_properties import (
     DEFAULT_SERVER_PROPERTIES,
     read_properties_file,
@@ -40,41 +41,6 @@ CONFIG_PATH = BASE_DIR / "static" / "data" / "config.json"
 EULA_PATH = SERVER_ROOT / "eula.txt"
 
 
-
-
-def read_last_lines(file_path: Path, max_lines: int = 100) -> list[str]:
-    """讀取文字檔最後幾行。"""
-    if not file_path.exists():
-        return [f"[OxO_MCServerManager] 找不到 log 檔案: {file_path}"]
-
-    try:
-        with file_path.open("r", encoding="utf-8", errors="replace") as file:
-            lines = file.readlines()
-        return lines[-max_lines:]
-    except Exception as error:
-        return [f"[OxO_MCServerManager] 讀取 log 失敗: {error}"]
-
-
-
-
-
-
-
-
-# def Test1():
-#     update_key = "max-players"
-#     update_value = 6
-    
-#     server_properties = read_properties_file(SERVER_PROPERTIES_PATH)
-#     if update_key in server_properties:
-#         server_properties[update_key] = update_value
-#         print(f"max-players已修改")
-
-#     print(server_properties)
-
-#     return properties_Format_recovery(server_properties)
-
-    
 
 def sync_rcon_to_server_properties(config: Dict) -> None:
     updates = {

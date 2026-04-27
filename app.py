@@ -9,6 +9,7 @@ from backend.routes.death_routes import death_bp
 from backend.routes.page_routes import page_bp
 from backend.routes.status_routes import status_bp
 from backend.routes.command_routes import command_bp
+from backend.routes.player_routes import player_bp
 
 from backend.db import init_db, get_recent_player_deaths
 from backend.server_status import is_server_online
@@ -43,6 +44,7 @@ app.register_blueprint(death_bp)
 app.register_blueprint(page_bp)
 app.register_blueprint(status_bp)
 app.register_blueprint(command_bp)
+app.register_blueprint(player_bp)
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -67,21 +69,6 @@ def open_browser():
 
 
 
-@app.route("/players")
-def get_players():
-    try:
-        players = get_online_players()
-        return jsonify({
-            "success":True,
-            "players":players
-        })
-    except Exception as error:
-        return jsonify({
-            "success":False,
-            "players":[],
-            "message":str(error)
-        })
-
 
 
 @app.route("/api/server/start", methods=["POST"])
@@ -101,37 +88,6 @@ def api_server_stop():
         "success": success,
         "message": message
     })
-
-@app.route("/api/player/action", methods=["POST"])
-def api_player_action():
-    data = request.get_json(silent=True) or {}
-    action = str(data.get("action", "")).strip()
-    player = str(data.get("player", "")).strip()
-
-    if not action or not player:
-        return jsonify({
-            "success": False,
-            "message": "缺少必要參數"
-        }), 400
-
-    try:
-        if action == "kick":
-            result = send_rcon_command(f'kick {player}')
-        else:
-            return jsonify({
-                "success": False,
-                "message": "不支援的操作"
-            }), 400
-
-        return jsonify({
-            "success": True,
-            "result": result
-        })
-    except Exception as error:
-        return jsonify({
-            "success": False,
-            "message": str(error)
-        }), 500
 
 
 

@@ -11,6 +11,7 @@ from backend.routes.status_routes import status_bp
 from backend.routes.command_routes import command_bp
 from backend.routes.player_routes import player_bp
 from backend.routes.server_routes import server_bp
+from backend.routes.server_settings_routes import settings_bp
 
 from backend.db import init_db, get_recent_player_deaths
 from backend.server_status import is_server_online
@@ -47,6 +48,8 @@ app.register_blueprint(status_bp)
 app.register_blueprint(command_bp)
 app.register_blueprint(player_bp)
 app.register_blueprint(server_bp)
+app.register_blueprint(settings_bp)
+
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -59,84 +62,11 @@ EULA_PATH = SERVER_ROOT / "eula.txt"
 
 
 
-#儲存config.json
-def save_config(data):
-    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
-
-
-
 def open_browser():
     webbrowser.open("http://127.0.0.1:5000", new=2)
 
 
 
-
-@app.route("/api/server/properties")
-def api_get_server_properties():
-    try:
-        current_props = read_properties_file(SERVER_PROPERTIES_PATH)
-        effective_props = get_effective_server_properties(SERVER_PROPERTIES_PATH)
-        modified_comment = read_properties_modified_comment(SERVER_PROPERTIES_PATH)
-
-        missing_keys = [
-            key for key in DEFAULT_SERVER_PROPERTIES
-            if key not in current_props
-        ]
-
-        unknown_keys = [
-            key for key in current_props
-            if key not in DEFAULT_SERVER_PROPERTIES
-        ]
-
-        return jsonify({
-            "success": True,
-            "properties": effective_props,
-            "current_properties": current_props,
-            "missing_keys": missing_keys,
-            "unknown_keys": unknown_keys,
-            "modified_comment": modified_comment,
-        })
-    except Exception as error:
-        return jsonify({
-            "success": False,
-            "message": str(error)
-        }), 500
-
-
-@app.route("/api/server/properties", methods=["POST"])
-def api_update_server_properties():
-    data = request.get_json(silent=True) or {}
-    updates = data.get("properties", {})
-
-    if not isinstance(updates, dict):
-        return jsonify({
-            "success": False,
-            "message": "properties 格式錯誤"
-        }), 400
-
-    try:
-        current_props = read_properties_file(SERVER_PROPERTIES_PATH)
-
-        for key, value in updates.items():
-            if key not in DEFAULT_SERVER_PROPERTIES:
-                continue
-
-            current_props[key] = str(value)
-
-        lines = format_properties_for_write(current_props)
-        write_properties_file(SERVER_PROPERTIES_PATH, lines)
-
-        return jsonify({
-            "success": True,
-            "message": "設定已儲存。部分設定需要重啟伺服器後才會生效。"
-        })
-
-    except Exception as error:
-        return jsonify({
-            "success": False,
-            "message": str(error)
-        }), 500
 
 
 @app.route("/api/eula/status")
@@ -214,54 +144,6 @@ def api_app_shutdown():
     })
 
 
-@app.route("/api/server/runtime-config")
-def api_get_runtime_config():
-    try:
-        config = load_or_create_config()
-        return jsonify({
-            "success": True,
-            "config": {
-                "java_xms": config.get("java_xms", "1G"),
-                "java_xmx": config.get("java_xmx", "4G"),
-            }
-        })
-    except Exception as error:
-        return jsonify({
-            "success": False,
-            "message": str(error)
-        }), 500
-
-
-@app.route("/api/server/runtime-config", methods=["POST"])
-def api_update_runtime_config():
-    data = request.get_json(silent=True) or {}
-    updates = data.get("config", {})
-
-    if not isinstance(updates, dict):
-        return jsonify({
-            "success": False,
-            "message": "config 格式錯誤"
-        }), 400
-
-    try:
-        config = load_or_create_config()
-
-        for key in ["java_xms", "java_xmx"]:
-            if key in updates:
-                config[key] = str(updates[key])
-
-        save_config(config)
-
-        return jsonify({
-            "success": True,
-            "message": "啟動記憶體設定已儲存"
-        })
-
-    except Exception as error:
-        return jsonify({
-            "success": False,
-            "message": str(error)
-        }), 500
 
 
 if __name__ == "__main__":

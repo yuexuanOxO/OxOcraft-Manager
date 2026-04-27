@@ -3,5 +3,5 @@
     "rcon_port": 25575,
     "rcon_password": "OxO123456",
     "java_xms": "2G",
-    "java_xmx": "3G"
+    "java_xmx": "4G"
 }

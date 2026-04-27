@@ -1,14 +1,13 @@
 import json
-import socket
 from pathlib import Path
 from typing import Dict
 from flask import Flask, render_template, jsonify, request
-from mcrcon import MCRcon
-from main import start_server,stop_server
+from backend.server_runtime import start_server,stop_server
 import webbrowser
 import threading
-import re
 from backend.db import init_db, get_recent_player_deaths
+from backend.server_status import is_server_online
+from backend.rcon_service import send_rcon_command, get_online_players
 from backend.server_settings.server_properties import (
     DEFAULT_SERVER_PROPERTIES,
     read_properties_file,
@@ -16,6 +15,18 @@ from backend.server_settings.server_properties import (
     format_properties_for_write,
     write_properties_file,
     read_properties_modified_comment,
+)
+from backend.paths import (
+    SERVER_PROPERTIES_PATH,
+    LOG_FILE_PATH,
+    CONFIG_PATH,
+    EULA_PATH,
+)
+
+from backend.config_files import (
+    load_or_create_config,
+    save_config,
+    read_eula_file,
 )
 
 
@@ -25,35 +36,10 @@ BASE_DIR = Path(__file__).resolve().parent
 SERVER_ROOT = BASE_DIR.parent
 
 SERVER_PROPERTIES_PATH = SERVER_ROOT / "server.properties"
-LOG_FILE = SERVER_ROOT / "logs" / "latest.log"
 CONFIG_PATH = BASE_DIR / "static" / "data" / "config.json"
 EULA_PATH = SERVER_ROOT / "eula.txt"
 
-DEFAULT_CONFIG = {
-    "rcon_host": "127.0.0.1",
-    "rcon_port": 25575,
-    "rcon_password": "OxO123456",
-    "java_xms": "2G",
-    "java_xmx": "4G",
-}
 
-
-def is_server_online(host: str = "127.0.0.1", port: int = 25565, timeout: int = 1) -> bool:
-    #讀取server.properties設定值的port
-    server_properties = read_properties_file(SERVER_PROPERTIES_PATH)
-    server_port = "server-port"
-
-    #根據server.properties的port動態修改,用正確的port檢查
-    if server_port in server_properties:
-        port = server_properties[server_port]
-    #備註讓user在使用UI操作server不要再去手動修改server.properties以免發生錯誤,需手動修改請在OxOcraft-Manager關閉時操作
-
-    """檢查 Minecraft server 是否在線。"""
-    try:
-        with socket.create_connection((host, port), timeout=timeout):
-            return True
-    except OSError:
-        return False
 
 
 def read_last_lines(file_path: Path, max_lines: int = 100) -> list[str]:
@@ -69,32 +55,9 @@ def read_last_lines(file_path: Path, max_lines: int = 100) -> list[str]:
         return [f"[OxO_MCServerManager] 讀取 log 失敗: {error}"]
 
 
-def load_or_create_config() -> Dict:
-    CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
-
-    if not CONFIG_PATH.exists():
-        save_config(DEFAULT_CONFIG.copy())
-        return DEFAULT_CONFIG.copy()
-
-    with CONFIG_PATH.open("r", encoding="utf-8") as file:
-        config = json.load(file)
-
-    changed = False
-    for key, value in DEFAULT_CONFIG.items():
-        if key not in config:
-            config[key] = value
-            changed = True
-
-    if changed:
-        save_config(config)
-
-    return config
 
 
-def save_config(config: Dict) -> None:
-    """儲存 config.json。"""
-    with CONFIG_PATH.open("w", encoding="utf-8") as file:
-        json.dump(config, file, ensure_ascii=False, indent=4)
+
 
 
 
@@ -139,107 +102,6 @@ def init_rcon_config() -> Dict:
     return config
 
 
-def send_rcon_command(command: str) -> str:
-    """透過 RCON 發送 Minecraft 指令。"""
-    config = load_or_create_config()
-
-    with MCRcon(
-        host=config["rcon_host"],
-        password=config["rcon_password"],
-        port=int(config["rcon_port"]),
-    ) as mcr:
-        result = mcr.command(command)
-
-    return result
-
-def get_online_players() -> list[str]:
-    result = send_rcon_command("list")
-
-    if  not result:
-        return []
-    
-    # 用正則抓玩家數量
-    match = re.search(r"There are (\d+) of a max of (\d+) players online",result)
-    if not match:
-        return []
-    
-    player_count = int(match.group(1))
-
-    # 沒玩家直接回空
-    if player_count == 0:
-        return []
-    
-    # 解析玩家名稱
-    if ":" not in result:
-        return []
-    
-    players_part = result.split(":",1)[1].strip()
-
-    if not players_part:
-        return []
-    
-    return [name.strip() for name in players_part.split(",") if name.strip()]
-
-
-def read_eula_file() -> dict:
-    if not EULA_PATH.exists():
-        return {
-            "exists": False,
-            "accepted": False,
-            "url": "",
-            "date": "",
-            "raw_lines": []
-        }
-
-    lines = EULA_PATH.read_text(encoding="utf-8", errors="replace").splitlines()
-
-    accepted = False
-    url = ""
-    date = ""
-
-    for line in lines:
-        stripped = line.strip()
-
-        if "https://" in stripped or "http://" in stripped:
-            match = re.search(r"https?://[^\s)]+", stripped)
-            if match:
-                url = match.group(0)
-
-        elif stripped.startswith("#") and not date:
-            # 第二行通常是日期，第一行通常是說明
-            pass
-
-        if stripped.startswith("#") and "CST" in stripped:
-            date = stripped.lstrip("#").strip()
-
-        if stripped.lower().startswith("eula="):
-            value = stripped.split("=", 1)[1].strip().lower()
-            accepted = value == "true"
-
-    return {
-        "exists": True,
-        "accepted": accepted,
-        "url": url,
-        "date": date,
-        "raw_lines": lines
-    }
-
-
-#讀取config.json
-def load_config():
-    if not CONFIG_PATH.exists():
-        default_config = {
-            "java_xms": "1G",
-            "java_xmx": "4G"
-        }
-
-        save_config(default_config)
-        return default_config
-
-    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
 #儲存config.json
 def save_config(data):
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:
@@ -254,7 +116,7 @@ def open_browser():
 
 @app.route("/")
 def index():
-    logs = "".join(read_last_lines(LOG_FILE, max_lines=100))
+    logs = "".join(read_last_lines(LOG_FILE_PATH, max_lines=100))
     server_online = is_server_online()
     return render_template("index_zh.html", logs=logs, server_online=server_online)
 
@@ -271,7 +133,7 @@ def get_status():
 @app.route("/log")
 def get_log():
     response = jsonify({
-        "logs": "".join(read_last_lines(LOG_FILE, max_lines=100))
+        "logs": "".join(read_last_lines(LOG_FILE_PATH, max_lines=100))
     })
     response.headers["Cache-Control"] = "no-store"
     return response

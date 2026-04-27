@@ -5,7 +5,7 @@ import threading
 import json
 from pathlib import Path
 
-from backend.death_rules import parse_death_message, location_pattern
+from backend.death_record.death_rules import parse_death_message, location_pattern
 from database import insert_player_death
 
 BASE_DIR = Path(__file__).resolve().parent

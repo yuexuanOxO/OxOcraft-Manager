@@ -1,3 +1,8 @@
+
+
+// *********暫停開發中*********
+
+
 let isTransitioning = false;
 let logPollingTimer = null;
 let statusPollingTimer = null;
@@ -6,8 +11,6 @@ let lastLogText = "";
 let wasServerOnline = false;
 let deathRecords = [];
 let currentDeathPage = 0;
-
-// 暫停更新中
 
 
 function startLogPolling() {

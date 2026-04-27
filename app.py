@@ -9,7 +9,7 @@ import webbrowser
 import threading
 import re
 from database import init_db, get_recent_player_deaths
-from server_properties import (
+from backend.server_settings.server_properties import (
     DEFAULT_SERVER_PROPERTIES,
     read_properties_file,
     get_effective_server_properties,

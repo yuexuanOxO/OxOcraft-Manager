@@ -420,7 +420,7 @@ h1 {
     content: "";
     position: absolute;
     inset: 0;
-    background: url("/static/icons/Advancement-plain-raw.png") no-repeat center center;
+    background: url("/static/icons/feature_card/advancement_plain_raw.png") no-repeat center center;
     background-size: contain;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
@@ -511,13 +511,13 @@ h1 {
 
 .feature-title-left {
     left: 0;
-    background-image: url("/static/icons/box_unobtained_left.png");
+    background-image: url("/static/icons/feature_card/box_unobtained_left.png");
     background-position: left top;
 }
 
 .feature-title-right {
     right: 0;
-    background-image: url("/static/icons/box_unobtained_right.png");
+    background-image: url("/static/icons/feature_card/box_unobtained_right.png");
     background-position: right top;
 }
 
@@ -527,7 +527,7 @@ h1 {
     left: 24px;
     right: 24px;
     height: 100%;
-    background-image: url("/static/icons/box_unobtained_center.png");
+    background-image: url("/static/icons/feature_card/box_unobtained_center.png");
     background-repeat: repeat-x;
     background-size: auto 100%;
     image-rendering: pixelated;
@@ -563,7 +563,7 @@ h1 {
 
 .feature-desc-left {
     left: 0;
-    background-image: url("/static/icons/title_box_left.png");
+    background-image: url("/static/icons/feature_card/title_box_left.png");
     background-position: left top;
 }
 
@@ -571,7 +571,7 @@ h1 {
 
 .feature-desc-right {
     right: 0;
-    background-image: url("/static/icons/title_box_right.png");
+    background-image: url("/static/icons/feature_card/title_box_right.png");
     background-position: right top;
 }
 
@@ -584,7 +584,7 @@ h1 {
     right: 24px;
     height: 100%;
 
-    background-image: url("/static/icons/title_box_center.png");
+    background-image: url("/static/icons/feature_card/title_box_center.png");
     background-repeat: repeat-x;
     background-size: auto 100%;
 

@@ -2,25 +2,25 @@ let deathRecords = [];
 let currentDeathPage = 0;
 
 const mobIconMap = {
-    zombie: "/static/icons/mobs/zombie.png",
-    skeleton: "/static/icons/mobs/skeleton.png",
-    creeper: "/static/icons/mobs/creeper.png",
-    spider: "/static/icons/mobs/spider.png",
-    enderman: "/static/icons/mobs/enderman.png",
-    wither: "/static/icons/mobs/wither.png",
-    warden: "/static/icons/mobs/Warden.png",
-    Slime: "/static/icons/mobs/slime.png",
-    blaze: "/static/icons/mobs/blaze.png",
-    ghast: "/static/icons/mobs/ghast.png",
-    drowned: "/static/icons/mobs/drowned.png",
-    husk: "/static/icons/mobs/husk.png",
-    stray: "/static/icons/mobs/stray.png",
-    bogged: "/static/icons/mobs/bogged.png",
-    phantom: "/static/icons/mobs/phantom.png",
-    evoker: "/static/icons/mobs/Evoker.png",
-    vex: "/static/icons/mobs/Vex.png",
-    shulker: "/static/icons/mobs/Shulker.png",
-    zoglin: "/static/icons/mobs/Zoglin.png"
+    zombie: "/static/img/mobs/zombie.png",
+    skeleton: "/static/img/mobs/skeleton.png",
+    creeper: "/static/img/mobs/creeper.png",
+    spider: "/static/img/mobs/spider.png",
+    enderman: "/static/img/mobs/enderman.png",
+    wither: "/static/img/mobs/wither.png",
+    warden: "/static/img/mobs/warden.png",
+    Slime: "/static/img/mobs/slime.png",
+    blaze: "/static/img/mobs/blaze.png",
+    ghast: "/static/img/mobs/ghast.png",
+    drowned: "/static/img/mobs/drowned.png",
+    husk: "/static/img/mobs/husk.png",
+    stray: "/static/img/mobs/stray.png",
+    bogged: "/static/img/mobs/bogged.png",
+    phantom: "/static/img/mobs/phantom.png",
+    evoker: "/static/img/mobs/evoker.png",
+    vex: "/static/img/mobs/vex.png",
+    shulker: "/static/img/mobs/shulker.png",
+    zoglin: "/static/img/mobs/zoglin.png"
 };
 
 function formatDimensionName(dimension) {

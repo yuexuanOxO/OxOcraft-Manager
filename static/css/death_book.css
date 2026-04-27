@@ -14,7 +14,7 @@
     position: relative;
     width: 620px;
     height: 760px;
-    background: url("/static/icons/book/death_book_bg.png") no-repeat center center;
+    background: url("/static/icons/death_record/death_book_bg.png") no-repeat center center;
     background-size: contain;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
@@ -119,19 +119,19 @@
 }
 
 .death-book-page-btn.prev {
-    background-image: url("/static/icons/book/page_prev.png");
+    background-image: url("/static/icons/death_record/page_prev.png");
 }
 
 .death-book-page-btn.prev:hover:not(:disabled) {
-    background-image: url("/static/icons/book/page_prev_hover.png");
+    background-image: url("/static/icons/death_record/page_prev_hover.png");
 }
 
 .death-book-page-btn.next {
-    background-image: url("/static/icons/book/page_next.png");
+    background-image: url("/static/icons/death_record/page_next.png");
 }
 
 .death-book-page-btn.next:hover:not(:disabled) {
-    background-image: url("/static/icons/book/page_next_hover.png");
+    background-image: url("/static/icons/death_record/page_next_hover.png");
 }
 
 .death-book-page-btn:disabled {

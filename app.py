@@ -8,6 +8,7 @@ import threading
 from backend.routes.death_routes import death_bp
 from backend.routes.page_routes import page_bp
 from backend.routes.status_routes import status_bp
+from backend.routes.command_routes import command_bp
 
 from backend.db import init_db, get_recent_player_deaths
 from backend.server_status import is_server_online
@@ -41,6 +42,7 @@ app = Flask(__name__)
 app.register_blueprint(death_bp)
 app.register_blueprint(page_bp)
 app.register_blueprint(status_bp)
+app.register_blueprint(command_bp)
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -81,47 +83,6 @@ def get_players():
         })
 
 
-@app.route("/api/rcon/test")
-def rcon_test():
-    """測試 RCON 是否可用。"""
-    try:
-        result = send_rcon_command("list")
-        return jsonify({
-            "success": True,
-            "message": "RCON 連線成功",
-            "result": result,
-        })
-    except Exception as error:
-        return jsonify({
-            "success": False,
-            "message": f"RCON 連線失敗：{error}",
-        }), 500
-
-
-@app.route("/api/command", methods=["POST"])
-def api_command():
-    """給 web 指令輸入框用。"""
-    data = request.get_json(silent=True) or {}
-    command = str(data.get("command", "")).strip()
-
-    if not command:
-        return jsonify({
-            "success": False,
-            "message": "指令不可為空",
-        }), 400
-
-    try:
-        result = send_rcon_command(command)
-        return jsonify({
-            "success": True,
-            "result": result,
-        })
-    except Exception as error:
-        return jsonify({
-            "success": False,
-            "message": str(error),
-        }), 500
-    
 
 @app.route("/api/server/start", methods=["POST"])
 def api_server_start():

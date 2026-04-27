@@ -8,7 +8,7 @@ from main import start_server,stop_server
 import webbrowser
 import threading
 import re
-from database import init_db, get_recent_player_deaths
+from backend.db import init_db, get_recent_player_deaths
 from backend.server_settings.server_properties import (
     DEFAULT_SERVER_PROPERTIES,
     read_properties_file,

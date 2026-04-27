@@ -2,7 +2,7 @@ import sqlite3
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / "oxocraft.db"
+DB_PATH = BASE_DIR / "instance" / "oxocraft.db"
 
 
 def get_connection() -> sqlite3.Connection:

@@ -7,6 +7,9 @@ let wasServerOnline = false;
 let deathRecords = [];
 let currentDeathPage = 0;
 
+// 暫停更新中
+
+
 function startLogPolling() {
     if (logPollingTimer !== null || backendDisconnected) {
         return;

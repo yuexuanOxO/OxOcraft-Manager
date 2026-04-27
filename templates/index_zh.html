@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OxOcraft-Manager</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/death_book.css') }}">
 </head>
 <body>
 
@@ -35,53 +36,8 @@
 
 
     {% include "components/server_settings_modal.html" %}
-
-    <div id="deathBookModal" class="death-book-modal hidden">
-        <div class="death-book-panel">
-
-            <div class="death-book-inner">
-                <div class="death-book-top">
-                    <div class="death-book-player-block">
-                        <img id="deathPlayerAvatar" class="death-book-avatar" src="" alt="player avatar">
-                        <div id="deathPlayerName" class="death-book-player-name">玩家名稱</div>
-                    </div>
-
-                    <div id="deathPageInfo" class="death-book-page-info">第 1 頁 / 第 1 頁</div>
-                </div>
-
-                <div class="death-book-content">
-                    <div class="death-book-section">
-                        <div class="death-book-label">最近死亡：</div>
-                        <div id="deathText" class="death-book-text"></div>
-                    </div>
-
-                    <div class="death-book-section">
-                        <div class="death-book-label">死亡地點：</div>
-                        <div id="deathLocation" class="death-book-text"></div>
-                        <div id="deathTime" class="death-book-text"></div>
-                    </div>
-
-                    <div id="deathKillerSection" class="death-book-section">
-                        <div class="death-book-label">擊殺者：</div>
-                        <div class="death-book-killer-row">
-                            <img id="deathKillerIcon" class="death-book-killer-icon hidden" src="" alt="killer icon">
-                            <div id="deathKillerText" class="death-book-text"></div>
-                        </div>
-                    </div>
-
-                    <div id="deathWeaponSection" class="death-book-section">
-                        <div class="death-book-label">使用兇器：</div>
-                        <div id="deathWeaponText" class="death-book-text"></div>
-                    </div>
-                </div>
-
-                <div class="death-book-nav">
-                    <button id="deathPrevBtn" class="death-book-page-btn prev" type="button" aria-label="上一頁"></button>
-                    <button id="deathNextBtn" class="death-book-page-btn next" type="button" aria-label="下一頁"></button>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include "components/death_book_modal.html" %}
+    
 
 
     <div class="container">
@@ -714,6 +670,7 @@
 
     </div>
 
-    <script src="{{ url_for('static', filename='main_zh.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/death_book.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main_zh.js') }}"></script>
 </body>
 </html>

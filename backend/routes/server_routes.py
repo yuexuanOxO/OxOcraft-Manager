@@ -1,9 +1,14 @@
 from flask import Blueprint, jsonify
-
 from backend.server_runtime import start_server, stop_server
+from backend.server_setup import get_server_setup_status
 
 
 server_bp = Blueprint("server", __name__)
+
+
+@server_bp.route("/api/server/setup-status")
+def api_server_setup_status():
+    return jsonify(get_server_setup_status())
 
 
 @server_bp.route("/api/server/start", methods=["POST"])

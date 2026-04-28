@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 
 from backend.paths import SERVER_PROPERTIES_PATH
 from backend.config_files import load_or_create_config, save_config
+from backend.server_config_sync import init_rcon_config
 from backend.server_settings.server_properties import (
     DEFAULT_SERVER_PROPERTIES,
     read_properties_file,
@@ -126,6 +127,23 @@ def api_update_runtime_config():
         return jsonify({
             "success": True,
             "message": "啟動記憶體設定已儲存"
+        })
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error)
+        }), 500
+    
+
+@settings_bp.route("/api/server/sync-rcon", methods=["POST"])
+def api_sync_rcon_config():
+    try:
+        init_rcon_config()
+
+        return jsonify({
+            "success": True,
+            "message": "RCON 設定已同步到 server.properties"
         })
 
     except Exception as error:

@@ -300,19 +300,21 @@ async function toggleServer() {
         let url = "";
         let targetOnline = false;
         let actionText = "";
-
-        if (!statusData.online) {
-            const eulaOk = await ensureEulaAcceptedBeforeStart();
-            if (!eulaOk) {
-                return;
-            }
-        }
+        let setupStage = "";
 
         if (statusData.online) {
             url = "/api/server/stop";
             targetOnline = false;
             actionText = "關閉中...";
         } else {
+            const setupStatus = await getServerSetupStatus();
+            setupStage = setupStatus.stage;
+
+            const eulaOk = await ensureEulaAcceptedBeforeStart();
+            if (!eulaOk) {
+                return;
+            }
+
             url = "/api/server/start";
             targetOnline = true;
             actionText = "啟動中...";
@@ -335,7 +337,13 @@ async function toggleServer() {
             return;
         }
 
-        const reachedTarget = await waitForServerStatus(targetOnline, 30000, 1000);
+        let reachedTarget = false;
+
+        if (targetOnline && setupStage === "need_first_run") {
+            reachedTarget = await waitForFirstRunFilesGenerated(30000, 1000);
+        } else {
+            reachedTarget = await waitForServerStatus(targetOnline, 30000, 1000);
+        }
 
         isTransitioning = false;
         setPowerButtonLoading(false);
@@ -345,6 +353,13 @@ async function toggleServer() {
 
         if (!reachedTarget) {
             alert(targetOnline ? "伺服器啟動逾時，請查看 log。" : "伺服器關閉逾時，請查看 log。");
+        } else if (targetOnline && setupStage === "need_first_run") {
+            await fetch("/api/server/sync-rcon", {
+                method: "POST"
+            });
+
+            alert("伺服器必要檔案已產生，RCON 設定已同步。請同意 Minecraft EULA 後再啟動伺服器。");
+            await checkEulaStatus();
         }
 
     } catch (error) {
@@ -354,6 +369,7 @@ async function toggleServer() {
         updateStatus();
     }
 }
+
 
 function setPowerButtonLoading(isLoading, actionText = "") {
     const powerBtn = document.getElementById("powerBtn");
@@ -1110,19 +1126,30 @@ async function saveAndRestartServer() {
 
 async function checkEulaStatus() {
     try {
-        const response = await fetch("/api/eula/status", { cache: "no-store" });
+        const response = await fetch("/api/server/setup-status", {
+            cache: "no-store"
+        });
+
         const data = await response.json();
 
         if (!data.success) {
-            console.error("讀取 EULA 失敗:", data.message);
+            console.error("讀取 setup-status 失敗");
             return;
         }
 
-        if (data.accepted) {
-            return;
-        }
+        // 只有需要同意 EULA 時才顯示
+        if (data.stage === "need_accept_eula") {
 
-        showEulaModal(data);
+            const eulaRes = await fetch("/api/eula/status", {
+                cache: "no-store"
+            });
+
+            const eulaData = await eulaRes.json();
+
+            if (eulaData.success) {
+                showEulaModal(eulaData);
+            }
+        }
 
     } catch (error) {
         console.error("檢查 EULA 失敗:", error);
@@ -1152,6 +1179,33 @@ function showEulaModal(data) {
 
     modal.classList.remove("hidden");
 }
+
+
+function showServerInitModal() {
+    const modal = document.getElementById("serverInitModal");
+    if (modal) {
+        modal.classList.remove("hidden");
+    }
+}
+
+function hideServerInitModal() {
+    const modal = document.getElementById("serverInitModal");
+    if (modal) {
+        modal.classList.add("hidden");
+    }
+}
+
+function setupServerInitModal() {
+    const btn = document.getElementById("serverInitBtn");
+
+    if (!btn) return;
+
+    btn.addEventListener("click", async () => {
+        hideServerInitModal();
+        await toggleServer();
+    });
+}
+
 
 function setupEulaModal() {
     const acceptBtn = document.getElementById("eulaAcceptBtn");
@@ -1212,29 +1266,107 @@ function setupEulaModal() {
 
 async function ensureEulaAcceptedBeforeStart() {
     try {
-        const response = await fetch("/api/eula/status", { cache: "no-store" });
+        const response = await fetch("/api/server/setup-status", {
+            cache: "no-store"
+        });
+
         const data = await response.json();
 
         if (!data.success) {
-            alert("檢查 EULA 狀態失敗：" + (data.message || "未知錯誤"));
+            alert("檢查伺服器狀態失敗");
             return false;
         }
 
-        if (data.accepted) {
+        if (data.stage === "ready") {
             return true;
         }
 
-        showEulaModal(data);
-        alert("請先同意 Minecraft EULA 後再啟動伺服器。");
+        if (data.stage === "need_first_run") {
+            return true;
+        }
+
+        if (data.stage === "need_accept_eula") {
+            const eulaRes = await fetch("/api/eula/status", {
+                cache: "no-store"
+            });
+
+            const eulaData = await eulaRes.json();
+
+            if (eulaData.success) {
+                showEulaModal(eulaData);
+            }
+
+            alert("請先同意 Minecraft EULA 後再啟動伺服器。");
+            return false;
+        }
+
+        if (data.stage === "missing_server_jar") {
+            alert(data.message);
+            return false;
+        }
+
+        alert(data.message || "目前無法啟動伺服器");
         return false;
 
     } catch (error) {
-        console.error("檢查 EULA 狀態失敗:", error);
-        alert("檢查 EULA 狀態失敗，請查看 console。");
+        console.error("檢查啟動條件失敗:", error);
+        alert("檢查啟動條件失敗");
         return false;
     }
 }
 
+
+async function getServerSetupStatus() {
+    const response = await fetch("/api/server/setup-status", {
+        cache: "no-store"
+    });
+
+    return await response.json();
+}
+
+
+async function waitForFirstRunFilesGenerated(timeoutMs = 30000, intervalMs = 1000) {
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < timeoutMs) {
+        try {
+            const response = await fetch("/api/server/setup-status", {
+                cache: "no-store"
+            });
+
+            const data = await response.json();
+
+            if (
+                data.eula_exists ||
+                data.server_properties_exists ||
+                data.stage === "need_accept_eula"
+            ) {
+                return true;
+            }
+
+        } catch (error) {
+            console.error("等待初次啟動檔案產生時發生錯誤:", error);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, intervalMs));
+    }
+
+    return false;
+}
+
+
+async function checkFirstRunGuide() {
+    try {
+        const data = await getServerSetupStatus();
+
+        if (data.stage === "need_first_run") {
+            showServerInitModal();
+        }
+
+    } catch (error) {
+        console.error(error);
+    }
+}
 
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -1281,5 +1413,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setupServerSettingSearch();
     setupEulaModal();
     checkEulaStatus();
+    setupServerInitModal();
+    checkFirstRunGuide();
     
 });

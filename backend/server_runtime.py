@@ -8,6 +8,7 @@ from pathlib import Path
 from backend.death_record.death_rules import parse_death_message, location_pattern
 from backend.db import insert_player_death
 from backend.paths import SERVER_JAR_PATH, CONFIG_PATH, MC_ROOT
+from backend.server_status import lock_current_server_port
 
 SERVER_ROOT = MC_ROOT
 
@@ -84,6 +85,8 @@ def start_server() -> tuple[bool, str]:
 
     if not SERVER_JAR_PATH.exists():
         return False, f"找不到 server.jar：{SERVER_JAR_PATH}"
+    
+    lock_current_server_port()
 
     command = [
         "java",

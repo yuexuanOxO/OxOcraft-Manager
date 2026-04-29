@@ -7,7 +7,8 @@ let serverSettingsServerOnline = false;
 let serverEvents = null;
 let lastServerStatusRevision = null;
 let pendingServerStatusPayload = null;
-
+let commandHistory = [];
+let commandHistoryIndex = -1;
 
 
 function stopAllPolling() {
@@ -187,6 +188,11 @@ async function sendCommand() {
             return;
         }
 
+        if (commandHistory[commandHistory.length - 1] !== command) {
+            commandHistory.push(command);
+        }
+
+        commandHistoryIndex = commandHistory.length;
         input.value = "";
         scrollLogToBottom();
 
@@ -1424,6 +1430,39 @@ document.addEventListener("DOMContentLoaded", () => {
             if (event.key === "Enter") {
                 event.preventDefault();
                 sendCommand();
+                return;
+            }
+
+            if (event.key === "ArrowUp") {
+                event.preventDefault();
+
+                if (commandHistory.length === 0) return;
+
+                if (commandHistoryIndex > 0) {
+                    commandHistoryIndex--;
+                } else {
+                    commandHistoryIndex = 0;
+                }
+
+                input.value = commandHistory[commandHistoryIndex] || "";
+                input.setSelectionRange(input.value.length, input.value.length);
+                return;
+            }
+
+            if (event.key === "ArrowDown") {
+                event.preventDefault();
+
+                if (commandHistory.length === 0) return;
+
+                if (commandHistoryIndex < commandHistory.length - 1) {
+                    commandHistoryIndex++;
+                    input.value = commandHistory[commandHistoryIndex] || "";
+                } else {
+                    commandHistoryIndex = commandHistory.length;
+                    input.value = "";
+                }
+
+                input.setSelectionRange(input.value.length, input.value.length);
             }
         });
     }

@@ -1,8 +1,6 @@
 let isTransitioning = false;
-let logPollingTimer = null;
 let statusPollingTimer = null;
 let backendDisconnected = false;
-let lastLogText = "";
 let wasServerOnline = false;
 let serverSettingKeyword = "";
 let serverSettingsServerOnline = false;
@@ -11,21 +9,10 @@ let lastServerStatusRevision = null;
 let pendingServerStatusPayload = null;
 
 
-function startLogPolling() {
-    return;
-}
-
-function stopLogPolling() {
-    if (logPollingTimer !== null) {
-        clearInterval(logPollingTimer);
-        logPollingTimer = null;
-    }
-}
 
 function stopAllPolling() {
     if (logPollingTimer !== null) {
         clearInterval(logPollingTimer);
-        logPollingTimer = null;
     }
 
     if (statusPollingTimer !== null) {
@@ -55,57 +42,13 @@ function handleBackendDisconnected() {
     console.error("Flask 後端已失聯，已停止輪詢。");
 }
 
-async function updateLog() {
-    if (!wasServerOnline) {
-        return;
-    }
 
-    try {
-        const response = await fetch("/log", { cache: "no-store" });
-        const data = await response.json();
-
-        const newLogText = data.logs;
-        const logBox = document.getElementById("logBox");
-
-        if (!logBox) return;
-
-        if (newLogText.length < lastLogText.length) {
-            lastLogText = "";
-        }
-
-        if (newLogText !== lastLogText) {
-            const newPart = newLogText.slice(lastLogText.length);
-
-            if (
-                newPart.includes("joined the game") ||
-                newPart.includes("left the game")
-            ) {
-                updatePlayers();
-            }
-
-            lastLogText = newLogText;
-        }
-
-        const wasNearBottom =
-            logBox.scrollTop + logBox.clientHeight >= logBox.scrollHeight - 20;
-
-        logBox.textContent = newLogText;
-
-        if (wasNearBottom) {
-            logBox.scrollTop = logBox.scrollHeight;
-        }
-
-    } catch (error) {
-        console.error("更新 log 失敗:", error);
-        handleBackendDisconnected();
-    }
-}
 
 async function updateStatus() {
     try {
         const response = await fetch("/api/server/query-status", { cache: "no-store" });
         const payload = await response.json();
-        applyServerStatusPayload(payload, true);
+        applyServerStatusPayload(payload);
 
     } catch (error) {
         console.error("更新狀態失敗:", error);
@@ -245,6 +188,7 @@ async function sendCommand() {
         }
 
         input.value = "";
+        scrollLogToBottom();
 
         // 送出指令後稍微等一下，再更新 log / status
         setTimeout(() => {
@@ -259,6 +203,14 @@ async function sendCommand() {
         button.disabled = false;
         input.focus();
     }
+}
+
+
+function scrollLogToBottom() {
+    const logBox = document.getElementById("logBox");
+    if (!logBox) return;
+
+    logBox.scrollTop = logBox.scrollHeight;
 }
 
 
@@ -1401,15 +1353,10 @@ function applyServerStatusPayload(payload) {
     }
 
     if (data.online && !wasServerOnline) {
-        lastLogText = "";
-        // startLogPolling();
         updatePlayers();
     }
 
     if (!data.online && wasServerOnline) {
-        // stopLogPolling();
-        lastLogText = "";
-
         if (logBox) {
             logBox.textContent = "伺服器尚未啟動";
         }
@@ -1489,7 +1436,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setupDeathBook();
 
     // ===== 定時更新 =====
-    statusPollingTimer = setInterval(updateStatus, 2000);
+    statusPollingTimer = setInterval(updateStatus, 10000);
 
 
     // ===== 初始化 =====

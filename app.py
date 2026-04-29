@@ -14,6 +14,7 @@ from backend.routes.player_routes import player_bp
 from backend.routes.server_routes import server_bp
 from backend.routes.server_settings_routes import settings_bp
 from backend.routes.eula_routes import eula_bp
+from backend.server_monitor import start_server_monitor
 
 
 
@@ -43,6 +44,7 @@ if __name__ == "__main__":
         init_rcon_config()
         print("RCON 設定已同步到 server.properties")
         print("請確認 Minecraft server 已重啟，否則新的 RCON 設定不會生效。")
+        start_server_monitor()
         
     except Exception as error:
         print(f"初始化失敗：{error}")

@@ -45,6 +45,10 @@ h1 {
     box-shadow: 0 0 8px #ff4d4f;
 }
 
+.status-light.starting{
+    background: #f7d046;
+    box-shadow: 0 0 10px #f7d046;
+}
 
 
 .panel-header {

@@ -6,6 +6,9 @@ let lastLogText = "";
 let wasServerOnline = false;
 let serverSettingKeyword = "";
 let serverSettingsServerOnline = false;
+let serverEvents = null;
+let lastServerStatusRevision = null;
+let pendingServerStatusPayload = null;
 
 
 function startLogPolling() {
@@ -104,64 +107,102 @@ async function updateLog() {
     }
 }
 
+// async function updateStatus() {
+//     try {
+//         const response = await fetch("/api/server/query-status", { cache: "no-store" });
+//         const data = await response.json();
+
+//         const statusLight = document.getElementById("statusLight");
+//         const statusText = document.getElementById("statusText");
+//         const powerBtn = document.getElementById("powerBtn");
+//         const logBox = document.getElementById("logBox");
+
+//         if (!isTransitioning) {
+//             if (data.state === "ready") {
+
+//                 statusLight.classList.remove("offline", "starting");
+//                 statusLight.classList.add("online");
+//                 statusText.textContent = "在線";
+
+//             } else if (data.state === "starting") {
+
+//                 statusLight.classList.remove("online", "offline");
+//                 statusLight.classList.add("starting");
+//                 statusText.textContent = "啟動中...";
+
+//             } else {
+
+//                 statusLight.classList.remove("online", "starting");
+//                 statusLight.classList.add("offline");
+//                 statusText.textContent = "離線";
+//             }
+
+//             if (powerBtn) {
+//                 if (data.online) {
+//                     powerBtn.classList.remove("offline");
+//                     powerBtn.classList.add("online");
+//                 } else {
+//                     powerBtn.classList.remove("online");
+//                     powerBtn.classList.add("offline");
+//                 }
+//             }
+//         }
+
+//         // server 剛上線
+//         if (data.online && !wasServerOnline) {
+//             lastLogText = "";
+//             startLogPolling();
+//             updateLog();
+//             updatePlayers();
+//         }
+
+//         // server 剛離線
+//         if (!data.online && wasServerOnline) {
+//             stopLogPolling();
+//             lastLogText = "";
+//             if (logBox) {
+//                 logBox.textContent = "伺服器尚未啟動";
+//             }
+
+//             clearPlayersList();
+//         }
+
+//         wasServerOnline = data.online;
+
+//     } catch (error) {
+//         console.error("更新狀態失敗:", error);
+//         handleBackendDisconnected();
+//     }
+// }
 async function updateStatus() {
     try {
-        const response = await fetch("/status", { cache: "no-store" });
-        const data = await response.json();
-
-        const statusLight = document.getElementById("statusLight");
-        const statusText = document.getElementById("statusText");
-        const powerBtn = document.getElementById("powerBtn");
-        const logBox = document.getElementById("logBox");
-
-        if (!isTransitioning) {
-            if (data.online) {
-                statusLight.classList.remove("offline");
-                statusLight.classList.add("online");
-                statusText.textContent = "在線";
-            } else {
-                statusLight.classList.remove("online");
-                statusLight.classList.add("offline");
-                statusText.textContent = "離線";
-            }
-
-            if (powerBtn) {
-                if (data.online) {
-                    powerBtn.classList.remove("offline");
-                    powerBtn.classList.add("online");
-                } else {
-                    powerBtn.classList.remove("online");
-                    powerBtn.classList.add("offline");
-                }
-            }
-        }
-
-        // server 剛上線
-        if (data.online && !wasServerOnline) {
-            lastLogText = "";
-            startLogPolling();
-            updateLog();
-            updatePlayers();
-        }
-
-        // server 剛離線
-        if (!data.online && wasServerOnline) {
-            stopLogPolling();
-            lastLogText = "";
-            if (logBox) {
-                logBox.textContent = "伺服器尚未啟動";
-            }
-
-            clearPlayersList();
-        }
-
-        wasServerOnline = data.online;
+        const response = await fetch("/api/server/query-status", { cache: "no-store" });
+        const payload = await response.json();
+        applyServerStatusPayload(payload, true);
 
     } catch (error) {
         console.error("更新狀態失敗:", error);
         handleBackendDisconnected();
     }
 }
+
+function setupServerEvents() {
+    if (serverEvents !== null) {
+        return;
+    }
+
+    serverEvents = new EventSource("/api/events");
+
+    serverEvents.addEventListener("server_status_changed", (event) => {
+        const payload = JSON.parse(event.data);
+        applyServerStatusPayload(payload);
+    });
+
+    serverEvents.onerror = () => {
+        console.warn("SSE 暫時中斷，瀏覽器將自動重連...");
+    };
+}
+
 
 
 async function updatePlayers() {
@@ -294,8 +335,9 @@ async function toggleServer() {
     }
 
     try {
-        const statusRes = await fetch("/status", { cache: "no-store" });
-        const statusData = await statusRes.json();
+        const statusRes = await fetch("/api/server/query-status", { cache: "no-store" });
+        const statusPayload = await statusRes.json();
+        const statusData = statusPayload.data || statusPayload;
 
         let url = "";
         let targetOnline = false;
@@ -380,6 +422,14 @@ function setPowerButtonLoading(isLoading, actionText = "") {
     if (isLoading) {
         powerBtn.disabled = true;
         powerBtn.classList.add("loading");
+
+        const statusLight = document.getElementById("statusLight");
+
+        if (statusLight) {
+            statusLight.classList.remove("online", "offline");
+            statusLight.classList.add("starting");
+        }
+
         if (actionText) {
             statusText.textContent = actionText;
         }
@@ -389,13 +439,15 @@ function setPowerButtonLoading(isLoading, actionText = "") {
     }
 }
 
-async function waitForServerStatus(targetOnline, timeoutMs = 30000, intervalMs = 1000) {
+async function waitForServerStatus(targetOnline, timeoutMs = 30000, intervalMs = 500) {
     const startTime = Date.now();
 
     while (Date.now() - startTime < timeoutMs) {
         try {
-            const response = await fetch("/status", { cache: "no-store" });
-            const data = await response.json();
+            const response = await fetch("/api/server/query-status", { cache: "no-store" });
+            const payload = await response.json();
+
+            const data = payload.data || payload;
 
             if (data.online === targetOnline) {
                 return true;
@@ -1369,6 +1421,139 @@ async function checkFirstRunGuide() {
 }
 
 
+// function applyServerStatusPayload(payload) {
+//     if (!payload || !payload.data) return;
+
+//     if (payload.revision === lastServerStatusRevision) {
+//         return;
+//     }
+
+//     lastServerStatusRevision = payload.revision;
+
+//     const data = payload.data;
+
+//     const statusLight = document.getElementById("statusLight");
+//     const statusText = document.getElementById("statusText");
+//     const powerBtn = document.getElementById("powerBtn");
+//     const logBox = document.getElementById("logBox");
+
+//     if (!statusLight || !statusText) return;
+
+//     if (!isTransitioning) {
+//         if (data.state === "ready") {
+//             statusLight.classList.remove("offline", "starting");
+//             statusLight.classList.add("online");
+//             statusText.textContent = "在線";
+//         } else if (data.state === "starting") {
+//             statusLight.classList.remove("online", "offline");
+//             statusLight.classList.add("starting");
+//             statusText.textContent = "啟動中...";
+//         } else {
+//             statusLight.classList.remove("online", "starting");
+//             statusLight.classList.add("offline");
+//             statusText.textContent = "離線";
+//         }
+
+//         if (powerBtn) {
+//             if (data.online) {
+//                 powerBtn.classList.remove("offline");
+//                 powerBtn.classList.add("online");
+//             } else {
+//                 powerBtn.classList.remove("online");
+//                 powerBtn.classList.add("offline");
+//             }
+//         }
+//     }
+
+//     if (data.online && !wasServerOnline) {
+//         lastLogText = "";
+//         startLogPolling();
+//         updateLog();
+//         updatePlayers();
+//     }
+
+//     if (!data.online && wasServerOnline) {
+//         stopLogPolling();
+//         lastLogText = "";
+
+//         if (logBox) {
+//             logBox.textContent = "伺服器尚未啟動";
+//         }
+
+//         clearPlayersList();
+//     }
+
+//     wasServerOnline = data.online;
+// }
+function applyServerStatusPayload(payload) {
+    if (!payload || !payload.data) return;
+
+    if (isTransitioning) {
+        pendingServerStatusPayload = payload;
+        return;
+    }
+
+    if (payload.revision === lastServerStatusRevision) {
+        return;
+    }
+
+    lastServerStatusRevision = payload.revision;
+
+    const data = payload.data;
+
+    const statusLight = document.getElementById("statusLight");
+    const statusText = document.getElementById("statusText");
+    const powerBtn = document.getElementById("powerBtn");
+    const logBox = document.getElementById("logBox");
+
+    if (!statusLight || !statusText) return;
+
+    if (data.state === "ready") {
+        statusLight.classList.remove("offline", "starting");
+        statusLight.classList.add("online");
+        statusText.textContent = "在線";
+    } else if (data.state === "starting") {
+        statusLight.classList.remove("online", "offline");
+        statusLight.classList.add("starting");
+        statusText.textContent = "啟動中...";
+    } else {
+        statusLight.classList.remove("online", "starting");
+        statusLight.classList.add("offline");
+        statusText.textContent = "離線";
+    }
+
+    if (powerBtn) {
+        if (data.online) {
+            powerBtn.classList.remove("offline");
+            powerBtn.classList.add("online");
+        } else {
+            powerBtn.classList.remove("online");
+            powerBtn.classList.add("offline");
+        }
+    }
+
+    if (data.online && !wasServerOnline) {
+        lastLogText = "";
+        startLogPolling();
+        updateLog();
+        updatePlayers();
+    }
+
+    if (!data.online && wasServerOnline) {
+        stopLogPolling();
+        lastLogText = "";
+
+        if (logBox) {
+            logBox.textContent = "伺服器尚未啟動";
+        }
+
+        clearPlayersList();
+    }
+
+    wasServerOnline = data.online;
+}
+
+
 document.addEventListener("DOMContentLoaded", () => {
     // ===== 啟動server按鈕 =====
     const powerBtn = document.getElementById("powerBtn");
@@ -1415,5 +1600,6 @@ document.addEventListener("DOMContentLoaded", () => {
     checkEulaStatus();
     setupServerInitModal();
     checkFirstRunGuide();
+    setupServerEvents();
     
 });

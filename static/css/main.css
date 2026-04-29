@@ -993,3 +993,8 @@ h1 {
     font-size: 22px;
     cursor: pointer;
 }
+
+.status-light.disconnected {
+    background-color: #888;
+    box-shadow: 0 0 8px #888;
+}

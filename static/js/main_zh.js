@@ -12,10 +12,6 @@ let commandHistoryIndex = -1;
 
 
 function stopAllPolling() {
-    if (logPollingTimer !== null) {
-        clearInterval(logPollingTimer);
-    }
-
     if (statusPollingTimer !== null) {
         clearInterval(statusPollingTimer);
         statusPollingTimer = null;
@@ -28,8 +24,19 @@ function handleBackendDisconnected() {
     backendDisconnected = true;
     stopAllPolling();
 
+    if (serverEvents) {
+        serverEvents.close();
+        serverEvents = null;
+    }
+
+    const statusLight = document.getElementById("statusLight");
     const statusText = document.getElementById("statusText");
     const powerBtn = document.getElementById("powerBtn");
+
+    if (statusLight) {
+        statusLight.classList.remove("online", "offline", "starting");
+        statusLight.classList.add("disconnected");
+    }
 
     if (statusText) {
         statusText.textContent = "管理介面已中斷";
@@ -70,7 +77,22 @@ function setupServerEvents() {
     });
 
     serverEvents.onerror = () => {
-        console.warn("SSE 暫時中斷，瀏覽器將自動重連...");
+        console.warn("SSE 暫時中斷，檢查後端連線...");
+
+        setTimeout(async () => {
+            try {
+                const response = await fetch("/api/server/query-status", {
+                    cache: "no-store"
+                });
+
+                if (!response.ok) {
+                    throw new Error("後端回應異常");
+                }
+
+            } catch (error) {
+                handleBackendDisconnected();
+            }
+        }, 1500);
     };
 
     serverEvents.addEventListener("log_append", (event) => {

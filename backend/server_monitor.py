@@ -22,6 +22,36 @@ _monitor_thread: Optional[threading.Thread] = None
 _monitor_started = False
 _lock = threading.Lock()
 
+_log_cache: list[str] = []
+LOG_CACHE_MAX_LINES = 500
+
+
+def append_log_line(line: str) -> None:
+    if not line:
+        return
+
+    with _lock:
+        _log_cache.append(line)
+
+        if len(_log_cache) > LOG_CACHE_MAX_LINES:
+            del _log_cache[:-LOG_CACHE_MAX_LINES]
+
+    publish_event("log_append", {
+        "line": line
+    })
+
+
+def get_cached_logs() -> list[str]:
+    with _lock:
+        return list(_log_cache)
+
+
+def clear_log_cache() -> None:
+    with _lock:
+        _log_cache.clear()
+
+    publish_event("log_clear", {})
+
 
 def get_cached_server_status() -> dict:
     with _lock:

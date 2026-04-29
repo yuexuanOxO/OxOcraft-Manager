@@ -23,7 +23,7 @@ app = Flask(__name__)
 
 app.register_blueprint(death_bp)
 app.register_blueprint(page_bp)
-app.register_blueprint(status_bp)
+# app.register_blueprint(status_bp)
 app.register_blueprint(command_bp)
 app.register_blueprint(player_bp)
 app.register_blueprint(server_bp)

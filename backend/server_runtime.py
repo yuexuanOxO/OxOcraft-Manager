@@ -9,6 +9,7 @@ from backend.death_record.death_rules import parse_death_message, location_patte
 from backend.db import insert_player_death
 from backend.paths import SERVER_JAR_PATH, CONFIG_PATH, MC_ROOT
 from backend.server_status import lock_current_server_port
+from backend.server_monitor import append_log_line, clear_log_cache
 
 SERVER_ROOT = MC_ROOT
 
@@ -40,6 +41,7 @@ def handle_server_output() -> None:
     for line in server_process.stdout:
         line = line.strip()
         print(line)
+        append_log_line(line)
 
         death_result = parse_death_message(line)
         if death_result:
@@ -96,6 +98,7 @@ def start_server() -> tuple[bool, str]:
     ]
 
     try:
+        clear_log_cache()
         server_process = subprocess.Popen(
             command,
             cwd=SERVER_ROOT,

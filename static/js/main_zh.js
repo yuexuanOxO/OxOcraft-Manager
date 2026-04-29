@@ -12,13 +12,7 @@ let pendingServerStatusPayload = null;
 
 
 function startLogPolling() {
-    if (logPollingTimer !== null || backendDisconnected) {
-        return;
-    }
-
-    logPollingTimer = setInterval(() => {
-        updateLog();
-    }, 2000);
+    return;
 }
 
 function stopLogPolling() {
@@ -107,73 +101,6 @@ async function updateLog() {
     }
 }
 
-// async function updateStatus() {
-//     try {
-//         const response = await fetch("/api/server/query-status", { cache: "no-store" });
-//         const data = await response.json();
-
-//         const statusLight = document.getElementById("statusLight");
-//         const statusText = document.getElementById("statusText");
-//         const powerBtn = document.getElementById("powerBtn");
-//         const logBox = document.getElementById("logBox");
-
-//         if (!isTransitioning) {
-//             if (data.state === "ready") {
-
-//                 statusLight.classList.remove("offline", "starting");
-//                 statusLight.classList.add("online");
-//                 statusText.textContent = "在線";
-
-//             } else if (data.state === "starting") {
-
-//                 statusLight.classList.remove("online", "offline");
-//                 statusLight.classList.add("starting");
-//                 statusText.textContent = "啟動中...";
-
-//             } else {
-
-//                 statusLight.classList.remove("online", "starting");
-//                 statusLight.classList.add("offline");
-//                 statusText.textContent = "離線";
-//             }
-
-//             if (powerBtn) {
-//                 if (data.online) {
-//                     powerBtn.classList.remove("offline");
-//                     powerBtn.classList.add("online");
-//                 } else {
-//                     powerBtn.classList.remove("online");
-//                     powerBtn.classList.add("offline");
-//                 }
-//             }
-//         }
-
-//         // server 剛上線
-//         if (data.online && !wasServerOnline) {
-//             lastLogText = "";
-//             startLogPolling();
-//             updateLog();
-//             updatePlayers();
-//         }
-
-//         // server 剛離線
-//         if (!data.online && wasServerOnline) {
-//             stopLogPolling();
-//             lastLogText = "";
-//             if (logBox) {
-//                 logBox.textContent = "伺服器尚未啟動";
-//             }
-
-//             clearPlayersList();
-//         }
-
-//         wasServerOnline = data.online;
-
-//     } catch (error) {
-//         console.error("更新狀態失敗:", error);
-//         handleBackendDisconnected();
-//     }
-// }
 async function updateStatus() {
     try {
         const response = await fetch("/api/server/query-status", { cache: "no-store" });
@@ -201,6 +128,15 @@ function setupServerEvents() {
     serverEvents.onerror = () => {
         console.warn("SSE 暫時中斷，瀏覽器將自動重連...");
     };
+
+    serverEvents.addEventListener("log_append", (event) => {
+        const payload = JSON.parse(event.data);
+        appendLogLine(payload.line);
+    });
+
+    serverEvents.addEventListener("log_clear", () => {
+        clearLogBox();
+    });
 }
 
 
@@ -312,7 +248,6 @@ async function sendCommand() {
 
         // 送出指令後稍微等一下，再更新 log / status
         setTimeout(() => {
-            updateLog();
             updateStatus();
         }, 300);
 
@@ -391,7 +326,6 @@ async function toggleServer() {
         setPowerButtonLoading(false);
 
         await updateStatus();
-        await updateLog();
 
         if (!reachedTarget) {
             alert(targetOnline ? "伺服器啟動逾時，請查看 log。" : "伺服器關閉逾時，請查看 log。");
@@ -511,7 +445,6 @@ document.addEventListener("click", async (event) => {
                     return;
                 }
 
-                updateLog();
                 updatePlayers();
             } catch (error) {
                 console.error("玩家操作失敗:", error);
@@ -1149,7 +1082,6 @@ async function saveAndRestartServer() {
         const started = await waitForServerStatus(true, 30000, 1000);
 
         await updateStatus();
-        await updateLog();
 
         if (started) {
             alert("設定已套用，伺服器已重啟。");
@@ -1421,70 +1353,6 @@ async function checkFirstRunGuide() {
 }
 
 
-// function applyServerStatusPayload(payload) {
-//     if (!payload || !payload.data) return;
-
-//     if (payload.revision === lastServerStatusRevision) {
-//         return;
-//     }
-
-//     lastServerStatusRevision = payload.revision;
-
-//     const data = payload.data;
-
-//     const statusLight = document.getElementById("statusLight");
-//     const statusText = document.getElementById("statusText");
-//     const powerBtn = document.getElementById("powerBtn");
-//     const logBox = document.getElementById("logBox");
-
-//     if (!statusLight || !statusText) return;
-
-//     if (!isTransitioning) {
-//         if (data.state === "ready") {
-//             statusLight.classList.remove("offline", "starting");
-//             statusLight.classList.add("online");
-//             statusText.textContent = "在線";
-//         } else if (data.state === "starting") {
-//             statusLight.classList.remove("online", "offline");
-//             statusLight.classList.add("starting");
-//             statusText.textContent = "啟動中...";
-//         } else {
-//             statusLight.classList.remove("online", "starting");
-//             statusLight.classList.add("offline");
-//             statusText.textContent = "離線";
-//         }
-
-//         if (powerBtn) {
-//             if (data.online) {
-//                 powerBtn.classList.remove("offline");
-//                 powerBtn.classList.add("online");
-//             } else {
-//                 powerBtn.classList.remove("online");
-//                 powerBtn.classList.add("offline");
-//             }
-//         }
-//     }
-
-//     if (data.online && !wasServerOnline) {
-//         lastLogText = "";
-//         startLogPolling();
-//         updateLog();
-//         updatePlayers();
-//     }
-
-//     if (!data.online && wasServerOnline) {
-//         stopLogPolling();
-//         lastLogText = "";
-
-//         if (logBox) {
-//             logBox.textContent = "伺服器尚未啟動";
-//         }
-
-//         clearPlayersList();
-//     }
-
-//     wasServerOnline = data.online;
-// }
 function applyServerStatusPayload(payload) {
     if (!payload || !payload.data) return;
 
@@ -1534,13 +1402,12 @@ function applyServerStatusPayload(payload) {
 
     if (data.online && !wasServerOnline) {
         lastLogText = "";
-        startLogPolling();
-        updateLog();
+        // startLogPolling();
         updatePlayers();
     }
 
     if (!data.online && wasServerOnline) {
-        stopLogPolling();
+        // stopLogPolling();
         lastLogText = "";
 
         if (logBox) {
@@ -1551,6 +1418,41 @@ function applyServerStatusPayload(payload) {
     }
 
     wasServerOnline = data.online;
+}
+
+
+function appendLogLine(line) {
+    const logBox = document.getElementById("logBox");
+    if (!logBox) return;
+
+    const wasNearBottom =
+        logBox.scrollTop + logBox.clientHeight >= logBox.scrollHeight - 20;
+
+    if (
+        logBox.textContent === "伺服器尚未啟動" ||
+        logBox.textContent === ""
+    ) {
+        logBox.textContent = line;
+    } else {
+        logBox.textContent += "\n" + line;
+    }
+
+    const lines = logBox.textContent.split("\n");
+    if (lines.length > 500) {
+        logBox.textContent = lines.slice(-500).join("\n");
+    }
+
+    if (wasNearBottom) {
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+}
+
+
+function clearLogBox() {
+    const logBox = document.getElementById("logBox");
+    if (!logBox) return;
+
+    logBox.textContent = "伺服器尚未啟動";
 }
 
 

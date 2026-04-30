@@ -986,8 +986,9 @@ async function updateServerSettingsFooterMode() {
     if (!applyBtn || !restartBtn) return;
 
     try {
-        const response = await fetch("/status", { cache: "no-store" });
-        const data = await response.json();
+        const response = await fetch("/api/server/query-status", { cache: "no-store" });
+        const payload = await response.json();
+        const data = payload.data || payload;
 
         serverSettingsServerOnline = !!data.online;
 

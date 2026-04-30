@@ -21,7 +21,7 @@ def api_eula_status():
             "accepted": info["accepted"],
             "url": info["url"],
             "date": info["date"],
-            "message_zh": "若要繼續使用 Minecraft 伺服器，你必須同意 Minecraft 使用者授權合約（EULA）。同意後，系統會將 eula.txt 中的 eula 設為 true。"
+            "message_zh": "若要繼續使用Minecraft伺服器，你必須同意Minecraft使用者授權合約(EULA)。同意後，系統會將eula.txt中的eula設為true。"
         })
 
     except Exception as error:
@@ -39,7 +39,7 @@ def api_eula_accept():
         if not info["exists"]:
             return jsonify({
                 "success": False,
-                "message": "找不到 eula.txt"
+                "message": "找不到eula.txt"
             }), 404
 
         output_lines = []

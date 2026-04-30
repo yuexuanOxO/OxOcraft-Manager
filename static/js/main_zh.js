@@ -260,6 +260,13 @@ async function toggleServer() {
         let setupStage = "";
 
         if (statusData.online) {
+
+            const ok = confirm("你是否要關閉伺服器？");
+
+            if (!ok) {
+                return;
+            }
+
             url = "/api/server/stop";
             targetOnline = false;
             actionText = "關閉中...";

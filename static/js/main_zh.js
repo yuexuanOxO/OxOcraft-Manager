@@ -103,6 +103,37 @@ function setupServerEvents() {
     serverEvents.addEventListener("log_clear", () => {
         clearLogBox();
     });
+
+    serverEvents.addEventListener("backup_started", (event) => {
+        const data = JSON.parse(event.data);
+        renderBackupProgress(data);
+        setBackupRunning(true);
+    });
+
+    serverEvents.addEventListener("backup_progress", (event) => {
+        const data = JSON.parse(event.data);
+        renderBackupProgress(data);
+    });
+
+    serverEvents.addEventListener("backup_finished", (event) => {
+        const data = JSON.parse(event.data);
+        renderBackupProgress(data);
+        setBackupRunning(false);
+    });
+
+    serverEvents.addEventListener("backup_failed", (event) => {
+        const data = JSON.parse(event.data);
+        renderBackupProgress(data);
+        setBackupRunning(false);
+    });
+
+    serverEvents.addEventListener("backup_canceled", (event) => {
+        const data = JSON.parse(event.data);
+        renderBackupProgress(data);
+        setBackupRunning(false);
+    });
+
+
 }
 
 
@@ -1439,6 +1470,227 @@ function clearLogBox() {
 }
 
 
+function setupBackupModal() {
+    const modal = document.getElementById("backupModal");
+    const openBtn = document.getElementById("backupBtn");
+    const tabs = document.querySelectorAll(".backup-tab");
+    const settingsPage = document.getElementById("backupSettingsPage");
+    const recordsPage = document.getElementById("backupRecordsPage");
+
+    if (!modal || !openBtn) return;
+
+    openBtn.addEventListener("click", async () => {
+        modal.classList.remove("hidden");
+        await loadBackupConfig();
+    });
+
+
+    modal.addEventListener("click", (event) => {
+        if (event.target === modal) {
+            modal.classList.add("hidden");
+        }
+    });
+
+    tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+            tabs.forEach(item => item.classList.remove("active"));
+            tab.classList.add("active");
+
+            const target = tab.dataset.tab;
+
+            if (target === "settings") {
+                settingsPage.classList.remove("hidden");
+                recordsPage.classList.add("hidden");
+            } else {
+                settingsPage.classList.add("hidden");
+                recordsPage.classList.remove("hidden");
+            }
+        });
+    });
+}
+
+function setBackupRunning(isRunning) {
+    const btn = document.getElementById("backupMainActionBtn");
+    if (!btn) return;
+
+    if (isRunning) {
+        btn.textContent = "取消備份";
+        btn.dataset.mode = "cancel";
+    } else {
+        btn.textContent = "立即備份";
+        btn.dataset.mode = "start";
+    }
+}
+
+const choosePathBtn = document.getElementById("backupChoosePathBtn");
+if (choosePathBtn) {
+    choosePathBtn.addEventListener("click", () => {
+        alert("瀏覽器版暫不支援直接開啟資料夾選擇器，第一版可先手動輸入路徑。");
+    });
+}
+
+
+async function startManualBackup() {
+    const sourceInput = document.getElementById("backupSourceRootInput");
+    const backupInput = document.getElementById("backupRootInput");
+
+    const response = await fetch("/api/backup/start", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            source_root: sourceInput ? sourceInput.value.trim() : "",
+            backup_root: backupInput ? backupInput.value.trim() : ""
+        })
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+        alert(data.message || "開始備份失敗");
+        return;
+    }
+
+    setBackupRunning(true);
+}
+
+async function cancelManualBackup() {
+    await fetch("/api/backup/cancel", {
+        method: "POST"
+    });
+}
+
+function setBackupRunning(isRunning) {
+    const btn = document.getElementById("backupMainActionBtn");
+    if (!btn) return;
+
+    if (isRunning) {
+        btn.textContent = "取消備份";
+        btn.dataset.mode = "cancel";
+    } else {
+        btn.textContent = "立即備份";
+        btn.dataset.mode = "start";
+    }
+}
+
+function setupBackupActionButton() {
+    const btn = document.getElementById("backupMainActionBtn");
+    if (!btn) return;
+
+    btn.addEventListener("click", async () => {
+        if (btn.dataset.mode === "cancel") {
+            await cancelManualBackup();
+            return;
+        }
+
+        await startManualBackup();
+    });
+}
+
+
+function renderBackupProgress(data) {
+    const statusText = document.getElementById("backupStatusText");
+    const progressBar = document.getElementById("backupProgressBar");
+    const progressText = document.getElementById("backupProgressText");
+    const currentFile = document.getElementById("backupCurrentFile");
+    const mapName = document.getElementById("backupMapName");
+
+    const percent = data.percent || 0;
+
+    if (statusText) {
+        statusText.textContent = `狀態：${data.message || data.status || "未知"}`;
+    }
+
+    if (progressBar) {
+        progressBar.style.width = `${percent}%`;
+    }
+
+    if (progressText) {
+        progressText.textContent = `${percent}%`;
+    }
+
+    if (currentFile) {
+        currentFile.textContent = `目前檔案：${data.current_file || "無"}`;
+    }
+
+    if (mapName && data.map_name) {
+        mapName.textContent = data.map_name;
+    }
+}
+
+
+async function loadBackupConfig() {
+    try {
+        const response = await fetch("/api/backup/config", {
+            cache: "no-store"
+        });
+
+        const data = await response.json();
+
+        if (!data.success) return;
+
+        const sourceInput = document.getElementById("backupSourceRootInput");
+        const backupInput = document.getElementById("backupRootInput");
+        const mapName = document.getElementById("backupMapName");
+        const sourceText = document.getElementById("backupSourceRootText");
+        const backupText = document.getElementById("backupRootText");
+
+        if (sourceInput && sourceText && !sourceInput.value.trim()) {
+            sourceInput.value = data.source_root || "";
+            sourceText.textContent = data.source_root || "";
+        }
+
+        if (backupInput && backupText && !backupInput.value.trim()) {
+            backupInput.value = data.backup_root || "";
+            backupText.textContent = data.backup_root || "";
+        }
+
+        if (mapName) {
+            mapName.textContent = data.level_name || "world";
+        }
+
+    } catch (error) {
+        console.error("讀取備份設定失敗:", error);
+    }
+}
+
+
+function setupBackupPathEditButtons() {
+    document.querySelectorAll(".backup-path-edit-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const target = btn.dataset.target;
+
+            const textEl = target === "source"
+                ? document.getElementById("backupSourceRootText")
+                : document.getElementById("backupRootText");
+
+            const inputEl = target === "source"
+                ? document.getElementById("backupSourceRootInput")
+                : document.getElementById("backupRootInput");
+
+            if (!textEl || !inputEl) return;
+
+            const isEditing = !inputEl.classList.contains("hidden");
+
+            if (isEditing) {
+                textEl.textContent = inputEl.value.trim();
+                inputEl.classList.add("hidden");
+                textEl.classList.remove("hidden");
+                btn.textContent = "✎";
+            } else {
+                inputEl.value = textEl.textContent.trim();
+                textEl.classList.add("hidden");
+                inputEl.classList.remove("hidden");
+                btn.textContent = "✓";
+                inputEl.focus();
+                inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
+            }
+        });
+    });
+}
+
+
 document.addEventListener("DOMContentLoaded", () => {
     // ===== 啟動server按鈕 =====
     const powerBtn = document.getElementById("powerBtn");
@@ -1519,5 +1771,8 @@ document.addEventListener("DOMContentLoaded", () => {
     setupServerInitModal();
     checkFirstRunGuide();
     setupServerEvents();
+    setupBackupModal();
+    setupBackupActionButton();
+    setupBackupPathEditButtons();
     
 });

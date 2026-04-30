@@ -1,0 +1,64 @@
+<div id="backupModal" class="backup-modal hidden">
+    <div class="backup-panel">
+        <div class="backup-header">
+            <div class="backup-title">備份管理</div>
+        </div>
+
+        <div class="backup-tabs">
+            <button class="backup-tab active" type="button" data-tab="settings">備份設定</button>
+            <button class="backup-tab" type="button" data-tab="records">備份紀錄</button>
+        </div>
+
+        <div id="backupSettingsPage" class="backup-page">
+            <div class="backup-row">
+                <div class="backup-label">Server 根路徑</div>
+
+                <div class="backup-path-wrap" data-path-row="source">
+                    <div id="backupSourceRootText" class="backup-path-text"></div>
+                    <input id="backupSourceRootInput" class="backup-path-input hidden" type="text" value="">
+                    <button class="backup-path-edit-btn" type="button" data-target="source">✎</button>
+                </div>
+            </div>
+
+            <div class="backup-row">
+                <div class="backup-label">備份輸出路徑</div>
+
+                <div class="backup-path-wrap" data-path-row="backup">
+                    <div id="backupRootText" class="backup-path-text"></div>
+                    <input id="backupRootInput" class="backup-path-input hidden" type="text" value="">
+                    <button class="backup-path-edit-btn" type="button" data-target="backup">✎</button>
+                </div>
+            </div>
+
+            <div class="backup-row">
+                <div class="backup-label">目前世界</div>
+                <div id="backupMapName" class="backup-value">讀取中...</div>
+            </div>
+
+            <div class="backup-actions">
+                <button id="backupMainActionBtn" type="button" data-mode="start">立即備份</button>
+            </div>
+
+            <div class="backup-status-box">
+                <div id="backupStatusText">狀態：待機</div>
+
+                <div class="backup-progress-wrap">
+                    <div id="backupProgressBar" class="backup-progress-bar"></div>
+                </div>
+
+                <div id="backupProgressText" class="backup-progress-text">0%</div>
+                <div id="backupCurrentFile" class="backup-current-file">目前檔案：無</div>
+            </div>
+        </div>
+
+        <div id="backupRecordsPage" class="backup-page hidden">
+            <div class="backup-record-actions">
+                <button id="backupRefreshRecordsBtn" type="button">重新整理紀錄</button>
+            </div>
+
+            <div id="backupRecordsList" class="backup-records-list">
+                <div class="backup-empty">目前尚無備份紀錄</div>
+            </div>
+        </div>
+    </div>
+</div>

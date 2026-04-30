@@ -66,6 +66,7 @@
 
     {% include "components/server_settings_modal.html" %}
     {% include "components/death_book_modal.html" %}
+    {% include "components/backup_modal.html" %}
     
 
 
@@ -115,18 +116,18 @@
 
 
                         <div class="feature-item">
-                            <button id="deathRecordBtn" class="feature-btn" type="button">
-                                <img src="{{ url_for('static', filename='icons/feature_button/slime_icon.png') }}" alt="其他功能2">
+                            <button id="backupBtn" class="feature-btn" type="button">
+                                <img src="{{ url_for('static', filename='img/save.png') }}" alt="備份管理">
                             </button>
 
-                            <div class="feature-label">其他功能2</div>
+                            <div class="feature-label">備份管理</div>
 
                             <div class="feature-hover-card">
                                 <div class="feature-title-box">
                                     <div class="feature-title-left"></div>
                                     <div class="feature-title-center"></div>
                                     <div class="feature-title-right"></div>
-                                    <div class="feature-title-text">其他功能2</div>
+                                    <div class="feature-title-text">備份管理</div>
                                 </div>
 
                                 <div class="feature-desc-box">
@@ -135,7 +136,7 @@
                                     <div class="feature-desc-right"></div>
 
                                     <div class="feature-desc-text">
-                                        其他功能2，開發中...。
+                                        手動備份Minecraft世界資料，查看備份進度與備份紀錄。
                                     </div>
                                 </div>
                             </div>

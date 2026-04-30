@@ -15,6 +15,7 @@ from backend.routes.server_routes import server_bp
 from backend.routes.server_settings_routes import settings_bp
 from backend.routes.eula_routes import eula_bp
 from backend.server_monitor import start_server_monitor
+from backend.routes.backup_routes import backup_bp
 
 
 
@@ -23,12 +24,12 @@ app = Flask(__name__)
 
 app.register_blueprint(death_bp)
 app.register_blueprint(page_bp)
-# app.register_blueprint(status_bp)
 app.register_blueprint(command_bp)
 app.register_blueprint(player_bp)
 app.register_blueprint(server_bp)
 app.register_blueprint(settings_bp)
 app.register_blueprint(eula_bp)
+app.register_blueprint(backup_bp)
 
 
 def open_browser():

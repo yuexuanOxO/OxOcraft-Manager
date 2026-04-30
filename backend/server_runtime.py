@@ -7,9 +7,10 @@ from pathlib import Path
 
 from backend.death_record.death_rules import parse_death_message, location_pattern
 from backend.db import insert_player_death
-from backend.paths import SERVER_JAR_PATH, CONFIG_PATH, MC_ROOT
 from backend.server_status import lock_current_server_port
 from backend.server_monitor import append_log_line, clear_log_cache
+from backend.paths import SERVER_JAR_PATH, CONFIG_PATH, MC_ROOT, SERVER_PROPERTIES_PATH
+from backend.server_settings.server_properties import read_properties_file
 
 SERVER_ROOT = MC_ROOT
 
@@ -17,6 +18,9 @@ server_process: subprocess.Popen | None = None
 
 # 暫存等待座標回來的死亡事件
 pending_deaths: dict[str, dict] = {}
+
+CURRENT_LEVEL_NAME: str | None = None
+CURRENT_WORLD_PATH: Path | None = None
 
 
 def is_server_running() -> bool:
@@ -89,6 +93,8 @@ def start_server() -> tuple[bool, str]:
         return False, f"找不到 server.jar：{SERVER_JAR_PATH}"
     
     lock_current_server_port()
+    lock_current_world_path()
+
 
     command = [
         "java",
@@ -138,3 +144,36 @@ def load_runtime_config() -> dict:
 
     with CONFIG_PATH.open("r", encoding="utf-8") as file:
         return json.load(file)
+    
+
+def lock_current_world_path() -> Path:
+    global CURRENT_LEVEL_NAME, CURRENT_WORLD_PATH
+
+    level_name = "world"
+
+    try:
+        if SERVER_PROPERTIES_PATH.exists():
+            props = read_properties_file(SERVER_PROPERTIES_PATH)
+            level_name = props.get("level-name", "world") or "world"
+    except Exception:
+        level_name = "world"
+
+    CURRENT_LEVEL_NAME = level_name
+    CURRENT_WORLD_PATH = MC_ROOT / level_name
+
+    return CURRENT_WORLD_PATH
+
+
+def get_current_world_path() -> Path:
+    if CURRENT_WORLD_PATH is not None:
+        return CURRENT_WORLD_PATH
+
+    return lock_current_world_path()
+
+
+def get_current_level_name() -> str:
+    if CURRENT_LEVEL_NAME is not None:
+        return CURRENT_LEVEL_NAME
+
+    lock_current_world_path()
+    return CURRENT_LEVEL_NAME or "world"

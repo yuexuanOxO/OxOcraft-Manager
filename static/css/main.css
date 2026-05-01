@@ -1214,3 +1214,109 @@ h1 {
     color: #fff;
     font-size: 18px;
 }
+
+
+.backup-record-item{
+    border: 2px solid #444;
+    background: #111;
+    padding: 10px 12px;
+    color: #ddd;
+}
+
+.backup-record-item.success{
+    border-color: #3fa65a;
+}
+
+.backup-record-item.failed{
+    border-color: #cc4444;
+}
+
+.backup-record-item.canceled{
+    border-color: #d6a23a;
+}
+
+.backup-record-main{
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.backup-record-title{
+    color: #fff;
+    font-size: 17px;
+    font-weight: bold;
+}
+
+.backup-record-time{
+    color: #888;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.backup-record-message{
+    color: #ccc;
+    margin-bottom: 4px;
+}
+
+.backup-record-path{
+    color: #65ff65;
+    font-size: 13px;
+    word-break: break-all;
+    margin-bottom: 4px;
+}
+
+.backup-record-meta{
+    color: #888;
+    font-size: 13px;
+}
+
+
+.background-task-bar{
+    position: absolute;
+    top: 8px;
+    left: 400px;
+    display: flex;
+    gap: 10px;
+    z-index: 1000;
+}
+
+.background-task-btn{
+    position: relative;
+    width: 58px;
+    height: 58px;
+    background: #1b1b1b;
+    border: 3px solid #666;
+    cursor: pointer;
+    padding: 0;
+}
+
+.task-icon{
+    width: 34px;
+    height: 34px;
+    image-rendering: pixelated;
+}
+
+.task-progress-ring{
+    position: absolute;
+    inset: 5px;
+    width: 42px;
+    height: 42px;
+    transform: rotate(-90deg);
+    pointer-events: none;
+}
+
+.ring-bg{
+    fill: none;
+    stroke: #333;
+    stroke-width: 4;
+}
+
+.ring-progress{
+    fill: none;
+    stroke: #65ff65;
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-dasharray: 106.8;
+    stroke-dashoffset: 106.8;
+}

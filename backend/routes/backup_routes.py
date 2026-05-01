@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from backend.paths import MC_ROOT
 from backend.server_runtime import get_current_level_name, get_current_world_path
+from backend.db import get_backup_records
 
 from backend.backup_service import (
     start_backup,
@@ -54,4 +55,12 @@ def api_backup_config():
         "backup_root": str(MC_ROOT / "world_backup"),
         "level_name": get_current_level_name(),
         "world_path": str(world_path),
+    })
+
+
+@backup_bp.route("/api/backup/records")
+def api_backup_records():
+    return jsonify({
+        "success": True,
+        "records": get_backup_records(20),
     })

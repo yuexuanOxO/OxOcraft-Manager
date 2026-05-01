@@ -4,10 +4,12 @@ import shutil
 import threading
 import time
 from pathlib import Path
+import zipfile
 
 from backend.paths import MC_ROOT
 from backend.server_monitor import publish_event, get_cached_server_status
 from backend.server_runtime import get_current_world_path, get_current_level_name
+from backend.db import insert_backup_record
 
 _backup_thread = None
 _cancel_requested = False
@@ -58,7 +60,7 @@ def backup_worker(source_root: Path, backup_root: Path) -> None:
     _cancel_requested = False
     _is_running = True
 
-    target_dir = None
+    target_zip = None
 
     try:
         locked_world_path = get_current_world_path()
@@ -83,7 +85,7 @@ def backup_worker(source_root: Path, backup_root: Path) -> None:
         world_backup_root = backup_root / map_name
         world_backup_root.mkdir(parents=True, exist_ok=True)
 
-        target_dir = world_backup_root / f"{map_name}_backup_{timestamp}"
+        target_zip = world_backup_root / f"{map_name}_backup_{timestamp}.zip"
 
         files = [p for p in source_world.rglob("*") if p.is_file()]
         total_files = len(files)
@@ -99,7 +101,7 @@ def backup_worker(source_root: Path, backup_root: Path) -> None:
             "message": "備份中",
             "map_name": map_name,
             "source_path": str(source_world),
-            "backup_path": str(target_dir),
+            "backup_path": str(target_zip),
             "total_files": total_files,
             "copied_files": 0,
             "total_bytes": total_bytes,
@@ -109,44 +111,44 @@ def backup_worker(source_root: Path, backup_root: Path) -> None:
 
         publish_event("backup_started", _backup_status)
 
-        if total_files == 0:
-            target_dir.mkdir(parents=True, exist_ok=True)
 
-        for file in files:
-            if _cancel_requested:
-                if target_dir:
-                    shutil.rmtree(target_dir, ignore_errors=True)
+        with zipfile.ZipFile(target_zip, "w", compression=zipfile.ZIP_DEFLATED) as zipf:
+
+            for file in files:
+
+                if _cancel_requested:
+                    if target_zip.exists():
+                        target_zip.unlink()
+
+                    _backup_status = {
+                        **_backup_status,
+                        "running": False,
+                        "status": "canceled",
+                        "message": "使用者取消備份",
+                    }
+
+                    publish_event("backup_canceled", _backup_status)
+                    save_backup_record_and_publish(_backup_status)
+                    return
+
+                rel_path = file.relative_to(source_world)
+
+                zipf.write(file, arcname=rel_path)
+
+                copied_files += 1
+                copied_bytes += file.stat().st_size
+
+                percent = int((copied_bytes / total_bytes) * 100) if total_bytes > 0 else 100
 
                 _backup_status = {
                     **_backup_status,
-                    "running": False,
-                    "status": "canceled",
-                    "message": "使用者取消備份",
+                    "percent": percent,
+                    "copied_files": copied_files,
+                    "copied_bytes": copied_bytes,
+                    "current_file": str(rel_path),
                 }
 
-                publish_event("backup_canceled", _backup_status)
-                return
-
-            rel_path = file.relative_to(source_world)
-            dest = target_dir / rel_path
-            dest.parent.mkdir(parents=True, exist_ok=True)
-
-            shutil.copy2(file, dest)
-
-            copied_files += 1
-            copied_bytes += file.stat().st_size
-
-            percent = int((copied_bytes / total_bytes) * 100) if total_bytes > 0 else 100
-
-            _backup_status = {
-                **_backup_status,
-                "percent": percent,
-                "copied_files": copied_files,
-                "copied_bytes": copied_bytes,
-                "current_file": str(rel_path),
-            }
-
-            publish_event("backup_progress", _backup_status)
+                publish_event("backup_progress", _backup_status)
 
         _backup_status = {
             **_backup_status,
@@ -157,22 +159,41 @@ def backup_worker(source_root: Path, backup_root: Path) -> None:
         }
 
         publish_event("backup_finished", _backup_status)
+        save_backup_record_and_publish(_backup_status)
 
     except Exception as error:
-        if target_dir:
-            shutil.rmtree(target_dir, ignore_errors=True)
+        if target_zip and target_zip.exists():
+            target_zip.unlink()
 
         _backup_status = {
             "running": False,
             "status": "failed",
             "percent": 0,
             "message": str(error),
-            "source_path": str(source_root),
-            "backup_path": str(backup_root),
+            "map_name": source_world.name if "source_world" in locals() else None,
+            "source_path": str(source_world) if "source_world" in locals() else str(source_root),
+            "backup_path": str(target_zip) if target_zip else str(backup_root),
+            "total_files": total_files if "total_files" in locals() else 0,
+            "total_bytes": total_bytes if "total_bytes" in locals() else 0,
         }
 
         publish_event("backup_failed", _backup_status)
+        save_backup_record_and_publish(_backup_status)
 
     finally:
         _is_running = False
         _cancel_requested = False
+
+
+def save_backup_record_and_publish(status_data: dict) -> None:
+    record = insert_backup_record(
+        status=status_data.get("status"),
+        map_name=status_data.get("map_name"),
+        source_path=status_data.get("source_path"),
+        backup_path=status_data.get("backup_path"),
+        total_files=status_data.get("total_files"),
+        total_bytes=status_data.get("total_bytes"),
+        message=status_data.get("message"),
+    )
+
+    publish_event("backup_record_added", record)

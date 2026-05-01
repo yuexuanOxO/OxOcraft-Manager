@@ -59,6 +59,21 @@ def init_db() -> None:
                 raw_log TEXT
             )
         """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS backup_records (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                status TEXT NOT NULL,
+                map_name TEXT,
+                source_path TEXT,
+                backup_path TEXT,
+                total_files INTEGER DEFAULT 0,
+                total_bytes INTEGER DEFAULT 0,
+                message TEXT
+            )
+        """)
+
         conn.commit()
 
 
@@ -122,6 +137,61 @@ def get_recent_player_deaths(limit: int = 10) -> list[dict]:
             SELECT *
             FROM player_deaths
             ORDER BY death_time DESC, id DESC
+            LIMIT ?
+        """, (limit,)).fetchall()
+
+    return [dict(row) for row in rows]
+
+
+def insert_backup_record(
+    status: str,
+    map_name: str | None,
+    source_path: str | None,
+    backup_path: str | None,
+    total_files: int | None,
+    total_bytes: int | None,
+    message: str | None,
+) -> dict:
+    with get_connection() as conn:
+        cursor = conn.execute("""
+            INSERT INTO backup_records (
+                status,
+                map_name,
+                source_path,
+                backup_path,
+                total_files,
+                total_bytes,
+                message
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            status,
+            map_name,
+            source_path,
+            backup_path,
+            total_files or 0,
+            total_bytes or 0,
+            message,
+        ))
+
+        record_id = cursor.lastrowid
+        conn.commit()
+
+        row = conn.execute("""
+            SELECT *
+            FROM backup_records
+            WHERE id = ?
+        """, (record_id,)).fetchone()
+
+    return dict(row)
+
+
+def get_backup_records(limit: int = 20) -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute("""
+            SELECT *
+            FROM backup_records
+            ORDER BY created_at DESC, id DESC
             LIMIT ?
         """, (limit,)).fetchall()
 

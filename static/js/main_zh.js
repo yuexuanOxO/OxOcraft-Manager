@@ -133,6 +133,11 @@ function setupServerEvents() {
         setBackupRunning(false);
     });
 
+    serverEvents.addEventListener("backup_record_added", (event) => {
+        const record = JSON.parse(event.data);
+        prependBackupRecord(record);
+    });
+
 
 }
 
@@ -1504,6 +1509,7 @@ function setupBackupModal() {
             } else {
                 settingsPage.classList.add("hidden");
                 recordsPage.classList.remove("hidden");
+                loadBackupRecords();
             }
         });
     });
@@ -1531,34 +1537,73 @@ if (choosePathBtn) {
 
 
 async function startManualBackup() {
-    const sourceInput = document.getElementById("backupSourceRootInput");
-    const backupInput = document.getElementById("backupRootInput");
+    const btn = document.getElementById("backupMainActionBtn");
 
-    const response = await fetch("/api/backup/start", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            source_root: sourceInput ? sourceInput.value.trim() : "",
-            backup_root: backupInput ? backupInput.value.trim() : ""
-        })
-    });
-
-    const data = await response.json();
-
-    if (!data.success) {
-        alert(data.message || "開始備份失敗");
-        return;
+    if (btn) {
+        btn.disabled = true;
     }
 
-    setBackupRunning(true);
+    try {
+        const sourceInput = document.getElementById("backupSourceRootInput");
+        const backupInput = document.getElementById("backupRootInput");
+
+        const response = await fetch("/api/backup/start", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                source_root: sourceInput ? sourceInput.value.trim() : "",
+                backup_root: backupInput ? backupInput.value.trim() : ""
+            })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            alert(data.message || "開始備份失敗");
+
+            if (btn) {
+                btn.disabled = false;
+            }
+
+            return;
+        }
+
+        setBackupRunning(true);
+
+        if (btn) {
+            btn.disabled = false;
+        }
+
+    } catch (error) {
+        console.error("開始備份失敗:", error);
+        alert("開始備份失敗，請查看 console。");
+
+        setBackupRunning(false);
+
+        if (btn) {
+            btn.disabled = false;
+        }
+    }
 }
 
 async function cancelManualBackup() {
-    await fetch("/api/backup/cancel", {
-        method: "POST"
-    });
+    const btn = document.getElementById("backupMainActionBtn");
+
+    if (btn) {
+        btn.disabled = true;
+    }
+
+    try {
+        await fetch("/api/backup/cancel", {
+            method: "POST"
+        });
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+        }
+    }
 }
 
 function setBackupRunning(isRunning) {
@@ -1617,6 +1662,40 @@ function renderBackupProgress(data) {
     if (mapName && data.map_name) {
         mapName.textContent = data.map_name;
     }
+
+    if (data.running || data.status === "running") {
+        showBackupTaskButton(percent);
+    } else if (
+        data.status === "success" ||
+        data.status === "failed" ||
+        data.status === "canceled"
+    ) {
+        showBackupTaskButton(100);
+
+        setTimeout(() => {
+            hideBackupTaskButton();
+        }, 3000);
+    }
+}
+
+
+function setupBackgroundTaskButtons() {
+    const backupTaskBtn = document.getElementById("backupTaskBtn");
+    const backupModal = document.getElementById("backupModal");
+
+    if (!backupTaskBtn || !backupModal) return;
+
+    backupTaskBtn.addEventListener("click", async () => {
+        backupModal.classList.remove("hidden");
+        await loadBackupConfig();
+
+        document.querySelectorAll(".backup-tab").forEach(tab => {
+            tab.classList.toggle("active", tab.dataset.tab === "settings");
+        });
+
+        document.getElementById("backupSettingsPage")?.classList.remove("hidden");
+        document.getElementById("backupRecordsPage")?.classList.add("hidden");
+    });
 }
 
 
@@ -1691,6 +1770,122 @@ function setupBackupPathEditButtons() {
 }
 
 
+async function loadBackupRecords() {
+    try {
+        const response = await fetch("/api/backup/records", {
+            cache: "no-store"
+        });
+
+        const data = await response.json();
+
+        if (!data.success) return;
+
+        renderBackupRecords(data.records || []);
+
+    } catch (error) {
+        console.error("讀取備份紀錄失敗:", error);
+    }
+}
+
+function renderBackupRecords(records) {
+    const list = document.getElementById("backupRecordsList");
+    if (!list) return;
+
+    list.innerHTML = "";
+
+    if (!records.length) {
+        list.innerHTML = "<div class='backup-empty'>目前尚無備份紀錄</div>";
+        return;
+    }
+
+    records.forEach(record => {
+        list.appendChild(createBackupRecordItem(record));
+    });
+}
+
+function prependBackupRecord(record) {
+    const list = document.getElementById("backupRecordsList");
+    if (!list) return;
+
+    const empty = list.querySelector(".backup-empty");
+    if (empty) empty.remove();
+
+    list.prepend(createBackupRecordItem(record));
+}
+
+function createBackupRecordItem(record) {
+    const item = document.createElement("div");
+    item.className = `backup-record-item ${record.status || ""}`;
+
+    const statusText = getBackupStatusLabel(record.status);
+    const sizeText = formatBytes(record.total_bytes || 0);
+
+    item.innerHTML = `
+        <div class="backup-record-main">
+            <div class="backup-record-title">
+                ${statusText}｜${record.map_name || "未知世界"}
+            </div>
+            <div class="backup-record-time">
+                ${record.created_at || ""}
+            </div>
+        </div>
+        <div class="backup-record-message">
+            ${record.message || ""}
+        </div>
+        <div class="backup-record-path">
+            ${record.backup_path || ""}
+        </div>
+        <div class="backup-record-meta">
+            檔案數：${record.total_files || 0}　大小：${sizeText}
+        </div>
+    `;
+
+    return item;
+}
+
+function getBackupStatusLabel(status) {
+    if (status === "success") return "成功";
+    if (status === "failed") return "失敗";
+    if (status === "canceled") return "已取消";
+    if (status === "running") return "備份中";
+    return "未知";
+}
+
+function formatBytes(bytes) {
+    if (!bytes) return "0 B";
+
+    const units = ["B", "KB", "MB", "GB", "TB"];
+    let size = Number(bytes);
+    let index = 0;
+
+    while (size >= 1024 && index < units.length - 1) {
+        size /= 1024;
+        index++;
+    }
+
+    return `${size.toFixed(index === 0 ? 0 : 2)} ${units[index]}`;
+}
+
+
+function showBackupTaskButton(percent = 0) {
+    const btn = document.getElementById("backupTaskBtn");
+    const ring = document.getElementById("backupTaskProgressRing");
+
+    if (!btn || !ring) return;
+
+    btn.classList.remove("hidden");
+
+    const circumference = 106.8;
+    const offset = circumference - (circumference * percent / 100);
+    ring.style.strokeDashoffset = offset;
+}
+
+function hideBackupTaskButton() {
+    const btn = document.getElementById("backupTaskBtn");
+    if (btn) btn.classList.add("hidden");
+}
+
+
 document.addEventListener("DOMContentLoaded", () => {
     // ===== 啟動server按鈕 =====
     const powerBtn = document.getElementById("powerBtn");
@@ -1754,7 +1949,12 @@ document.addEventListener("DOMContentLoaded", () => {
         logBox.textContent = "伺服器尚未啟動";
     }
    
-    setupDeathBook();
+    
+
+    const backupRefreshRecordsBtn = document.getElementById("backupRefreshRecordsBtn");
+    if (backupRefreshRecordsBtn) {
+        backupRefreshRecordsBtn.addEventListener("click", loadBackupRecords);
+    }
 
     // ===== 定時更新 =====
     statusPollingTimer = setInterval(updateStatus, 10000);
@@ -1774,5 +1974,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setupBackupModal();
     setupBackupActionButton();
     setupBackupPathEditButtons();
+    setupDeathBook();
+    setupBackgroundTaskButtons();
     
 });

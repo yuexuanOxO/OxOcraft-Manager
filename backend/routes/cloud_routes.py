@@ -1,16 +1,18 @@
-from pathlib import Path
 import json
 import os
 import requests
+import threading
 
 from flask import Blueprint, jsonify, redirect, request, session
-
+from pathlib import Path
+from backend.server_monitor import publish_event
 from google_auth_oauthlib.flow import Flow
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from backend.db import get_latest_success_backup
+
 
 cloud_bp = Blueprint("cloud", __name__)
 
@@ -21,6 +23,7 @@ CLIENT_SECRET_FILE = CREDENTIAL_DIR / "google_credentials.json"
 TOKEN_FILE = CREDENTIAL_DIR / "google_token.json"
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = "1"
+DEFAULT_CLOUD_KEEP_COUNT = 2
 
 SCOPES = [
     "openid",
@@ -94,6 +97,34 @@ def get_or_create_drive_folder(service, folder_name, parent_id=None):
     ).execute()
 
     return folder["id"]
+
+def cleanup_old_cloud_backups(service, folder_id, keep_count=DEFAULT_CLOUD_KEEP_COUNT):
+    if keep_count <= 0:
+        return
+
+    result = service.files().list(
+        q=f"'{folder_id}' in parents and trashed = false",
+        spaces="drive",
+        fields="files(id, name, createdTime)",
+        orderBy="createdTime desc"
+    ).execute()
+
+    files = result.get("files", [])
+
+    old_files = files[keep_count:]
+
+    for file in old_files:
+        file_id = file["id"]
+
+        # 直接永久刪除，不丟垃圾桶
+        service.files().delete(
+            fileId=file_id
+        ).execute()
+
+    if old_files:
+        print(f"雲端舊備份清理完成，刪除 {len(old_files)} 筆")
+
+
 
 
 @cloud_bp.route("/api/cloud/google/login")
@@ -191,60 +222,128 @@ def api_google_disconnect():
     })
 
 
+_cloud_upload_running = False
+
+
 @cloud_bp.route("/api/cloud/google/upload-latest", methods=["POST"])
 def api_google_upload_latest():
-    service = get_drive_service()
+    global _cloud_upload_running
 
-    if not service:
+    if _cloud_upload_running:
         return jsonify({
             "success": False,
-            "message": "尚未連接 Google Drive"
-        }), 400
+            "message": "已有雲端上傳進行中"
+        }), 409
 
-    record = get_latest_success_backup()
-
-    if not record:
-        return jsonify({
-            "success": False,
-            "message": "找不到成功的本機備份紀錄"
-        }), 404
-
-    backup_path = Path(record["backup_path"])
-
-    if not backup_path.exists():
-        return jsonify({
-            "success": False,
-            "message": f"找不到備份檔案：{backup_path}"
-        }), 404
-
-    root_folder_id = get_or_create_drive_folder(service, "OxOcraft-Backup")
-    world_folder_id = get_or_create_drive_folder(
-        service,
-        record.get("map_name") or "unknown_world",
-        parent_id=root_folder_id
-    )
-
-    file_metadata = {
-        "name": backup_path.name,
-        "parents": [world_folder_id]
-    }
-
-    media = MediaFileUpload(
-        str(backup_path),
-        mimetype="application/zip",
-        resumable=False
-    )
-
-    print("開始上傳 Google Drive:", backup_path)
-    uploaded = service.files().create(
-        body=file_metadata,
-        media_body=media,
-        fields="id, name, webViewLink"
-    ).execute()
-    print("Google Drive 上傳完成:", uploaded)
+    thread = threading.Thread(target=cloud_upload_latest_worker, daemon=True)
+    thread.start()
 
     return jsonify({
         "success": True,
-        "message": "上傳成功",
-        "file": uploaded
+        "message": "已開始雲端上傳"
     })
+
+
+def cloud_upload_latest_worker():
+    global _cloud_upload_running
+
+    _cloud_upload_running = True
+
+    try:
+        service = get_drive_service()
+
+        if not service:
+            raise Exception("尚未連接 Google Drive")
+
+        record = get_latest_success_backup()
+
+        if not record:
+            raise Exception("找不到成功的本機備份紀錄")
+
+        backup_path = Path(record["backup_path"])
+
+        if not backup_path.exists():
+            raise FileNotFoundError(f"找不到備份檔案：{backup_path}")
+
+        file_size = backup_path.stat().st_size
+
+        publish_event("cloud_upload_started", {
+            "status": "running",
+            "percent": 0,
+            "message": "雲端上傳中",
+            "file_name": backup_path.name,
+            "file_size": file_size,
+        })
+
+        root_folder_id = get_or_create_drive_folder(service, "OxOcraft-Backup")
+
+        map_name = record.get("map_name") or "unknown_world"
+
+        world_folder_id = get_or_create_drive_folder(
+            service,
+            map_name,
+            parent_id=root_folder_id
+        )
+
+        file_metadata = {
+            "name": backup_path.name,
+            "parents": [world_folder_id]
+        }
+
+        media = MediaFileUpload(
+            str(backup_path),
+            mimetype="application/zip",
+            resumable=True,
+            chunksize=1024 * 1024
+        )
+
+        request_upload = service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields="id, name, webViewLink"
+        )
+
+        response = None
+        last_percent = -1
+
+        while response is None:
+            status, response = request_upload.next_chunk()
+
+            if status:
+                percent = int(status.progress() * 100)
+
+                if percent != last_percent:
+                    last_percent = percent
+
+                    publish_event("cloud_upload_progress", {
+                        "status": "running",
+                        "percent": percent,
+                        "message": "雲端上傳中",
+                        "file_name": backup_path.name,
+                        "file_size": file_size,
+                    })
+
+        cleanup_old_cloud_backups(
+            service,
+            world_folder_id,
+            keep_count=DEFAULT_CLOUD_KEEP_COUNT
+        )
+
+        publish_event("cloud_upload_finished", {
+            "status": "success",
+            "percent": 100,
+            "message": "雲端上傳完成",
+            "file_name": response.get("name"),
+            "file_id": response.get("id"),
+            "webViewLink": response.get("webViewLink"),
+        })
+
+    except Exception as error:
+        publish_event("cloud_upload_failed", {
+            "status": "failed",
+            "percent": 0,
+            "message": str(error),
+        })
+
+    finally:
+        _cloud_upload_running = False

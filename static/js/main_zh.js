@@ -138,6 +138,32 @@ function setupServerEvents() {
         prependBackupRecord(record);
     });
 
+    serverEvents.addEventListener("cloud_upload_started", (event) => {
+        const data = JSON.parse(event.data);
+        renderCloudUploadProgress(data);
+    });
+
+    serverEvents.addEventListener("cloud_upload_progress", (event) => {
+        const data = JSON.parse(event.data);
+        renderCloudUploadProgress(data);
+    });
+
+    serverEvents.addEventListener("cloud_upload_finished", (event) => {
+        const data = JSON.parse(event.data);
+        renderCloudUploadProgress(data);
+
+        const btn = document.getElementById("cloudUploadLatestBtn");
+        if (btn) btn.disabled = false;
+    });
+
+    serverEvents.addEventListener("cloud_upload_failed", (event) => {
+        const data = JSON.parse(event.data);
+        renderCloudUploadProgress(data);
+
+        const btn = document.getElementById("cloudUploadLatestBtn");
+        if (btn) btn.disabled = false;
+    });
+
 
 }
 
@@ -1701,6 +1727,7 @@ function renderBackupProgress(data) {
 function setupBackgroundTaskButtons() {
     const backupTaskBtn = document.getElementById("backupTaskBtn");
     const backupModal = document.getElementById("backupModal");
+    const cloudUploadTaskBtn = document.getElementById("cloudUploadTaskBtn");
 
     if (!backupTaskBtn || !backupModal) return;
 
@@ -1715,6 +1742,24 @@ function setupBackgroundTaskButtons() {
         document.getElementById("backupSettingsPage")?.classList.remove("hidden");
         document.getElementById("backupRecordsPage")?.classList.add("hidden");
     });
+
+    if (cloudUploadTaskBtn && backupModal) {
+        cloudUploadTaskBtn.addEventListener("click", async () => {
+            backupModal.classList.remove("hidden");
+            await loadBackupConfig();
+
+            document.querySelectorAll(".backup-tab").forEach(tab => {
+                tab.classList.toggle("active", tab.dataset.tab === "cloud");
+            });
+
+            document.getElementById("backupSettingsPage")?.classList.add("hidden");
+            document.getElementById("backupRecordsPage")?.classList.add("hidden");
+            document.getElementById("backupCloudPage")?.classList.remove("hidden");
+
+            await loadCloudStatus();
+        });
+    }
+
 }
 
 
@@ -1954,7 +1999,7 @@ async function uploadLatestBackupToGoogleDrive() {
     const btn = document.getElementById("cloudUploadLatestBtn");
 
     if (status) {
-        status.textContent = "正在上傳最新備份...";
+        status.textContent = "準備雲端上傳...";
     }
 
     if (btn) {
@@ -1970,20 +2015,77 @@ async function uploadLatestBackupToGoogleDrive() {
 
         if (!data.success) {
             if (status) status.textContent = data.message || "上傳失敗";
+            if (btn) btn.disabled = false;
             return;
         }
 
         if (status) {
-            status.textContent = `上傳成功：${data.file?.name || ""}`;
+            status.textContent = data.message || "已開始雲端上傳";
         }
 
     } catch (error) {
         console.error("Google Drive 上傳失敗:", error);
         if (status) status.textContent = "上傳失敗，請查看 console。";
-
-    } finally {
         if (btn) btn.disabled = false;
     }
+}
+
+
+function renderCloudUploadProgress(data) {
+    const status = document.getElementById("cloudUploadStatus");
+    const file = document.getElementById("cloudUploadFile");
+    const bar = document.getElementById("cloudUploadProgressBar");
+    const text = document.getElementById("cloudUploadProgressText");
+
+    const percent = data.percent || 0;
+
+    if (status) {
+        status.textContent = data.message || "雲端上傳中";
+    }
+
+    if (file) {
+        file.textContent = `目前檔案：${data.file_name || "無"}`;
+    }
+
+    if (bar) {
+        bar.style.width = `${percent}%`;
+    }
+
+    if (text) {
+        text.textContent = `${percent}%`;
+    }
+
+    if (data.status === "running") {
+        showCloudUploadTaskButton(percent);
+    } else if (
+        data.status === "success" ||
+        data.status === "failed"
+    ) {
+        showCloudUploadTaskButton(100);
+
+        setTimeout(() => {
+            hideCloudUploadTaskButton();
+        }, 3000);
+    }
+}
+
+
+function showCloudUploadTaskButton(percent = 0) {
+    const btn = document.getElementById("cloudUploadTaskBtn");
+    const ring = document.getElementById("cloudUploadTaskProgressRing");
+
+    if (!btn || !ring) return;
+
+    btn.classList.remove("hidden");
+
+    const circumference = 106.8;
+    const offset = circumference - (circumference * percent / 100);
+    ring.style.strokeDashoffset = offset;
+}
+
+function hideCloudUploadTaskButton() {
+    const btn = document.getElementById("cloudUploadTaskBtn");
+    if (btn) btn.classList.add("hidden");
 }
 
 

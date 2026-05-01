@@ -8,7 +8,7 @@ from backend.server_config_sync import init_rcon_config
 
 from backend.routes.death_routes import death_bp
 from backend.routes.page_routes import page_bp
-from backend.routes.status_routes import status_bp
+# from backend.routes.status_routes import status_bp
 from backend.routes.command_routes import command_bp
 from backend.routes.player_routes import player_bp
 from backend.routes.server_routes import server_bp
@@ -16,11 +16,13 @@ from backend.routes.server_settings_routes import settings_bp
 from backend.routes.eula_routes import eula_bp
 from backend.server_monitor import start_server_monitor
 from backend.routes.backup_routes import backup_bp
+from backend.routes.cloud_routes import cloud_bp
 
 
 
 
 app = Flask(__name__)
+app.secret_key = "oxo_google_login_secret"
 
 app.register_blueprint(death_bp)
 app.register_blueprint(page_bp)
@@ -30,6 +32,7 @@ app.register_blueprint(server_bp)
 app.register_blueprint(settings_bp)
 app.register_blueprint(eula_bp)
 app.register_blueprint(backup_bp)
+app.register_blueprint(cloud_bp)
 
 
 def open_browser():

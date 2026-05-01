@@ -196,3 +196,15 @@ def get_backup_records(limit: int = 20) -> list[dict]:
         """, (limit,)).fetchall()
 
     return [dict(row) for row in rows]
+
+def get_latest_success_backup() -> dict | None:
+    with get_connection() as conn:
+        row = conn.execute("""
+            SELECT *
+            FROM backup_records
+            WHERE status = 'success'
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+        """).fetchone()
+
+    return dict(row) if row else None

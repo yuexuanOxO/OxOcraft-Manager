@@ -2,3 +2,5 @@ backend/__pycache__/
 __pycache__/
 venv/
 *.pyc
+backend/credentials/
+*.env

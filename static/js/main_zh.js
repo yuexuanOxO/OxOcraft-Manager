@@ -1498,18 +1498,37 @@ function setupBackupModal() {
 
     tabs.forEach((tab) => {
         tab.addEventListener("click", () => {
+
             tabs.forEach(item => item.classList.remove("active"));
             tab.classList.add("active");
 
             const target = tab.dataset.tab;
 
+            const cloudPage = document.getElementById("backupCloudPage");
+
+            settingsPage.classList.add("hidden");
+            recordsPage.classList.add("hidden");
+
+            if (cloudPage) {
+                cloudPage.classList.add("hidden");
+            }
+
             if (target === "settings") {
+
                 settingsPage.classList.remove("hidden");
-                recordsPage.classList.add("hidden");
-            } else {
-                settingsPage.classList.add("hidden");
+
+            } else if (target === "records") {
+
                 recordsPage.classList.remove("hidden");
                 loadBackupRecords();
+
+            } else if (target === "cloud") {
+
+                if (cloudPage) {
+                    cloudPage.classList.remove("hidden");
+                }
+
+                loadCloudStatus();
             }
         });
     });
@@ -1886,6 +1905,88 @@ function hideBackupTaskButton() {
 }
 
 
+async function loadCloudStatus() {
+    const res = await fetch("/api/cloud/google/status", {
+        cache: "no-store"
+    });
+
+    const data = await res.json();
+
+    const status = document.getElementById("cloudStatusText");
+    const email = document.getElementById("cloudEmailText");
+    const connectBtn = document.getElementById("cloudConnectBtn");
+    const disconnectBtn = document.getElementById("cloudDisconnectBtn");
+
+    if (!status) return;
+
+    if (data.connected) {
+        status.textContent = "Google Drive：已連接";
+        email.textContent = data.email || "";
+
+        connectBtn?.classList.add("hidden");
+        disconnectBtn?.classList.remove("hidden");
+
+    } else {
+        status.textContent = "Google Drive：未連接";
+        email.textContent = "";
+
+        connectBtn?.classList.remove("hidden");
+        disconnectBtn?.classList.add("hidden");
+    }
+}
+
+
+document.getElementById("cloudConnectBtn")?.addEventListener("click", () => {
+    window.location.href = "/api/cloud/google/login";
+});
+
+document.getElementById("cloudDisconnectBtn")?.addEventListener("click", async () => {
+    await fetch("/api/cloud/google/disconnect", {
+        method: "POST"
+    });
+
+    loadCloudStatus();
+});
+
+
+async function uploadLatestBackupToGoogleDrive() {
+    const status = document.getElementById("cloudUploadStatus");
+    const btn = document.getElementById("cloudUploadLatestBtn");
+
+    if (status) {
+        status.textContent = "正在上傳最新備份...";
+    }
+
+    if (btn) {
+        btn.disabled = true;
+    }
+
+    try {
+        const response = await fetch("/api/cloud/google/upload-latest", {
+            method: "POST"
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            if (status) status.textContent = data.message || "上傳失敗";
+            return;
+        }
+
+        if (status) {
+            status.textContent = `上傳成功：${data.file?.name || ""}`;
+        }
+
+    } catch (error) {
+        console.error("Google Drive 上傳失敗:", error);
+        if (status) status.textContent = "上傳失敗，請查看 console。";
+
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+
 document.addEventListener("DOMContentLoaded", () => {
     // ===== 啟動server按鈕 =====
     const powerBtn = document.getElementById("powerBtn");
@@ -1955,6 +2056,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (backupRefreshRecordsBtn) {
         backupRefreshRecordsBtn.addEventListener("click", loadBackupRecords);
     }
+
+
+    document.getElementById("cloudUploadLatestBtn")?.addEventListener("click", uploadLatestBackupToGoogleDrive);
 
     // ===== 定時更新 =====
     statusPollingTimer = setInterval(updateStatus, 10000);

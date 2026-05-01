@@ -7,6 +7,7 @@
         <div class="backup-tabs">
             <button class="backup-tab active" type="button" data-tab="settings">備份設定</button>
             <button class="backup-tab" type="button" data-tab="records">備份紀錄</button>
+            <button class="backup-tab" data-tab="cloud">雲端同步</button>
         </div>
 
         <div id="backupSettingsPage" class="backup-page">
@@ -59,6 +60,21 @@
             <div id="backupRecordsList" class="backup-records-list">
                 <div class="backup-empty">目前尚無備份紀錄</div>
             </div>
+        </div>
+
+        <div id="backupCloudPage" class="backup-page hidden">
+
+            <div class="cloud-box">
+                <div id="cloudStatusText">Google Drive：未連接</div>
+                <div id="cloudEmailText"></div>
+
+                <button id="cloudConnectBtn">連接 Google Drive</button>
+                <button id="cloudDisconnectBtn" class="hidden">解除連結</button>
+
+                <button id="cloudUploadLatestBtn" type="button">立即上傳最新備份</button>
+                <div id="cloudUploadStatus"></div>
+            </div>
+
         </div>
     </div>
 </div>

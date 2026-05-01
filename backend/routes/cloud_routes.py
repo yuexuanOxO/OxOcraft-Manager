@@ -11,7 +11,12 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
-from backend.db import get_latest_success_backup
+from backend.db import (
+    get_latest_success_backup,
+    insert_cloud_backup_record,
+    mark_cloud_backup_deleted,
+    update_backup_record_status,
+)
 
 
 cloud_bp = Blueprint("cloud", __name__)
@@ -116,13 +121,30 @@ def cleanup_old_cloud_backups(service, folder_id, keep_count=DEFAULT_CLOUD_KEEP_
     for file in old_files:
         file_id = file["id"]
 
-        # 直接永久刪除，不丟垃圾桶
         service.files().delete(
             fileId=file_id
         ).execute()
 
+        mark_cloud_backup_deleted(file_id)
+
     if old_files:
         print(f"雲端舊備份清理完成，刪除 {len(old_files)} 筆")
+
+def get_google_account_email(creds) -> str:
+    headers = {
+        "Authorization": f"Bearer {creds.token}"
+    }
+
+    r = requests.get(
+        "https://www.googleapis.com/oauth2/v2/userinfo",
+        headers=headers
+    )
+
+    if r.status_code == 200:
+        user = r.json()
+        return user.get("email", "已連接 Google 帳號")
+
+    return "已連接 Google 帳號"
 
 
 
@@ -248,12 +270,16 @@ def cloud_upload_latest_worker():
     global _cloud_upload_running
 
     _cloud_upload_running = True
+    cloud_record = None
 
     try:
         service = get_drive_service()
 
         if not service:
             raise Exception("尚未連接 Google Drive")
+        
+        creds = load_token()
+        cloud_account = get_google_account_email(creds) if creds else None
 
         record = get_latest_success_backup()
 
@@ -266,6 +292,21 @@ def cloud_upload_latest_worker():
             raise FileNotFoundError(f"找不到備份檔案：{backup_path}")
 
         file_size = backup_path.stat().st_size
+        map_name = record.get("map_name") or "unknown_world"
+
+        cloud_record = insert_cloud_backup_record(
+            status="running",
+            map_name=map_name,
+            local_backup_path=str(backup_path),
+            total_bytes=file_size,
+            message="雲端上傳中",
+            cloud_provider="google_drive",
+            cloud_account=cloud_account,
+            cloud_file_id=None,
+            cloud_link=None,
+        )
+
+        publish_event("backup_record_added", cloud_record)
 
         publish_event("cloud_upload_started", {
             "status": "running",
@@ -329,6 +370,18 @@ def cloud_upload_latest_worker():
             keep_count=DEFAULT_CLOUD_KEEP_COUNT
         )
 
+        if cloud_record:
+            cloud_record = update_backup_record_status(
+                record_id=cloud_record["id"],
+                status="success",
+                message="雲端上傳完成",
+                cloud_file_id=response.get("id"),
+                cloud_link=response.get("webViewLink"),
+                cloud_file_status="active",
+            )
+
+            publish_event("backup_record_updated", cloud_record)
+
         publish_event("cloud_upload_finished", {
             "status": "success",
             "percent": 100,
@@ -336,9 +389,21 @@ def cloud_upload_latest_worker():
             "file_name": response.get("name"),
             "file_id": response.get("id"),
             "webViewLink": response.get("webViewLink"),
+            "cloud_account": cloud_account,
         })
 
+
     except Exception as error:
+        if cloud_record:
+            failed_record = update_backup_record_status(
+                record_id=cloud_record["id"],
+                status="failed",
+                message=f"雲端上傳失敗：{error}",
+                cloud_file_status="deleted",
+            )
+
+            publish_event("backup_record_updated", failed_record)
+
         publish_event("cloud_upload_failed", {
             "status": "failed",
             "percent": 0,

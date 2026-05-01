@@ -124,7 +124,7 @@ def backup_worker(source_root: Path, backup_root: Path) -> None:
                         **_backup_status,
                         "running": False,
                         "status": "canceled",
-                        "message": "使用者取消備份",
+                        "message": "已取消本機備份",
                     }
 
                     publish_event("backup_canceled", _backup_status)
@@ -155,7 +155,7 @@ def backup_worker(source_root: Path, backup_root: Path) -> None:
             "running": False,
             "status": "success",
             "percent": 100,
-            "message": "備份完成",
+            "message": "本機備份完成",
         }
 
         publish_event("backup_finished", _backup_status)
@@ -169,7 +169,7 @@ def backup_worker(source_root: Path, backup_root: Path) -> None:
             "running": False,
             "status": "failed",
             "percent": 0,
-            "message": str(error),
+            "message": f"本機備份失敗：{error}",
             "map_name": source_world.name if "source_world" in locals() else None,
             "source_path": str(source_world) if "source_world" in locals() else str(source_root),
             "backup_path": str(target_zip) if target_zip else str(backup_root),

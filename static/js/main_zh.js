@@ -164,6 +164,11 @@ function setupServerEvents() {
         if (btn) btn.disabled = false;
     });
 
+    serverEvents.addEventListener("backup_record_updated", (event) => {
+        const record = JSON.parse(event.data);
+        updateBackupRecordItem(record);
+    });
+
 
 }
 
@@ -1880,14 +1885,58 @@ function prependBackupRecord(record) {
 function createBackupRecordItem(record) {
     const item = document.createElement("div");
     item.className = `backup-record-item ${record.status || ""}`;
+    item.dataset.recordId = record.id;
 
     const statusText = getBackupStatusLabel(record.status);
     const sizeText = formatBytes(record.total_bytes || 0);
+    const backupType = record.backup_type || "local";
+
+    if (backupType === "cloud") {
+        const providerText = getCloudProviderLabel(record.cloud_provider);
+        const fileName = record.backup_path
+            ? record.backup_path.split(/[\\/]/).pop()
+            : "未知檔案";
+
+        const linkHtml =
+            record.cloud_file_status === "deleted"
+                ? `<span class="cloud-link-deleted">已刪除的雲端備份</span>`
+                : record.cloud_link
+                    ? `<a class="cloud-link-active" href="${record.cloud_link}" target="_blank" rel="noopener noreferrer">開啟雲端備份</a>`
+                    : `<span class="cloud-link-missing">沒有連結</span>`;
+
+        item.innerHTML = `
+            <div class="backup-record-main">
+                <div class="backup-record-title">
+                    ${statusText}｜${providerText}｜${record.map_name || "未知世界"}
+                </div>
+                <div class="backup-record-time">
+                    ${record.created_at || ""}
+                </div>
+            </div>
+            <div class="backup-record-message">
+                ${record.message || ""}
+            </div>
+            <div class="backup-record-meta">
+                帳號：${record.cloud_account || "未知"}
+            </div>
+            <div class="backup-record-meta">
+                檔案：${fileName}
+            </div>
+            <div class="backup-record-meta">
+                大小：${sizeText}
+            </div>
+            <div class="backup-record-path">
+                連結：${linkHtml}
+            </div>
+        `;
+
+        return item;
+    }
 
     item.innerHTML = `
         <div class="backup-record-main">
             <div class="backup-record-title">
-                ${statusText}｜${record.map_name || "未知世界"}
+                ${statusText}｜本機｜${record.map_name || "未知世界"}
             </div>
             <div class="backup-record-time">
                 ${record.created_at || ""}
@@ -1913,6 +1962,11 @@ function getBackupStatusLabel(status) {
     if (status === "canceled") return "已取消";
     if (status === "running") return "備份中";
     return "未知";
+}
+
+function getCloudProviderLabel(provider) {
+    if (provider === "google_drive") return "Google Drive";
+    return provider || "雲端";
 }
 
 function formatBytes(bytes) {
@@ -2086,6 +2140,21 @@ function showCloudUploadTaskButton(percent = 0) {
 function hideCloudUploadTaskButton() {
     const btn = document.getElementById("cloudUploadTaskBtn");
     if (btn) btn.classList.add("hidden");
+}
+
+
+function updateBackupRecordItem(record) {
+    const list = document.getElementById("backupRecordsList");
+    if (!list || !record || !record.id) return;
+
+    const oldItem = list.querySelector(`[data-record-id="${record.id}"]`);
+    const newItem = createBackupRecordItem(record);
+
+    if (oldItem) {
+        oldItem.replaceWith(newItem);
+    } else {
+        list.prepend(newItem);
+    }
 }
 
 

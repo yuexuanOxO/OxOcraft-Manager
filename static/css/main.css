@@ -1320,3 +1320,23 @@ h1 {
     stroke-dasharray: 106.8;
     stroke-dashoffset: 106.8;
 }
+
+
+.cloud-link-active{
+    color: #65ff65;
+    text-decoration: underline;
+}
+
+.cloud-link-active:hover{
+    color: #9cff9c;
+}
+
+.cloud-link-deleted{
+    color: #777;
+    text-decoration: line-through;
+    cursor: default;
+}
+
+.cloud-link-missing{
+    color: #888;
+}

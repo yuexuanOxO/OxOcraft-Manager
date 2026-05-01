@@ -64,13 +64,24 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS backup_records (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
                 status TEXT NOT NULL,
+                backup_type TEXT DEFAULT 'local',
+
                 map_name TEXT,
                 source_path TEXT,
                 backup_path TEXT,
+
                 total_files INTEGER DEFAULT 0,
                 total_bytes INTEGER DEFAULT 0,
-                message TEXT
+
+                message TEXT,
+
+                cloud_provider TEXT,
+                cloud_account TEXT,
+                cloud_file_id TEXT,
+                cloud_link TEXT,
+                cloud_file_status TEXT DEFAULT 'active'
             )
         """)
 
@@ -151,6 +162,12 @@ def insert_backup_record(
     total_files: int | None,
     total_bytes: int | None,
     message: str | None,
+    backup_type: str = "local",
+    cloud_provider: str | None = None,
+    cloud_account: str | None = None,
+    cloud_file_id: str | None = None,
+    cloud_link: str | None = None,
+    cloud_file_status: str = "active",
 ) -> dict:
     with get_connection() as conn:
         cursor = conn.execute("""
@@ -161,9 +178,15 @@ def insert_backup_record(
                 backup_path,
                 total_files,
                 total_bytes,
-                message
+                message,
+                backup_type,
+                cloud_provider,
+                cloud_account,
+                cloud_file_id,
+                cloud_link,
+                cloud_file_status
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             status,
             map_name,
@@ -172,6 +195,12 @@ def insert_backup_record(
             total_files or 0,
             total_bytes or 0,
             message,
+            backup_type,
+            cloud_provider,
+            cloud_account,
+            cloud_file_id,
+            cloud_link,
+            cloud_file_status,
         ))
 
         record_id = cursor.lastrowid
@@ -208,3 +237,106 @@ def get_latest_success_backup() -> dict | None:
         """).fetchone()
 
     return dict(row) if row else None
+
+def insert_cloud_backup_record(
+    status: str,
+    map_name: str | None,
+    local_backup_path: str | None,
+    total_bytes: int | None,
+    message: str | None,
+    cloud_provider: str,
+    cloud_account: str | None,
+    cloud_file_id: str | None,
+    cloud_link: str | None,
+) -> dict:
+    return insert_backup_record(
+        status=status,
+        map_name=map_name,
+        source_path=local_backup_path,
+        backup_path=local_backup_path,
+        total_files=0,
+        total_bytes=total_bytes,
+        message=message,
+        backup_type="cloud",
+        cloud_provider=cloud_provider,
+        cloud_account=cloud_account,
+        cloud_file_id=cloud_file_id,
+        cloud_link=cloud_link,
+        cloud_file_status="active",
+    )
+
+
+def mark_cloud_backup_deleted(cloud_file_id: str) -> None:
+    if not cloud_file_id:
+        return
+
+    with get_connection() as conn:
+        conn.execute("""
+            UPDATE backup_records
+            SET cloud_file_status = 'deleted'
+            WHERE cloud_file_id = ?
+        """, (cloud_file_id,))
+
+        conn.commit()
+
+
+def update_backup_record_status(
+    record_id: int,
+    status: str,
+    message: str | None = None,
+    cloud_file_id: str | None = None,
+    cloud_link: str | None = None,
+    cloud_file_status: str | None = None,
+) -> dict | None:
+    fields = ["status = ?"]
+    values = [status]
+
+    if message is not None:
+        fields.append("message = ?")
+        values.append(message)
+
+    if cloud_file_id is not None:
+        fields.append("cloud_file_id = ?")
+        values.append(cloud_file_id)
+
+    if cloud_link is not None:
+        fields.append("cloud_link = ?")
+        values.append(cloud_link)
+
+    if cloud_file_status is not None:
+        fields.append("cloud_file_status = ?")
+        values.append(cloud_file_status)
+
+    values.append(record_id)
+
+    with get_connection() as conn:
+        conn.execute(f"""
+            UPDATE backup_records
+            SET {", ".join(fields)}
+            WHERE id = ?
+        """, values)
+
+        conn.commit()
+
+        row = conn.execute("""
+            SELECT *
+            FROM backup_records
+            WHERE id = ?
+        """, (record_id,)).fetchone()
+
+    return dict(row) if row else None
+
+
+def mark_interrupted_cloud_uploads_failed() -> None:
+    with get_connection() as conn:
+        conn.execute("""
+            UPDATE backup_records
+            SET
+                status = 'failed',
+                message = '程式中斷，雲端上傳未完成',
+                cloud_file_status = 'deleted'
+            WHERE backup_type = 'cloud'
+              AND status = 'running'
+        """)
+
+        conn.commit()

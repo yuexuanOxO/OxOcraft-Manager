@@ -147,6 +147,160 @@ def get_google_account_email(creds) -> str:
     return "已連接 Google 帳號"
 
 
+def cloud_upload_latest_worker():
+    global _cloud_upload_running, _cloud_upload_cancel_requested
+
+    _cloud_upload_running = True
+    cloud_record = None
+
+    try:
+        service = get_drive_service()
+
+        if not service:
+            raise Exception("尚未連接 Google Drive")
+        
+        creds = load_token()
+        cloud_account = get_google_account_email(creds) if creds else None
+
+        record = get_latest_success_backup()
+
+        if not record:
+            raise Exception("找不到成功的本機備份紀錄")
+
+        backup_path = Path(record["backup_path"])
+
+        if not backup_path.exists():
+            raise FileNotFoundError(f"找不到備份檔案：{backup_path}")
+
+        file_size = backup_path.stat().st_size
+        map_name = record.get("map_name") or "unknown_world"
+
+        cloud_record = insert_cloud_backup_record(
+            status="running",
+            map_name=map_name,
+            local_backup_path=str(backup_path),
+            total_bytes=file_size,
+            message="雲端上傳中",
+            cloud_provider="google_drive",
+            cloud_account=cloud_account,
+            cloud_file_id=None,
+            cloud_link=None,
+        )
+
+        publish_event("backup_record_added", cloud_record)
+
+        publish_event("cloud_upload_started", {
+            "status": "running",
+            "percent": 0,
+            "message": "雲端上傳中",
+            "file_name": backup_path.name,
+            "file_size": file_size,
+        })
+
+        root_folder_id = get_or_create_drive_folder(service, "OxOcraft-Backup")
+
+        map_name = record.get("map_name") or "unknown_world"
+
+        world_folder_id = get_or_create_drive_folder(
+            service,
+            map_name,
+            parent_id=root_folder_id
+        )
+
+        file_metadata = {
+            "name": backup_path.name,
+            "parents": [world_folder_id]
+        }
+
+        media = MediaFileUpload(
+            str(backup_path),
+            mimetype="application/zip",
+            resumable=True,
+            chunksize=1024 * 1024
+        )
+
+        request_upload = service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields="id, name, webViewLink"
+        )
+
+        response = None
+        last_percent = -1
+
+        while response is None:
+            if _cloud_upload_cancel_requested:
+                if cloud_record:
+                    canceled_record = update_backup_record_status(
+                        record_id=cloud_record["id"],
+                        status="canceled",
+                        message="已取消雲端上傳",
+                        cloud_file_status="deleted",
+                    )
+
+                    publish_event("backup_record_updated", canceled_record)
+
+                publish_event("cloud_upload_canceled", {
+                    "status": "canceled",
+                    "percent": last_percent if last_percent >= 0 else 0,
+                    "message": "已取消雲端上傳",
+                    "file_name": backup_path.name,
+                    "file_size": file_size,
+                })
+
+                return
+
+            status, response = request_upload.next_chunk()
+
+        cleanup_old_cloud_backups(
+            service,
+            world_folder_id,
+            keep_count=DEFAULT_CLOUD_KEEP_COUNT
+        )
+
+        if cloud_record:
+            cloud_record = update_backup_record_status(
+                record_id=cloud_record["id"],
+                status="success",
+                message="雲端上傳完成",
+                cloud_file_id=response.get("id"),
+                cloud_link=response.get("webViewLink"),
+                cloud_file_status="active",
+            )
+
+            publish_event("backup_record_updated", cloud_record)
+
+        publish_event("cloud_upload_finished", {
+            "status": "success",
+            "percent": 100,
+            "message": "雲端上傳完成",
+            "file_name": response.get("name"),
+            "file_id": response.get("id"),
+            "webViewLink": response.get("webViewLink"),
+            "cloud_account": cloud_account,
+        })
+
+
+    except Exception as error:
+        if cloud_record:
+            failed_record = update_backup_record_status(
+                record_id=cloud_record["id"],
+                status="failed",
+                message=f"雲端上傳失敗：{error}",
+                cloud_file_status="deleted",
+            )
+
+            publish_event("backup_record_updated", failed_record)
+
+        publish_event("cloud_upload_failed", {
+            "status": "failed",
+            "percent": 0,
+            "message": str(error),
+        })
+
+    finally:
+        _cloud_upload_running = False
+        _cloud_upload_cancel_requested = False
 
 
 @cloud_bp.route("/api/cloud/google/login")
@@ -245,11 +399,12 @@ def api_google_disconnect():
 
 
 _cloud_upload_running = False
+_cloud_upload_cancel_requested = False
 
 
 @cloud_bp.route("/api/cloud/google/upload-latest", methods=["POST"])
 def api_google_upload_latest():
-    global _cloud_upload_running
+    global _cloud_upload_running, _cloud_upload_cancel_requested
 
     if _cloud_upload_running:
         return jsonify({
@@ -265,150 +420,21 @@ def api_google_upload_latest():
         "message": "已開始雲端上傳"
     })
 
+@cloud_bp.route("/api/cloud/google/cancel-upload", methods=["POST"])
+def api_google_cancel_upload():
+    global _cloud_upload_cancel_requested
 
-def cloud_upload_latest_worker():
-    global _cloud_upload_running
+    if not _cloud_upload_running:
+        return jsonify({
+            "success": False,
+            "message": "目前沒有雲端上傳進行中"
+        }), 400
 
-    _cloud_upload_running = True
-    cloud_record = None
+    _cloud_upload_cancel_requested = True
 
-    try:
-        service = get_drive_service()
-
-        if not service:
-            raise Exception("尚未連接 Google Drive")
-        
-        creds = load_token()
-        cloud_account = get_google_account_email(creds) if creds else None
-
-        record = get_latest_success_backup()
-
-        if not record:
-            raise Exception("找不到成功的本機備份紀錄")
-
-        backup_path = Path(record["backup_path"])
-
-        if not backup_path.exists():
-            raise FileNotFoundError(f"找不到備份檔案：{backup_path}")
-
-        file_size = backup_path.stat().st_size
-        map_name = record.get("map_name") or "unknown_world"
-
-        cloud_record = insert_cloud_backup_record(
-            status="running",
-            map_name=map_name,
-            local_backup_path=str(backup_path),
-            total_bytes=file_size,
-            message="雲端上傳中",
-            cloud_provider="google_drive",
-            cloud_account=cloud_account,
-            cloud_file_id=None,
-            cloud_link=None,
-        )
-
-        publish_event("backup_record_added", cloud_record)
-
-        publish_event("cloud_upload_started", {
-            "status": "running",
-            "percent": 0,
-            "message": "雲端上傳中",
-            "file_name": backup_path.name,
-            "file_size": file_size,
-        })
-
-        root_folder_id = get_or_create_drive_folder(service, "OxOcraft-Backup")
-
-        map_name = record.get("map_name") or "unknown_world"
-
-        world_folder_id = get_or_create_drive_folder(
-            service,
-            map_name,
-            parent_id=root_folder_id
-        )
-
-        file_metadata = {
-            "name": backup_path.name,
-            "parents": [world_folder_id]
-        }
-
-        media = MediaFileUpload(
-            str(backup_path),
-            mimetype="application/zip",
-            resumable=True,
-            chunksize=1024 * 1024
-        )
-
-        request_upload = service.files().create(
-            body=file_metadata,
-            media_body=media,
-            fields="id, name, webViewLink"
-        )
-
-        response = None
-        last_percent = -1
-
-        while response is None:
-            status, response = request_upload.next_chunk()
-
-            if status:
-                percent = int(status.progress() * 100)
-
-                if percent != last_percent:
-                    last_percent = percent
-
-                    publish_event("cloud_upload_progress", {
-                        "status": "running",
-                        "percent": percent,
-                        "message": "雲端上傳中",
-                        "file_name": backup_path.name,
-                        "file_size": file_size,
-                    })
-
-        cleanup_old_cloud_backups(
-            service,
-            world_folder_id,
-            keep_count=DEFAULT_CLOUD_KEEP_COUNT
-        )
-
-        if cloud_record:
-            cloud_record = update_backup_record_status(
-                record_id=cloud_record["id"],
-                status="success",
-                message="雲端上傳完成",
-                cloud_file_id=response.get("id"),
-                cloud_link=response.get("webViewLink"),
-                cloud_file_status="active",
-            )
-
-            publish_event("backup_record_updated", cloud_record)
-
-        publish_event("cloud_upload_finished", {
-            "status": "success",
-            "percent": 100,
-            "message": "雲端上傳完成",
-            "file_name": response.get("name"),
-            "file_id": response.get("id"),
-            "webViewLink": response.get("webViewLink"),
-            "cloud_account": cloud_account,
-        })
+    return jsonify({
+        "success": True,
+        "message": "已送出取消雲端上傳請求"
+    })
 
 
-    except Exception as error:
-        if cloud_record:
-            failed_record = update_backup_record_status(
-                record_id=cloud_record["id"],
-                status="failed",
-                message=f"雲端上傳失敗：{error}",
-                cloud_file_status="deleted",
-            )
-
-            publish_event("backup_record_updated", failed_record)
-
-        publish_event("cloud_upload_failed", {
-            "status": "failed",
-            "percent": 0,
-            "message": str(error),
-        })
-
-    finally:
-        _cloud_upload_running = False

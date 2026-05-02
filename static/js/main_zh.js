@@ -145,6 +145,7 @@ function setupServerEvents() {
     serverEvents.addEventListener("cloud_upload_started", (event) => {
         const data = JSON.parse(event.data);
         renderCloudUploadProgress(data);
+        setCloudUploadRunning(true);
     });
 
     serverEvents.addEventListener("cloud_upload_progress", (event) => {
@@ -155,6 +156,7 @@ function setupServerEvents() {
     serverEvents.addEventListener("cloud_upload_finished", (event) => {
         const data = JSON.parse(event.data);
         renderCloudUploadProgress(data);
+        setCloudUploadRunning(false);
 
         const btn = document.getElementById("cloudUploadLatestBtn");
         if (btn) btn.disabled = false;
@@ -163,6 +165,7 @@ function setupServerEvents() {
     serverEvents.addEventListener("cloud_upload_failed", (event) => {
         const data = JSON.parse(event.data);
         renderCloudUploadProgress(data);
+        setCloudUploadRunning(false);
 
         const btn = document.getElementById("cloudUploadLatestBtn");
         if (btn) btn.disabled = false;
@@ -171,6 +174,12 @@ function setupServerEvents() {
     serverEvents.addEventListener("backup_record_updated", (event) => {
         const record = JSON.parse(event.data);
         updateBackupRecordItem(record);
+    });
+
+    serverEvents.addEventListener("cloud_upload_canceled", (event) => {
+        const data = JSON.parse(event.data);
+        renderCloudUploadProgress(data);
+        setCloudUploadRunning(false);
     });
 
 
@@ -2227,6 +2236,11 @@ async function uploadLatestBackupToGoogleDrive() {
     const status = document.getElementById("cloudUploadStatus");
     const btn = document.getElementById("cloudUploadLatestBtn");
 
+    if (btn && btn.dataset.mode === "cancel") {
+        await cancelGoogleDriveUpload();
+        return;
+    }
+
     if (status) {
         status.textContent = "準備雲端上傳...";
     }
@@ -2259,6 +2273,21 @@ async function uploadLatestBackupToGoogleDrive() {
     }
 }
 
+function setCloudUploadRunning(isRunning) {
+    const btn = document.getElementById("cloudUploadLatestBtn");
+    if (!btn) return;
+
+    if (isRunning) {
+        btn.textContent = "取消上傳";
+        btn.dataset.mode = "cancel";
+        btn.disabled = false;
+    } else {
+        btn.textContent = "立即上傳最新備份";
+        btn.dataset.mode = "start";
+        btn.disabled = false;
+    }
+}
+
 
 function renderCloudUploadProgress(data) {
     const status = document.getElementById("cloudUploadStatus");
@@ -2288,7 +2317,8 @@ function renderCloudUploadProgress(data) {
         showCloudUploadTaskButton(percent);
     } else if (
         data.status === "success" ||
-        data.status === "failed"
+        data.status === "failed" ||
+        data.status === "canceled"
     ) {
         showCloudUploadTaskButton(100);
 
@@ -2330,6 +2360,36 @@ function updateBackupRecordItem(record) {
     }
 
     renderFilteredBackupRecords();
+}
+
+async function cancelGoogleDriveUpload() {
+    const status = document.getElementById("cloudUploadStatus");
+    const btn = document.getElementById("cloudUploadLatestBtn");
+
+    if (btn) {
+        btn.disabled = true;
+    }
+
+    try {
+        const response = await fetch("/api/cloud/google/cancel-upload", {
+            method: "POST"
+        });
+
+        const data = await response.json();
+
+        if (status) {
+            status.textContent = data.message || "已送出取消雲端上傳請求";
+        }
+
+    } catch (error) {
+        console.error("取消 Google Drive 上傳失敗:", error);
+        if (status) status.textContent = "取消上傳失敗，請查看 console。";
+
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+        }
+    }
 }
 
 

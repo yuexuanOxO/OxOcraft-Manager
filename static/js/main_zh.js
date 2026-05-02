@@ -11,8 +11,8 @@ let commandHistory = [];
 let commandHistoryIndex = -1;
 let backupRecordsCache = [];
 let backupRecordKeyword = "";
-let backupProviderFilters = new Set(["local", "google_drive"]);
-let backupStatusFilters = new Set(["success", "failed", "running", "canceled"]);
+let backupProviderFilters = new Set();
+let backupStatusFilters = new Set();
 
 
 function stopAllPolling() {
@@ -1692,6 +1692,7 @@ function setupBackupRecordFilters() {
     const searchBtn = document.getElementById("backupRecordSearchBtn");
     const filterBtn = document.getElementById("backupRecordFilterBtn");
     const filterPanel = document.getElementById("backupRecordFilterPanel");
+    const clearBtn = document.getElementById("backupClearFiltersBtn");
 
     function applySearch() {
         backupRecordKeyword = searchInput ? searchInput.value.trim() : "";
@@ -1719,6 +1720,19 @@ function setupBackupRecordFilters() {
         filterBtn.addEventListener("click", (event) => {
             event.stopPropagation();
             filterPanel.classList.toggle("hidden");
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+            backupProviderFilters.clear();
+            backupStatusFilters.clear();
+
+            document.querySelectorAll("[data-filter-provider], [data-filter-status]").forEach((btn) => {
+                btn.classList.remove("active");
+            });
+
+            renderFilteredBackupRecords();
         });
     }
 
@@ -1764,6 +1778,7 @@ function setupBackupRecordFilters() {
             filterPanel.classList.add("hidden");
         }
     });
+
 }
 
 function renderBackupProgress(data) {
@@ -1962,11 +1977,11 @@ function renderFilteredBackupRecords() {
         const providerKey = getBackupProviderKey(record);
         const statusKey = record.status || "unknown";
 
-        if (!backupProviderFilters.has(providerKey)) {
+        if (backupProviderFilters.size > 0 && !backupProviderFilters.has(providerKey)) {
             return false;
         }
 
-        if (!backupStatusFilters.has(statusKey)) {
+        if (backupStatusFilters.size > 0 && !backupStatusFilters.has(statusKey)) {
             return false;
         }
 

@@ -78,13 +78,13 @@
                         <div class="backup-filter-title">來源</div>
 
                         <div class="backup-provider-filter-row">
-                            <button class="backup-filter-chip active" type="button" data-filter-provider="local">
+                            <button class="backup-filter-chip" type="button" data-filter-provider="local">
                                 <img class="backup-provider-img-icon" src="/static/icons/backup/grass_block.ico" alt="本機">
                                 <span>本機</span>
                             </button>
 
-                            <button class="backup-filter-chip active" type="button" data-filter-provider="google_drive">
-                                <span class="backup-provider-text-icon">G</span>
+                            <button class="backup-filter-chip" type="button" data-filter-provider="google_drive">
+                                <img class="backup-provider-img-icon" src="/static/icons/backup/google_drive.ico" alt="Google Drive">
                                 <span>Google Drive</span>
                             </button>
                         </div>
@@ -92,11 +92,19 @@
                         <div class="backup-filter-title">狀態</div>
 
                         <div class="backup-status-filter-row">
-                            <button class="backup-filter-chip active" type="button" data-filter-status="success">成功</button>
-                            <button class="backup-filter-chip active" type="button" data-filter-status="failed">失敗</button>
-                            <button class="backup-filter-chip active" type="button" data-filter-status="running">備份中</button>
-                            <button class="backup-filter-chip active" type="button" data-filter-status="canceled">已取消</button>
+                            <button class="backup-filter-chip" type="button" data-filter-status="success">成功</button>
+                            <button class="backup-filter-chip" type="button" data-filter-status="failed">失敗</button>
+                            <button class="backup-filter-chip" type="button" data-filter-status="running">備份中</button>
+                            <button class="backup-filter-chip" type="button" data-filter-status="canceled">已取消</button>
                         </div>
+
+                        <div class="backup-filter-footer">
+                            <button id="backupClearFiltersBtn" class="backup-clear-filter-btn" type="button" title="清除篩選">
+                                <img src="/static/icons/backup/brush.png" alt="清除篩選">
+                                <span>清除篩選</span>
+                            </button>
+                        </div>
+
                     </div>
                 </div>
             </div>

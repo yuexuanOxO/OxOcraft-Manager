@@ -1499,3 +1499,39 @@ h1 {
 
     image-rendering: auto;
 }
+
+.backup-filter-footer{
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 2px;
+}
+
+.backup-clear-filter-btn{
+    min-height: 34px;
+    padding: 4px 10px;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    background: #151515;
+    border: 2px solid #666;
+    color: #ddd;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.backup-clear-filter-btn:hover{
+    border-color: #aaa;
+    color: #fff;
+    background: #222;
+}
+
+.backup-clear-filter-btn img{
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}

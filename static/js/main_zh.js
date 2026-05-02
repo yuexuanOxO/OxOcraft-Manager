@@ -15,6 +15,15 @@ let backupProviderFilters = new Set();
 let backupStatusFilters = new Set();
 let selectedCloudBackupFolder = "";
 let currentBackupLevelName = "world";
+let currentPlayers = new Set();
+
+let autoBackupState = {
+    enabled: false,
+    frequency: "daily",
+    startAt: "",
+    nextRunAt: "",
+    uploadCloud: false
+};
 
 
 function stopAllPolling() {
@@ -103,7 +112,23 @@ function setupServerEvents() {
 
     serverEvents.addEventListener("log_append", (event) => {
         const payload = JSON.parse(event.data);
-        appendLogLine(payload.line);
+        const line = payload.line || "";
+
+        appendLogLine(line);
+
+        const joinMatch = line.match(/\]:\s*(.+?) joined the game$/);
+        const leftMatch = line.match(/\]:\s*(.+?) left the game$/);
+
+        if (joinMatch) {
+            addPlayerFromLog(joinMatch[1]);
+            setTimeout(updateStatusForce, 3000); // 延後用 Query 校正
+        }
+
+        if (leftMatch) {
+            removePlayerFromLog(leftMatch[1]);
+            setTimeout(updateStatusForce, 3000); // 延後用 Query 校正
+        }
+
     });
 
     serverEvents.addEventListener("log_clear", () => {
@@ -184,78 +209,139 @@ function setupServerEvents() {
         setCloudUploadRunning(false);
     });
 
+    serverEvents.addEventListener("auto_backup_started", (event) => {
+        const data = JSON.parse(event.data);
+
+        isTransitioning = true;
+        setPowerButtonLoading(true, data.message || "自動備份進行中");
+    });
+
+    serverEvents.addEventListener("auto_backup_finished", async (event) => {
+        isTransitioning = false;
+        setPowerButtonLoading(false);
+
+        await updateStatus();
+        await loadAutoBackupConfig();
+    });
+
+    serverEvents.addEventListener("auto_backup_failed", async (event) => {
+        const data = JSON.parse(event.data);
+
+        isTransitioning = false;
+        setPowerButtonLoading(false);
+
+        alert("自動備份失敗：" + (data.message || "未知錯誤"));
+
+        await updateStatus();
+        await loadAutoBackupConfig();
+    });
+
+    serverEvents.addEventListener("auto_backup_config_updated", async () => {
+        await loadAutoBackupConfig();
+    });
+
+    serverEvents.addEventListener("auto_backup_warning", (event) => {
+        const data = JSON.parse(event.data);
+        console.log(data.message || "自動備份公告階段");
+    });
 
 }
 
 
-
-async function updatePlayers() {
+async function updateStatusForce() {
     try {
-        const response = await fetch("/players", { cache: "no-store" });
-        const data = await response.json();
-
-        const playersList = document.getElementById("playersList");
-        if (!playersList) return;
-
-        playersList.innerHTML = "";
-
-        if (!data.success || !data.players || data.players.length === 0) {
-            playersList.innerHTML = "<div class='no-player'>目前沒有玩家在線</div>";
-            return;
-        }
-
-        data.players.forEach(player => {
-            const item = document.createElement("div");
-            item.className = "player-item";
-
-            const left = document.createElement("div");
-            left.className = "player-main";
-
-            const avatar = document.createElement("img");
-            avatar.className = "player-avatar";
-            avatar.src = `https://mc-heads.net/avatar/${player}`;
-            avatar.alt = `${player} avatar`;
-
-            const name = document.createElement("span");
-            name.className = "player-name";
-            name.textContent = player;
-
-            left.appendChild(avatar);
-            left.appendChild(name);
-
-            const menuWrap = document.createElement("div");
-            menuWrap.className = "player-menu-wrap";
-
-            const menuBtn = document.createElement("button");
-            menuBtn.className = "player-menu-btn";
-            menuBtn.type = "button";
-            menuBtn.textContent = "⋮";
-            menuBtn.dataset.player = player;
-
-            const menu = document.createElement("div");
-            menu.className = "player-menu";
-            menu.hidden = true;
-
-            const kickBtn = document.createElement("button");
-            kickBtn.className = "player-menu-item";
-            kickBtn.type = "button";
-            kickBtn.textContent = "踢出伺服器";
-            kickBtn.dataset.action = "kick";
-            kickBtn.dataset.player = player;
-
-            menu.appendChild(kickBtn);
-            menuWrap.appendChild(menuBtn);
-            menuWrap.appendChild(menu);
-
-            item.appendChild(left);
-            item.appendChild(menuWrap);
-            playersList.appendChild(item);
+        const response = await fetch("/api/server/query-status?force=1", {
+            cache: "no-store"
         });
 
+        const payload = await response.json();
+        applyServerStatusPayload(payload);
+
     } catch (error) {
-        console.error("更新玩家列表失敗:", error);
+        console.error("強制更新狀態失敗:", error);
+        handleBackendDisconnected();
     }
 }
+
+function setPlayersFromQuery(players) {
+    currentPlayers = new Set(players || []);
+    renderPlayersFromQuery([...currentPlayers]);
+}
+
+function addPlayerFromLog(playerName) {
+    if (!playerName) return;
+
+    currentPlayers.add(playerName);
+    renderPlayersFromQuery([...currentPlayers]);
+}
+
+function removePlayerFromLog(playerName) {
+    if (!playerName) return;
+
+    currentPlayers.delete(playerName);
+    renderPlayersFromQuery([...currentPlayers]);
+}
+
+function renderPlayersFromQuery(players) {
+    const playersList = document.getElementById("playersList");
+    if (!playersList) return;
+
+    playersList.innerHTML = "";
+
+    if (!players || players.length === 0) {
+        playersList.innerHTML = "<div class='no-player'>目前沒有玩家在線</div>";
+        return;
+    }
+
+    players.forEach(player => {
+        const item = document.createElement("div");
+        item.className = "player-item";
+
+        const left = document.createElement("div");
+        left.className = "player-main";
+
+        const avatar = document.createElement("img");
+        avatar.className = "player-avatar";
+        avatar.src = `https://mc-heads.net/avatar/${player}`;
+        avatar.alt = `${player} avatar`;
+
+        const name = document.createElement("span");
+        name.className = "player-name";
+        name.textContent = player;
+
+        left.appendChild(avatar);
+        left.appendChild(name);
+
+        const menuWrap = document.createElement("div");
+        menuWrap.className = "player-menu-wrap";
+
+        const menuBtn = document.createElement("button");
+        menuBtn.className = "player-menu-btn";
+        menuBtn.type = "button";
+        menuBtn.textContent = "⋮";
+        menuBtn.dataset.player = player;
+
+        const menu = document.createElement("div");
+        menu.className = "player-menu";
+        menu.hidden = true;
+
+        const kickBtn = document.createElement("button");
+        kickBtn.className = "player-menu-item";
+        kickBtn.type = "button";
+        kickBtn.textContent = "踢出伺服器";
+        kickBtn.dataset.action = "kick";
+        kickBtn.dataset.player = player;
+
+        menu.appendChild(kickBtn);
+        menuWrap.appendChild(menuBtn);
+        menuWrap.appendChild(menu);
+
+        item.appendChild(left);
+        item.appendChild(menuWrap);
+        playersList.appendChild(item);
+    });
+}
+
 
 function clearPlayersList() {
     const playersList = document.getElementById("playersList");
@@ -299,11 +385,6 @@ async function sendCommand() {
         commandHistoryIndex = commandHistory.length;
         input.value = "";
         scrollLogToBottom();
-
-        // 送出指令後稍微等一下，再更新 log / status
-        setTimeout(() => {
-            updateStatus();
-        }, 300);
 
     } catch (error) {
         console.error("送出指令失敗:", error);
@@ -514,7 +595,6 @@ document.addEventListener("click", async (event) => {
                     return;
                 }
 
-                updatePlayers();
             } catch (error) {
                 console.error("玩家操作失敗:", error);
                 alert("玩家操作失敗");
@@ -1444,6 +1524,10 @@ function applyServerStatusPayload(payload) {
     const powerBtn = document.getElementById("powerBtn");
     const logBox = document.getElementById("logBox");
 
+    if (data.online) {
+        setPlayersFromQuery(data.players || []);
+    }
+
     if (!statusLight || !statusText) return;
 
     if (data.state === "ready") {
@@ -1468,10 +1552,6 @@ function applyServerStatusPayload(payload) {
             powerBtn.classList.remove("online");
             powerBtn.classList.add("offline");
         }
-    }
-
-    if (data.online && !wasServerOnline) {
-        updatePlayers();
     }
 
     if (!data.online && wasServerOnline) {
@@ -1533,6 +1613,7 @@ function setupBackupModal() {
     openBtn.addEventListener("click", async () => {
         modal.classList.remove("hidden");
         await loadBackupConfig();
+        await loadAutoBackupConfig();
     });
 
 
@@ -2492,6 +2573,134 @@ async function cancelGoogleDriveUpload() {
 }
 
 
+function setBoolButton(btn, value) {
+    if (!btn) return;
+
+    btn.dataset.value = value ? "true" : "false";
+    btn.textContent = value ? "True" : "False";
+
+    btn.classList.toggle("true", value);
+    btn.classList.toggle("false", !value);
+}
+
+function formatAutoBackupTime(value) {
+    if (!value) return "未啟用";
+
+    return value.replace("T", " ");
+}
+
+async function loadAutoBackupConfig() {
+    try {
+        const response = await fetch("/api/backup/auto-config", {
+            cache: "no-store"
+        });
+
+        const data = await response.json();
+
+        if (!data.success) return;
+
+        const config = data.config || {};
+
+        autoBackupState.enabled = !!config.auto_backup_enabled;
+        autoBackupState.frequency = config.auto_backup_frequency || "daily";
+        autoBackupState.startAt = config.auto_backup_start_at || "";
+        autoBackupState.nextRunAt = config.auto_backup_next_run_at || "";
+        autoBackupState.uploadCloud = !!config.auto_backup_upload_cloud;
+
+        const enabledBtn = document.getElementById("autoBackupEnabledBtn");
+        const uploadBtn = document.getElementById("autoBackupUploadCloudBtn");
+        const frequency = document.getElementById("autoBackupFrequency");
+        const startAt = document.getElementById("autoBackupStartAt");
+        const nextText = document.getElementById("autoBackupNextRunText");
+
+        setBoolButton(enabledBtn, autoBackupState.enabled);
+        setBoolButton(uploadBtn, autoBackupState.uploadCloud);
+
+        if (frequency) frequency.value = autoBackupState.frequency;
+        if (startAt) startAt.value = autoBackupState.startAt;
+        if (nextText) nextText.textContent = formatAutoBackupTime(autoBackupState.nextRunAt);
+
+    } catch (error) {
+        console.error("讀取自動備份設定失敗:", error);
+    }
+}
+
+async function saveAutoBackupConfig() {
+    const enabledBtn = document.getElementById("autoBackupEnabledBtn");
+    const uploadBtn = document.getElementById("autoBackupUploadCloudBtn");
+    const frequency = document.getElementById("autoBackupFrequency");
+    const startAt = document.getElementById("autoBackupStartAt");
+
+    const enabled = enabledBtn?.dataset.value === "true";
+    const uploadCloud = uploadBtn?.dataset.value === "true";
+
+    if (enabled && !startAt?.value) {
+        alert("請先選擇自動備份開始時間。");
+        return;
+    }
+
+    try {
+        const response = await fetch("/api/backup/auto-config", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                auto_backup_enabled: enabled,
+                auto_backup_frequency: frequency ? frequency.value : "daily",
+                auto_backup_start_at: startAt ? startAt.value : "",
+                auto_backup_upload_cloud: uploadCloud
+            })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            alert(data.message || "儲存自動備份設定失敗");
+            return;
+        }
+
+        alert(data.message || "自動備份設定已儲存");
+        await loadAutoBackupConfig();
+
+    } catch (error) {
+        console.error("儲存自動備份設定失敗:", error);
+        alert("儲存自動備份設定失敗，請查看 console。");
+    }
+}
+
+function setupAutoBackupSettings() {
+    const enabledBtn = document.getElementById("autoBackupEnabledBtn");
+    const uploadBtn = document.getElementById("autoBackupUploadCloudBtn");
+    const saveBtn = document.getElementById("autoBackupSaveBtn");
+
+    if (enabledBtn) {
+        enabledBtn.addEventListener("click", () => {
+            const nextValue = enabledBtn.dataset.value !== "true";
+            setBoolButton(enabledBtn, nextValue);
+
+            if (nextValue) {
+                alert(
+                    "若要自動備份，請確保 OxOcraft-Manager 在預定備份時間是執行中的。\n\n" +
+                    "若預定時間未執行，系統會在下次啟動時詢問是否補做該次備份。"
+                );
+            }
+        });
+    }
+
+    if (uploadBtn) {
+        uploadBtn.addEventListener("click", () => {
+            const nextValue = uploadBtn.dataset.value !== "true";
+            setBoolButton(uploadBtn, nextValue);
+        });
+    }
+
+    if (saveBtn) {
+        saveBtn.addEventListener("click", saveAutoBackupConfig);
+    }
+}
+
+
 document.addEventListener("DOMContentLoaded", () => {
     // ===== 啟動server按鈕 =====
     const powerBtn = document.getElementById("powerBtn");
@@ -2570,7 +2779,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // ===== 初始化 =====
-    updatePlayers();
     updateStatus();
     setupGlobalFeatureCard();
     setupServerSettingsModal();
@@ -2587,5 +2795,6 @@ document.addEventListener("DOMContentLoaded", () => {
     setupDeathBook();
     setupBackgroundTaskButtons();
     setupBackupRecordFilters();
+    setupAutoBackupSettings();
     
 });

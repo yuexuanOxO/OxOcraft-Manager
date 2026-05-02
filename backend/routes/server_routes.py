@@ -2,8 +2,10 @@ import queue
 from backend.server_runtime import start_server, stop_server
 from backend.server_setup import get_server_setup_status
 from backend.server_status import get_server_query_status
-from flask import Blueprint, jsonify, Response
+
+from flask import Blueprint, jsonify, Response, request
 from backend.server_monitor import (
+    refresh_server_status_now,
     get_cached_server_status,
     subscribe_events,
     unsubscribe_events,
@@ -42,7 +44,13 @@ def api_server_stop():
 
 @server_bp.route("/api/server/query-status")
 def api_server_query_status():
-    response = jsonify(get_cached_server_status())
+    force = request.args.get("force") == "1"
+
+    if force:
+        response = jsonify(refresh_server_status_now())
+    else:
+        response = jsonify(get_cached_server_status())
+
     response.headers["Cache-Control"] = "no-store"
     return response
 

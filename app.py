@@ -16,6 +16,7 @@ from backend.routes.eula_routes import eula_bp
 from backend.server_monitor import start_server_monitor
 from backend.routes.backup_routes import backup_bp
 from backend.routes.cloud_routes import cloud_bp
+from backend.auto_backup_service import start_auto_backup_scheduler
 
 
 
@@ -49,6 +50,7 @@ if __name__ == "__main__":
         print("RCON 設定已同步到 server.properties")
         print("請確認 Minecraft server 已重啟，否則新的 RCON 設定不會生效。")
         start_server_monitor()
+        start_auto_backup_scheduler()
         
     except Exception as error:
         print(f"初始化失敗：{error}")

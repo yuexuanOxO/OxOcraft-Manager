@@ -3,5 +3,10 @@
     "rcon_port": 25575,
     "rcon_password": "OxO123456",
     "java_xms": "2G",
-    "java_xmx": "3G"
+    "java_xmx": "3G",
+    "auto_backup_enabled": true,
+    "auto_backup_frequency": "daily",
+    "auto_backup_start_at": "2026-05-02T19:22",
+    "auto_backup_next_run_at": "2026-05-03T19:22",
+    "auto_backup_upload_cloud": true
 }

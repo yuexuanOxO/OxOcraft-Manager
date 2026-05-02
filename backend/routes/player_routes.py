@@ -1,25 +1,11 @@
 from flask import Blueprint, jsonify, request
 
-from backend.rcon_service import get_online_players, send_rcon_command
+from backend.rcon_service import send_rcon_command
 
 
 player_bp = Blueprint("player", __name__)
 
 
-@player_bp.route("/players")
-def get_players():
-    try:
-        players = get_online_players()
-        return jsonify({
-            "success": True,
-            "players": players
-        })
-    except Exception as error:
-        return jsonify({
-            "success": False,
-            "players": [],
-            "message": str(error)
-        })
 
 
 @player_bp.route("/api/player/action", methods=["POST"])

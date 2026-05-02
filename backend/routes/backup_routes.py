@@ -4,6 +4,10 @@ from backend.server_runtime import get_current_level_name, get_current_world_pat
 from backend.db import get_backup_records
 import tkinter as tk
 from tkinter import filedialog
+import json
+from datetime import datetime, timedelta
+from calendar import monthrange
+from pathlib import Path
 
 from backend.backup_service import (
     start_backup,
@@ -11,7 +15,71 @@ from backend.backup_service import (
     get_backup_status,
 )
 
+CONFIG_PATH = Path("static/data/config.json")
+
 backup_bp = Blueprint("backup", __name__)
+
+def load_app_config() -> dict:
+    if not CONFIG_PATH.exists():
+        return {}
+
+    return json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+
+
+def save_app_config(config: dict) -> None:
+    CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    CONFIG_PATH.write_text(
+        json.dumps(config, ensure_ascii=False, indent=4),
+        encoding="utf-8"
+    )
+
+
+def add_month_safe(dt: datetime) -> datetime:
+    year = dt.year
+    month = dt.month + 1
+
+    if month > 12:
+        year += 1
+        month = 1
+
+    last_day = monthrange(year, month)[1]
+    day = min(dt.day, last_day)
+
+    return dt.replace(year=year, month=month, day=day)
+
+
+def add_year_safe(dt: datetime) -> datetime:
+    year = dt.year + 1
+    month = dt.month
+
+    last_day = monthrange(year, month)[1]
+    day = min(dt.day, last_day)
+
+    return dt.replace(year=year, day=day)
+
+
+def calculate_next_auto_backup(start_at_text: str, frequency: str) -> str:
+    if not start_at_text:
+        return ""
+
+    start_at = datetime.fromisoformat(start_at_text)
+    now = datetime.now()
+
+    next_run = start_at
+
+    while next_run <= now:
+        if frequency == "daily":
+            next_run = next_run.replace(day=next_run.day) + timedelta(days=1)
+        elif frequency == "weekly":
+            next_run = next_run + timedelta(days=7)
+        elif frequency == "monthly":
+            next_run = add_month_safe(next_run)
+        elif frequency == "yearly":
+            next_run = add_year_safe(next_run)
+        else:
+            next_run = next_run + timedelta(days=1)
+
+    return next_run.strftime("%Y-%m-%dT%H:%M")
 
 
 @backup_bp.route("/api/backup/start", methods=["POST"])
@@ -82,4 +150,53 @@ def api_backup_select_folder():
     return jsonify({
         "success": True,
         "path": folder_path or ""
+    })
+
+@backup_bp.route("/api/backup/auto-config")
+def api_backup_auto_config():
+    config = load_app_config()
+
+    return jsonify({
+        "success": True,
+        "config": {
+            "auto_backup_enabled": config.get("auto_backup_enabled", False),
+            "auto_backup_frequency": config.get("auto_backup_frequency", "daily"),
+            "auto_backup_start_at": config.get("auto_backup_start_at", ""),
+            "auto_backup_next_run_at": config.get("auto_backup_next_run_at", ""),
+            "auto_backup_upload_cloud": config.get("auto_backup_upload_cloud", False),
+        }
+    })
+
+
+@backup_bp.route("/api/backup/auto-config", methods=["POST"])
+def api_backup_auto_config_save():
+    data = request.get_json(silent=True) or {}
+
+    config = load_app_config()
+
+    enabled = bool(data.get("auto_backup_enabled"))
+    frequency = data.get("auto_backup_frequency") or "daily"
+    start_at = data.get("auto_backup_start_at") or ""
+    upload_cloud = bool(data.get("auto_backup_upload_cloud"))
+
+    next_run_at = calculate_next_auto_backup(start_at, frequency) if enabled else ""
+
+    config["auto_backup_enabled"] = enabled
+    config["auto_backup_frequency"] = frequency
+    config["auto_backup_start_at"] = start_at
+    config["auto_backup_next_run_at"] = next_run_at
+    config["auto_backup_upload_cloud"] = upload_cloud
+
+    save_app_config(config)
+
+    return jsonify({
+        "success": True,
+        "message": "自動備份設定已儲存",
+        "config": {
+            "auto_backup_enabled": enabled,
+            "auto_backup_frequency": frequency,
+            "auto_backup_start_at": start_at,
+            "auto_backup_next_run_at": next_run_at,
+            "auto_backup_upload_cloud": upload_cloud,
+        }
     })

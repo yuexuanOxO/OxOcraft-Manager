@@ -74,7 +74,9 @@ def backup_worker(source_root: Path, backup_root: Path) -> None:
         map_name = source_world.name
 
         if not source_world.exists():
-            raise FileNotFoundError(f"找不到世界資料夾：{source_world}")
+            raise FileNotFoundError(
+                f"找不到世界 {level_name}\n請確認 Server 根路徑是否正確"
+            )
 
         if not source_world.is_dir():
             raise NotADirectoryError(f"來源不是資料夾：{source_world}")
@@ -169,7 +171,7 @@ def backup_worker(source_root: Path, backup_root: Path) -> None:
             "running": False,
             "status": "failed",
             "percent": 0,
-            "message": f"本機備份失敗：{error}",
+            "message": f"{error}",
             "map_name": source_world.name if "source_world" in locals() else None,
             "source_path": str(source_world) if "source_world" in locals() else str(source_root),
             "backup_path": str(target_zip) if target_zip else str(backup_root),

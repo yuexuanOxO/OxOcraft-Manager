@@ -1624,7 +1624,6 @@ async function startManualBackup() {
             return;
         }
 
-        setBackupRunning(true);
 
         if (btn) {
             btn.disabled = false;
@@ -1903,7 +1902,7 @@ async function loadBackupConfig() {
 
 function setupBackupPathEditButtons() {
     document.querySelectorAll(".backup-path-edit-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
+        btn.addEventListener("click", async () => {
             const target = btn.dataset.target;
 
             const textEl = target === "source"
@@ -1916,20 +1915,32 @@ function setupBackupPathEditButtons() {
 
             if (!textEl || !inputEl) return;
 
-            const isEditing = !inputEl.classList.contains("hidden");
+            btn.disabled = true;
 
-            if (isEditing) {
-                textEl.textContent = inputEl.value.trim();
-                inputEl.classList.add("hidden");
-                textEl.classList.remove("hidden");
-                btn.textContent = "✎";
-            } else {
-                inputEl.value = textEl.textContent.trim();
-                textEl.classList.add("hidden");
-                inputEl.classList.remove("hidden");
-                btn.textContent = "✓";
-                inputEl.focus();
-                inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
+            try {
+                const response = await fetch("/api/backup/select-folder", {
+                    method: "POST"
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    alert(data.message || "選擇資料夾失敗");
+                    return;
+                }
+
+                if (!data.path) {
+                    return;
+                }
+
+                inputEl.value = data.path;
+                textEl.textContent = data.path;
+
+            } catch (error) {
+                console.error("選擇資料夾失敗:", error);
+                alert("選擇資料夾失敗，請查看 console。");
+            } finally {
+                btn.disabled = false;
             }
         });
     });

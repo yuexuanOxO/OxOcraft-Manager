@@ -147,7 +147,30 @@ def get_google_account_email(creds) -> str:
     return "已連接 Google 帳號"
 
 
-def cloud_upload_latest_worker():
+def get_latest_zip_from_folder(folder_path: str) -> tuple[Path, str]:
+    folder = Path(folder_path).expanduser()
+
+    if not folder.exists():
+        raise FileNotFoundError(f"找不到備份資料夾：{folder}")
+
+    if not folder.is_dir():
+        raise NotADirectoryError(f"指定路徑不是資料夾：{folder}")
+
+    zip_files = [
+        path for path in folder.glob("*.zip")
+        if path.is_file()
+    ]
+
+    if not zip_files:
+        raise FileNotFoundError(f"資料夾內找不到 zip 備份檔：{folder}")
+
+    latest_zip = max(zip_files, key=lambda path: path.stat().st_mtime)
+    map_name = folder.name
+
+    return latest_zip, map_name
+
+
+def cloud_upload_latest_worker(backup_folder: str = ""):
     global _cloud_upload_running, _cloud_upload_cancel_requested
 
     _cloud_upload_running = True
@@ -162,18 +185,22 @@ def cloud_upload_latest_worker():
         creds = load_token()
         cloud_account = get_google_account_email(creds) if creds else None
 
-        record = get_latest_success_backup()
+        if backup_folder:
+            backup_path, map_name = get_latest_zip_from_folder(backup_folder)
+        else:
+            record = get_latest_success_backup()
 
-        if not record:
-            raise Exception("找不到成功的本機備份紀錄")
+            if not record:
+                raise Exception("找不到成功的本機備份紀錄")
 
-        backup_path = Path(record["backup_path"])
+            backup_path = Path(record["backup_path"])
 
-        if not backup_path.exists():
-            raise FileNotFoundError(f"找不到備份檔案：{backup_path}")
+            if not backup_path.exists():
+                raise FileNotFoundError(f"找不到備份檔案：{backup_path}")
+
+            map_name = record.get("map_name") or backup_path.parent.name or "unknown_world"
 
         file_size = backup_path.stat().st_size
-        map_name = record.get("map_name") or "unknown_world"
 
         cloud_record = insert_cloud_backup_record(
             status="running",
@@ -198,8 +225,6 @@ def cloud_upload_latest_worker():
         })
 
         root_folder_id = get_or_create_drive_folder(service, "OxOcraft-Backup")
-
-        map_name = record.get("map_name") or "unknown_world"
 
         world_folder_id = get_or_create_drive_folder(
             service,
@@ -377,14 +402,17 @@ def api_google_status():
     )
 
     email = "已連接 Google 帳號"
+    picture = ""
 
     if r.status_code == 200:
         user = r.json()
         email = user.get("email", email)
+        picture = user.get("picture", "")
 
     return jsonify({
         "connected": True,
-        "email": email
+        "email": email,
+        "picture": picture
     })
 
 
@@ -412,13 +440,22 @@ def api_google_upload_latest():
             "message": "已有雲端上傳進行中"
         }), 409
 
-    thread = threading.Thread(target=cloud_upload_latest_worker, daemon=True)
+    data = request.get_json(silent=True) or {}
+    backup_folder = data.get("backup_folder") or ""
+
+    thread = threading.Thread(
+        target=cloud_upload_latest_worker,
+        args=(backup_folder,),
+        daemon=True
+    )
     thread.start()
 
     return jsonify({
         "success": True,
         "message": "已開始雲端上傳"
     })
+
+
 
 @cloud_bp.route("/api/cloud/google/cancel-upload", methods=["POST"])
 def api_google_cancel_upload():

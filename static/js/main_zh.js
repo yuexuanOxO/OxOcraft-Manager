@@ -13,6 +13,8 @@ let backupRecordsCache = [];
 let backupRecordKeyword = "";
 let backupProviderFilters = new Set();
 let backupStatusFilters = new Set();
+let selectedCloudBackupFolder = "";
+let currentBackupLevelName = "world";
 
 
 function stopAllPolling() {
@@ -1899,13 +1901,40 @@ async function loadBackupConfig() {
             backupText.textContent = data.backup_root || "";
         }
 
+        currentBackupLevelName = data.level_name || "world";
+
         if (mapName) {
-            mapName.textContent = data.level_name || "world";
+            mapName.textContent = currentBackupLevelName;
         }
+
+        updateDefaultCloudBackupFolderText();
 
     } catch (error) {
         console.error("讀取備份設定失敗:", error);
     }
+}
+
+
+function updateDefaultCloudBackupFolderText() {
+    const text = document.getElementById("cloudBackupFolderText");
+    if (!text || selectedCloudBackupFolder) return;
+
+    text.textContent = `未指定，使用伺服器上次開啟的世界${currentBackupLevelName}備份`;
+}
+
+
+async function openFolderPicker() {
+    const response = await fetch("/api/backup/select-folder", {
+        method: "POST"
+    });
+
+    const data = await response.json();
+
+    if (!data.success || !data.path) {
+        return "";
+    }
+
+    return data.path;
 }
 
 
@@ -1927,23 +1956,14 @@ function setupBackupPathEditButtons() {
             btn.disabled = true;
 
             try {
-                const response = await fetch("/api/backup/select-folder", {
-                    method: "POST"
-                });
+                const path = await openFolderPicker();
 
-                const data = await response.json();
-
-                if (!data.success) {
-                    alert(data.message || "選擇資料夾失敗");
+                if (!path) {
                     return;
                 }
 
-                if (!data.path) {
-                    return;
-                }
-
-                inputEl.value = data.path;
-                textEl.textContent = data.path;
+                inputEl.value = path;
+                textEl.textContent = path;
 
             } catch (error) {
                 console.error("選擇資料夾失敗:", error);
@@ -2188,6 +2208,50 @@ function hideBackupTaskButton() {
 }
 
 
+function setupCloudBackupFolderPicker() {
+    const selectBtn = document.getElementById("cloudBackupFolderSelectBtn");
+    const clearBtn = document.getElementById("cloudBackupFolderClearBtn");
+    const text = document.getElementById("cloudBackupFolderText");
+
+    if (selectBtn) {
+        selectBtn.addEventListener("click", async () => {
+            selectBtn.disabled = true;
+
+            try {
+                const path = await openFolderPicker();
+
+                if (!path) {
+                    return;
+                }
+
+                selectedCloudBackupFolder = path;
+
+                if (text) {
+                    text.textContent = path;
+                }
+
+            } catch (error) {
+                console.error("選擇雲端備份資料夾失敗:", error);
+                alert("選擇資料夾失敗，請查看 console。");
+
+            } finally {
+                selectBtn.disabled = false;
+            }
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+            selectedCloudBackupFolder = "";
+
+            if (text) {
+                updateDefaultCloudBackupFolderText();
+            }
+        });
+    }
+}
+
+
 async function loadCloudStatus() {
     const res = await fetch("/api/cloud/google/status", {
         cache: "no-store"
@@ -2198,23 +2262,48 @@ async function loadCloudStatus() {
     const status = document.getElementById("cloudStatusText");
     const email = document.getElementById("cloudEmailText");
     const connectBtn = document.getElementById("cloudConnectBtn");
-    const disconnectBtn = document.getElementById("cloudDisconnectBtn");
 
     if (!status) return;
 
     if (data.connected) {
         status.textContent = "Google Drive：已連接";
-        email.textContent = data.email || "";
+        status.classList.remove("cloud-status-disconnected");
+        status.classList.add("cloud-status-connected");
+
+        if (email) {
+            email.innerHTML = `
+                <div class="cloud-account-row">
+                    ${
+                        data.picture
+                            ? `<img class="cloud-account-avatar" src="${data.picture}" alt="Google account avatar">`
+                            : ""
+                    }
+                    <span>${data.email || ""}</span>
+                    <button id="cloudDisconnectInlineBtn" class="cloud-disconnect-inline-btn" type="button">
+                        解除連結
+                    </button>
+                </div>
+            `;
+
+            document.getElementById("cloudDisconnectInlineBtn")?.addEventListener("click", disconnectGoogleDrive);
+        }
 
         connectBtn?.classList.add("hidden");
-        disconnectBtn?.classList.remove("hidden");
+
+        document.getElementById("cloudUploadLatestBtn")?.classList.remove("hidden");
 
     } else {
         status.textContent = "Google Drive：未連接";
-        email.textContent = "";
+        status.classList.remove("cloud-status-connected");
+        status.classList.add("cloud-status-disconnected");
+
+        if (email) {
+            email.innerHTML = "";
+        }
 
         connectBtn?.classList.remove("hidden");
-        disconnectBtn?.classList.add("hidden");
+
+        document.getElementById("cloudUploadLatestBtn")?.classList.add("hidden");
     }
 }
 
@@ -2223,13 +2312,17 @@ document.getElementById("cloudConnectBtn")?.addEventListener("click", () => {
     window.location.href = "/api/cloud/google/login";
 });
 
-document.getElementById("cloudDisconnectBtn")?.addEventListener("click", async () => {
+async function disconnectGoogleDrive() {
+    const ok = confirm("確定要解除 Google Drive 連結嗎？\n解除後將無法上傳雲端備份，直到重新連接。");
+    if (!ok) return;
+
     await fetch("/api/cloud/google/disconnect", {
         method: "POST"
     });
 
     loadCloudStatus();
-});
+}
+
 
 
 async function uploadLatestBackupToGoogleDrive() {
@@ -2251,7 +2344,13 @@ async function uploadLatestBackupToGoogleDrive() {
 
     try {
         const response = await fetch("/api/cloud/google/upload-latest", {
-            method: "POST"
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                backup_folder: selectedCloudBackupFolder
+            })
         });
 
         const data = await response.json();
@@ -2484,6 +2583,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setupBackupModal();
     setupBackupActionButton();
     setupBackupPathEditButtons();
+    setupCloudBackupFolderPicker();
     setupDeathBook();
     setupBackgroundTaskButtons();
     setupBackupRecordFilters();

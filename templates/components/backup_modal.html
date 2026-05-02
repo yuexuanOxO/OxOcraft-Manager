@@ -121,7 +121,24 @@
                 <div id="cloudEmailText"></div>
 
                 <button id="cloudConnectBtn">連接 Google Drive</button>
-                <button id="cloudDisconnectBtn" class="hidden">解除連結</button>
+
+                <div class="cloud-backup-folder-row">
+                    <div class="cloud-backup-folder-label">指定備份資料夾</div>
+
+                    <div class="cloud-backup-folder-wrap">
+                        <div id="cloudBackupFolderText" class="cloud-backup-folder-text">
+                            未指定，使用伺服器上次開啟的世界備份
+                        </div>
+
+                        <button id="cloudBackupFolderSelectBtn" class="backup-icon-btn" type="button" title="選擇備份資料夾">
+                            <img src="/static/icons/backup/folder.png" alt="選擇資料夾">
+                        </button>
+
+                        <button id="cloudBackupFolderClearBtn" class="backup-icon-btn" type="button" title="清除指定資料夾">
+                            <img src="/static/icons/backup/brush.png" alt="清除指定資料夾">
+                        </button>
+                    </div>
+                </div>
 
                 <button id="cloudUploadLatestBtn" type="button">立即上傳最新備份</button>
                 <div id="cloudUploadStatus"></div>

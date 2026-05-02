@@ -1535,3 +1535,82 @@ h1 {
     image-rendering: pixelated;
     image-rendering: crisp-edges;
 }
+
+.cloud-status-connected{
+    color: #65ff65;
+}
+
+.cloud-status-disconnected{
+    color: #ff5555;
+}
+
+.cloud-account-row{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    margin-bottom: 6px;
+    color: #fff;
+    font-weight: bold;
+}
+
+.cloud-account-avatar{
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #555;
+}
+
+.cloud-disconnect-inline-btn{
+    height: 26px;
+    padding: 0 8px;
+    margin-left: 6px;
+
+    background: #151515;
+    border: 1px solid #666;
+    color: #ddd;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.cloud-disconnect-inline-btn:hover{
+    border-color: #ff7777;
+    color: #ff7777;
+}
+
+.cloud-backup-folder-row{
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.cloud-backup-folder-label{
+    color: #ddd;
+    margin-bottom: 6px;
+}
+
+.cloud-backup-folder-wrap{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cloud-backup-folder-text{
+    min-width: 360px;
+    max-width: 480px;
+    height: 36px;
+    padding: 0 10px;
+    box-sizing: border-box;
+
+    display: flex;
+    align-items: center;
+
+    background: #050505;
+    border: 2px solid #555;
+    color: #65ff65;
+    font-size: 14px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

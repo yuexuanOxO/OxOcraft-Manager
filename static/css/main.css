@@ -1100,8 +1100,7 @@ h1 {
     margin-bottom: 18px;
 }
 
-#backupMainActionBtn,
-#backupRefreshRecordsBtn{
+#backupMainActionBtn{
     min-width: 140px;
     height: 44px;
     font-size: 20px;
@@ -1243,9 +1242,28 @@ h1 {
 }
 
 .backup-record-title{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
     color: #fff;
     font-size: 17px;
     font-weight: bold;
+}
+
+.backup-provider-img-icon{
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    vertical-align: middle;
+    position: static;
+
+    image-rendering: auto;
 }
 
 .backup-record-time{
@@ -1339,4 +1357,145 @@ h1 {
 
 .cloud-link-missing{
     color: #888;
+}
+
+
+.backup-record-toolbar{
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 18px;
+}
+
+.backup-record-search-input{
+    width: 330px;
+    height: 38px;
+    padding: 0 10px;
+    box-sizing: border-box;
+
+    background: #050505;
+    border: 2px solid #ddd;
+    color: #fff;
+    font-size: 15px;
+    outline: none;
+}
+
+.backup-record-search-input:focus{
+    border-color: #65ff65;
+}
+
+.backup-icon-btn{
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    flex-shrink: 0;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #111;
+    border: 2px solid #555;
+    cursor: pointer;
+}
+
+.backup-icon-btn:hover{
+    background: #222;
+    border-color: #999;
+}
+
+.backup-icon-btn img{
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.backup-filter-panel{
+    position: absolute;
+    top: 46px;
+    right: 96px;
+
+    width: 300px;
+    padding: 14px;
+    box-sizing: border-box;
+
+    background: #080808;
+    border: 3px solid #777;
+    box-shadow: 0 0 0 3px #222;
+    z-index: 10;
+}
+
+.backup-filter-title{
+    color: #65ff65;
+    font-size: 15px;
+    margin-bottom: 8px;
+}
+
+.backup-provider-filter-row,
+.backup-status-filter-row{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.backup-filter-chip{
+    min-height: 34px;
+    padding: 4px 10px;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    background: #151515;
+    border: 2px solid #444;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.backup-filter-chip.active{
+    border-color: #3fa65a;
+    color: #fff;
+    background: #102015;
+}
+
+.backup-provider-emoji{
+    font-size: 17px;
+    line-height: 1;
+}
+
+.backup-provider-text-icon{
+    width: 20px;
+    height: 20px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 2px solid #3fa65a;
+    color: #65ff65;
+    font-size: 13px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.backup-provider-img-icon{
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    vertical-align: middle;
+    position: static;
+
+    image-rendering: auto;
 }

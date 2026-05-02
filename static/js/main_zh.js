@@ -9,6 +9,10 @@ let lastServerStatusRevision = null;
 let pendingServerStatusPayload = null;
 let commandHistory = [];
 let commandHistoryIndex = -1;
+let backupRecordsCache = [];
+let backupRecordKeyword = "";
+let backupProviderFilters = new Set(["local", "google_drive"]);
+let backupStatusFilters = new Set(["success", "failed", "running", "canceled"]);
 
 
 function stopAllPolling() {
@@ -1683,6 +1687,84 @@ function setupBackupActionButton() {
     });
 }
 
+function setupBackupRecordFilters() {
+    const searchInput = document.getElementById("backupRecordSearchInput");
+    const searchBtn = document.getElementById("backupRecordSearchBtn");
+    const filterBtn = document.getElementById("backupRecordFilterBtn");
+    const filterPanel = document.getElementById("backupRecordFilterPanel");
+
+    function applySearch() {
+        backupRecordKeyword = searchInput ? searchInput.value.trim() : "";
+        renderFilteredBackupRecords();
+    }
+
+    if (searchBtn) {
+        searchBtn.addEventListener("click", applySearch);
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                applySearch();
+            }
+        });
+
+        searchInput.addEventListener("input", () => {
+            backupRecordKeyword = searchInput.value.trim();
+            renderFilteredBackupRecords();
+        });
+    }
+
+    if (filterBtn && filterPanel) {
+        filterBtn.addEventListener("click", (event) => {
+            event.stopPropagation();
+            filterPanel.classList.toggle("hidden");
+        });
+    }
+
+    document.querySelectorAll("[data-filter-provider]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const provider = btn.dataset.filterProvider;
+
+            if (backupProviderFilters.has(provider)) {
+                backupProviderFilters.delete(provider);
+                btn.classList.remove("active");
+            } else {
+                backupProviderFilters.add(provider);
+                btn.classList.add("active");
+            }
+
+            renderFilteredBackupRecords();
+        });
+    });
+
+    document.querySelectorAll("[data-filter-status]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const status = btn.dataset.filterStatus;
+
+            if (backupStatusFilters.has(status)) {
+                backupStatusFilters.delete(status);
+                btn.classList.remove("active");
+            } else {
+                backupStatusFilters.add(status);
+                btn.classList.add("active");
+            }
+
+            renderFilteredBackupRecords();
+        });
+    });
+
+    document.addEventListener("click", (event) => {
+        if (!filterPanel || filterPanel.classList.contains("hidden")) return;
+
+        const clickedInsidePanel = filterPanel.contains(event.target);
+        const clickedFilterButton = filterBtn && filterBtn.contains(event.target);
+
+        if (!clickedInsidePanel && !clickedFilterButton) {
+            filterPanel.classList.add("hidden");
+        }
+    });
+}
 
 function renderBackupProgress(data) {
     const statusText = document.getElementById("backupStatusText");
@@ -1849,7 +1931,8 @@ async function loadBackupRecords() {
 
         if (!data.success) return;
 
-        renderBackupRecords(data.records || []);
+        backupRecordsCache = data.records || [];
+        renderFilteredBackupRecords();
 
     } catch (error) {
         console.error("讀取備份紀錄失敗:", error);
@@ -1863,7 +1946,7 @@ function renderBackupRecords(records) {
     list.innerHTML = "";
 
     if (!records.length) {
-        list.innerHTML = "<div class='backup-empty'>目前尚無備份紀錄</div>";
+        list.innerHTML = "<div class='backup-empty'>沒有符合條件的備份紀錄</div>";
         return;
     }
 
@@ -1872,14 +1955,64 @@ function renderBackupRecords(records) {
     });
 }
 
+function renderFilteredBackupRecords() {
+    const keyword = backupRecordKeyword.trim().toLowerCase();
+
+    const filtered = backupRecordsCache.filter((record) => {
+        const providerKey = getBackupProviderKey(record);
+        const statusKey = record.status || "unknown";
+
+        if (!backupProviderFilters.has(providerKey)) {
+            return false;
+        }
+
+        if (!backupStatusFilters.has(statusKey)) {
+            return false;
+        }
+
+        if (!keyword) {
+            return true;
+        }
+
+        const searchText = [
+            record.status,
+            getBackupStatusLabel(record.status),
+            record.backup_type,
+            providerKey,
+            getCloudProviderLabel(record.cloud_provider),
+            record.map_name,
+            record.message,
+            record.source_path,
+            record.backup_path,
+            record.cloud_account,
+            record.cloud_file_id,
+            record.cloud_link,
+            record.cloud_file_status,
+        ].join(" ").toLowerCase();
+
+        return searchText.includes(keyword);
+    });
+
+    renderBackupRecords(filtered);
+}
+
+function getBackupProviderKey(record) {
+    if ((record.backup_type || "local") === "local") {
+        return "local";
+    }
+
+    return record.cloud_provider || "cloud";
+}
+
 function prependBackupRecord(record) {
-    const list = document.getElementById("backupRecordsList");
-    if (!list) return;
+    if (!record) return;
 
-    const empty = list.querySelector(".backup-empty");
-    if (empty) empty.remove();
+    backupRecordsCache = [
+        record,
+        ...backupRecordsCache.filter(item => item.id !== record.id)
+    ];
 
-    list.prepend(createBackupRecordItem(record));
+    renderFilteredBackupRecords();
 }
 
 function createBackupRecordItem(record) {
@@ -1890,6 +2023,7 @@ function createBackupRecordItem(record) {
     const statusText = getBackupStatusLabel(record.status);
     const sizeText = formatBytes(record.total_bytes || 0);
     const backupType = record.backup_type || "local";
+    const providerIconHtml = getBackupProviderIconHtml(record);
 
     if (backupType === "cloud") {
         const providerText = getCloudProviderLabel(record.cloud_provider);
@@ -1907,7 +2041,7 @@ function createBackupRecordItem(record) {
         item.innerHTML = `
             <div class="backup-record-main">
                 <div class="backup-record-title">
-                    ${statusText}｜${providerText}｜${record.map_name || "未知世界"}
+                    ${statusText}｜${providerIconHtml} ${providerText}｜${record.map_name || "未知世界"}
                 </div>
                 <div class="backup-record-time">
                     ${record.created_at || ""}
@@ -1936,7 +2070,7 @@ function createBackupRecordItem(record) {
     item.innerHTML = `
         <div class="backup-record-main">
             <div class="backup-record-title">
-                ${statusText}｜本機｜${record.map_name || "未知世界"}
+                ${statusText}｜${providerIconHtml} 本機｜${record.map_name || "未知世界"}
             </div>
             <div class="backup-record-time">
                 ${record.created_at || ""}
@@ -1967,6 +2101,21 @@ function getBackupStatusLabel(status) {
 function getCloudProviderLabel(provider) {
     if (provider === "google_drive") return "Google Drive";
     return provider || "雲端";
+}
+
+function getBackupProviderIconHtml(record) {
+    const providerKey = getBackupProviderKey(record);
+
+    if (providerKey === "local") {
+        return `
+        <img class="backup-provider-img-icon" src="/static/icons/backup/grass_block.ico" alt="本機備份">`;
+    }
+
+    if (providerKey === "google_drive") {
+        return `<img class="backup-provider-img-icon" src="/static/icons/backup/google_drive.ico" alt="Google Drive">`;
+    }
+
+    return `<span class="backup-provider-text-icon">☁</span>`;
 }
 
 function formatBytes(bytes) {
@@ -2144,17 +2293,17 @@ function hideCloudUploadTaskButton() {
 
 
 function updateBackupRecordItem(record) {
-    const list = document.getElementById("backupRecordsList");
-    if (!list || !record || !record.id) return;
+    if (!record || !record.id) return;
 
-    const oldItem = list.querySelector(`[data-record-id="${record.id}"]`);
-    const newItem = createBackupRecordItem(record);
+    backupRecordsCache = backupRecordsCache.map(item => {
+        return item.id === record.id ? record : item;
+    });
 
-    if (oldItem) {
-        oldItem.replaceWith(newItem);
-    } else {
-        list.prepend(newItem);
+    if (!backupRecordsCache.some(item => item.id === record.id)) {
+        backupRecordsCache.unshift(record);
     }
+
+    renderFilteredBackupRecords();
 }
 
 
@@ -2251,5 +2400,6 @@ document.addEventListener("DOMContentLoaded", () => {
     setupBackupPathEditButtons();
     setupDeathBook();
     setupBackgroundTaskButtons();
+    setupBackupRecordFilters();
     
 });

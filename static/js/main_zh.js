@@ -19,6 +19,7 @@ let manualBackupSelectedWorld = null;
 let currentPlayers = new Set();
 let autoBackupMissedPromptOpen = false;
 let currentServerWorldPath = "";
+let manualBackupUploadCloud = false;
 
 let autoBackupState = {
     enabled: false,
@@ -2008,6 +2009,11 @@ function renderBackupProgress(data) {
         setTimeout(() => {
             hideBackupTaskButton();
         }, 3000);
+
+        if (!manualBackupUploadCloud) {
+            fadeOutAndHide(document.getElementById("manualBackupProgressBox"), 3000);
+        }
+
         document.getElementById("manualLocalBackupBtn")?.removeAttribute("disabled");
         document.getElementById("manualLocalCloudBackupBtn")?.removeAttribute("disabled");
     }
@@ -2128,6 +2134,7 @@ async function startSafeManualBackup(uploadCloud) {
     const localBtn = document.getElementById("manualLocalBackupBtn");
     const cloudBtn = document.getElementById("manualLocalCloudBackupBtn");
     const selectedWorldPath = manualBackupSelectedWorld?.path || "";
+    manualBackupUploadCloud = uploadCloud;
 
     if (!sourceInput?.value.trim()) {
         alert("請先選擇世界資料夾");
@@ -2845,6 +2852,8 @@ function renderCloudUploadProgress(data) {
         setTimeout(() => {
             hideCloudUploadTaskButton();
         }, 3000);
+
+        fadeOutAndHide(document.getElementById("manualBackupProgressBox"), 3000);
     }
 
     
@@ -3048,6 +3057,24 @@ function setupAutoBackupSettings() {
     if (saveBtn) {
         saveBtn.addEventListener("click", saveAutoBackupConfig);
     }
+}
+
+
+function fadeOutAndHide(element, delay = 3000) {
+    if (!element) return;
+
+    element.style.opacity = "1";
+    element.style.transition = "opacity 0.8s ease";
+
+    setTimeout(() => {
+        element.style.opacity = "0";
+
+        setTimeout(() => {
+            element.classList.add("hidden");
+            element.style.opacity = "1";
+        }, 800);
+
+    }, delay);
 }
 
 

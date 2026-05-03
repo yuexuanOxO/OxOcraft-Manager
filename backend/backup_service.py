@@ -9,7 +9,7 @@ import zipfile
 from backend.paths import MC_ROOT
 from backend.server_monitor import publish_event, get_cached_server_status
 from backend.server_runtime import get_current_world_path, get_current_level_name
-from backend.db import insert_backup_record
+from backend.db import insert_backup_record, update_backup_record_status
 
 _backup_thread = None
 _cancel_requested = False
@@ -20,6 +20,7 @@ _backup_status = {
     "percent": 0,
     "message": "待機",
 }
+_current_backup_record_id = None
 
 
 class BackupCanceled(Exception):
@@ -49,6 +50,31 @@ def remove_partial_backup_file(target_zip: Path | None) -> None:
         print(f"[Backup] 無法刪除未完成備份檔案：{error}")
 
 
+def publish_or_update_backup_record(status_data: dict) -> None:
+    global _current_backup_record_id
+
+    if _current_backup_record_id is None:
+        record = insert_backup_record(
+            status=status_data.get("status"),
+            map_name=status_data.get("map_name"),
+            source_path=status_data.get("source_path"),
+            backup_path=status_data.get("backup_path"),
+            total_files=status_data.get("total_files"),
+            total_bytes=status_data.get("total_bytes"),
+            message=status_data.get("message"),
+        )
+        _current_backup_record_id = record["id"]
+    else:
+        record = update_backup_record_status(
+            record_id=_current_backup_record_id,
+            status=status_data.get("status"),
+            message=status_data.get("message"),
+        )
+
+    if record:
+        publish_event("backup_record_added", record)
+
+
 def mark_backup_canceled(target_zip: Path | None = None) -> None:
     global _backup_status
 
@@ -63,7 +89,7 @@ def mark_backup_canceled(target_zip: Path | None = None) -> None:
     }
 
     publish_event("backup_canceled", _backup_status)
-    save_backup_record_and_publish(_backup_status)
+    publish_or_update_backup_record(_backup_status)
 
 
 def start_backup(source_root: str | None = None, backup_root: str | None = None) -> tuple[bool, str]:
@@ -86,9 +112,10 @@ def start_backup(source_root: str | None = None, backup_root: str | None = None)
 
 
 def backup_worker(source_root: Path, backup_root: Path) -> None:
-    global _cancel_requested, _is_running, _backup_status
+    global _cancel_requested, _current_backup_record_id, _is_running, _backup_status
 
     _cancel_requested = False
+    _current_backup_record_id = None
     _is_running = True
 
     target_zip = None
@@ -143,6 +170,7 @@ def backup_worker(source_root: Path, backup_root: Path) -> None:
         }
 
         publish_event("backup_started", _backup_status)
+        publish_or_update_backup_record(_backup_status)
 
 
         with zipfile.ZipFile(target_zip, "w", compression=zipfile.ZIP_DEFLATED) as zipf:
@@ -180,7 +208,7 @@ def backup_worker(source_root: Path, backup_root: Path) -> None:
         }
 
         publish_event("backup_finished", _backup_status)
-        save_backup_record_and_publish(_backup_status)
+        publish_or_update_backup_record(_backup_status)
 
     except BackupCanceled:
         mark_backup_canceled(target_zip)
@@ -205,11 +233,12 @@ def backup_worker(source_root: Path, backup_root: Path) -> None:
         }
 
         publish_event("backup_failed", _backup_status)
-        save_backup_record_and_publish(_backup_status)
+        publish_or_update_backup_record(_backup_status)
 
     finally:
         _is_running = False
         _cancel_requested = False
+        _current_backup_record_id = None
 
 
 def save_backup_record_and_publish(status_data: dict) -> None:

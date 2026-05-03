@@ -345,3 +345,17 @@ def mark_interrupted_cloud_uploads_failed() -> None:
         """)
 
         conn.commit()
+
+
+def mark_interrupted_local_backups_failed() -> None:
+    with get_connection() as conn:
+        conn.execute("""
+            UPDATE backup_records
+            SET
+                status = 'failed',
+                message = '程式中斷，本機備份未完成'
+            WHERE backup_type = 'local'
+              AND status = 'running'
+        """)
+
+        conn.commit()

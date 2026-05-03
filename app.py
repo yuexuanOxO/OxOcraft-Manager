@@ -3,7 +3,11 @@ import webbrowser
 
 from flask import Flask
 
-from backend.db import init_db,mark_interrupted_cloud_uploads_failed
+from backend.db import (
+    init_db,
+    mark_interrupted_cloud_uploads_failed,
+    mark_interrupted_local_backups_failed,
+)
 from backend.server_config_sync import init_rcon_config
 
 from backend.routes.death_routes import death_bp
@@ -44,6 +48,7 @@ if __name__ == "__main__":
     try:
         init_db()
         mark_interrupted_cloud_uploads_failed()
+        mark_interrupted_local_backups_failed()
         print("SQLite 資料庫初始化完成")
         
         init_rcon_config()

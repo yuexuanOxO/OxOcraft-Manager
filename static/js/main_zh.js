@@ -2154,6 +2154,12 @@ async function startSafeManualBackup(uploadCloud) {
         if (localBtn) localBtn.disabled = true;
         if (cloudBtn) cloudBtn.disabled = true;
 
+        document.getElementById("manualBackupProgressBox")?.classList.remove("hidden");
+
+        if (uploadCloud) {
+            document.getElementById("manualCloudUploadBox")?.classList.add("hidden");
+        }
+
         const response = await fetch("/api/backup/manual-safe-start", {
             method: "POST",
             headers: {
@@ -2768,6 +2774,7 @@ function setCloudUploadRunning(isRunning) {
 function renderCloudUploadProgress(data) {
 
     const percent = data.percent || 0;
+    showCloudUploadTaskButton(percent);
 
     // 原本雲端頁
     const status = document.getElementById("cloudUploadStatus");
@@ -2781,6 +2788,12 @@ function renderCloudUploadProgress(data) {
     const manualBar = document.getElementById("manualCloudUploadProgressBar");
     const manualText = document.getElementById("manualCloudUploadProgressText");
 
+    const manualCloudBox = document.getElementById("manualCloudUploadBox");
+
+    if (manualCloudBox && data.status === "running") {
+        manualCloudBox.classList.remove("hidden");
+    }
+
     const msg = data.message || "雲端上傳中";
     const fileName = data.file_name || "無";
 
@@ -2793,6 +2806,18 @@ function renderCloudUploadProgress(data) {
     if (manualFile) manualFile.textContent = `目前檔案：${fileName}`;
     if (manualBar) manualBar.style.width = `${percent}%`;
     if (manualText) manualText.textContent = `${percent}%`;
+
+    if (
+        data.status === "success" ||
+        data.status === "failed" ||
+        data.status === "canceled"
+    ) {
+        setTimeout(() => {
+            hideCloudUploadTaskButton();
+        }, 3000);
+    }
+
+    
 }
 
 

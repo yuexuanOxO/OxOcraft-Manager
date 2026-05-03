@@ -44,7 +44,7 @@
                 <button id="manualLocalCloudBackupBtn" type="button">開始本機&雲端備份</button>
             </div>
 
-            <div class="backup-status-box">
+            <div id="manualBackupProgressBox" class="backup-status-box hidden">
                 <div id="manualBackupStatusText">狀態：待機</div>
 
                 <div class="manual-progress-row">
@@ -56,7 +56,7 @@
                 </div>
                 <div id="manualBackupCurrentFile" class="backup-current-file">目前檔案：無</div>
 
-                <div class="manual-cloud-upload-box">
+                <div id="manualCloudUploadBox" class="manual-cloud-upload-box hidden">
                     <div id="manualCloudUploadStatus">雲端上傳：待機</div>
 
                     <div class="manual-progress-row">

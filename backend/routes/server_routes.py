@@ -2,6 +2,7 @@ import queue
 from backend.server_runtime import start_server, stop_server
 from backend.server_setup import get_server_setup_status
 from backend.server_status import get_server_query_status
+from backend.auto_backup_service import is_auto_backup_control_locked
 
 from flask import Blueprint, jsonify, Response, request
 from backend.server_monitor import (
@@ -15,6 +16,8 @@ from backend.server_monitor import (
 server_bp = Blueprint("server", __name__)
 
 
+
+
 @server_bp.route("/api/server/setup-status")
 def api_server_setup_status():
     return jsonify(get_server_setup_status())
@@ -22,6 +25,13 @@ def api_server_setup_status():
 
 @server_bp.route("/api/server/start", methods=["POST"])
 def api_server_start():
+
+    if is_auto_backup_control_locked():
+        return jsonify({
+            "success": False,
+            "message": "自動備份進行中，暫時無法啟動伺服器"
+        }), 409
+
     success, message = start_server()
 
     status_code = 200 if success else 400
@@ -34,6 +44,13 @@ def api_server_start():
 
 @server_bp.route("/api/server/stop", methods=["POST"])
 def api_server_stop():
+
+    if is_auto_backup_control_locked():
+        return jsonify({
+            "success": False,
+            "message": "自動備份進行中，暫時無法關閉伺服器"
+        }), 409
+
     success, message = stop_server()
 
     return jsonify({

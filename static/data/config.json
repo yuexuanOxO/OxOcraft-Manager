@@ -6,7 +6,7 @@
     "java_xmx": "3G",
     "auto_backup_enabled": true,
     "auto_backup_frequency": "daily",
-    "auto_backup_start_at": "2026-05-02T19:22",
-    "auto_backup_next_run_at": "2026-05-03T19:22",
+    "auto_backup_start_at": "2026-05-03T11:39",
+    "auto_backup_next_run_at": "2026-05-04T11:39",
     "auto_backup_upload_cloud": true
 }

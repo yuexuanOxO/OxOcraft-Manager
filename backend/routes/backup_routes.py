@@ -14,6 +14,11 @@ from backend.backup_service import (
     cancel_backup,
     get_backup_status,
 )
+from backend.auto_backup_service import (
+    get_missed_backup_status,
+    run_missed_backup_now,
+    skip_missed_backup,
+)
 
 CONFIG_PATH = Path("static/data/config.json")
 
@@ -155,6 +160,7 @@ def api_backup_select_folder():
 @backup_bp.route("/api/backup/auto-config")
 def api_backup_auto_config():
     config = load_app_config()
+    missed_backup = get_missed_backup_status()
 
     return jsonify({
         "success": True,
@@ -164,6 +170,8 @@ def api_backup_auto_config():
             "auto_backup_start_at": config.get("auto_backup_start_at", ""),
             "auto_backup_next_run_at": config.get("auto_backup_next_run_at", ""),
             "auto_backup_upload_cloud": config.get("auto_backup_upload_cloud", False),
+            "auto_backup_missed_pending": missed_backup["pending"],
+            "auto_backup_missed_run_at": missed_backup["missed_run_at"],
         }
     })
 
@@ -200,3 +208,24 @@ def api_backup_auto_config_save():
             "auto_backup_upload_cloud": upload_cloud,
         }
     })
+
+
+@backup_bp.route("/api/backup/auto-missed/skip", methods=["POST"])
+def api_backup_auto_missed_skip():
+    skip_missed_backup()
+
+    return jsonify({
+        "success": True,
+        "message": "已跳過上次未執行的自動備份排程"
+    })
+
+
+@backup_bp.route("/api/backup/auto-missed/run-now", methods=["POST"])
+def api_backup_auto_missed_run_now():
+    success, message = run_missed_backup_now()
+
+    status_code = 200 if success else 409
+    return jsonify({
+        "success": success,
+        "message": message
+    }), status_code

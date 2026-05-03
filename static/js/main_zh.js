@@ -16,6 +16,7 @@ let backupStatusFilters = new Set();
 let selectedCloudBackupFolder = "";
 let currentBackupLevelName = "world";
 let currentPlayers = new Set();
+let autoBackupMissedPromptOpen = false;
 
 let autoBackupState = {
     enabled: false,
@@ -245,6 +246,51 @@ function setupServerEvents() {
         console.log(data.message || "自動備份公告階段");
     });
 
+    serverEvents.addEventListener("auto_backup_missed", handleAutoBackupMissed);
+
+}
+
+
+async function handleAutoBackupMissed(event) {
+    if (autoBackupMissedPromptOpen) return;
+
+    autoBackupMissedPromptOpen = true;
+
+    try {
+        const data = JSON.parse(event.data || "{}");
+        const missedRunAt = data.missed_run_at
+            ? data.missed_run_at.replace("T", " ")
+            : "";
+        const promptText = missedRunAt
+            ? `偵測到上次自動備份排程 (${missedRunAt}) 沒有執行。\n\n是否要跳過這次排程？\n\n按「確定」：跳過並更新下次備份時間。\n按「取消」：現在補做備份。`
+            : "偵測到上次自動備份排程沒有執行。\n\n是否要跳過這次排程？\n\n按「確定」：跳過並更新下次備份時間。\n按「取消」：現在補做備份。";
+        const skipMissedBackup = confirm(promptText);
+        const endpoint = skipMissedBackup
+            ? "/api/backup/auto-missed/skip"
+            : "/api/backup/auto-missed/run-now";
+
+        const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+        const result = await response.json();
+
+        if (!result.success) {
+            alert(result.message || "處理上次未執行的自動備份排程失敗");
+            return;
+        }
+
+        await loadAutoBackupConfig();
+
+    } catch (error) {
+        console.error("處理未執行自動備份排程失敗:", error);
+        alert("處理未執行自動備份排程失敗，請查看 console。");
+
+    } finally {
+        autoBackupMissedPromptOpen = false;
+    }
 }
 
 
@@ -2620,6 +2666,14 @@ async function loadAutoBackupConfig() {
         if (startAt) startAt.value = autoBackupState.startAt;
         if (nextText) nextText.textContent = formatAutoBackupTime(autoBackupState.nextRunAt);
 
+        if (config.auto_backup_missed_pending) {
+            await handleAutoBackupMissed({
+                data: JSON.stringify({
+                    missed_run_at: config.auto_backup_missed_run_at || ""
+                })
+            });
+        }
+
     } catch (error) {
         console.error("讀取自動備份設定失敗:", error);
     }
@@ -2796,5 +2850,6 @@ document.addEventListener("DOMContentLoaded", () => {
     setupBackgroundTaskButtons();
     setupBackupRecordFilters();
     setupAutoBackupSettings();
+    loadAutoBackupConfig();
     
 });

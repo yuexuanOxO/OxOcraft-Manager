@@ -2,7 +2,7 @@ import json
 import queue
 import threading
 import time
-from typing import Optional
+from typing import Callable, Optional
 
 from backend.server_status import get_server_query_status
 
@@ -18,6 +18,7 @@ _status_cache = {
 }
 
 _event_queues: list[queue.Queue] = []
+_event_handlers: list[Callable[[str, dict], None]] = []
 _monitor_thread: Optional[threading.Thread] = None
 _monitor_started = False
 _lock = threading.Lock()
@@ -75,6 +76,18 @@ def unsubscribe_events(q: queue.Queue) -> None:
             _event_queues.remove(q)
 
 
+def register_event_handler(handler: Callable[[str, dict], None]) -> None:
+    with _lock:
+        if handler not in _event_handlers:
+            _event_handlers.append(handler)
+
+
+def unregister_event_handler(handler: Callable[[str, dict], None]) -> None:
+    with _lock:
+        if handler in _event_handlers:
+            _event_handlers.remove(handler)
+
+
 def publish_event(event_type: str, data: dict) -> None:
     payload = {
         "type": event_type,
@@ -83,9 +96,16 @@ def publish_event(event_type: str, data: dict) -> None:
 
     with _lock:
         queues = list(_event_queues)
+        handlers = list(_event_handlers)
 
     for q in queues:
         q.put(payload)
+
+    for handler in handlers:
+        try:
+            handler(event_type, data)
+        except Exception as error:
+            print(f"[ServerMonitor] event handler failed: {error}")
 
 
 def get_poll_interval(state: str) -> float:

@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -169,9 +170,12 @@ def insert_backup_record(
     cloud_link: str | None = None,
     cloud_file_status: str = "active",
 ) -> dict:
+    created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     with get_connection() as conn:
         cursor = conn.execute("""
             INSERT INTO backup_records (
+                created_at,
                 status,
                 map_name,
                 source_path,
@@ -186,8 +190,9 @@ def insert_backup_record(
                 cloud_link,
                 cloud_file_status
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
+            created_at,
             status,
             map_name,
             source_path,

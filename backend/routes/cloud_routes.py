@@ -430,29 +430,44 @@ _cloud_upload_running = False
 _cloud_upload_cancel_requested = False
 
 
-@cloud_bp.route("/api/cloud/google/upload-latest", methods=["POST"])
-def api_google_upload_latest():
+def start_cloud_upload_latest(backup_folder: str = "") -> tuple[bool, str]:
     global _cloud_upload_running, _cloud_upload_cancel_requested
 
     if _cloud_upload_running:
-        return jsonify({
-            "success": False,
-            "message": "已有雲端上傳進行中"
-        }), 409
+        return False, "已有雲端上傳進行中"
 
+    _cloud_upload_running = True
+    _cloud_upload_cancel_requested = False
+
+    try:
+        thread = threading.Thread(
+            target=cloud_upload_latest_worker,
+            args=(backup_folder,),
+            daemon=True
+        )
+        thread.start()
+    except Exception:
+        _cloud_upload_running = False
+        raise
+
+    return True, "已開始雲端上傳"
+
+
+@cloud_bp.route("/api/cloud/google/upload-latest", methods=["POST"])
+def api_google_upload_latest():
     data = request.get_json(silent=True) or {}
     backup_folder = data.get("backup_folder") or ""
 
-    thread = threading.Thread(
-        target=cloud_upload_latest_worker,
-        args=(backup_folder,),
-        daemon=True
-    )
-    thread.start()
+    success, message = start_cloud_upload_latest(backup_folder)
+    if not success:
+        return jsonify({
+            "success": False,
+            "message": message
+        }), 409
 
     return jsonify({
         "success": True,
-        "message": "已開始雲端上傳"
+        "message": message
     })
 
 

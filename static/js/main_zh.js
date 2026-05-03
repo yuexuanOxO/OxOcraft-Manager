@@ -18,6 +18,7 @@ let currentBackupLevelName = "world";
 let manualBackupSelectedWorld = null;
 let currentPlayers = new Set();
 let autoBackupMissedPromptOpen = false;
+let currentServerWorldPath = "";
 
 let autoBackupState = {
     enabled: false,
@@ -2072,6 +2073,8 @@ async function loadBackupConfig() {
         const manualSourceText = document.getElementById("manualBackupSourceText");
         const manualBackupText = document.getElementById("manualBackupRootText");
 
+        currentServerWorldPath = data.world_path || "";
+
         if (sourceInput && sourceText) {
             sourceInput.value = data.source_root || "";
             sourceText.textContent = data.source_root || "";
@@ -2145,9 +2148,12 @@ async function startSafeManualBackup(uploadCloud) {
         const statusRes = await fetch("/api/server/query-status", { cache: "no-store" });
         const statusPayload = await statusRes.json();
         const statusData = statusPayload.data || statusPayload;
+        const isSelectedCurrentWorld =
+            normalizePath(manualBackupSelectedWorld?.path || "") ===
+            normalizePath(currentServerWorldPath);
 
-        if (statusData.online) {
-            const ok = confirm("手動備份需要先關閉伺服器，備份完成後會重新啟動。是否繼續？");
+        if (statusData.online && isSelectedCurrentWorld) {
+            const ok = confirm("你要備份的是目前伺服器使用中的世界。\n\n手動備份需要先關閉伺服器，備份完成後會重新啟動。是否繼續？");
             if (!ok) return;
         }
 

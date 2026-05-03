@@ -120,13 +120,27 @@ def wait_for_server_online(target_online: bool, timeout: int = 120) -> bool:
     return False
 
 
+def normalize_path_text(path_text: str) -> str:
+    return str(Path(path_text).expanduser().resolve()).lower()
+
+
 def manual_safe_backup_worker(source_root: str, backup_root: str, upload_cloud: bool) -> None:
     global _manual_safe_backup_running
 
     server_was_online = is_cached_server_online()
 
+    selected_world_path = Path(source_root).expanduser()
+    current_world_path = get_current_world_path()
+
+    is_current_world = (
+        normalize_path_text(str(selected_world_path)) ==
+        normalize_path_text(str(current_world_path))
+    )
+
+    need_stop_server = server_was_online and is_current_world
+
     try:
-        if server_was_online:
+        if need_stop_server:
             stop_server()
             wait_for_server_online(False, timeout=120)
 
@@ -140,6 +154,9 @@ def manual_safe_backup_worker(source_root: str, backup_root: str, upload_cloud: 
 
         result = wait_for_backup_done()
 
+        if need_stop_server:
+            start_server()
+
         if upload_cloud and result.get("status") == "success":
             from backend.routes.cloud_routes import start_cloud_upload_latest
 
@@ -148,7 +165,7 @@ def manual_safe_backup_worker(source_root: str, backup_root: str, upload_cloud: 
             start_cloud_upload_latest(backup_folder)
 
     finally:
-        if server_was_online:
+        if need_stop_server and not is_cached_server_online():
             start_server()
 
         _manual_safe_backup_running = False

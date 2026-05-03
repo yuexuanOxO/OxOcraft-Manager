@@ -22,6 +22,10 @@ _backup_status = {
 }
 
 
+class BackupCanceled(Exception):
+    pass
+
+
 def get_backup_status() -> dict:
     return dict(_backup_status)
 
@@ -33,6 +37,33 @@ def is_backup_running() -> bool:
 def cancel_backup() -> None:
     global _cancel_requested
     _cancel_requested = True
+
+
+def remove_partial_backup_file(target_zip: Path | None) -> None:
+    if not target_zip or not target_zip.exists():
+        return
+
+    try:
+        target_zip.unlink()
+    except OSError as error:
+        print(f"[Backup] 無法刪除未完成備份檔案：{error}")
+
+
+def mark_backup_canceled(target_zip: Path | None = None) -> None:
+    global _backup_status
+
+    remove_partial_backup_file(target_zip)
+
+    _backup_status = {
+        **_backup_status,
+        "running": False,
+        "status": "canceled",
+        "message": "手動取消",
+        "backup_path": str(target_zip) if target_zip else _backup_status.get("backup_path"),
+    }
+
+    publish_event("backup_canceled", _backup_status)
+    save_backup_record_and_publish(_backup_status)
 
 
 def start_backup(source_root: str | None = None, backup_root: str | None = None) -> tuple[bool, str]:
@@ -119,19 +150,7 @@ def backup_worker(source_root: Path, backup_root: Path) -> None:
             for file in files:
 
                 if _cancel_requested:
-                    if target_zip.exists():
-                        target_zip.unlink()
-
-                    _backup_status = {
-                        **_backup_status,
-                        "running": False,
-                        "status": "canceled",
-                        "message": "已取消本機備份",
-                    }
-
-                    publish_event("backup_canceled", _backup_status)
-                    save_backup_record_and_publish(_backup_status)
-                    return
+                    raise BackupCanceled()
 
                 rel_path = file.relative_to(source_world)
 
@@ -163,9 +182,15 @@ def backup_worker(source_root: Path, backup_root: Path) -> None:
         publish_event("backup_finished", _backup_status)
         save_backup_record_and_publish(_backup_status)
 
+    except BackupCanceled:
+        mark_backup_canceled(target_zip)
+
     except Exception as error:
-        if target_zip and target_zip.exists():
-            target_zip.unlink()
+        if _cancel_requested:
+            mark_backup_canceled(target_zip)
+            return
+
+        remove_partial_backup_file(target_zip)
 
         _backup_status = {
             "running": False,

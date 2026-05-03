@@ -1687,3 +1687,19 @@ h1 {
     padding-top: 18px;
     border-top: 1px solid rgba(255,255,255,0.18);
 }
+
+
+.backup-modal{
+    position: fixed;
+}
+
+.manual-floating-progress{
+    position: fixed;
+    left: calc(50% + 390px);
+    top: 75px;
+
+    width: 420px;
+    box-sizing: border-box;
+    z-index: 99999;
+}
+

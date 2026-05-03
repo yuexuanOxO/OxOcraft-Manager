@@ -44,41 +44,6 @@
                 <button id="manualLocalCloudBackupBtn" type="button">開始本機&雲端備份</button>
             </div>
 
-            <div id="manualBackupProgressBox" class="backup-status-box hidden">
-                <div id="manualBackupStatusText">狀態：待機</div>
-
-                <div class="manual-progress-row">
-                    <div class="backup-progress-wrap manual-progress-wrap">
-                        <div id="manualBackupProgressBar" class="backup-progress-bar"></div>
-                    </div>
-
-                    <div id="manualBackupProgressText" class="backup-progress-text manual-progress-text">0%</div>
-                </div>
-                <div id="manualBackupCurrentFile" class="backup-current-file">目前檔案：無</div>
-
-                <div id="manualCloudUploadBox" class="manual-cloud-upload-box hidden">
-                    <div id="manualCloudUploadStatus">雲端上傳：待機</div>
-
-                    <div class="manual-progress-row">
-                        <div class="backup-progress-wrap manual-progress-wrap">
-                            <div id="manualCloudUploadProgressBar" class="backup-progress-bar"></div>
-                        </div>
-
-                        <div id="manualCloudUploadProgressText"
-                            class="backup-progress-text manual-progress-text">
-                            0%
-                        </div>
-                    </div>
-
-                    <div id="manualCloudUploadFile" class="backup-current-file">
-                        目前檔案：無
-                    </div>
-                </div>
-                
-            </div>
-
-            
-
         </div>
 
         <div id="backupSettingsPage" class="backup-page hidden">
@@ -270,4 +235,38 @@
 
         </div>
     </div>
+
+    <div id="manualBackupProgressBox" class="backup-status-box manual-floating-progress hidden">
+        <div id="manualBackupStatusText">狀態：待機</div>
+
+        <div class="manual-progress-row">
+            <div class="backup-progress-wrap manual-progress-wrap">
+                <div id="manualBackupProgressBar" class="backup-progress-bar"></div>
+            </div>
+
+            <div id="manualBackupProgressText" class="backup-progress-text manual-progress-text">0%</div>
+        </div>
+        <div id="manualBackupCurrentFile" class="backup-current-file">目前檔案：無</div>
+
+        <div id="manualCloudUploadBox" class="manual-cloud-upload-box hidden">
+            <div id="manualCloudUploadStatus">雲端上傳：待機</div>
+
+            <div class="manual-progress-row">
+                <div class="backup-progress-wrap manual-progress-wrap">
+                    <div id="manualCloudUploadProgressBar" class="backup-progress-bar"></div>
+                </div>
+
+                <div id="manualCloudUploadProgressText"
+                    class="backup-progress-text manual-progress-text">
+                    0%
+                </div>
+            </div>
+
+            <div id="manualCloudUploadFile" class="backup-current-file">
+                目前檔案：無
+            </div>
+        </div>
+        
+    </div>
+
 </div>

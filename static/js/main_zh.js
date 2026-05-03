@@ -2083,9 +2083,10 @@ async function loadBackupConfig() {
         }
 
         if (manualSourceInput && manualSourceText) {
-            manualSourceInput.value = data.world_path || data.source_root || "";
-            manualSourceText.textContent = manualSourceInput.value;
-            await loadManualBackupWorlds(manualSourceInput.value);
+            const manualScanRoot = data.manual_scan_root || data.source_root || "";
+            manualSourceInput.value = manualScanRoot;
+            manualSourceText.textContent = manualScanRoot;
+            await loadManualBackupWorlds(manualScanRoot, data.world_path || "");
         }
 
         if (manualBackupInput && manualBackupText && !manualBackupInput.value.trim()) {
@@ -2159,7 +2160,8 @@ async function startSafeManualBackup(uploadCloud) {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                source_root: selectedWorldPath,
+                manual_scan_root: sourceInput.value.trim(),
+                selected_world_path: selectedWorldPath,
                 backup_root: backupInput.value.trim(),
                 upload_cloud: uploadCloud
             })
@@ -2192,7 +2194,7 @@ function setupManualBackupButtons() {
 }
 
 
-async function loadManualBackupWorlds(rootPath) {
+async function loadManualBackupWorlds(rootPath, currentWorldPath = "") {
     if (!rootPath) return;
 
     const response = await fetch("/api/backup/worlds", {
@@ -2204,6 +2206,7 @@ async function loadManualBackupWorlds(rootPath) {
             root: rootPath
         })
     });
+
     const data = await response.json();
 
     if (!data.success) {
@@ -2211,11 +2214,19 @@ async function loadManualBackupWorlds(rootPath) {
         return;
     }
 
-    renderManualBackupWorlds(data.worlds || []);
+    renderManualBackupWorlds(data.worlds || [], currentWorldPath);
 }
 
 
-function renderManualBackupWorlds(worlds) {
+function normalizePath(path) {
+    return String(path || "")
+        .replaceAll("\\\\", "/")
+        .replaceAll("\\", "/")
+        .toLowerCase();
+}
+
+
+function renderManualBackupWorlds(worlds, currentWorldPath = "") {
     const list = document.getElementById("manualBackupWorldList");
     const info = document.getElementById("manualBackupWorldInfo");
 
@@ -2229,30 +2240,51 @@ function renderManualBackupWorlds(worlds) {
         return;
     }
 
-    worlds.forEach((world, index) => {
+    const matchedWorld = worlds.find(world => {
+        return normalizePath(world.path) === normalizePath(currentWorldPath);
+    });
+
+    manualBackupSelectedWorld = matchedWorld || worlds[0];
+
+    worlds.forEach((world) => {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "manual-world-btn";
         btn.textContent = `${world.name} (${formatBytes(world.total_bytes || 0)})`;
+
+        if (normalizePath(world.path) === normalizePath(manualBackupSelectedWorld.path)) {
+            btn.classList.add("active");
+        }
+
         btn.addEventListener("click", () => {
             document.querySelectorAll(".manual-world-btn").forEach(item => {
                 item.classList.remove("active");
             });
+
             btn.classList.add("active");
             manualBackupSelectedWorld = world;
+
             const sourceInput = document.getElementById("manualBackupSourceInput");
             const sourceText = document.getElementById("manualBackupSourceText");
             const parentPath = (world.path || "").replace(/[\\/][^\\/]+$/, "");
+
             if (sourceInput) sourceInput.value = parentPath || world.path || "";
             if (sourceText) sourceText.textContent = parentPath || world.path || "";
             if (info) info.textContent = `${world.name} | ${formatBytes(world.total_bytes || 0)}`;
         });
-        list.appendChild(btn);
 
-        if (index === 0) {
-            btn.click();
-        }
+        list.appendChild(btn);
     });
+
+    const sourceInput = document.getElementById("manualBackupSourceInput");
+    const sourceText = document.getElementById("manualBackupSourceText");
+    const selectedParentPath = (manualBackupSelectedWorld.path || "").replace(/[\\/][^\\/]+$/, "");
+
+    if (sourceInput) sourceInput.value = selectedParentPath || manualBackupSelectedWorld.path || "";
+    if (sourceText) sourceText.textContent = selectedParentPath || manualBackupSelectedWorld.path || "";
+    if (info) {
+        info.textContent = `${manualBackupSelectedWorld.name} | ${formatBytes(manualBackupSelectedWorld.total_bytes || 0)}`;
+    }
 }
 
 

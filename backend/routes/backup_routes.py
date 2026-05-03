@@ -81,6 +81,24 @@ def find_world_folders(root: Path) -> list[dict]:
     return worlds
 
 
+def get_manual_backup_default_scan_root(world_path: Path) -> Path:
+    """
+    手動備份頁面的預設掃描根目錄。
+
+    get_current_world_path() 是 Minecraft 實際使用中的世界資料夾，
+    例如：
+        D:/Minecraft/server/All_Save/world2
+
+    但手動備份頁面需要掃描的是世界集合資料夾，
+    例如：
+        D:/Minecraft/server/All_Save
+    """
+    if is_world_folder(world_path):
+        return world_path.parent
+
+    return world_path
+
+
 def is_cached_server_online() -> bool:
     status = get_cached_server_status()
     data = status.get("data", status)
@@ -227,13 +245,24 @@ def api_backup_config():
     world_path = get_current_world_path()
     config = load_app_config()
 
+    manual_scan_root = get_manual_backup_default_scan_root(world_path)
+
     return jsonify({
         "success": True,
-        "source_root": str(world_path),
+
+        # 手動備份頁面上方的「伺服器世界路徑」
+        "manual_scan_root": str(config.get("manual_scan_root") or manual_scan_root),
+
+        # 先保留 source_root，避免前端目前還吃這個欄位時壞掉
+        "source_root": str(config.get("manual_scan_root") or manual_scan_root),
+
         "backup_root": config.get("backup_root") or str(MC_ROOT / "world_backup"),
         "manual_backup_root": config.get("manual_backup_root") or str(MC_ROOT / "world_backup"),
-        "level_name": get_current_level_name(),
+
+        # 實際目前 server.properties 指到的世界
         "world_path": str(world_path),
+        "current_world_name": world_path.name,
+        "level_name": get_current_level_name(),
     })
 
 
@@ -275,6 +304,11 @@ def api_backup_worlds():
         }), 400
 
     worlds = find_world_folders(root)
+
+    config = load_app_config()
+    config["manual_scan_root"] = str(root)
+    save_app_config(config)
+
     return jsonify({
         "success": True,
         "root": str(root),
@@ -293,11 +327,13 @@ def api_backup_manual_safe_start():
         }), 409
 
     data = request.get_json(silent=True) or {}
-    source_root = data.get("source_root") or ""
+
+    # 手動備份真正要備份的是使用者選中的世界資料夾
+    selected_world_path = data.get("selected_world_path") or data.get("source_root") or ""
     backup_root = data.get("backup_root") or ""
     upload_cloud = bool(data.get("upload_cloud"))
 
-    if not source_root or not is_world_folder(Path(source_root).expanduser()):
+    if not selected_world_path or not is_world_folder(Path(selected_world_path).expanduser()):
         return jsonify({
             "success": False,
             "message": "請先選擇有效的世界資料夾",
@@ -311,12 +347,18 @@ def api_backup_manual_safe_start():
 
     config = load_app_config()
     config["manual_backup_root"] = backup_root
+
+    # 如果前端有傳 manual_scan_root，就順便記住
+    manual_scan_root = data.get("manual_scan_root")
+    if manual_scan_root:
+        config["manual_scan_root"] = manual_scan_root
+
     save_app_config(config)
 
     _manual_safe_backup_running = True
     threading.Thread(
         target=manual_safe_backup_worker,
-        args=(source_root, backup_root, upload_cloud),
+        args=(selected_world_path, backup_root, upload_cloud),
         daemon=True,
     ).start()
 
@@ -324,6 +366,7 @@ def api_backup_manual_safe_start():
         "success": True,
         "message": "已開始手動備份",
     })
+
 
 @backup_bp.route("/api/backup/auto-config")
 def api_backup_auto_config():

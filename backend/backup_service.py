@@ -98,7 +98,7 @@ def start_backup(source_root: str | None = None, backup_root: str | None = None)
     if _is_running:
         return False, "已有備份進行中"
 
-    source_root_path = Path(source_root).expanduser() if source_root else MC_ROOT
+    source_root_path = Path(source_root).expanduser() if source_root else None
     backup_root_path = Path(backup_root).expanduser() if backup_root else (MC_ROOT / "world_backup")
 
     _backup_thread = threading.Thread(
@@ -111,7 +111,7 @@ def start_backup(source_root: str | None = None, backup_root: str | None = None)
     return True, "已開始備份"
 
 
-def backup_worker(source_root: Path, backup_root: Path) -> None:
+def backup_worker(source_root: Path | None, backup_root: Path) -> None:
     global _cancel_requested, _current_backup_record_id, _is_running, _backup_status
 
     _cancel_requested = False
@@ -125,7 +125,11 @@ def backup_worker(source_root: Path, backup_root: Path) -> None:
         level_name = get_current_level_name()
 
         if source_root:
-            source_world = Path(source_root).expanduser() / level_name
+            source_root_path = Path(source_root).expanduser()
+            if source_root_path.name == locked_world_path.name:
+                source_world = source_root_path
+            else:
+                source_world = source_root_path / locked_world_path.name
         else:
             source_world = locked_world_path
 

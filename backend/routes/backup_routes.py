@@ -94,6 +94,11 @@ def api_backup_start():
     source_root = data.get("source_root")
     backup_root = data.get("backup_root")
 
+    if backup_root:
+        config = load_app_config()
+        config["backup_root"] = backup_root
+        save_app_config(config)
+
     success, message = start_backup(
         source_root=source_root,
         backup_root=backup_root,
@@ -123,11 +128,12 @@ def api_backup_status():
 @backup_bp.route("/api/backup/config")
 def api_backup_config():
     world_path = get_current_world_path()
+    config = load_app_config()
 
     return jsonify({
         "success": True,
-        "source_root": str(MC_ROOT),
-        "backup_root": str(MC_ROOT / "world_backup"),
+        "source_root": str(world_path),
+        "backup_root": config.get("backup_root") or str(MC_ROOT / "world_backup"),
         "level_name": get_current_level_name(),
         "world_path": str(world_path),
     })

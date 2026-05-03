@@ -5,19 +5,18 @@
         </div>
 
         <div class="backup-tabs">
-            <button class="backup-tab active" type="button" data-tab="settings">備份設定</button>
+            <button class="backup-tab active" type="button" data-tab="settings">自動備份設定</button>
             <button class="backup-tab" type="button" data-tab="records">備份紀錄</button>
             <button class="backup-tab" data-tab="cloud">雲端同步</button>
         </div>
 
         <div id="backupSettingsPage" class="backup-page">
             <div class="backup-row">
-                <div class="backup-label">Server 根路徑</div>
+                <div class="backup-label">伺服器世界路徑</div>
 
-                <div class="backup-path-wrap" data-path-row="source">
-                    <div id="backupSourceRootText" class="backup-path-text"></div>
+                <div class="backup-path-display" data-path-row="source">
+                    <div id="backupSourceRootText" class="backup-value"></div>
                     <input id="backupSourceRootInput" class="backup-path-input hidden" type="text" value="">
-                    <button class="backup-path-edit-btn" type="button" data-target="source">✎</button>
                 </div>
             </div>
 

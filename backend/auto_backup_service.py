@@ -343,9 +343,12 @@ def run_auto_backup_flow(scheduled_time: datetime) -> None:
         while is_backup_running():
             time.sleep(1)
 
+        config = load_config()
+        backup_root = config.get("backup_root") or str(MC_ROOT / "world_backup")
+
         success, message = start_backup(
-            source_root=str(MC_ROOT),
-            backup_root=str(MC_ROOT / "world_backup")
+            source_root=None,
+            backup_root=backup_root
         )
 
         if success:

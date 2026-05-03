@@ -2018,7 +2018,7 @@ async function loadBackupConfig() {
         const sourceText = document.getElementById("backupSourceRootText");
         const backupText = document.getElementById("backupRootText");
 
-        if (sourceInput && sourceText && !sourceInput.value.trim()) {
+        if (sourceInput && sourceText) {
             sourceInput.value = data.source_root || "";
             sourceText.textContent = data.source_root || "";
         }
@@ -2031,7 +2031,10 @@ async function loadBackupConfig() {
         currentBackupLevelName = data.level_name || "world";
 
         if (mapName) {
-            mapName.textContent = currentBackupLevelName;
+            const worldPath = data.world_path || "";
+            mapName.textContent = worldPath
+                ? worldPath.split(/[\\/]/).filter(Boolean).pop()
+                : currentBackupLevelName;
         }
 
         updateDefaultCloudBackupFolderText();

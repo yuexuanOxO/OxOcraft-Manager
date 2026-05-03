@@ -2766,42 +2766,33 @@ function setCloudUploadRunning(isRunning) {
 
 
 function renderCloudUploadProgress(data) {
+
+    const percent = data.percent || 0;
+
+    // 原本雲端頁
     const status = document.getElementById("cloudUploadStatus");
     const file = document.getElementById("cloudUploadFile");
     const bar = document.getElementById("cloudUploadProgressBar");
     const text = document.getElementById("cloudUploadProgressText");
 
-    const percent = data.percent || 0;
+    // 手動備份頁新增
+    const manualStatus = document.getElementById("manualCloudUploadStatus");
+    const manualFile = document.getElementById("manualCloudUploadFile");
+    const manualBar = document.getElementById("manualCloudUploadProgressBar");
+    const manualText = document.getElementById("manualCloudUploadProgressText");
 
-    if (status) {
-        status.textContent = data.message || "雲端上傳中";
-    }
+    const msg = data.message || "雲端上傳中";
+    const fileName = data.file_name || "無";
 
-    if (file) {
-        file.textContent = `目前檔案：${data.file_name || "無"}`;
-    }
+    if (status) status.textContent = msg;
+    if (file) file.textContent = `目前檔案：${fileName}`;
+    if (bar) bar.style.width = `${percent}%`;
+    if (text) text.textContent = `${percent}%`;
 
-    if (bar) {
-        bar.style.width = `${percent}%`;
-    }
-
-    if (text) {
-        text.textContent = `${percent}%`;
-    }
-
-    if (data.status === "running") {
-        showCloudUploadTaskButton(percent);
-    } else if (
-        data.status === "success" ||
-        data.status === "failed" ||
-        data.status === "canceled"
-    ) {
-        showCloudUploadTaskButton(100);
-
-        setTimeout(() => {
-            hideCloudUploadTaskButton();
-        }, 3000);
-    }
+    if (manualStatus) manualStatus.textContent = `雲端上傳：${msg}`;
+    if (manualFile) manualFile.textContent = `目前檔案：${fileName}`;
+    if (manualBar) manualBar.style.width = `${percent}%`;
+    if (manualText) manualText.textContent = `${percent}%`;
 }
 
 

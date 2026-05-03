@@ -1680,3 +1680,10 @@ h1 {
     font-size: 18px;
     cursor: pointer;
 }
+
+
+.manual-cloud-upload-box{
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255,255,255,0.18);
+}

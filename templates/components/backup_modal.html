@@ -5,12 +5,60 @@
         </div>
 
         <div class="backup-tabs">
-            <button class="backup-tab active" type="button" data-tab="settings">自動備份設定</button>
+            <button class="backup-tab active" type="button" data-tab="manual">手動備份</button>
+            <button class="backup-tab" type="button" data-tab="settings">自動備份</button>
             <button class="backup-tab" type="button" data-tab="records">備份紀錄</button>
-            <button class="backup-tab" data-tab="cloud">雲端同步</button>
+            <button class="backup-tab" data-tab="cloud">雲端備份</button>
         </div>
 
-        <div id="backupSettingsPage" class="backup-page">
+        <div id="backupManualPage" class="backup-page">
+            <div class="backup-row">
+                <div class="backup-label">伺服器世界路徑</div>
+
+                <div class="backup-path-wrap" data-path-row="manual-source">
+                    <div id="manualBackupSourceText" class="backup-path-text"></div>
+                    <input id="manualBackupSourceInput" class="backup-path-input hidden" type="text" value="">
+                    <button class="backup-path-edit-btn" type="button" data-target="manual-source">✎</button>
+                </div>
+            </div>
+
+            <div class="backup-row">
+                <div class="backup-label">備份輸出路徑</div>
+
+                <div class="backup-path-wrap" data-path-row="manual-backup">
+                    <div id="manualBackupRootText" class="backup-path-text"></div>
+                    <input id="manualBackupRootInput" class="backup-path-input hidden" type="text" value="">
+                    <button class="backup-path-edit-btn" type="button" data-target="manual-backup">✎</button>
+                </div>
+            </div>
+
+            <div class="backup-row">
+                <div class="backup-label">目前世界</div>
+                <div id="manualBackupWorldInfo" class="backup-value">請選擇世界資料夾</div>
+            </div>
+
+            <div id="manualBackupWorldList" class="manual-world-list"></div>
+
+            <div class="backup-actions">
+                <button id="manualLocalBackupBtn" type="button">開始本機備份</button>
+                <button id="manualLocalCloudBackupBtn" type="button">開始本機&雲端備份</button>
+            </div>
+
+            <div class="backup-status-box">
+                <div id="manualBackupStatusText">狀態：待機</div>
+
+                <div class="manual-progress-row">
+                    <div class="backup-progress-wrap manual-progress-wrap">
+                        <div id="manualBackupProgressBar" class="backup-progress-bar"></div>
+                    </div>
+
+                    <div id="manualBackupProgressText" class="backup-progress-text manual-progress-text">0%</div>
+                </div>
+                <div id="manualBackupCurrentFile" class="backup-current-file">目前檔案：無</div>
+            </div>
+        </div>
+
+        <div id="backupSettingsPage" class="backup-page hidden">
             <div class="backup-row">
                 <div class="backup-label">伺服器世界路徑</div>
 

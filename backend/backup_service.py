@@ -27,6 +27,17 @@ class BackupCanceled(Exception):
     pass
 
 
+def is_world_folder(path: Path) -> bool:
+    if not path.is_dir():
+        return False
+
+    if not (path / "level.dat").is_file():
+        return False
+
+    markers = ("data", "region", "DIM1", "DIM-1", "dimensions", "players", "datapacks")
+    return any((path / marker).exists() for marker in markers)
+
+
 def get_backup_status() -> dict:
     return dict(_backup_status)
 
@@ -126,7 +137,7 @@ def backup_worker(source_root: Path | None, backup_root: Path) -> None:
 
         if source_root:
             source_root_path = Path(source_root).expanduser()
-            if source_root_path.name == locked_world_path.name:
+            if is_world_folder(source_root_path):
                 source_world = source_root_path
             else:
                 source_world = source_root_path / locked_world_path.name

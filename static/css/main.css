@@ -1135,6 +1135,28 @@ h1 {
     color: #65ff65;
 }
 
+.manual-progress-row{
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-top: 14px;
+}
+
+.manual-progress-row .backup-progress-wrap{
+    margin-top: 0;
+}
+
+.manual-progress-wrap{
+    flex: 1 1 auto;
+    max-width: none;
+}
+
+.manual-progress-text{
+    margin-top: 0;
+    min-width: 54px;
+    text-align: right;
+}
+
 .backup-current-file{
     margin-top: 8px;
     color: #aaa;
@@ -1212,6 +1234,28 @@ h1 {
 
     color: #fff;
     font-size: 18px;
+}
+
+.manual-world-list{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 4px 0 18px 156px;
+}
+
+.manual-world-btn{
+    min-height: 38px;
+    padding: 0 14px;
+    cursor: pointer;
+    background: #111;
+    border: 2px solid #555;
+    color: #65ff65;
+    font-size: 16px;
+}
+
+.manual-world-btn.active{
+    border-color: #20d050;
+    background: #1a2a1a;
 }
 
 

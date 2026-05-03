@@ -15,6 +15,7 @@ let backupProviderFilters = new Set();
 let backupStatusFilters = new Set();
 let selectedCloudBackupFolder = "";
 let currentBackupLevelName = "world";
+let manualBackupSelectedWorld = null;
 let currentPlayers = new Set();
 let autoBackupMissedPromptOpen = false;
 
@@ -1651,6 +1652,7 @@ function setupBackupModal() {
     const modal = document.getElementById("backupModal");
     const openBtn = document.getElementById("backupBtn");
     const tabs = document.querySelectorAll(".backup-tab");
+    const manualPage = document.getElementById("backupManualPage");
     const settingsPage = document.getElementById("backupSettingsPage");
     const recordsPage = document.getElementById("backupRecordsPage");
 
@@ -1658,6 +1660,21 @@ function setupBackupModal() {
 
     openBtn.addEventListener("click", async () => {
         modal.classList.remove("hidden");
+        tabs.forEach(item => {
+            item.classList.toggle("active", item.dataset.tab === "manual");
+        });
+
+        if (manualPage) {
+            manualPage.classList.remove("hidden");
+        }
+        settingsPage.classList.add("hidden");
+        recordsPage.classList.add("hidden");
+
+        const cloudPage = document.getElementById("backupCloudPage");
+        if (cloudPage) {
+            cloudPage.classList.add("hidden");
+        }
+
         await loadBackupConfig();
         await loadAutoBackupConfig();
     });
@@ -1679,6 +1696,9 @@ function setupBackupModal() {
 
             const cloudPage = document.getElementById("backupCloudPage");
 
+            if (manualPage) {
+                manualPage.classList.add("hidden");
+            }
             settingsPage.classList.add("hidden");
             recordsPage.classList.add("hidden");
 
@@ -1686,7 +1706,13 @@ function setupBackupModal() {
                 cloudPage.classList.add("hidden");
             }
 
-            if (target === "settings") {
+            if (target === "manual") {
+
+                if (manualPage) {
+                    manualPage.classList.remove("hidden");
+                }
+
+            } else if (target === "settings") {
 
                 settingsPage.classList.remove("hidden");
 
@@ -1923,6 +1949,10 @@ function renderBackupProgress(data) {
     const progressBar = document.getElementById("backupProgressBar");
     const progressText = document.getElementById("backupProgressText");
     const currentFile = document.getElementById("backupCurrentFile");
+    const manualStatusText = document.getElementById("manualBackupStatusText");
+    const manualProgressBar = document.getElementById("manualBackupProgressBar");
+    const manualProgressText = document.getElementById("manualBackupProgressText");
+    const manualCurrentFile = document.getElementById("manualBackupCurrentFile");
     const mapName = document.getElementById("backupMapName");
 
     const percent = data.percent || 0;
@@ -1943,11 +1973,29 @@ function renderBackupProgress(data) {
         currentFile.textContent = `目前檔案：${data.current_file || "無"}`;
     }
 
+    if (manualStatusText) {
+        manualStatusText.textContent = `狀態：${data.message || data.status || "未知"}`;
+    }
+
+    if (manualProgressBar) {
+        manualProgressBar.style.width = `${percent}%`;
+    }
+
+    if (manualProgressText) {
+        manualProgressText.textContent = `${percent}%`;
+    }
+
+    if (manualCurrentFile) {
+        manualCurrentFile.textContent = `目前檔案：${data.current_file || "無"}`;
+    }
+
     if (mapName && data.map_name) {
         mapName.textContent = data.map_name;
     }
 
     if (data.running || data.status === "running") {
+        document.getElementById("manualLocalBackupBtn")?.setAttribute("disabled", "disabled");
+        document.getElementById("manualLocalCloudBackupBtn")?.setAttribute("disabled", "disabled");
         showBackupTaskButton(percent);
     } else if (
         data.status === "success" ||
@@ -1959,6 +2007,8 @@ function renderBackupProgress(data) {
         setTimeout(() => {
             hideBackupTaskButton();
         }, 3000);
+        document.getElementById("manualLocalBackupBtn")?.removeAttribute("disabled");
+        document.getElementById("manualLocalCloudBackupBtn")?.removeAttribute("disabled");
     }
 }
 
@@ -2014,9 +2064,13 @@ async function loadBackupConfig() {
 
         const sourceInput = document.getElementById("backupSourceRootInput");
         const backupInput = document.getElementById("backupRootInput");
+        const manualSourceInput = document.getElementById("manualBackupSourceInput");
+        const manualBackupInput = document.getElementById("manualBackupRootInput");
         const mapName = document.getElementById("backupMapName");
         const sourceText = document.getElementById("backupSourceRootText");
         const backupText = document.getElementById("backupRootText");
+        const manualSourceText = document.getElementById("manualBackupSourceText");
+        const manualBackupText = document.getElementById("manualBackupRootText");
 
         if (sourceInput && sourceText) {
             sourceInput.value = data.source_root || "";
@@ -2026,6 +2080,17 @@ async function loadBackupConfig() {
         if (backupInput && backupText && !backupInput.value.trim()) {
             backupInput.value = data.backup_root || "";
             backupText.textContent = data.backup_root || "";
+        }
+
+        if (manualSourceInput && manualSourceText) {
+            manualSourceInput.value = data.world_path || data.source_root || "";
+            manualSourceText.textContent = manualSourceInput.value;
+            await loadManualBackupWorlds(manualSourceInput.value);
+        }
+
+        if (manualBackupInput && manualBackupText && !manualBackupInput.value.trim()) {
+            manualBackupInput.value = data.manual_backup_root || data.backup_root || "";
+            manualBackupText.textContent = manualBackupInput.value;
         }
 
         currentBackupLevelName = data.level_name || "world";
@@ -2053,6 +2118,144 @@ function updateDefaultCloudBackupFolderText() {
 }
 
 
+async function startSafeManualBackup(uploadCloud) {
+    const sourceInput = document.getElementById("manualBackupSourceInput");
+    const backupInput = document.getElementById("manualBackupRootInput");
+    const localBtn = document.getElementById("manualLocalBackupBtn");
+    const cloudBtn = document.getElementById("manualLocalCloudBackupBtn");
+    const selectedWorldPath = manualBackupSelectedWorld?.path || "";
+
+    if (!sourceInput?.value.trim()) {
+        alert("請先選擇世界資料夾");
+        return;
+    }
+
+    if (!selectedWorldPath) {
+        alert("請先選擇要備份的世界資料夾");
+        return;
+    }
+
+    if (!backupInput?.value.trim()) {
+        alert("請先選擇備份輸出路徑");
+        return;
+    }
+
+    try {
+        const statusRes = await fetch("/api/server/query-status", { cache: "no-store" });
+        const statusPayload = await statusRes.json();
+        const statusData = statusPayload.data || statusPayload;
+
+        if (statusData.online) {
+            const ok = confirm("手動備份需要先關閉伺服器，備份完成後會重新啟動。是否繼續？");
+            if (!ok) return;
+        }
+
+        if (localBtn) localBtn.disabled = true;
+        if (cloudBtn) cloudBtn.disabled = true;
+
+        const response = await fetch("/api/backup/manual-safe-start", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                source_root: selectedWorldPath,
+                backup_root: backupInput.value.trim(),
+                upload_cloud: uploadCloud
+            })
+        });
+        const data = await response.json();
+
+        if (!data.success) {
+            alert(data.message || "開始手動備份失敗");
+            if (localBtn) localBtn.disabled = false;
+            if (cloudBtn) cloudBtn.disabled = false;
+        }
+
+    } catch (error) {
+        console.error("開始手動備份失敗:", error);
+        alert("開始手動備份失敗，請查看 console。");
+        if (localBtn) localBtn.disabled = false;
+        if (cloudBtn) cloudBtn.disabled = false;
+    }
+}
+
+
+function setupManualBackupButtons() {
+    document.getElementById("manualLocalBackupBtn")?.addEventListener("click", () => {
+        startSafeManualBackup(false);
+    });
+
+    document.getElementById("manualLocalCloudBackupBtn")?.addEventListener("click", () => {
+        startSafeManualBackup(true);
+    });
+}
+
+
+async function loadManualBackupWorlds(rootPath) {
+    if (!rootPath) return;
+
+    const response = await fetch("/api/backup/worlds", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            root: rootPath
+        })
+    });
+    const data = await response.json();
+
+    if (!data.success) {
+        alert(data.message || "找不到有效的世界資料夾");
+        return;
+    }
+
+    renderManualBackupWorlds(data.worlds || []);
+}
+
+
+function renderManualBackupWorlds(worlds) {
+    const list = document.getElementById("manualBackupWorldList");
+    const info = document.getElementById("manualBackupWorldInfo");
+
+    if (!list) return;
+
+    list.innerHTML = "";
+
+    if (!worlds.length) {
+        manualBackupSelectedWorld = null;
+        if (info) info.textContent = "找不到有效的世界資料夾";
+        return;
+    }
+
+    worlds.forEach((world, index) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "manual-world-btn";
+        btn.textContent = `${world.name} (${formatBytes(world.total_bytes || 0)})`;
+        btn.addEventListener("click", () => {
+            document.querySelectorAll(".manual-world-btn").forEach(item => {
+                item.classList.remove("active");
+            });
+            btn.classList.add("active");
+            manualBackupSelectedWorld = world;
+            const sourceInput = document.getElementById("manualBackupSourceInput");
+            const sourceText = document.getElementById("manualBackupSourceText");
+            const parentPath = (world.path || "").replace(/[\\/][^\\/]+$/, "");
+            if (sourceInput) sourceInput.value = parentPath || world.path || "";
+            if (sourceText) sourceText.textContent = parentPath || world.path || "";
+            if (info) info.textContent = `${world.name} | ${formatBytes(world.total_bytes || 0)}`;
+        });
+        list.appendChild(btn);
+
+        if (index === 0) {
+            btn.click();
+        }
+    });
+}
+
+
 async function openFolderPicker() {
     const response = await fetch("/api/backup/select-folder", {
         method: "POST"
@@ -2075,11 +2278,19 @@ function setupBackupPathEditButtons() {
 
             const textEl = target === "source"
                 ? document.getElementById("backupSourceRootText")
-                : document.getElementById("backupRootText");
+                : target === "manual-source"
+                    ? document.getElementById("manualBackupSourceText")
+                    : target === "manual-backup"
+                        ? document.getElementById("manualBackupRootText")
+                        : document.getElementById("backupRootText");
 
             const inputEl = target === "source"
                 ? document.getElementById("backupSourceRootInput")
-                : document.getElementById("backupRootInput");
+                : target === "manual-source"
+                    ? document.getElementById("manualBackupSourceInput")
+                    : target === "manual-backup"
+                        ? document.getElementById("manualBackupRootInput")
+                        : document.getElementById("backupRootInput");
 
             if (!textEl || !inputEl) return;
 
@@ -2094,6 +2305,10 @@ function setupBackupPathEditButtons() {
 
                 inputEl.value = path;
                 textEl.textContent = path;
+
+                if (target === "manual-source") {
+                    await loadManualBackupWorlds(path);
+                }
 
             } catch (error) {
                 console.error("選擇資料夾失敗:", error);
@@ -2853,6 +3068,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setupBackgroundTaskButtons();
     setupBackupRecordFilters();
     setupAutoBackupSettings();
+    setupManualBackupButtons();
     loadAutoBackupConfig();
     
 });

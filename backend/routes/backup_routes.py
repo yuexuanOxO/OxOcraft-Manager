@@ -1,10 +1,13 @@
 from flask import Blueprint, jsonify, request
 from backend.paths import MC_ROOT
-from backend.server_runtime import get_current_level_name, get_current_world_path
+from backend.server_runtime import get_current_level_name, get_current_world_path, start_server, stop_server
+from backend.server_monitor import get_cached_server_status
 from backend.db import get_backup_records
 import tkinter as tk
 from tkinter import filedialog
 import json
+import threading
+import time
 from datetime import datetime, timedelta
 from calendar import monthrange
 from pathlib import Path
@@ -13,6 +16,8 @@ from backend.backup_service import (
     start_backup,
     cancel_backup,
     get_backup_status,
+    is_backup_running,
+    is_world_folder,
 )
 from backend.auto_backup_service import (
     get_missed_backup_status,
@@ -23,6 +28,7 @@ from backend.auto_backup_service import (
 CONFIG_PATH = Path("static/data/config.json")
 
 backup_bp = Blueprint("backup", __name__)
+_manual_safe_backup_running = False
 
 def load_app_config() -> dict:
     if not CONFIG_PATH.exists():
@@ -37,6 +43,97 @@ def save_app_config(config: dict) -> None:
         json.dumps(config, ensure_ascii=False, indent=4),
         encoding="utf-8"
     )
+
+
+def get_folder_size(path: Path) -> int:
+    total = 0
+    for item in path.rglob("*"):
+        if item.is_file():
+            try:
+                total += item.stat().st_size
+            except OSError:
+                pass
+    return total
+
+
+def find_world_folders(root: Path) -> list[dict]:
+    root = root.expanduser()
+    candidates = [root] if is_world_folder(root) else []
+
+    if root.is_dir():
+        for child in root.iterdir():
+            if child.is_dir() and is_world_folder(child):
+                candidates.append(child)
+
+    worlds = []
+    seen = set()
+    for world in candidates:
+        resolved = str(world.resolve())
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        worlds.append({
+            "name": world.name,
+            "path": str(world),
+            "total_bytes": get_folder_size(world),
+        })
+
+    return worlds
+
+
+def is_cached_server_online() -> bool:
+    status = get_cached_server_status()
+    data = status.get("data", status)
+    return bool(data.get("online"))
+
+
+def wait_for_backup_done() -> dict:
+    while is_backup_running():
+        time.sleep(1)
+    return get_backup_status()
+
+
+def wait_for_server_online(target_online: bool, timeout: int = 120) -> bool:
+    start = time.time()
+    while time.time() - start < timeout:
+        if is_cached_server_online() == target_online:
+            return True
+        time.sleep(1)
+    return False
+
+
+def manual_safe_backup_worker(source_root: str, backup_root: str, upload_cloud: bool) -> None:
+    global _manual_safe_backup_running
+
+    server_was_online = is_cached_server_online()
+
+    try:
+        if server_was_online:
+            stop_server()
+            wait_for_server_online(False, timeout=120)
+
+        success, message = start_backup(
+            source_root=source_root,
+            backup_root=backup_root,
+        )
+
+        if not success:
+            return
+
+        result = wait_for_backup_done()
+
+        if upload_cloud and result.get("status") == "success":
+            from backend.routes.cloud_routes import start_cloud_upload_latest
+
+            backup_path = result.get("backup_path")
+            backup_folder = str(Path(backup_path).parent) if backup_path else ""
+            start_cloud_upload_latest(backup_folder)
+
+    finally:
+        if server_was_online:
+            start_server()
+
+        _manual_safe_backup_running = False
 
 
 def add_month_safe(dt: datetime) -> datetime:
@@ -134,6 +231,7 @@ def api_backup_config():
         "success": True,
         "source_root": str(world_path),
         "backup_root": config.get("backup_root") or str(MC_ROOT / "world_backup"),
+        "manual_backup_root": config.get("manual_backup_root") or str(MC_ROOT / "world_backup"),
         "level_name": get_current_level_name(),
         "world_path": str(world_path),
     })
@@ -161,6 +259,70 @@ def api_backup_select_folder():
     return jsonify({
         "success": True,
         "path": folder_path or ""
+    })
+
+
+@backup_bp.route("/api/backup/worlds", methods=["POST"])
+def api_backup_worlds():
+    data = request.get_json(silent=True) or {}
+    root = Path(data.get("root") or "").expanduser()
+
+    if not root.exists() or not root.is_dir():
+        return jsonify({
+            "success": False,
+            "message": "資料夾不存在或不是有效資料夾",
+            "worlds": [],
+        }), 400
+
+    worlds = find_world_folders(root)
+    return jsonify({
+        "success": True,
+        "root": str(root),
+        "worlds": worlds,
+    })
+
+
+@backup_bp.route("/api/backup/manual-safe-start", methods=["POST"])
+def api_backup_manual_safe_start():
+    global _manual_safe_backup_running
+
+    if _manual_safe_backup_running:
+        return jsonify({
+            "success": False,
+            "message": "手動備份正在執行中",
+        }), 409
+
+    data = request.get_json(silent=True) or {}
+    source_root = data.get("source_root") or ""
+    backup_root = data.get("backup_root") or ""
+    upload_cloud = bool(data.get("upload_cloud"))
+
+    if not source_root or not is_world_folder(Path(source_root).expanduser()):
+        return jsonify({
+            "success": False,
+            "message": "請先選擇有效的世界資料夾",
+        }), 400
+
+    if not backup_root:
+        return jsonify({
+            "success": False,
+            "message": "請先選擇備份輸出路徑",
+        }), 400
+
+    config = load_app_config()
+    config["manual_backup_root"] = backup_root
+    save_app_config(config)
+
+    _manual_safe_backup_running = True
+    threading.Thread(
+        target=manual_safe_backup_worker,
+        args=(source_root, backup_root, upload_cloud),
+        daemon=True,
+    ).start()
+
+    return jsonify({
+        "success": True,
+        "message": "已開始手動備份",
     })
 
 @backup_bp.route("/api/backup/auto-config")

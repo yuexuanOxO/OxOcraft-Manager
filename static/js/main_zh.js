@@ -2253,21 +2253,34 @@ function renderManualBackupWorlds(worlds, currentWorldPath = "") {
     manualBackupSelectedWorld = matchedWorld || worlds[0];
 
     worlds.forEach((world) => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "manual-world-btn";
-        btn.textContent = `${world.name} (${formatBytes(world.total_bytes || 0)})`;
+        const isCurrentWorld =
+            normalizePath(world.path) === normalizePath(currentWorldPath);
 
-        if (normalizePath(world.path) === normalizePath(manualBackupSelectedWorld.path)) {
-            btn.classList.add("active");
+        const isSelected =
+            normalizePath(world.path) === normalizePath(manualBackupSelectedWorld.path);
+
+        const row = document.createElement("button");
+        row.type = "button";
+        row.className = "manual-world-row";
+
+        if (isSelected) {
+            row.classList.add("active");
         }
 
-        btn.addEventListener("click", () => {
-            document.querySelectorAll(".manual-world-btn").forEach(item => {
+        row.innerHTML = `
+            <div class="manual-world-name">${world.name}</div>
+            <div class="manual-world-size">${formatBytes(world.total_bytes || 0)}</div>
+            <div class="manual-world-status ${isCurrentWorld ? "using" : "ready"}">
+                ${isCurrentWorld ? "使用中" : "可備份"}
+            </div>
+        `;
+
+        row.addEventListener("click", () => {
+            document.querySelectorAll(".manual-world-row").forEach(item => {
                 item.classList.remove("active");
             });
 
-            btn.classList.add("active");
+            row.classList.add("active");
             manualBackupSelectedWorld = world;
 
             const sourceInput = document.getElementById("manualBackupSourceInput");
@@ -2276,20 +2289,31 @@ function renderManualBackupWorlds(worlds, currentWorldPath = "") {
 
             if (sourceInput) sourceInput.value = parentPath || world.path || "";
             if (sourceText) sourceText.textContent = parentPath || world.path || "";
-            if (info) info.textContent = `${world.name} | ${formatBytes(world.total_bytes || 0)}`;
+
+            if (info) {
+                info.textContent = `${world.name} | ${formatBytes(world.total_bytes || 0)}`;
+            }
         });
 
-        list.appendChild(btn);
+        list.appendChild(row);
     });
 
     const sourceInput = document.getElementById("manualBackupSourceInput");
     const sourceText = document.getElementById("manualBackupSourceText");
-    const selectedParentPath = (manualBackupSelectedWorld.path || "").replace(/[\\/][^\\/]+$/, "");
+    const selectedParentPath =
+        (manualBackupSelectedWorld.path || "").replace(/[\\/][^\\/]+$/, "");
 
-    if (sourceInput) sourceInput.value = selectedParentPath || manualBackupSelectedWorld.path || "";
-    if (sourceText) sourceText.textContent = selectedParentPath || manualBackupSelectedWorld.path || "";
+    if (sourceInput) {
+        sourceInput.value = selectedParentPath || manualBackupSelectedWorld.path || "";
+    }
+
+    if (sourceText) {
+        sourceText.textContent = selectedParentPath || manualBackupSelectedWorld.path || "";
+    }
+
     if (info) {
-        info.textContent = `${manualBackupSelectedWorld.name} | ${formatBytes(manualBackupSelectedWorld.total_bytes || 0)}`;
+        info.textContent =
+            `${manualBackupSelectedWorld.name} | ${formatBytes(manualBackupSelectedWorld.total_bytes || 0)}`;
     }
 }
 

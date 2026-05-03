@@ -1236,26 +1236,76 @@ h1 {
     font-size: 18px;
 }
 
+
+.manual-world-table{
+    margin: 10px 0 18px 0;
+    border: 2px solid #777;
+    background: #050505;
+}
+
+.manual-world-header{
+    display: grid;
+    grid-template-columns: 1fr 150px 120px;
+    min-height: 34px;
+    align-items: center;
+
+    border-bottom: 2px solid #777;
+    color: #ddd;
+    font-weight: bold;
+    text-align: center;
+}
+
 .manual-world-list{
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin: 4px 0 18px 156px;
+    max-height: 260px;
+    overflow-y: auto;
 }
 
-.manual-world-btn{
+.manual-world-row{
+    width: 100%;
     min-height: 38px;
-    padding: 0 14px;
+
+    display: grid;
+    grid-template-columns: 1fr 150px 120px;
+    align-items: center;
+
+    padding: 0;
+    border: none;
+    border-bottom: 1px solid #555;
+
+    background: #0b0b0b;
+    color: #ddd;
     cursor: pointer;
-    background: #111;
-    border: 2px solid #555;
-    color: #65ff65;
     font-size: 16px;
+    text-align: center;
 }
 
-.manual-world-btn.active{
-    border-color: #20d050;
-    background: #1a2a1a;
+.manual-world-row:hover{
+    background: #151515;
+}
+
+.manual-world-row.active{
+    outline: 2px solid #20d050;
+    outline-offset: -2px;
+    background: #102010;
+}
+
+.manual-world-name{
+    color: #65ff65;
+    text-align: left;
+    padding-left: 16px;
+}
+
+.manual-world-size{
+    color: #ddd;
+}
+
+.manual-world-status.using{
+    color: #65ff65;
+    font-weight: bold;
+}
+
+.manual-world-status.ready{
+    color: #aaa;
 }
 
 
@@ -1703,3 +1753,40 @@ h1 {
     z-index: 99999;
 }
 
+.backup-actions{
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 18px;
+    margin-bottom: 0;
+}
+
+#manualLocalBackupBtn,
+#manualLocalCloudBackupBtn{
+    min-width: 150px;
+    height: 38px;
+    padding: 0 14px;
+
+    background: #222;
+    border: 2px solid #666;
+    color: #ddd;
+
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#manualLocalBackupBtn:hover,
+#manualLocalCloudBackupBtn:hover{
+    background: #2e2e2e;
+    border-color: #65ff65;
+    color: #65ff65;
+}
+
+#manualLocalBackupBtn:disabled,
+#manualLocalCloudBackupBtn:disabled{
+    opacity: 0.45;
+    cursor: not-allowed;
+    border-color: #444;
+    color: #777;
+}

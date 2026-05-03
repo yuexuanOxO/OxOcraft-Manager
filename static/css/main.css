@@ -1745,13 +1745,23 @@ h1 {
 
 .manual-floating-progress{
     position: fixed;
-    left: calc(50% + 390px);
-    top: 75px;
+
+    left: calc(50vw + 395px);
+    top: calc(50vh - 315px);
 
     width: 420px;
     box-sizing: border-box;
     z-index: 99999;
 }
+
+@media (max-width: 1600px){
+    .manual-floating-progress{
+        left: calc(50vw + 370px);
+        top: calc(50vh - 310px);
+        width: 390px;
+    }
+}
+
 
 .backup-actions{
     display: flex;

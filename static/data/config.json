@@ -11,5 +11,5 @@
     "auto_backup_upload_cloud": false,
     "backup_root": "D:\\Minecraft\\server\\world_backup",
     "manual_backup_root": "D:\\Minecraft\\server\\world_backup",
-    "manual_scan_root": "D:\\Minecraft\\server\\All_Save"
+    "manual_scan_root": "D:\\Minecraft\\server"
 }

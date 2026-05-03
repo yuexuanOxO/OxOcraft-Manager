@@ -2169,9 +2169,21 @@ async function startSafeManualBackup(uploadCloud) {
 
         document.getElementById("manualBackupProgressBox")?.classList.remove("hidden");
 
-        if (uploadCloud) {
-            document.getElementById("manualCloudUploadBox")?.classList.add("hidden");
+        const cloudBox = document.getElementById("manualCloudUploadBox");
+        const cloudBar = document.getElementById("manualCloudUploadProgressBar");
+        const cloudText = document.getElementById("manualCloudUploadProgressText");
+        const cloudStatus = document.getElementById("manualCloudUploadStatus");
+        const cloudFile = document.getElementById("manualCloudUploadFile");
+
+        if (cloudBox) {
+            cloudBox.classList.add("hidden");
+            cloudBox.style.opacity = "1";
         }
+
+        if (cloudBar) cloudBar.style.width = "0%";
+        if (cloudText) cloudText.textContent = "0%";
+        if (cloudStatus) cloudStatus.textContent = "雲端上傳：待機";
+        if (cloudFile) cloudFile.textContent = "目前檔案：無";
 
         const response = await fetch("/api/backup/manual-safe-start", {
             method: "POST",

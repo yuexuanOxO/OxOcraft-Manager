@@ -7,9 +7,9 @@
     "java_xmx": "4G",
     "auto_backup_enabled": true,
     "auto_backup_frequency": "yearly",
-    "auto_backup_start_at": "2026-05-04T18:52",
-    "auto_backup_next_run_at": "2027-05-04T18:52",
-    "auto_backup_upload_cloud": false,
+    "auto_backup_start_at": "2026-05-04T21:19",
+    "auto_backup_next_run_at": "2027-05-04T21:19",
+    "auto_backup_upload_cloud": true,
     "backup_root": "D:\\Minecraft\\server\\world_backup",
     "manual_backup_root": "D:\\Minecraft\\server\\world_backup",
     "manual_scan_root": "D:\\Minecraft\\server"

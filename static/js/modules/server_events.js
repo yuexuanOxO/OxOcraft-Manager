@@ -3,7 +3,8 @@ import {
     updateStatusForce,
     addPlayerFromLog,
     removePlayerFromLog,
-    clearPlayersList
+    clearPlayersList,
+    handleBackendDisconnected
 } from "./server_status.js";
 
 import {

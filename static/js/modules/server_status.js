@@ -2,7 +2,6 @@ let statusPollingTimer = null;
 let backendDisconnected = false;
 let wasServerOnline = false;
 let lastServerStatusRevision = null;
-// let pendingServerStatusPayload = null;
 let currentPlayers = new Set();
 
 
@@ -21,16 +20,16 @@ function stopAllPolling() {
 }
 
 
-function handleBackendDisconnected() {
+export function handleBackendDisconnected() {
     if (backendDisconnected) return;
 
     backendDisconnected = true;
     stopAllPolling();
 
-    if (serverEvents) {
-        serverEvents.close();
-        serverEvents = null;
-    }
+    // if (serverEvents) {
+    //     serverEvents.close();
+    //     serverEvents = null;
+    // }
 
     const statusLight = document.getElementById("statusLight");
     const statusText = document.getElementById("statusText");

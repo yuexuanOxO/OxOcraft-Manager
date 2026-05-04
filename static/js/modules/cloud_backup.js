@@ -1,11 +1,12 @@
-let selectedCloudBackupFolder = "";
-
 import {
     openFolderPicker,
     fadeOutAndHide,
     isBackupEndStatus,
     getCurrentBackupLevelName
 } from "./backup.js";
+
+
+let selectedCloudBackupFolder = "";
 
 
 export function initCloudBackup() {

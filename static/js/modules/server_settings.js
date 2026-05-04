@@ -7,6 +7,9 @@ import {
     updateStatus
 } from "./server_status.js";
 
+import {
+    saveAndRestartServer
+} from "./server_control.js";
 
 export function initServerSettings() {
     setupServerSettingsModal();
@@ -57,9 +60,9 @@ function setupServerSettingsModal() {
         applyBtn.addEventListener("click", saveServerSettings);
     }
 
-    // if (restartBtn) {
-    //     restartBtn.addEventListener("click", saveAndRestartServer);
-    // }
+    if (restartBtn) {
+        restartBtn.addEventListener("click", saveAndRestartServer);
+    }
 
     modal.addEventListener("click", (event) => {
         if (event.target === modal) {
@@ -323,7 +326,7 @@ function setupServerSettingSearch(){
 }
 
 
-async function saveServerSettings(showAlert = true) {
+export async function saveServerSettings(showAlert = true) {
     const applyBtn = document.getElementById("serverSettingsApplyBtn");
     const propertiesPayload = {};
     const runtimeConfigPayload = {};
@@ -409,7 +412,7 @@ async function saveServerSettings(showAlert = true) {
 }
 
 
-async function updateServerSettingsFooterMode() {
+export async function updateServerSettingsFooterMode() {
     const applyBtn = document.getElementById("serverSettingsApplyBtn");
     const restartBtn = document.getElementById("serverSettingsRestartBtn");
 

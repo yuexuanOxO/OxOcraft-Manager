@@ -1,12 +1,26 @@
+import { initDeathBook } from "./modules/death_book.js";
+import { initFeatureCards } from "./modules/feature_cards.js";
+
+import {
+    initServerStatus,
+    updateStatus,
+    updateStatusForce,
+    applyServerStatusPayload,
+    addPlayerFromLog,
+    removePlayerFromLog,
+    clearPlayersList
+} from "./modules/server_status.js";
+
+
 let isTransitioning = false;
-let statusPollingTimer = null;
-let backendDisconnected = false;
-let wasServerOnline = false;
+
+
+
 let serverSettingKeyword = "";
 let serverSettingsServerOnline = false;
 let serverEvents = null;
-let lastServerStatusRevision = null;
-let pendingServerStatusPayload = null;
+
+
 let commandHistory = [];
 let commandHistoryIndex = -1;
 let backupRecordsCache = [];
@@ -30,58 +44,13 @@ let autoBackupState = {
 };
 
 
-function stopAllPolling() {
-    if (statusPollingTimer !== null) {
-        clearInterval(statusPollingTimer);
-        statusPollingTimer = null;
-    }
-}
-
-function handleBackendDisconnected() {
-    if (backendDisconnected) return;
-
-    backendDisconnected = true;
-    stopAllPolling();
-
-    if (serverEvents) {
-        serverEvents.close();
-        serverEvents = null;
-    }
-
-    const statusLight = document.getElementById("statusLight");
-    const statusText = document.getElementById("statusText");
-    const powerBtn = document.getElementById("powerBtn");
-
-    if (statusLight) {
-        statusLight.classList.remove("online", "offline", "starting");
-        statusLight.classList.add("disconnected");
-    }
-
-    if (statusText) {
-        statusText.textContent = "管理介面已中斷";
-    }
-
-    if (powerBtn) {
-        powerBtn.disabled = true;
-        powerBtn.classList.add("loading");
-    }
-
-    console.error("Flask 後端已失聯，已停止輪詢。");
-}
 
 
 
-async function updateStatus() {
-    try {
-        const response = await fetch("/api/server/query-status", { cache: "no-store" });
-        const payload = await response.json();
-        applyServerStatusPayload(payload);
 
-    } catch (error) {
-        console.error("更新狀態失敗:", error);
-        handleBackendDisconnected();
-    }
-}
+
+
+
 
 function setupServerEvents() {
     if (serverEvents !== null) {
@@ -297,107 +266,18 @@ async function handleAutoBackupMissed(event) {
 }
 
 
-async function updateStatusForce() {
-    try {
-        const response = await fetch("/api/server/query-status?force=1", {
-            cache: "no-store"
-        });
-
-        const payload = await response.json();
-        applyServerStatusPayload(payload);
-
-    } catch (error) {
-        console.error("強制更新狀態失敗:", error);
-        handleBackendDisconnected();
-    }
-}
-
-function setPlayersFromQuery(players) {
-    currentPlayers = new Set(players || []);
-    renderPlayersFromQuery([...currentPlayers]);
-}
-
-function addPlayerFromLog(playerName) {
-    if (!playerName) return;
-
-    currentPlayers.add(playerName);
-    renderPlayersFromQuery([...currentPlayers]);
-}
-
-function removePlayerFromLog(playerName) {
-    if (!playerName) return;
-
-    currentPlayers.delete(playerName);
-    renderPlayersFromQuery([...currentPlayers]);
-}
-
-function renderPlayersFromQuery(players) {
-    const playersList = document.getElementById("playersList");
-    if (!playersList) return;
-
-    playersList.innerHTML = "";
-
-    if (!players || players.length === 0) {
-        playersList.innerHTML = "<div class='no-player'>目前沒有玩家在線</div>";
-        return;
-    }
-
-    players.forEach(player => {
-        const item = document.createElement("div");
-        item.className = "player-item";
-
-        const left = document.createElement("div");
-        left.className = "player-main";
-
-        const avatar = document.createElement("img");
-        avatar.className = "player-avatar";
-        avatar.src = `https://mc-heads.net/avatar/${player}`;
-        avatar.alt = `${player} avatar`;
-
-        const name = document.createElement("span");
-        name.className = "player-name";
-        name.textContent = player;
-
-        left.appendChild(avatar);
-        left.appendChild(name);
-
-        const menuWrap = document.createElement("div");
-        menuWrap.className = "player-menu-wrap";
-
-        const menuBtn = document.createElement("button");
-        menuBtn.className = "player-menu-btn";
-        menuBtn.type = "button";
-        menuBtn.textContent = "⋮";
-        menuBtn.dataset.player = player;
-
-        const menu = document.createElement("div");
-        menu.className = "player-menu";
-        menu.hidden = true;
-
-        const kickBtn = document.createElement("button");
-        kickBtn.className = "player-menu-item";
-        kickBtn.type = "button";
-        kickBtn.textContent = "踢出伺服器";
-        kickBtn.dataset.action = "kick";
-        kickBtn.dataset.player = player;
-
-        menu.appendChild(kickBtn);
-        menuWrap.appendChild(menuBtn);
-        menuWrap.appendChild(menu);
-
-        item.appendChild(left);
-        item.appendChild(menuWrap);
-        playersList.appendChild(item);
-    });
-}
 
 
-function clearPlayersList() {
-    const playersList = document.getElementById("playersList");
-    if (!playersList) return;
 
-    playersList.innerHTML = "<div class='no-player'>目前沒有玩家在線</div>";
-}
+
+
+
+
+
+
+
+
+
 
 async function sendCommand() {
     const input = document.getElementById("commandInput");
@@ -660,143 +540,7 @@ document.addEventListener("click", async (event) => {
 
 
 
-// 成就功能卡顯示
-function setupGlobalFeatureCard() {
-    const globalCard = document.getElementById("globalFeatureCard");
-    const globalButtonHost = document.getElementById("globalFeatureButtonHost");
-    const featureItems = document.querySelectorAll(".feature-item");
 
-    if (!globalCard || !globalButtonHost || !featureItems.length) return;
-
-    let hideTimer = null;
-    let activeButton = null;
-    let activePlaceholder = null;
-    let activeOriginalParent = null;
-    let activeItem = null;
-
-    function cancelHide() {
-        if (hideTimer) {
-            clearTimeout(hideTimer);
-            hideTimer = null;
-        }
-    }
-
-    function restoreButton() {
-        if (activeButton && activeOriginalParent) {
-            if (activePlaceholder && activePlaceholder.parentNode) {
-                activePlaceholder.parentNode.replaceChild(activeButton, activePlaceholder);
-            } else {
-                activeOriginalParent.appendChild(activeButton);
-            }
-        }
-
-        activeButton = null;
-        activePlaceholder = null;
-        activeOriginalParent = null;
-        activeItem = null;
-
-        globalButtonHost.classList.add("hidden");
-        globalButtonHost.innerHTML = "";
-
-        globalCard.classList.add("hidden");
-        globalCard.innerHTML = "";
-    }
-
-    function scheduleHide() {
-        cancelHide();
-        hideTimer = setTimeout(() => {
-            restoreButton();
-        }, 80);
-    }
-
-    function showCard(item) {
-        const sourceCard = item.querySelector(".feature-hover-card");
-        const btn = item.querySelector(".feature-btn");
-
-        if (!sourceCard || !btn) return;
-
-        cancelHide();
-
-        // 如果已經是目前這顆，就不要重複搬移，避免一直重置
-        if (activeItem === item) {
-            return;
-        }
-
-        // 如果目前已有其他顆在外層，先還原
-        if (activeButton) {
-            restoreButton();
-        }
-
-        const rect = btn.getBoundingClientRect();
-        const roundedLeft = Math.round(rect.left);
-        const roundedTop = Math.round(rect.top);
-
-        globalCard.innerHTML = sourceCard.innerHTML;
-        globalCard.classList.remove("hidden");
-        globalCard.style.left = `${roundedLeft - 15}px`;
-        globalCard.style.top = `${roundedTop - 4}px`;
-
-        activeButton = btn;
-        activeOriginalParent = btn.parentNode;
-        activeItem = item;
-
-        const placeholder = document.createElement("div");
-        placeholder.className = "feature-btn-placeholder";
-        activePlaceholder = placeholder;
-
-        activeOriginalParent.replaceChild(placeholder, btn);
-
-        globalButtonHost.classList.remove("hidden");
-        globalButtonHost.style.left = `${roundedLeft}px`;
-        globalButtonHost.style.top = `${roundedTop}px`;
-        globalButtonHost.innerHTML = "";
-        globalButtonHost.appendChild(btn);
-    }
-
-    featureItems.forEach((item) => {
-        item.addEventListener("mouseenter", () => {
-            showCard(item);
-        });
-
-        item.addEventListener("mouseleave", (event) => {
-            const toElement = event.relatedTarget;
-
-            // 如果滑鼠是移到外層按鈕 host，不要關閉
-            if (toElement && globalButtonHost.contains(toElement)) {
-                return;
-            }
-
-            scheduleHide();
-        });
-    });
-
-    globalButtonHost.addEventListener("mouseenter", () => {
-        cancelHide();
-    });
-
-    globalButtonHost.addEventListener("mouseleave", (event) => {
-        const toElement = event.relatedTarget;
-
-        // 如果滑鼠從外層按鈕又回到原本某個 feature-item，就不要關閉
-        const movedToFeatureItem = Array.from(featureItems).some((item) => {
-            return toElement && item.contains(toElement);
-        });
-
-        if (movedToFeatureItem) {
-            return;
-        }
-
-        scheduleHide();
-    });
-
-    window.addEventListener("scroll", () => {
-        restoreButton();
-    }, true);
-
-    window.addEventListener("resize", () => {
-        restoreButton();
-    });
-}
 
 
 // server設定頁面
@@ -1552,67 +1296,7 @@ async function checkFirstRunGuide() {
 }
 
 
-function applyServerStatusPayload(payload) {
-    if (!payload || !payload.data) return;
 
-    if (isTransitioning) {
-        pendingServerStatusPayload = payload;
-        return;
-    }
-
-    if (payload.revision === lastServerStatusRevision) {
-        return;
-    }
-
-    lastServerStatusRevision = payload.revision;
-
-    const data = payload.data;
-
-    const statusLight = document.getElementById("statusLight");
-    const statusText = document.getElementById("statusText");
-    const powerBtn = document.getElementById("powerBtn");
-    const logBox = document.getElementById("logBox");
-
-    if (data.online) {
-        setPlayersFromQuery(data.players || []);
-    }
-
-    if (!statusLight || !statusText) return;
-
-    if (data.state === "ready") {
-        statusLight.classList.remove("offline", "starting");
-        statusLight.classList.add("online");
-        statusText.textContent = "在線";
-    } else if (data.state === "starting") {
-        statusLight.classList.remove("online", "offline");
-        statusLight.classList.add("starting");
-        statusText.textContent = "啟動中...";
-    } else {
-        statusLight.classList.remove("online", "starting");
-        statusLight.classList.add("offline");
-        statusText.textContent = "離線";
-    }
-
-    if (powerBtn) {
-        if (data.online) {
-            powerBtn.classList.remove("offline");
-            powerBtn.classList.add("online");
-        } else {
-            powerBtn.classList.remove("online");
-            powerBtn.classList.add("offline");
-        }
-    }
-
-    if (!data.online && wasServerOnline) {
-        if (logBox) {
-            logBox.textContent = "伺服器尚未啟動";
-        }
-
-        clearPlayersList();
-    }
-
-    wasServerOnline = data.online;
-}
 
 
 function appendLogLine(line) {
@@ -3190,7 +2874,6 @@ document.addEventListener("DOMContentLoaded", () => {
         logBox.textContent = "伺服器尚未啟動";
     }
    
-    
 
     const backupRefreshRecordsBtn = document.getElementById("backupRefreshRecordsBtn");
     if (backupRefreshRecordsBtn) {
@@ -3201,12 +2884,10 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("cloudUploadLatestBtn")?.addEventListener("click", uploadLatestBackupToGoogleDrive);
 
     // ===== 定時更新 =====
-    statusPollingTimer = setInterval(updateStatus, 10000);
+    initServerStatus();
 
 
     // ===== 初始化 =====
-    updateStatus();
-    setupGlobalFeatureCard();
     setupServerSettingsModal();
     setupServerSettingSearch();
     setupEulaModal();
@@ -3218,12 +2899,16 @@ document.addEventListener("DOMContentLoaded", () => {
     setupBackupActionButton();
     setupBackupPathEditButtons();
     setupCloudBackupFolderPicker();
-    setupDeathBook();
     setupBackgroundTaskButtons();
     setupBackupRecordFilters();
     setupAutoBackupSettings();
     setupManualBackupButtons();
     loadAutoBackupConfig();
     setupManualProgressCancelButtons();
+    initDeathBook();
+    initFeatureCards();
+    
+
+
     
 });

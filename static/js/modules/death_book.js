@@ -177,7 +177,7 @@ function showNextDeathPage() {
     }
 }
 
-function setupDeathBook() {
+export function initDeathBook() {
     const deathRecordBtn = document.getElementById("deathRecordBtn");
     if (deathRecordBtn) {
         deathRecordBtn.addEventListener("click", openDeathBook);

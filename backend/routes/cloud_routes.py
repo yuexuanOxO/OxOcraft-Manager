@@ -241,7 +241,7 @@ def cloud_upload_latest_worker(backup_folder: str = ""):
             str(backup_path),
             mimetype="application/zip",
             resumable=True,
-            chunksize=1024 * 1024
+            chunksize=16 * 1024 * 1024
         )
 
         request_upload = service.files().create(
@@ -276,6 +276,22 @@ def cloud_upload_latest_worker(backup_folder: str = ""):
                 return
 
             status, response = request_upload.next_chunk()
+
+
+            if status:
+                percent = int(status.progress() * 100)
+
+                if percent != last_percent:
+                    last_percent = percent
+
+                    publish_event("cloud_upload_progress", {
+                        "status": "running",
+                        "percent": percent,
+                        "message": "雲端上傳中",
+                        "file_name": backup_path.name,
+                        "file_size": file_size,
+                    })
+
 
         cleanup_old_cloud_backups(
             service,

@@ -14,6 +14,9 @@ def sync_rcon_to_server_properties(config: Dict) -> None:
         "enable-rcon": "true",
         "rcon.port": str(config["rcon_port"]),
         "rcon.password": str(config["rcon_password"]),
+        "query.port": str(config["query_port"]),
+        "enable-query":"true"
+
     }
 
     server_properties = read_properties_file(SERVER_PROPERTIES_PATH)

@@ -1,9 +1,10 @@
 {
     "rcon_host": "127.0.0.1",
     "rcon_port": 25575,
+    "query_port": 25565,
     "rcon_password": "OxO123456",
     "java_xms": "2G",
-    "java_xmx": "3G",
+    "java_xmx": "4G",
     "auto_backup_enabled": false,
     "auto_backup_frequency": "yearly",
     "auto_backup_start_at": "2026-05-03T11:57",

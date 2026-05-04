@@ -13,7 +13,7 @@ from calendar import monthrange
 from pathlib import Path
 
 from backend.backup_service import (
-    start_backup,
+    enqueue_backup,
     cancel_backup,
     get_backup_status,
     is_backup_running,
@@ -144,25 +144,30 @@ def manual_safe_backup_worker(source_root: str, backup_root: str, upload_cloud: 
             stop_server()
             wait_for_server_online(False, timeout=120)
 
-        success, message = start_backup(
+        success, message = enqueue_backup(
             source_root=source_root,
             backup_root=backup_root,
+            upload_cloud=upload_cloud,
         )
 
         if not success:
             return
 
-        result = wait_for_backup_done()
+        # result = wait_for_backup_done()
 
+        # if need_stop_server:
+        #     start_server()
+
+        # if upload_cloud and result.get("status") == "success":
+        #     from backend.routes.cloud_routes import start_cloud_upload_latest
+
+        #     backup_path = result.get("backup_path")
+        #     backup_folder = str(Path(backup_path).parent) if backup_path else ""
+        #     start_cloud_upload_latest(backup_folder)
         if need_stop_server:
+            wait_for_backup_done()
             start_server()
 
-        if upload_cloud and result.get("status") == "success":
-            from backend.routes.cloud_routes import start_cloud_upload_latest
-
-            backup_path = result.get("backup_path")
-            backup_folder = str(Path(backup_path).parent) if backup_path else ""
-            start_cloud_upload_latest(backup_folder)
 
     finally:
         if need_stop_server and not is_cached_server_online():
@@ -337,11 +342,11 @@ def api_backup_worlds():
 def api_backup_manual_safe_start():
     global _manual_safe_backup_running
 
-    if _manual_safe_backup_running:
-        return jsonify({
-            "success": False,
-            "message": "手動備份正在執行中",
-        }), 409
+    # if _manual_safe_backup_running:
+    #     return jsonify({
+    #         "success": False,
+    #         "message": "手動備份正在執行中",
+    #     }), 409
 
     data = request.get_json(silent=True) or {}
 

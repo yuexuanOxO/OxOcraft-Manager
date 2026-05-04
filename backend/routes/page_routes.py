@@ -12,4 +12,4 @@ page_bp = Blueprint("page", __name__)
 def index():
     logs = "".join(read_last_lines(LOG_FILE_PATH, max_lines=100))
     server_online = is_server_online()
-    return render_template("index_zh.html", logs=logs, server_online=server_online)
+    return render_template("index.html", logs=logs, server_online=server_online)

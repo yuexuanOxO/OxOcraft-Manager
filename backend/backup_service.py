@@ -6,6 +6,8 @@ import time
 from pathlib import Path
 import zipfile
 
+from collections import deque
+from uuid import uuid4
 from backend.paths import MC_ROOT
 from backend.server_monitor import publish_event, get_cached_server_status
 from backend.server_runtime import get_current_world_path, get_current_level_name
@@ -20,8 +22,11 @@ _backup_status = {
     "percent": 0,
     "message": "待機",
 }
-_current_backup_record_id = None
 
+_current_backup_record_id = None
+_backup_queue = deque()
+_current_backup_task = None
+_queue_lock = threading.Lock()
 
 class BackupCanceled(Exception):
     pass
@@ -122,7 +127,42 @@ def start_backup(source_root: str | None = None, backup_root: str | None = None)
     return True, "已開始備份"
 
 
-def backup_worker(source_root: Path | None, backup_root: Path) -> None:
+def enqueue_backup(
+    source_root: str | None = None,
+    backup_root: str | None = None,
+    upload_cloud: bool = False,
+) -> tuple[bool, str]:
+    global _current_backup_task
+
+    source_root_path = Path(source_root).expanduser() if source_root else None
+    backup_root_path = Path(backup_root).expanduser() if backup_root else (MC_ROOT / "world_backup")
+
+    task = {
+        "id": str(uuid4()),
+        "source_root": str(source_root_path) if source_root_path else "",
+        "backup_root": str(backup_root_path),
+        "upload_cloud": bool(upload_cloud),
+        "status": "waiting",
+        "percent": 0,
+        "map_name": source_root_path.name if source_root_path else get_current_level_name(),
+    }
+
+    with _queue_lock:
+        if _is_running:
+            _backup_queue.append(task)
+
+            publish_event("backup_queue_updated", get_backup_queue_status())
+
+            return True, "已加入備份佇列"
+
+        _current_backup_task = task
+
+    _start_backup_task(task)
+
+    return True, "已開始備份"
+
+
+def backup_worker(source_root: Path | None, backup_root: Path, task: dict | None = None) -> None:
     global _cancel_requested, _current_backup_record_id, _is_running, _backup_status
 
     _cancel_requested = False
@@ -174,6 +214,8 @@ def backup_worker(source_root: Path | None, backup_root: Path) -> None:
             "status": "running",
             "percent": 0,
             "message": "備份中",
+            "task_id": task.get("id") if task else "",
+            "upload_cloud": bool(task.get("upload_cloud")) if task else False,
             "map_name": map_name,
             "source_path": str(source_world),
             "backup_path": str(target_zip),
@@ -182,10 +224,12 @@ def backup_worker(source_root: Path | None, backup_root: Path) -> None:
             "total_bytes": total_bytes,
             "copied_bytes": 0,
             "current_file": "",
+            
         }
 
         publish_event("backup_started", _backup_status)
         publish_or_update_backup_record(_backup_status)
+
 
 
         with zipfile.ZipFile(target_zip, "w", compression=zipfile.ZIP_DEFLATED) as zipf:
@@ -220,7 +264,17 @@ def backup_worker(source_root: Path | None, backup_root: Path) -> None:
             "status": "success",
             "percent": 100,
             "message": "本機備份完成",
+            "task_id": task.get("id") if task else "",
+            "upload_cloud": bool(task.get("upload_cloud")) if task else False,
         }
+
+        if task and task.get("upload_cloud"):
+            from backend.routes.cloud_routes import start_cloud_upload_latest
+
+            backup_path = _backup_status.get("backup_path")
+            backup_folder = str(Path(backup_path).parent) if backup_path else ""
+
+            start_cloud_upload_latest(backup_folder)
 
         publish_event("backup_finished", _backup_status)
         publish_or_update_backup_record(_backup_status)
@@ -240,6 +294,8 @@ def backup_worker(source_root: Path | None, backup_root: Path) -> None:
             "status": "failed",
             "percent": 0,
             "message": f"{error}",
+            "task_id": task.get("id") if task else "",
+            "upload_cloud": bool(task.get("upload_cloud")) if task else False,
             "map_name": source_world.name if "source_world" in locals() else None,
             "source_path": str(source_world) if "source_world" in locals() else str(source_root),
             "backup_path": str(target_zip) if target_zip else str(backup_root),
@@ -254,6 +310,32 @@ def backup_worker(source_root: Path | None, backup_root: Path) -> None:
         _is_running = False
         _cancel_requested = False
         _current_backup_record_id = None
+        _start_next_backup_task()
+
+
+def _start_next_backup_task() -> None:
+    global _current_backup_task
+
+    next_task = None
+
+    with _queue_lock:
+        if _backup_queue:
+            next_task = _backup_queue.popleft()
+            _current_backup_task = next_task
+        else:
+            _current_backup_task = None
+
+    publish_event("backup_queue_updated", get_backup_queue_status())
+
+    if next_task:
+        _start_backup_task(next_task)
+
+def get_backup_queue_status() -> dict:
+    with _queue_lock:
+        return {
+            "current": dict(_current_backup_task) if _current_backup_task else None,
+            "queue": [dict(task) for task in _backup_queue],
+        }
 
 
 def save_backup_record_and_publish(status_data: dict) -> None:
@@ -268,3 +350,17 @@ def save_backup_record_and_publish(status_data: dict) -> None:
     )
 
     publish_event("backup_record_added", record)
+
+
+def _start_backup_task(task: dict) -> None:
+    global _backup_thread, _is_running
+
+    source_root_path = Path(task["source_root"]).expanduser() if task.get("source_root") else None
+    backup_root_path = Path(task["backup_root"]).expanduser()
+
+    _backup_thread = threading.Thread(
+        target=backup_worker,
+        args=(source_root_path, backup_root_path, task),
+        daemon=True,
+    )
+    _backup_thread.start()

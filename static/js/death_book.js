@@ -20,7 +20,8 @@ const mobIconMap = {
     evoker: "/static/img/mobs/evoker.png",
     vex: "/static/img/mobs/vex.png",
     shulker: "/static/img/mobs/shulker.png",
-    zoglin: "/static/img/mobs/zoglin.png"
+    zoglin: "/static/img/mobs/zoglin.png",
+    pillager:"/static/img/mobs/pillager.png"
 };
 
 function formatDimensionName(dimension) {

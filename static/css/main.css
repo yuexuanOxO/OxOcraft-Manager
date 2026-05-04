@@ -1801,3 +1801,36 @@ h1 {
     color: #777;
 }
 
+
+.manual-progress-title-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+}
+
+.manual-progress-cancel-btn{
+    width:28px;
+    height:28px;
+    padding:0;
+
+    background:#111;
+    border:2px solid #777;
+    color:#ff5555;
+
+    font-size:22px;
+    font-weight:bold;
+    line-height:20px;
+    cursor:pointer;
+}
+
+.manual-progress-cancel-btn:hover{
+    background:#2a1111;
+    border-color:#ff5555;
+    color:#fff;
+}
+
+.manual-progress-cancel-btn:disabled{
+    opacity:.35;
+    cursor:not-allowed;
+}

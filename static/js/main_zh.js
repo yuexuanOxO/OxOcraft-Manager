@@ -1735,18 +1735,7 @@ function setupBackupModal() {
     });
 }
 
-function setBackupRunning(isRunning) {
-    const btn = document.getElementById("backupMainActionBtn");
-    if (!btn) return;
 
-    if (isRunning) {
-        btn.textContent = "取消備份";
-        btn.dataset.mode = "cancel";
-    } else {
-        btn.textContent = "立即備份";
-        btn.dataset.mode = "start";
-    }
-}
 
 const choosePathBtn = document.getElementById("backupChoosePathBtn");
 if (choosePathBtn) {
@@ -1999,18 +1988,25 @@ function renderBackupProgress(data) {
         document.getElementById("manualLocalBackupBtn")?.setAttribute("disabled", "disabled");
         document.getElementById("manualLocalCloudBackupBtn")?.setAttribute("disabled", "disabled");
         showBackupTaskButton(percent);
-    } else if (
-        data.status === "success" ||
-        data.status === "failed" ||
-        data.status === "canceled"
-    ) {
+    } else if (isBackupEndStatus(data)) {
         showBackupTaskButton(100);
 
         setTimeout(() => {
             hideBackupTaskButton();
         }, 3000);
 
-        if (!manualBackupUploadCloud) {
+        const status = String(data.status || "").toLowerCase();
+        const message = String(data.message || "");
+
+        const isLocalSuccess = status === "success";
+        const isCanceledOrFailed =
+            status === "failed" ||
+            status === "canceled" ||
+            status === "cancelled" ||
+            status.includes("cancel") ||
+            message.includes("取消");
+
+        if (!manualBackupUploadCloud || isCanceledOrFailed) {
             fadeOutAndHide(document.getElementById("manualBackupProgressBox"), 3000);
         }
 
@@ -2032,11 +2028,13 @@ function setupBackgroundTaskButtons() {
         await loadBackupConfig();
 
         document.querySelectorAll(".backup-tab").forEach(tab => {
-            tab.classList.toggle("active", tab.dataset.tab === "settings");
+            tab.classList.toggle("active", tab.dataset.tab === "manual");
         });
 
-        document.getElementById("backupSettingsPage")?.classList.remove("hidden");
+        document.getElementById("backupManualPage")?.classList.remove("hidden");
+        document.getElementById("backupSettingsPage")?.classList.add("hidden");
         document.getElementById("backupRecordsPage")?.classList.add("hidden");
+        document.getElementById("backupCloudPage")?.classList.add("hidden");
     });
 
     if (cloudUploadTaskBtn && backupModal) {
@@ -2045,14 +2043,13 @@ function setupBackgroundTaskButtons() {
             await loadBackupConfig();
 
             document.querySelectorAll(".backup-tab").forEach(tab => {
-                tab.classList.toggle("active", tab.dataset.tab === "cloud");
+                tab.classList.toggle("active", tab.dataset.tab === "manual");
             });
 
+            document.getElementById("backupManualPage")?.classList.remove("hidden");
             document.getElementById("backupSettingsPage")?.classList.add("hidden");
             document.getElementById("backupRecordsPage")?.classList.add("hidden");
-            document.getElementById("backupCloudPage")?.classList.remove("hidden");
-
-            await loadCloudStatus();
+            document.getElementById("backupCloudPage")?.classList.add("hidden");
         });
     }
 
@@ -2184,6 +2181,9 @@ async function startSafeManualBackup(uploadCloud) {
         if (cloudText) cloudText.textContent = "0%";
         if (cloudStatus) cloudStatus.textContent = "雲端上傳：待機";
         if (cloudFile) cloudFile.textContent = "目前檔案：無";
+
+        document.getElementById("manualCancelBackupBtn")?.removeAttribute("disabled");
+        document.getElementById("manualCancelCloudUploadBtn")?.removeAttribute("disabled");
 
         const response = await fetch("/api/backup/manual-safe-start", {
             method: "POST",
@@ -2856,11 +2856,7 @@ function renderCloudUploadProgress(data) {
     if (manualBar) manualBar.style.width = `${percent}%`;
     if (manualText) manualText.textContent = `${percent}%`;
 
-    if (
-        data.status === "success" ||
-        data.status === "failed" ||
-        data.status === "canceled"
-    ) {
+    if (isBackupEndStatus(data)) {
         setTimeout(() => {
             hideCloudUploadTaskButton();
         }, 3000);
@@ -3090,6 +3086,47 @@ function fadeOutAndHide(element, delay = 3000) {
 }
 
 
+function isBackupEndStatus(data) {
+    const status = String(data.status || "").toLowerCase();
+    const message = String(data.message || "");
+
+    return (
+        status === "success" ||
+        status === "failed" ||
+        status === "canceled" ||
+        status === "cancelled" ||
+        status.includes("cancel") ||
+        message.includes("取消")
+    );
+}
+
+
+function setupManualProgressCancelButtons() {
+    const localCancelBtn = document.getElementById("manualCancelBackupBtn");
+    const cloudCancelBtn = document.getElementById("manualCancelCloudUploadBtn");
+
+    if (localCancelBtn) {
+        localCancelBtn.addEventListener("click", async () => {
+            const ok = confirm("確定要取消目前的本機備份嗎？");
+            if (!ok) return;
+
+            localCancelBtn.disabled = true;
+            await cancelManualBackup();
+        });
+    }
+
+    if (cloudCancelBtn) {
+        cloudCancelBtn.addEventListener("click", async () => {
+            const ok = confirm("確定要取消目前的雲端上傳嗎？");
+            if (!ok) return;
+
+            cloudCancelBtn.disabled = true;
+            await cancelGoogleDriveUpload();
+        });
+    }
+}
+
+
 document.addEventListener("DOMContentLoaded", () => {
     // ===== 啟動server按鈕 =====
     const powerBtn = document.getElementById("powerBtn");
@@ -3187,5 +3224,6 @@ document.addEventListener("DOMContentLoaded", () => {
     setupAutoBackupSettings();
     setupManualBackupButtons();
     loadAutoBackupConfig();
+    setupManualProgressCancelButtons();
     
 });

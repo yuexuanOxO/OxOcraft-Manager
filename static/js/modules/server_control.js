@@ -4,7 +4,8 @@ import {
 
 import {
     saveServerSettings,
-    updateServerSettingsFooterMode
+    updateServerSettingsFooterMode,
+    loadServerSettings
 } from "./server_settings.js";
 
 
@@ -473,6 +474,7 @@ export async function saveAndRestartServer() {
         await updateStatus();
 
         if (started) {
+            await loadServerSettings();
             alert("設定已套用，伺服器已重啟。");
         } else {
             alert("伺服器啟動逾時，請查看 log。");

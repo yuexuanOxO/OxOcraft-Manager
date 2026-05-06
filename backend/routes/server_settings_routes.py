@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify, request
 from backend.paths import SERVER_PROPERTIES_PATH
 from backend.config_files import load_or_create_config, save_config
 from backend.server_config_sync import init_rcon_config
+from backend.server_effective_settings import load_effective_settings_snapshot
 from backend.server_settings.server_properties import (
     DEFAULT_SERVER_PROPERTIES,
     read_properties_file,
@@ -144,6 +145,23 @@ def api_sync_rcon_config():
         return jsonify({
             "success": True,
             "message": "RCON 設定已同步到 server.properties"
+        })
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error)
+        }), 500
+    
+
+@settings_bp.route("/api/server/effective-settings")
+def api_get_effective_settings():
+    try:
+        snapshot = load_effective_settings_snapshot()
+
+        return jsonify({
+            "success": True,
+            "snapshot": snapshot
         })
 
     except Exception as error:

@@ -16,3 +16,4 @@ CONFIG_PATH = DATA_DIR / "config.json"
 SERVER_PROPERTIES_FIELDS_PATH = DATA_DIR / "server_properties_fields.json"
 
 DB_PATH = BACKEND_DIR / "instance" / "oxocraft.db"
+

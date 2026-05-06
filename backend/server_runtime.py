@@ -11,6 +11,7 @@ from backend.server_status import lock_current_server_port
 from backend.server_monitor import append_log_line, clear_log_cache
 from backend.paths import SERVER_JAR_PATH, CONFIG_PATH, MC_ROOT, SERVER_PROPERTIES_PATH
 from backend.server_settings.server_properties import read_properties_file
+from backend.server_effective_settings import save_effective_settings_snapshot
 
 SERVER_ROOT = MC_ROOT
 
@@ -116,6 +117,8 @@ def start_server() -> tuple[bool, str]:
             encoding="utf-8",
             errors="replace",
         )
+
+        save_effective_settings_snapshot()
 
         threading.Thread(target=handle_server_output, daemon=True).start()
         return True, "伺服器啟動成功"

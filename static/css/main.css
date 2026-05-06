@@ -1872,3 +1872,94 @@ h1 {
 #logBox:has(.offline-log-placeholder) {
     overflow: hidden;
 }
+
+
+
+.setting-switch-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 150px;
+    height: 36px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.setting-switch-visual {
+    position: relative;
+    display: inline-block;
+    flex: 0 0 72px;
+    width: 72px;
+    height: 32px;
+}
+
+.setting-switch-track {
+    position: absolute;
+    left: 4px;
+    top: 4px;
+
+    width: 64px;
+    height: 24px;
+
+    border: none;
+    box-shadow: none;
+    background-color: transparent;
+    background-image: url("/static/icons/server_settings/switch_track.png");
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.setting-switch-thumb {
+    position: absolute;
+    top: 0;
+    left: 4px;
+
+    width: 32px;
+    height: 32px;
+
+    border: none;
+    box-shadow: none;
+    background-color: transparent;
+    background-image: url("/static/icons/server_settings/switch_thumb.png");
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+
+    transition: transform 0.06s steps(1);
+}
+
+.setting-switch-btn.off .setting-switch-thumb {
+    transform: translateX(0);
+}
+
+.setting-switch-btn.on .setting-switch-thumb {
+    transform: translateX(32px);
+}
+
+.setting-switch-text {
+    display: inline-block;
+    min-width: 42px;
+    font-size: 15px;
+    color: #dcdcdc;
+    text-align: left;
+    line-height: 1;
+}
+
+.setting-switch-btn.dirty .setting-switch-visual {
+    filter:
+        drop-shadow(0 0 4px rgba(200,132,44,0.85))
+        drop-shadow(0 0 8px rgba(200,132,44,0.45));
+}
+
+.setting-switch-btn.dirty .setting-switch-text {
+    color: #e2a34d;
+}

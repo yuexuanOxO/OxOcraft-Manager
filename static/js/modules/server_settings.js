@@ -2,6 +2,7 @@ let serverSettingKeyword = "";
 let serverSettingsServerOnline = false;
 let serverSettingFields = [];
 let serverSettingsState = {};
+let serverSettingsEffectiveState = {};
 
 import {
     updateStatus
@@ -93,7 +94,7 @@ async function loadServerSettingFields() {
 }
 
 
-async function loadServerSettings() {
+export async function loadServerSettings() {
     const body = document.getElementById("serverSettingsBody");
     if (!body) return;
 
@@ -113,11 +114,27 @@ async function loadServerSettings() {
 
         serverSettingsState = data.properties || {};
 
+        
+
         if (runtimeData.success) {
             serverSettingsState = {
                 ...serverSettingsState,
                 ...runtimeData.config
             };
+        }
+
+        const effectiveResponse = await fetch("/api/server/effective-settings", { cache: "no-store" });
+        const effectiveData = await effectiveResponse.json();
+
+        if (effectiveData.success) {
+            const snapshot = effectiveData.snapshot || {};
+
+            serverSettingsEffectiveState = {
+                ...(snapshot.properties || {}),
+                ...(snapshot.runtime_config || {})
+            };
+        } else {
+            serverSettingsEffectiveState = structuredClone(serverSettingsState);
         }
 
         // 更新最近修改時間
@@ -130,7 +147,6 @@ async function loadServerSettings() {
         console.error("讀取 server.properties 失敗:", error);
     }
 }
-
 
 function renderServerSettings() {
     const body = document.getElementById("serverSettingsBody");
@@ -188,19 +204,29 @@ function renderServerSettings() {
 
             const btn = document.createElement("button");
             btn.type = "button";
-            btn.className = "setting-bool-btn";
+            btn.className = "setting-switch-btn";
             btn.dataset.key = field.key;
 
             const value = String(serverSettingsState[field.key] || "false").toLowerCase();
+            const isTrue = value === "true";
 
-            btn.textContent = value === "true" ? "True" : "False";
-            btn.classList.toggle("true", value === "true");
-            btn.classList.toggle("false", value !== "true");
+            btn.classList.toggle("on", isTrue);
+            btn.classList.toggle("off", !isTrue);
+
+            if (isFieldDirty(field.key)) {
+                btn.classList.add("dirty");
+            }
+
+            btn.innerHTML = `
+                <span class="setting-switch-visual">
+                    <span class="setting-switch-track"></span>
+                    <span class="setting-switch-thumb"></span>
+                </span>
+                <span class="setting-switch-text">${isTrue ? "true" : "false"}</span>
+            `;
 
             btn.addEventListener("click", () => {
-                serverSettingsState[field.key] =
-                    value === "true" ? "false" : "true";
-
+                serverSettingsState[field.key] = isTrue ? "false" : "true";
                 renderServerSettings();
             });
 
@@ -224,6 +250,10 @@ function renderServerSettings() {
             select.className = "setting-input";
             select.dataset.key = field.key;
 
+            if (isFieldDirty(field.key)) {
+                select.classList.add("dirty");
+            }
+
             const currentValue = serverSettingsState[field.key] || "";
 
             (field.options || []).forEach((option) => {
@@ -236,6 +266,12 @@ function renderServerSettings() {
 
             select.addEventListener("change", () => {
                 serverSettingsState[field.key] = select.value;
+
+                if (isFieldDirty(field.key)) {
+                    select.classList.add("dirty");
+                } else {
+                    select.classList.remove("dirty");
+                }
             });
 
             valueWrap.appendChild(select);
@@ -246,6 +282,10 @@ function renderServerSettings() {
             input.type = field.type === "number" ? "number" : "text";
             input.value = serverSettingsState[field.key] || "";
 
+            if (isFieldDirty(field.key)) {
+                input.classList.add("dirty");
+            }
+
             const defaultValue =
                 field.default !== undefined && field.default !== ""
                     ? field.default
@@ -255,6 +295,12 @@ function renderServerSettings() {
 
             input.addEventListener("input", () => {
                 serverSettingsState[field.key] = input.value;
+
+                if (isFieldDirty(field.key)) {
+                    input.classList.add("dirty");
+                } else {
+                    input.classList.remove("dirty");
+                }
             });
 
             valueWrap.appendChild(input);
@@ -396,7 +442,12 @@ export async function saveServerSettings(showAlert = true) {
             }
         }
 
-        await loadServerSettings();
+        if (serverSettingsServerOnline) {
+            renderServerSettings();
+        } else {
+            await loadServerSettings();
+        }
+
         return true;
 
     } catch (error) {
@@ -442,3 +493,9 @@ export async function updateServerSettingsFooterMode() {
 }
 
 
+function isFieldDirty(key) {
+    const current = String(serverSettingsState[key] ?? "");
+    const effective = String(serverSettingsEffectiveState[key] ?? "");
+
+    return current !== effective;
+}

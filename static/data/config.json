@@ -4,13 +4,13 @@
     "query_port": 25565,
     "rcon_password": "OxO123456",
     "java_xms": "2G",
-    "java_xmx": "5G",
+    "java_xmx": "4G",
     "auto_backup_enabled": false,
-    "auto_backup_frequency": "yearly",
-    "auto_backup_start_at": "2026-05-04T22:52",
+    "auto_backup_frequency": "daily",
+    "auto_backup_start_at": "2026-05-06T14:51",
     "auto_backup_next_run_at": "",
-    "auto_backup_upload_cloud": false,
+    "auto_backup_upload_cloud": true,
     "backup_root": "D:\\Minecraft\\server\\world_backup",
     "manual_backup_root": "D:\\Minecraft\\server\\world_backup",
-    "manual_scan_root": "D:\\Minecraft\\server"
+    "manual_scan_root": "D:\\Minecraft\\server\\All_Save"
 }

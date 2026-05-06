@@ -3,7 +3,6 @@ import {
     updateStatusForce,
     addPlayerFromLog,
     removePlayerFromLog,
-    clearPlayersList,
     handleBackendDisconnected
 } from "./server_status.js";
 
@@ -170,12 +169,10 @@ export function initServerEvents() {
     serverEvents.addEventListener("auto_backup_started", (event) => {
         const data = JSON.parse(event.data);
 
-        isTransitioning = true;
         setPowerButtonLoading(true, data.message || "自動備份進行中");
     });
 
     serverEvents.addEventListener("auto_backup_finished", async (event) => {
-        isTransitioning = false;
         setPowerButtonLoading(false);
 
         await updateStatus();
@@ -185,7 +182,6 @@ export function initServerEvents() {
     serverEvents.addEventListener("auto_backup_failed", async (event) => {
         const data = JSON.parse(event.data);
 
-        isTransitioning = false;
         setPowerButtonLoading(false);
 
         alert("自動備份失敗：" + (data.message || "未知錯誤"));

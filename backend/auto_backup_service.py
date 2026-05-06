@@ -155,7 +155,7 @@ def send_private_backup_notice(player_name: str, scheduled_time: datetime) -> bo
         remaining_text = format_remaining_backup_time(scheduled_time)
         payload = json.dumps(
             {
-                "text": f"[OxO]伺服器還有{remaining_text}就要關閉進行備份了喔!",
+                "text": f"<OxO>伺服器還有{remaining_text}就要關閉進行備份了喔!",
                 "color": "light_purple",
             },
             ensure_ascii=False,

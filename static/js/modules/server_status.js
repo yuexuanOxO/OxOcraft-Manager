@@ -26,11 +26,6 @@ export function handleBackendDisconnected() {
     backendDisconnected = true;
     stopAllPolling();
 
-    // if (serverEvents) {
-    //     serverEvents.close();
-    //     serverEvents = null;
-    // }
-
     const statusLight = document.getElementById("statusLight");
     const statusText = document.getElementById("statusText");
     const powerBtn = document.getElementById("powerBtn");
@@ -57,13 +52,14 @@ export async function updateStatus() {
     try {
         const response = await fetch("/api/server/query-status", { cache: "no-store" });
         const payload = await response.json();
-        applyServerStatusPayload(payload);
+        applyServerStatusPayload(payload, false);
 
     } catch (error) {
         console.error("更新狀態失敗:", error);
         handleBackendDisconnected();
     }
 }
+
 
 
 export async function updateStatusForce() {
@@ -73,7 +69,7 @@ export async function updateStatusForce() {
         });
 
         const payload = await response.json();
-        applyServerStatusPayload(payload);
+        applyServerStatusPayload(payload, true);
 
     } catch (error) {
         console.error("強制更新狀態失敗:", error);
@@ -173,13 +169,8 @@ export function clearPlayersList() {
 }
 
 
-export function applyServerStatusPayload(payload) {
+export function applyServerStatusPayload(payload, forceApply = false) {
     if (!payload || !payload.data) return;
-
-    // if (isTransitioning) {
-    //     pendingServerStatusPayload = payload;
-    //     return;
-    // }
 
     if (payload.revision === lastServerStatusRevision) {
         return;

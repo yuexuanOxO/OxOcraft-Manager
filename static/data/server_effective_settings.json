@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-05-06T22:00:16",
-    "properties_modified_comment": "Wed May 06 22:00:14 CST 2026",
+    "captured_at": "2026-05-06T22:20:56",
+    "properties_modified_comment": "Wed May 06 22:20:54 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -21,7 +21,7 @@
         "max-tick-time": "60000",
         "require-resource-pack": "false",
         "use-native-transport": "true",
-        "max-players": "3",
+        "max-players": "4",
         "online-mode": "true",
         "enable-status": "true",
         "allow-flight": "true",

@@ -789,9 +789,9 @@ h1 {
     opacity: 1;
 }
 
-.setting-input.changed{
+/* .setting-input.changed{
     border-color: #ffd000;
-}
+} */
 
 .setting-bool-wrap{
     display: flex;
@@ -1962,4 +1962,19 @@ h1 {
 
 .setting-switch-btn.dirty .setting-switch-text {
     color: #e2a34d;
+}
+
+.setting-switch-btn.dirty .setting-switch-track {
+    border-color: #c8842c !important;
+    box-shadow: 0 0 8px rgba(200, 132, 44, 0.75);
+}
+
+.setting-input.dirty {
+    border-color: #c8842c !important;
+    box-shadow: 0 0 8px rgba(200, 132, 44, 0.75);
+}
+
+select.setting-input.dirty {
+    border-color: #c8842c !important;
+    box-shadow: 0 0 8px rgba(200, 132, 44, 0.75);
 }

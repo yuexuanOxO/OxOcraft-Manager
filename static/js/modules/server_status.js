@@ -1,6 +1,9 @@
+import { showOfflineCat } from "./log_console.js";
+
 let statusPollingTimer = null;
 let backendDisconnected = false;
 let wasServerOnline = false;
+let hasReceivedFirstStatus = false;
 let lastServerStatusRevision = null;
 let currentPlayers = new Set();
 
@@ -52,14 +55,13 @@ export async function updateStatus() {
     try {
         const response = await fetch("/api/server/query-status", { cache: "no-store" });
         const payload = await response.json();
-        applyServerStatusPayload(payload, false);
+        applyServerStatusPayload(payload);
 
     } catch (error) {
         console.error("更新狀態失敗:", error);
         handleBackendDisconnected();
     }
 }
-
 
 
 export async function updateStatusForce() {
@@ -69,7 +71,7 @@ export async function updateStatusForce() {
         });
 
         const payload = await response.json();
-        applyServerStatusPayload(payload, true);
+        applyServerStatusPayload(payload);
 
     } catch (error) {
         console.error("強制更新狀態失敗:", error);
@@ -169,8 +171,13 @@ export function clearPlayersList() {
 }
 
 
-export function applyServerStatusPayload(payload, forceApply = false) {
+export function applyServerStatusPayload(payload) {
     if (!payload || !payload.data) return;
+
+    // if (isTransitioning) {
+    //     pendingServerStatusPayload = payload;
+    //     return;
+    // }
 
     if (payload.revision === lastServerStatusRevision) {
         return;
@@ -180,10 +187,23 @@ export function applyServerStatusPayload(payload, forceApply = false) {
 
     const data = payload.data;
 
+    const isFirstStatus = !hasReceivedFirstStatus;
+    hasReceivedFirstStatus = true;
+
     const statusLight = document.getElementById("statusLight");
     const statusText = document.getElementById("statusText");
     const powerBtn = document.getElementById("powerBtn");
-    const logBox = document.getElementById("logBox");
+
+
+    if (isFirstStatus && !data.online && data.state !== "starting") {
+        showOfflineCat();
+        clearPlayersList();
+    }
+
+    if (!isFirstStatus && wasServerOnline && !data.online && data.state !== "starting") {
+        showOfflineCat();
+        clearPlayersList();
+    }
 
     if (data.online) {
         setPlayersFromQuery(data.players || []);
@@ -213,14 +233,6 @@ export function applyServerStatusPayload(payload, forceApply = false) {
             powerBtn.classList.remove("online");
             powerBtn.classList.add("offline");
         }
-    }
-
-    if (!data.online && wasServerOnline) {
-        if (logBox) {
-            logBox.textContent = "伺服器尚未啟動";
-        }
-
-        clearPlayersList();
     }
 
     wasServerOnline = data.online;

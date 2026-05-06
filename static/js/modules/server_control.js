@@ -1,6 +1,5 @@
 import {
-    updateStatus,
-    updateStatusForce
+    updateStatus
 } from "./server_status.js";
 
 import {
@@ -93,7 +92,7 @@ async function toggleServer() {
         isTransitioning = false;
         setPowerButtonLoading(false);
 
-        await updateStatusForce();
+        await updateStatus();
 
         if (!reachedTarget) {
             alert(targetOnline ? "伺服器啟動逾時，請查看 log。" : "伺服器關閉逾時，請查看 log。");

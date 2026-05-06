@@ -703,7 +703,7 @@
                     <button id="powerBtn" class="power-btn">⏻</button>
                 </div>
 
-                <pre id="logBox">{{ logs }}</pre>
+                <pre id="logBox">{% if server_online %}{{ logs }}{% endif %}</pre>
 
                 <div class="command-bar">
                     <input id="commandInput" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="輸入Minecraft指令">

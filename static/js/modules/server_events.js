@@ -8,7 +8,7 @@ import {
 
 import {
     appendLogLine,
-    clearLogBox
+    clearLogTextOnly
 } from "./log_console.js";
 
 import {
@@ -89,7 +89,7 @@ export function initServerEvents() {
     });
 
     serverEvents.addEventListener("log_clear", () => {
-        clearLogBox();
+        clearLogTextOnly();
     });
 
     serverEvents.addEventListener("backup_started", (event) => {

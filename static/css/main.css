@@ -1834,3 +1834,41 @@ h1 {
     opacity:.35;
     cursor:not-allowed;
 }
+
+
+.offline-log-placeholder {
+    height: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 20px;
+
+    overflow: hidden;
+}
+
+.offline-cat-img {
+    width: min(85%, 950px);
+    height: auto;
+
+    object-fit: contain;
+    image-rendering: pixelated;
+
+    opacity: 0.95;
+    pointer-events: none;
+    user-select: none;
+}
+
+.offline-log-text {
+    font-size: 28px;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+
+#logBox:has(.offline-log-placeholder) {
+    overflow: hidden;
+}

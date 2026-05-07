@@ -1,7 +1,5 @@
 import {
     openFolderPicker,
-    fadeOutAndHide,
-    isBackupEndStatus,
     getCurrentBackupLevelName
 } from "./backup.js";
 
@@ -207,74 +205,12 @@ export function setCloudUploadRunning(isRunning) {
 
 
 export function renderCloudUploadProgress(data) {
-
-    const percent = data.percent || 0;
-    showCloudUploadTaskButton(percent);
-
-    // 原本雲端頁
     const status = document.getElementById("cloudUploadStatus");
-    const file = document.getElementById("cloudUploadFile");
-    const bar = document.getElementById("cloudUploadProgressBar");
-    const text = document.getElementById("cloudUploadProgressText");
 
-    // 手動備份頁新增
-    const manualStatus = document.getElementById("manualCloudUploadStatus");
-    const manualFile = document.getElementById("manualCloudUploadFile");
-    const manualBar = document.getElementById("manualCloudUploadProgressBar");
-    const manualText = document.getElementById("manualCloudUploadProgressText");
-
-    const manualCloudBox = document.getElementById("manualCloudUploadBox");
-
-    if (manualCloudBox && data.status === "running") {
-        manualCloudBox.classList.remove("hidden");
+    if (status) {
+        status.textContent = data.message || data.status || "雲端上傳中";
     }
-
-    const msg = data.message || "雲端上傳中";
-    const fileName = data.file_name || "無";
-
-    if (status) status.textContent = msg;
-    if (file) file.textContent = `目前檔案：${fileName}`;
-    if (bar) bar.style.width = `${percent}%`;
-    if (text) text.textContent = `${percent}%`;
-
-    if (manualStatus) manualStatus.textContent = `雲端上傳：${msg}`;
-    if (manualFile) manualFile.textContent = `目前檔案：${fileName}`;
-    if (manualBar) manualBar.style.width = `${percent}%`;
-    if (manualText) manualText.textContent = `${percent}%`;
-
-    // if (isBackupEndStatus(data)) {
-    //     setTimeout(() => {
-    //         hideCloudUploadTaskButton();
-    //     }, 3000);
-
-    //     fadeOutAndHide(document.getElementById("manualBackupProgressBox"), 3000);
-    // }
-
-    
 }
-
-
-function showCloudUploadTaskButton(percent = 0) {
-    const btn = document.getElementById("cloudUploadTaskBtn");
-    const ring = document.getElementById("cloudUploadTaskProgressRing");
-
-    if (!btn || !ring) return;
-
-    btn.classList.remove("hidden");
-
-    const circumference = 106.8;
-    const offset = circumference - (circumference * percent / 100);
-    ring.style.strokeDashoffset = offset;
-}
-
-
-function hideCloudUploadTaskButton() {
-    const btn = document.getElementById("cloudUploadTaskBtn");
-    if (btn) btn.classList.add("hidden");
-}
-
-
-
 
 
 export async function cancelGoogleDriveUpload() {

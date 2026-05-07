@@ -314,33 +314,13 @@ function setupBackupRecordFilters() {
 
 
 export function renderBackupProgress(data) {
-    const statusText = document.getElementById("backupStatusText");
-    const progressBar = document.getElementById("backupProgressBar");
-    const progressText = document.getElementById("backupProgressText");
-    const currentFile = document.getElementById("backupCurrentFile");
     const manualStatusText = document.getElementById("manualBackupStatusText");
     const manualProgressBar = document.getElementById("manualBackupProgressBar");
     const manualProgressText = document.getElementById("manualBackupProgressText");
     const manualCurrentFile = document.getElementById("manualBackupCurrentFile");
     const mapName = document.getElementById("backupMapName");
-
     const percent = data.percent || 0;
 
-    if (statusText) {
-        statusText.textContent = `狀態：${data.message || data.status || "未知"}`;
-    }
-
-    if (progressBar) {
-        progressBar.style.width = `${percent}%`;
-    }
-
-    if (progressText) {
-        progressText.textContent = `${percent}%`;
-    }
-
-    if (currentFile) {
-        currentFile.textContent = `目前檔案：${data.current_file || "無"}`;
-    }
 
     if (manualStatusText) {
         manualStatusText.textContent = `狀態：${data.message || data.status || "未知"}`;
@@ -363,33 +343,19 @@ export function renderBackupProgress(data) {
     }
 
     if (data.running || data.status === "running") {
-        document.getElementById("manualLocalBackupBtn")?.setAttribute("disabled", "disabled");
-        document.getElementById("manualLocalCloudBackupBtn")?.setAttribute("disabled", "disabled");
-        showBackupTaskButton(percent);
+        document.getElementById("manualLocalBackupBtn")
+            ?.setAttribute("disabled", "disabled");
+
+        document.getElementById("manualLocalCloudBackupBtn")
+            ?.setAttribute("disabled", "disabled");
+
     } else if (isBackupEndStatus(data)) {
-        showBackupTaskButton(100);
 
-        setTimeout(() => {
-            hideBackupTaskButton();
-        }, 3000);
+        document.getElementById("manualLocalBackupBtn")
+            ?.removeAttribute("disabled");
 
-        const status = String(data.status || "").toLowerCase();
-        const message = String(data.message || "");
-
-        const isLocalSuccess = status === "success";
-        const isCanceledOrFailed =
-            status === "failed" ||
-            status === "canceled" ||
-            status === "cancelled" ||
-            status.includes("cancel") ||
-            message.includes("取消");
-
-        if (!manualBackupUploadCloud || isCanceledOrFailed) {
-            fadeOutAndHide(document.getElementById("manualBackupProgressBox"), 3000);
-        }
-
-        document.getElementById("manualLocalBackupBtn")?.removeAttribute("disabled");
-        document.getElementById("manualLocalCloudBackupBtn")?.removeAttribute("disabled");
+        document.getElementById("manualLocalCloudBackupBtn")
+            ?.removeAttribute("disabled");
     }
 }
 
@@ -536,16 +502,10 @@ async function startSafeManualBackup(uploadCloud) {
 
         document.getElementById("manualBackupProgressBox")?.classList.remove("hidden");
 
-        const cloudBox = document.getElementById("manualCloudUploadBox");
         const cloudBar = document.getElementById("manualCloudUploadProgressBar");
         const cloudText = document.getElementById("manualCloudUploadProgressText");
         const cloudStatus = document.getElementById("manualCloudUploadStatus");
         const cloudFile = document.getElementById("manualCloudUploadFile");
-
-        if (cloudBox) {
-            cloudBox.classList.add("hidden");
-            cloudBox.style.opacity = "1";
-        }
 
         if (cloudBar) cloudBar.style.width = "0%";
         if (cloudText) cloudText.textContent = "0%";
@@ -997,44 +957,6 @@ export function formatBytes(bytes) {
     }
 
     return `${size.toFixed(index === 0 ? 0 : 2)} ${units[index]}`;
-}
-
-
-function showBackupTaskButton(percent = 0) {
-    const btn = document.getElementById("backupTaskBtn");
-    const ring = document.getElementById("backupTaskProgressRing");
-
-    if (!btn || !ring) return;
-
-    btn.classList.remove("hidden");
-
-    const circumference = 106.8;
-    const offset = circumference - (circumference * percent / 100);
-    ring.style.strokeDashoffset = offset;
-}
-
-
-function hideBackupTaskButton() {
-    const btn = document.getElementById("backupTaskBtn");
-    if (btn) btn.classList.add("hidden");
-}
-
-
-export function fadeOutAndHide(element, delay = 3000) {
-    if (!element) return;
-
-    element.style.opacity = "1";
-    element.style.transition = "opacity 0.8s ease";
-
-    setTimeout(() => {
-        element.style.opacity = "0";
-
-        setTimeout(() => {
-            element.classList.add("hidden");
-            element.style.opacity = "1";
-        }, 800);
-
-    }, delay);
 }
 
 

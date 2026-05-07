@@ -36,6 +36,11 @@ import {
     updateServerSettingsFooterModeByState
 } from "./server_settings.js";
 
+import {
+    updateBackupTaskState
+} from "./backup_tasks.js";
+
+
 let serverEvents = null;
 let isBackendDead = false;
 
@@ -113,29 +118,34 @@ export function initServerEvents() {
     serverEvents.addEventListener("backup_started", (event) => {
         const data = JSON.parse(event.data);
         renderBackupProgress(data);
+        updateBackupTaskState("local", data);
         setBackupRunning(true);
     });
 
     serverEvents.addEventListener("backup_progress", (event) => {
         const data = JSON.parse(event.data);
         renderBackupProgress(data);
+        updateBackupTaskState("local", data);
     });
 
     serverEvents.addEventListener("backup_finished", (event) => {
         const data = JSON.parse(event.data);
         renderBackupProgress(data);
+        updateBackupTaskState("local", data);
         setBackupRunning(false);
     });
 
     serverEvents.addEventListener("backup_failed", (event) => {
         const data = JSON.parse(event.data);
         renderBackupProgress(data);
+        updateBackupTaskState("local", data);
         setBackupRunning(false);
     });
 
     serverEvents.addEventListener("backup_canceled", (event) => {
         const data = JSON.parse(event.data);
         renderBackupProgress(data);
+        updateBackupTaskState("local", data);
         setBackupRunning(false);
     });
 
@@ -147,17 +157,20 @@ export function initServerEvents() {
     serverEvents.addEventListener("cloud_upload_started", (event) => {
         const data = JSON.parse(event.data);
         renderCloudUploadProgress(data);
+        updateBackupTaskState("cloud", data);
         setCloudUploadRunning(true);
     });
 
     serverEvents.addEventListener("cloud_upload_progress", (event) => {
         const data = JSON.parse(event.data);
         renderCloudUploadProgress(data);
+        updateBackupTaskState("cloud", data);
     });
 
     serverEvents.addEventListener("cloud_upload_finished", (event) => {
         const data = JSON.parse(event.data);
         renderCloudUploadProgress(data);
+        updateBackupTaskState("cloud", data);
         setCloudUploadRunning(false);
 
         const btn = document.getElementById("cloudUploadLatestBtn");
@@ -167,6 +180,7 @@ export function initServerEvents() {
     serverEvents.addEventListener("cloud_upload_failed", (event) => {
         const data = JSON.parse(event.data);
         renderCloudUploadProgress(data);
+        updateBackupTaskState("cloud", data);
         setCloudUploadRunning(false);
 
         const btn = document.getElementById("cloudUploadLatestBtn");
@@ -181,6 +195,7 @@ export function initServerEvents() {
     serverEvents.addEventListener("cloud_upload_canceled", (event) => {
         const data = JSON.parse(event.data);
         renderCloudUploadProgress(data);
+        updateBackupTaskState("cloud", data);
         setCloudUploadRunning(false);
     });
 

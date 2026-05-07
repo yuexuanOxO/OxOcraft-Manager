@@ -2011,20 +2011,34 @@ h1 {
 
 .manual-floating-progress{
     position: fixed;
-
     left: calc(50vw + 395px);
-    top: calc(50vh - 315px);
-
     width: 420px;
     box-sizing: border-box;
     z-index: 99999;
 }
 
+/* 本機備份框 */
+#manualBackupProgressBox{
+    top: calc(50vh - 315px);
+}
+
+/* 雲端上傳框 */
+#cloudBackupProgressBox{
+    top: calc(50vh - 130px);
+}
+
 @media (max-width: 1600px){
     .manual-floating-progress{
         left: calc(50vw + 370px);
-        top: calc(50vh - 310px);
         width: 390px;
+    }
+
+    #manualBackupProgressBox{
+        top: calc(50vh - 310px);
+    }
+
+    #cloudBackupProgressBox{
+        top: calc(50vh - 125px);
     }
 }
 

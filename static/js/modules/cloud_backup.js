@@ -242,13 +242,13 @@ export function renderCloudUploadProgress(data) {
     if (manualBar) manualBar.style.width = `${percent}%`;
     if (manualText) manualText.textContent = `${percent}%`;
 
-    if (isBackupEndStatus(data)) {
-        setTimeout(() => {
-            hideCloudUploadTaskButton();
-        }, 3000);
+    // if (isBackupEndStatus(data)) {
+    //     setTimeout(() => {
+    //         hideCloudUploadTaskButton();
+    //     }, 3000);
 
-        fadeOutAndHide(document.getElementById("manualBackupProgressBox"), 3000);
-    }
+    //     fadeOutAndHide(document.getElementById("manualBackupProgressBox"), 3000);
+    // }
 
     
 }

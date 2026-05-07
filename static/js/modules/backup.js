@@ -9,7 +9,8 @@ let manualBackupUploadCloud = false;
 
 import {
     updateDefaultCloudBackupFolderText,
-    loadCloudStatus
+    loadCloudStatus,
+    cancelGoogleDriveUpload
 } from "./cloud_backup.js";
 
 import {

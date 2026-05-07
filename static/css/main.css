@@ -665,11 +665,93 @@ h1 {
     box-sizing: border-box;
 }
 
+.server-preview-card{
+    width: 520px;
+    height: 92px;
+
+    padding: 8px;
+
+    background: #0a0a0a;
+
+    border: 3px solid #6a6a6a;
+    box-shadow: 0 0 0 3px #222;
+
+    box-sizing: border-box;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.server-preview-icon{
+    width: 64px;
+    height: 64px;
+
+    object-fit: cover;
+
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+
+    flex-shrink: 0;
+}
+
+.server-preview-main{
+    flex: 1;
+    min-width: 0;
+}
+
+.server-preview-top-row{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 10px;
+}
+
+.server-preview-name{
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.server-preview-players{
+    color: #d8d8d8;
+    font-size: 18px;
+
+    flex-shrink: 0;
+}
+
+.server-preview-motd{
+    margin-top: 6px;
+
+    color: #aaaaaa;
+    font-size: 16px;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.server-preview-signal{
+    width: 28px;
+    height: 20px;
+
+    margin-top: 8px;
+
+    align-self: flex-start;
+
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+
+    flex-shrink: 0;
+}
+
 .settings-status-card{
     width: 420px;
-
-    margin-left: 22px;
-    margin-top: -120px;
 
     padding: 16px;
 
@@ -965,6 +1047,15 @@ h1 {
     image-rendering: pixelated;
     image-rendering: crisp-edges;
     flex-shrink: 0;
+}
+
+.settings-side-preview-area{
+    margin-left: 22px;
+    margin-top: -220px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
 }
 
 #serverSettingsResetBtn{

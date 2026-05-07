@@ -678,11 +678,46 @@ function updateServerSettingsStatusState(state) {
 }
 
 
+function updateServerPreviewCard() {
+
+    const motdBox =
+        document.getElementById("serverPreviewMotd");
+
+    const playersBox =
+        document.getElementById("serverPreviewPlayers");
+
+    if (motdBox) {
+        motdBox.textContent =
+            serverSettingsState["motd"]
+            || "A Minecraft Server";
+    }
+
+    if (playersBox) {
+
+        const maxPlayers =
+            serverSettingsState["max-players"]
+            || "20";
+
+        playersBox.textContent =
+            `0/${maxPlayers}`;
+    }
+
+    const icon =
+        document.getElementById("serverPreviewIcon");
+
+    if (icon) {
+        icon.src =
+            `/api/server/icon-preview?t=${Date.now()}`;
+    }
+
+}
+
+
 function updateServerSettingsStatusCard() {
     updateServerSettingsStatusState(serverSettingsServerState);
     updateServerSettingsStatusSummary();
     updateServerSettingsDirtyList();
-    
+    updateServerPreviewCard();
 }
 
 

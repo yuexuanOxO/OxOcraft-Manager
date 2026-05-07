@@ -33,26 +33,64 @@
 
     </div>
 
-    <div id="serverSettingsStatusCard" class="settings-status-card">
-        <div class="settings-status-section">
-            <div id="settingsStatusServerState" class="settings-status-main">⚫ 伺服器狀態未知</div>
-            <div id="settingsStatusSummary" class="settings-status-summary">所有設定已生效</div>
+    <div class="settings-side-preview-area">
+
+        <div id="serverPreviewCard" class="server-preview-card">
+
+            <img
+                id="serverPreviewIcon"
+                class="server-preview-icon"
+                src="/api/server/icon-preview"
+                alt="server icon"
+            >
+
+            <div class="server-preview-main">
+
+                <div class="server-preview-top-row">
+
+                    <div id="serverPreviewName" class="server-preview-name">localhost</div>
+                    <div id="serverPreviewPlayers" class="server-preview-players">0/20</div>
+
+                </div>
+
+                <div id="serverPreviewMotd" class="server-preview-motd">A Minecraft Server</div>
+
+            </div>
+
+            <img
+                id="serverPreviewSignal"
+                class="server-preview-signal"
+                src="/static/icons/server_settings/status_online.png"
+                alt="signal"
+            >
 
         </div>
 
-        <div class="settings-status-section dirty-box">
-            <div class="settings-status-section-title">未生效設定：</div>
-            <div id="settingsDirtyList" class="settings-dirty-list">無</div>
+        <div id="serverSettingsStatusCard" class="settings-status-card">
+            <div class="settings-status-section">
+                <div id="settingsStatusServerState" class="settings-status-main">⚫ 伺服器狀態未知</div>
+                <div id="settingsStatusSummary" class="settings-status-summary">所有設定已生效</div>
 
-        </div>
+            </div>
 
-        <div class="settings-status-section settings-status-meta">
-            <div id="settingsStatusModifiedTime">
-                最近修改：未知
+            <div class="settings-status-section dirty-box">
+                <div class="settings-status-section-title">未生效設定：</div>
+                <div id="settingsDirtyList" class="settings-dirty-list">無</div>
+
+            </div>
+
+            <div class="settings-status-section settings-status-meta">
+                <div id="settingsStatusModifiedTime">
+                    最近修改：未知
+                </div>
+
             </div>
 
         </div>
 
+
     </div>
+
+    
 
 </div>

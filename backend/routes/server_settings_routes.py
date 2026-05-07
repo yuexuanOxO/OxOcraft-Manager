@@ -1,9 +1,15 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_file
 
-from backend.paths import SERVER_PROPERTIES_PATH
 from backend.config_files import load_or_create_config, save_config
 from backend.server_config_sync import init_rcon_config
 from backend.server_effective_settings import load_effective_settings_snapshot
+
+from backend.paths import (
+    SERVER_PROPERTIES_PATH,
+    MC_ROOT,
+    STATIC_DIR,
+)
+
 from backend.server_settings.server_properties import (
     DEFAULT_SERVER_PROPERTIES,
     read_properties_file,
@@ -169,3 +175,35 @@ def api_get_effective_settings():
             "success": False,
             "message": str(error)
         }), 500
+    
+
+@settings_bp.route("/api/server/icon-preview")
+def api_server_icon_preview():
+
+    server_icon_path = MC_ROOT / "server-icon.png"
+
+    default_icon_path = (
+        STATIC_DIR
+        / "icons"
+        / "server_settings"
+        / "default_server_icon.png"
+    )
+
+    try:
+
+        if server_icon_path.exists():
+            return send_file(
+                server_icon_path,
+                mimetype="image/png"
+            )
+
+        return send_file(
+            default_icon_path,
+            mimetype="image/png"
+        )
+
+    except Exception:
+        return send_file(
+            default_icon_path,
+            mimetype="image/png"
+        )

@@ -146,6 +146,7 @@ export async function loadServerSettings() {
         updateServerSettingsModifiedTime(data.modified_comment);
 
         renderServerSettings();
+        updateServerSettingsStatusCard();
 
     } catch (error) {
         body.innerHTML = "<div class='settings-placeholder'>讀取失敗，請查看 console。</div>";
@@ -233,6 +234,7 @@ function renderServerSettings() {
             btn.addEventListener("click", () => {
                 serverSettingsState[field.key] = isTrue ? "false" : "true";
                 renderServerSettings();
+                updateServerSettingsStatusCard();
             });
 
             const defaultText = document.createElement("div");
@@ -277,6 +279,8 @@ function renderServerSettings() {
                 } else {
                     select.classList.remove("dirty");
                 }
+
+                updateServerSettingsStatusCard();
             });
 
             valueWrap.appendChild(select);
@@ -306,6 +310,8 @@ function renderServerSettings() {
                 } else {
                     input.classList.remove("dirty");
                 }
+
+                updateServerSettingsStatusCard();
             });
 
             valueWrap.appendChild(input);
@@ -319,7 +325,7 @@ function renderServerSettings() {
 
 
 function updateServerSettingsModifiedTime(commentText) {
-    const box = document.getElementById("serverSettingsModifiedTime");
+    const box = document.getElementById("settingsStatusModifiedTime");
     if (!box) return;
 
     if (!commentText) {
@@ -513,6 +519,8 @@ export function updateServerSettingsFooterModeByState(data) {
     const displayState = serverSettingsBusyMode || state;
     serverSettingsServerState = displayState;
 
+    updateServerSettingsStatusState(displayState);
+
     if (displayState === "ready") {
         applyBtn.textContent = "僅保留變更";
         applyBtn.disabled = false;
@@ -551,6 +559,112 @@ export function updateServerSettingsFooterModeByState(data) {
 
     restartBtn.classList.add("hidden");
     restartBtn.disabled = true;
+}
+
+
+function updateServerSettingsStatusState(state) {
+    const box = document.getElementById("settingsStatusServerState");
+    if (!box) return;
+
+    const statusMap = {
+        ready: {
+            icon: "/static/icons/server_settings/status_online.ico",
+            text: "伺服器運行中"
+        },
+        starting: {
+            icon: "/static/icons/server_settings/status_busy.ico",
+            text: "伺服器啟動中"
+        },
+        stopping: {
+            icon: "/static/icons/server_settings/status_busy.ico",
+            text: "伺服器關閉中"
+        },
+        offline: {
+            icon: "/static/icons/server_settings/status_offline.ico",
+            text: "伺服器未啟動"
+        },
+        disconnected: {
+            icon: "/static/icons/server_settings/status_disconnected.ico",
+            text: "管理介面中斷"
+        },
+        unknown: {
+            icon: "/static/icons/server_settings/status_disconnected.ico",
+            text: "狀態未知"
+        }
+    };
+
+    const status = statusMap[state] || statusMap.offline;
+
+    box.innerHTML = `
+        <img class="settings-status-icon" src="${status.icon}" alt="">
+        <span>${status.text}</span>
+    `;
+}
+
+
+function updateServerSettingsStatusCard() {
+    updateServerSettingsStatusState(serverSettingsServerState);
+    updateServerSettingsStatusSummary();
+    updateServerSettingsDirtyList();
+    
+}
+
+
+function updateServerSettingsStatusSummary() {
+
+    const summary = document.getElementById("settingsStatusSummary");
+    if (!summary) return;
+
+    const dirtyCount = getDirtySettingKeys().length;
+
+    if (dirtyCount <= 0) {
+        summary.textContent = "所有設定已生效";
+        return;
+    }
+
+    summary.textContent =
+        `${dirtyCount} 項設定尚未生效\n重新啟動後才會套用`;
+}
+
+
+function updateServerSettingsDirtyList() {
+
+    const list = document.getElementById("settingsDirtyList");
+    if (!list) return;
+
+    const dirtyKeys = getDirtySettingKeys();
+
+    if (dirtyKeys.length <= 0) {
+        list.innerHTML = `<div class="settings-dirty-item">無</div>`;
+        return;
+    }
+
+    list.innerHTML = "";
+
+    dirtyKeys.forEach((key) => {
+
+        const field = serverSettingFields.find(item => item.key === key);
+
+        const div = document.createElement("div");
+        div.className = "settings-dirty-item";
+
+        const oldValue = serverSettingsEffectiveState[key] ?? "無";
+        const newValue = serverSettingsState[key] ?? "無";
+
+        div.textContent =
+            `▸ ${field?.label || key} (${key})：${oldValue} > ${newValue}`;
+
+        list.appendChild(div);
+    });
+
+}
+
+
+function getDirtySettingKeys() {
+
+    return serverSettingFields
+        .map(field => field.key)
+        .filter(key => isFieldDirty(key));
 }
 
 

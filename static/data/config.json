@@ -4,7 +4,7 @@
     "query_port": 25565,
     "rcon_password": "OxO123456",
     "java_xms": "2G",
-    "java_xmx": "4G",
+    "java_xmx": "5G",
     "auto_backup_enabled": false,
     "auto_backup_frequency": "daily",
     "auto_backup_start_at": "2026-05-06T14:51",

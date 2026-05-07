@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-05-07T11:27:28",
-    "properties_modified_comment": "Thu May 07 11:27:20 CST 2026",
+    "captured_at": "2026-05-07T12:20:59",
+    "properties_modified_comment": "Thu May 07 12:20:54 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -13,16 +13,16 @@
         "level-name": "All_Save\\\\world",
         "motd": "A Minecraft Server",
         "query.port": "25565",
-        "pvp": "true",
+        "pvp": "false",
         "generate-structures": "true",
         "max-chained-neighbor-updates": "1000000",
-        "difficulty": "normal",
+        "difficulty": "hard",
         "network-compression-threshold": "256",
         "max-tick-time": "60000",
         "require-resource-pack": "false",
         "use-native-transport": "true",
-        "max-players": "4",
-        "online-mode": "true",
+        "max-players": "6",
+        "online-mode": "false",
         "enable-status": "true",
         "allow-flight": "true",
         "initial-disabled-packs": "",
@@ -42,9 +42,9 @@
         "simulation-distance": "10",
         "rcon.password": "OxO123456",
         "player-idle-timeout": "0",
-        "force-gamemode": "true",
+        "force-gamemode": "false",
         "rate-limit": "0",
-        "hardcore": "false",
+        "hardcore": "true",
         "white-list": "false",
         "broadcast-console-to-ops": "true",
         "spawn-npcs": "true",
@@ -62,6 +62,6 @@
     },
     "runtime_config": {
         "java_xms": "2G",
-        "java_xmx": "4G"
+        "java_xmx": "5G"
     }
 }

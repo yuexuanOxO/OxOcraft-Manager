@@ -43,6 +43,7 @@ function setupServerSettingsModal() {
     const openBtn = document.getElementById("serverSettingBtn");
     const applyBtn = document.getElementById("serverSettingsApplyBtn");
     const restartBtn = document.getElementById("serverSettingsRestartBtn");
+    const resetBtn = document.getElementById("serverSettingsResetBtn");
 
     if (!modal || !openBtn) return;
 
@@ -70,6 +71,10 @@ function setupServerSettingsModal() {
         restartBtn.addEventListener("click", saveAndRestartServer);
     }
 
+    if (resetBtn) {
+        resetBtn.addEventListener("click", resetServerSettingsToDefault);
+    }
+
     modal.addEventListener("click", (event) => {
         if (event.target === modal) {
             modal.classList.add("hidden");
@@ -81,6 +86,30 @@ function setupServerSettingsModal() {
             }
         }
     });
+}
+
+
+function resetServerSettingsToDefault() {
+
+    const confirmed = confirm(`
+是否將所有設定恢復為 Minecraft 原版預設值？
+
+此操作不會立即套用，
+需再次按下「確定套用」或「套用後並重啟」。
+`);
+
+    if (!confirmed) return;
+
+    serverSettingFields.forEach((field) => {
+
+        if (field.default === undefined) return;
+
+        serverSettingsState[field.key] =
+            String(field.default);
+    });
+
+    renderServerSettings();
+    updateServerSettingsStatusCard();
 }
 
 
@@ -492,6 +521,12 @@ export function updateServerSettingsFooterMode() {
 export function updateServerSettingsFooterModeByState(data) {
     const applyBtn = document.getElementById("serverSettingsApplyBtn");
     const restartBtn = document.getElementById("serverSettingsRestartBtn");
+    const resetBtn = document.getElementById("serverSettingsResetBtn");
+    
+
+    if (resetBtn) {
+        resetBtn.disabled = false;
+    }
 
     if (!applyBtn || !restartBtn) return;
 
@@ -528,6 +563,11 @@ export function updateServerSettingsFooterModeByState(data) {
         restartBtn.textContent = "套用後並重啟";
         restartBtn.classList.remove("hidden");
         restartBtn.disabled = false;
+
+        if (resetBtn) {
+            resetBtn.disabled = false;
+        }
+
         return;
     }
 
@@ -542,6 +582,11 @@ export function updateServerSettingsFooterModeByState(data) {
         restartBtn.textContent = "套用後並重啟";
         restartBtn.classList.remove("hidden");
         restartBtn.disabled = true;
+
+        if (resetBtn) {
+            resetBtn.disabled = true;
+        }
+
         return;
     }
 
@@ -551,6 +596,11 @@ export function updateServerSettingsFooterModeByState(data) {
 
         restartBtn.classList.add("hidden");
         restartBtn.disabled = true;
+
+        if (resetBtn) {
+            resetBtn.disabled = true;
+        }
+
         return;
     }
 
@@ -559,6 +609,11 @@ export function updateServerSettingsFooterModeByState(data) {
 
     restartBtn.classList.add("hidden");
     restartBtn.disabled = true;
+
+    if (resetBtn) {
+        resetBtn.disabled = false;
+    }
+
 }
 
 

@@ -706,11 +706,6 @@ h1 {
     font-size: 18px;
 }
 
-.settings-footer{
-    margin-top: 16px;
-    text-align: center;
-}
-
 #serverSettingsApplyBtn{
     min-width: 180px;
     height: 52px;
@@ -887,9 +882,14 @@ h1 {
 
 .settings-footer{
     margin-top: 16px;
+
     display: flex;
     justify-content: center;
+    align-items: center;
+
     gap: 18px;
+
+    position: relative;
 }
 
 #serverSettingsApplyBtn,
@@ -967,6 +967,36 @@ h1 {
     flex-shrink: 0;
 }
 
+#serverSettingsResetBtn{
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+
+    width: 44px;
+    height: 44px;
+
+    background: transparent;
+    border: none;
+    color: #d8d8d8;
+
+    font-size: 34px;
+    font-weight: bold;
+    line-height: 1;
+
+    cursor: pointer;
+    transition:color .15s;
+}
+
+#serverSettingsResetBtn:hover{
+    color: white;
+}
+
+#serverSettingsResetBtn:disabled{
+    opacity: .35;
+    cursor: default;
+    transform: translateY(-50%);
+}
 
 
 
@@ -2043,19 +2073,14 @@ h1 {
 }
 
 .setting-switch-btn.dirty .setting-switch-visual {
-    filter:
-        drop-shadow(0 0 4px rgba(200,132,44,0.85))
-        drop-shadow(0 0 8px rgba(200,132,44,0.45));
+    filter: none;
+    box-shadow: 0 0 0 2px rgba(200,132,44,.75);
 }
 
 .setting-switch-btn.dirty .setting-switch-text {
     color: #e2a34d;
 }
 
-.setting-switch-btn.dirty .setting-switch-track {
-    border-color: #c8842c !important;
-    box-shadow: 0 0 8px rgba(200, 132, 44, 0.75);
-}
 
 .setting-input.dirty {
     border-color: #c8842c !important;

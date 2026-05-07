@@ -176,6 +176,14 @@ def cloud_upload_latest_worker(backup_folder: str = ""):
     _cloud_upload_running = True
     cloud_record = None
 
+    publish_event("cloud_upload_started", {
+        "status": "running",
+        "percent": 0,
+        "message": "準備雲端上傳中",
+        "file_name": "",
+        "file_size": 0,
+    })
+
     try:
         service = get_drive_service()
 

@@ -1,11 +1,16 @@
 let serverSettingKeyword = "";
-let serverSettingsServerOnline = false;
+let serverSettingsServerState = "offline";
 let serverSettingFields = [];
 let serverSettingsState = {};
 let serverSettingsEffectiveState = {};
+let serverSettingsBusyMode = null;
+let serverSettingsBusyUnlockAt = 0;
+let serverSettingsBusyRecheckTimer = null;
+
+const SERVER_SETTINGS_BUSY_MIN_MS = 2500;
 
 import {
-    updateStatus
+    latestServerStatusData
 } from "./server_status.js";
 
 import {
@@ -427,7 +432,7 @@ export async function saveServerSettings(showAlert = true) {
         }
 
         if (showAlert) {
-            if (serverSettingsServerOnline) {
+            if (serverSettingsServerState === "ready") {
                 alert(`
                 此次變更已保留。
 
@@ -442,7 +447,7 @@ export async function saveServerSettings(showAlert = true) {
             }
         }
 
-        if (serverSettingsServerOnline) {
+        if (serverSettingsServerState === "ready") {
             renderServerSettings();
         } else {
             await loadServerSettings();
@@ -456,40 +461,96 @@ export async function saveServerSettings(showAlert = true) {
         return false;
 
     } finally {
-        if (applyBtn) {
-            applyBtn.disabled = false;
-        }
+        updateServerSettingsFooterMode();
     }
 }
 
 
-export async function updateServerSettingsFooterMode() {
+function scheduleServerSettingsFooterRecheck() {
+    if (serverSettingsBusyRecheckTimer) return;
+
+    const delay = Math.max(0, serverSettingsBusyUnlockAt - Date.now());
+
+    serverSettingsBusyRecheckTimer = setTimeout(() => {
+        serverSettingsBusyRecheckTimer = null;
+        updateServerSettingsFooterMode();
+    }, delay + 50);
+}
+
+
+export function updateServerSettingsFooterMode() {
+    updateServerSettingsFooterModeByState(latestServerStatusData);
+}
+
+
+export function updateServerSettingsFooterModeByState(data) {
     const applyBtn = document.getElementById("serverSettingsApplyBtn");
     const restartBtn = document.getElementById("serverSettingsRestartBtn");
 
     if (!applyBtn || !restartBtn) return;
 
-    try {
-        const response = await fetch("/api/server/query-status", { cache: "no-store" });
-        const payload = await response.json();
-        const data = payload.data || payload;
+    const state = data?.state || "offline";
+    const online = !!data?.online;
+    const now = Date.now();
 
-        serverSettingsServerOnline = !!data.online;
-
-        if (serverSettingsServerOnline) {
-            applyBtn.textContent = "僅保留變更";
-            restartBtn.classList.remove("hidden");
-        } else {
-            applyBtn.textContent = "確定套用";
-            restartBtn.classList.add("hidden");
-        }
-
-    } catch (error) {
-        console.error("讀取伺服器狀態失敗:", error);
-        serverSettingsServerOnline = false;
-        applyBtn.textContent = "確定套用";
-        restartBtn.classList.add("hidden");
+    if (state === "starting" || state === "stopping") {
+        serverSettingsBusyMode = state;
+        serverSettingsBusyUnlockAt = now + SERVER_SETTINGS_BUSY_MIN_MS;
     }
+
+    if (serverSettingsBusyMode) {
+        const canUnlock = now >= serverSettingsBusyUnlockAt;
+
+        if (serverSettingsBusyMode === "starting" && state === "ready" && canUnlock) {
+            serverSettingsBusyMode = null;
+        } else if (serverSettingsBusyMode === "stopping" && !online && state !== "starting" && canUnlock) {
+            serverSettingsBusyMode = null;
+        } else {
+            scheduleServerSettingsFooterRecheck();
+        }
+    }
+
+    const displayState = serverSettingsBusyMode || state;
+    serverSettingsServerState = displayState;
+
+    if (displayState === "ready") {
+        applyBtn.textContent = "僅保留變更";
+        applyBtn.disabled = false;
+
+        restartBtn.textContent = "套用後並重啟";
+        restartBtn.classList.remove("hidden");
+        restartBtn.disabled = false;
+        return;
+    }
+
+    if (displayState === "starting" || displayState === "stopping") {
+        applyBtn.textContent =
+        displayState === "starting"
+            ? "伺服器啟動中..."
+            : "伺服器關閉中...";
+
+        applyBtn.disabled = true;
+
+        restartBtn.textContent = "套用後並重啟";
+        restartBtn.classList.remove("hidden");
+        restartBtn.disabled = true;
+        return;
+    }
+
+    if (displayState === "disconnected" || displayState === "unknown") {
+        applyBtn.textContent = "無法確認狀態";
+        applyBtn.disabled = true;
+
+        restartBtn.classList.add("hidden");
+        restartBtn.disabled = true;
+        return;
+    }
+
+    applyBtn.textContent = "確定套用";
+    applyBtn.disabled = false;
+
+    restartBtn.classList.add("hidden");
+    restartBtn.disabled = true;
 }
 
 

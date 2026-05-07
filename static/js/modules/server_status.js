@@ -6,6 +6,7 @@ let wasServerOnline = false;
 let hasReceivedFirstStatus = false;
 let lastServerStatusRevision = null;
 let currentPlayers = new Set();
+export let latestServerStatusData = null;
 
 
 export function initServerStatus() {
@@ -174,10 +175,6 @@ export function clearPlayersList() {
 export function applyServerStatusPayload(payload) {
     if (!payload || !payload.data) return;
 
-    // if (isTransitioning) {
-    //     pendingServerStatusPayload = payload;
-    //     return;
-    // }
 
     if (payload.revision === lastServerStatusRevision) {
         return;
@@ -186,6 +183,7 @@ export function applyServerStatusPayload(payload) {
     lastServerStatusRevision = payload.revision;
 
     const data = payload.data;
+    latestServerStatusData = data;
 
     const isFirstStatus = !hasReceivedFirstStatus;
     hasReceivedFirstStatus = true;
@@ -194,6 +192,7 @@ export function applyServerStatusPayload(payload) {
     const statusText = document.getElementById("statusText");
     const powerBtn = document.getElementById("powerBtn");
 
+    
 
     if (isFirstStatus && !data.online && data.state !== "starting") {
         showOfflineCat();

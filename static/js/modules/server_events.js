@@ -32,6 +32,10 @@ import {
     setPowerButtonLoading
 } from "./server_control.js";
 
+import {
+    updateServerSettingsFooterModeByState
+} from "./server_settings.js";
+
 let serverEvents = null;
 
 
@@ -45,7 +49,9 @@ export function initServerEvents() {
 
     serverEvents.addEventListener("server_status_changed", (event) => {
         const payload = JSON.parse(event.data);
+
         applyServerStatusPayload(payload);
+        updateServerSettingsFooterModeByState(payload.data);
     });
 
     serverEvents.onerror = () => {

@@ -5,6 +5,7 @@ import {
 import {
     saveServerSettings,
     updateServerSettingsFooterMode,
+    updateServerSettingsFooterModeByState,
     loadServerSettings
 } from "./server_settings.js";
 
@@ -67,6 +68,11 @@ async function toggleServer() {
 
         isTransitioning = true;
         setPowerButtonLoading(true, actionText);
+
+        updateServerSettingsFooterModeByState({
+            state: targetOnline ? "starting" : "stopping",
+            online: statusData.online
+        });
 
         const response = await fetch(url, {
             method: "POST"
@@ -439,6 +445,11 @@ export async function saveAndRestartServer() {
 
         setPowerButtonLoading(true, "關閉中...");
 
+        updateServerSettingsFooterModeByState({
+            state: "stopping",
+            online: true
+        });
+
         let response = await fetch("/api/server/stop", {
             method: "POST"
         });
@@ -457,6 +468,11 @@ export async function saveAndRestartServer() {
         }
 
         setPowerButtonLoading(true, "啟動中...");
+
+        updateServerSettingsFooterModeByState({
+            state: "starting",
+            online: false
+        });
 
         response = await fetch("/api/server/start", {
             method: "POST"
@@ -485,15 +501,6 @@ export async function saveAndRestartServer() {
         alert("套用並重啟失敗，請查看 console。");
 
     } finally {
-        if (restartBtn) {
-            restartBtn.disabled = false;
-            restartBtn.textContent = "套用後並重啟";
-        }
-
-        if (applyBtn) {
-            applyBtn.disabled = false;
-        }
-
         await updateServerSettingsFooterMode();
         setPowerButtonLoading(false);
     }

@@ -998,6 +998,15 @@ h1 {
     transform: translateY(-50%);
 }
 
+.setting-input.locked,
+.setting-switch-btn.locked{
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.setting-switch-btn.locked .setting-switch-visual{
+    filter: grayscale(.5);
+}
 
 
 

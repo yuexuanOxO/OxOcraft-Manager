@@ -242,7 +242,9 @@
     "label": "啟用 Query",
     "type": "boolean",
     "default": "true",
-    "description": "允許使用GameSpy4協議的伺服器監聽器。用於取得伺服器資訊。"
+    "description": "允許使用GameSpy4協議的伺服器監聽器。用於取得伺服器資訊。",
+    "locked": true,
+    "lockedReason": "此設定由 OxOcraft-Manager 用於偵測伺服器狀態，不能關閉。"
   },
   {
     "key": "query.port",
@@ -253,14 +255,19 @@
     "dependsOn": {
       "key": "enable-query",
       "value": "true"
-    }
+    },
+    "locked": true,
+    "lockedReason": "此設定由 OxOcraft-Manager 用於查詢伺服器狀態，避免與 server-port 不一致。"
+
   },
   {
     "key": "enable-rcon",
     "label": "啟用 RCON",
     "type": "boolean",
     "default": "true",
-    "description": "是否允許遠程訪問伺服器控制台。\n由於RCON協議傳輸資料時沒有加密，所以不建議把RCON暴露在網際網路上。RCON用戶端和伺服器端交換的所有資料（包括RCON密碼）都會洩露給正在監聽此連接的人。\n但是OxOcraft-Manager需要使用所以會開啟方便UI對伺服器進行操作,若關閉大部分功能都將受影響。"
+    "description": "是否允許遠程訪問伺服器控制台。\n由於RCON協議傳輸資料時沒有加密，所以不建議把RCON暴露在網際網路上。RCON用戶端和伺服器端交換的所有資料（包括RCON密碼）都會洩露給正在監聽此連接的人。\n但是OxOcraft-Manager需要使用所以會開啟方便UI對伺服器進行操作,若關閉大部分功能都將受影響。",
+    "locked": true,
+    "lockedReason": "此設定由 OxOcraft-Manager 用於偵測伺服器狀態，不能關閉。"
   },
   {
     "key": "rcon.port",
@@ -271,7 +278,9 @@
     "dependsOn": {
       "key": "enable-rcon",
       "value": "true"
-    }
+    },
+    "locked": true,
+    "lockedReason": "此設定由 OxOcraft-Manager 用於偵測伺服器狀態，不能關閉。"
   },
   {
     "key": "rcon.password",
@@ -282,7 +291,9 @@
     "dependsOn": {
       "key": "enable-rcon",
       "value": "true"
-    }
+    },
+    "locked": true,
+    "lockedReason": "此設定由 OxOcraft-Manager 用於偵測伺服器狀態，不能關閉。"
   },
   {
     "key": "broadcast-rcon-to-ops",

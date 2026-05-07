@@ -242,6 +242,12 @@ function renderServerSettings() {
             btn.className = "setting-switch-btn";
             btn.dataset.key = field.key;
 
+            if (field.locked) {
+                btn.disabled = true;
+                btn.classList.add("locked");
+                btn.title = field.lockedReason || "此設定由 OxOcraft-Manager 管理，不能修改。";
+            }
+
             const value = String(serverSettingsState[field.key] || "false").toLowerCase();
             const isTrue = value === "true";
 
@@ -261,6 +267,8 @@ function renderServerSettings() {
             `;
 
             btn.addEventListener("click", () => {
+                if (field.locked) return;
+
                 serverSettingsState[field.key] = isTrue ? "false" : "true";
                 renderServerSettings();
                 updateServerSettingsStatusCard();
@@ -285,6 +293,12 @@ function renderServerSettings() {
             const select = document.createElement("select");
             select.className = "setting-input";
             select.dataset.key = field.key;
+
+            if (field.locked) {
+                select.disabled = true;
+                select.classList.add("locked");
+                select.title = field.lockedReason || "此設定由 OxOcraft-Manager 管理，不能修改。";
+            }
 
             if (isFieldDirty(field.key)) {
                 select.classList.add("dirty");
@@ -317,6 +331,13 @@ function renderServerSettings() {
             const input = document.createElement("input");
             input.className = "setting-input";
             input.dataset.key = field.key;
+
+            if (field.locked) {
+                input.disabled = true;
+                input.classList.add("locked");
+                input.title = field.lockedReason || "此設定由 OxOcraft-Manager 管理，不能修改。";
+            }
+
             input.type = field.type === "number" ? "number" : "text";
             input.value = serverSettingsState[field.key] || "";
 

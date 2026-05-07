@@ -699,6 +699,12 @@ h1 {
 .server-preview-main{
     flex: 1;
     min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    transform: translateY(-14px);
 }
 
 .server-preview-top-row{
@@ -741,7 +747,7 @@ h1 {
     width: 28px;
     height: 20px;
 
-    margin-top: 8px;
+    margin-top: -4px;
 
     align-self: flex-start;
 

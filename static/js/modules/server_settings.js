@@ -6,6 +6,9 @@ let serverSettingsEffectiveState = {};
 let serverSettingsBusyMode = null;
 let serverSettingsBusyUnlockAt = 0;
 let serverSettingsBusyRecheckTimer = null;
+let pendingServerIconFile = null;
+let pendingServerIconPreviewUrl = null;
+let serverIconNeedsRestart = false;
 
 const SERVER_SETTINGS_BUSY_MIN_MS = 2500;
 
@@ -44,6 +47,9 @@ function setupServerSettingsModal() {
     const applyBtn = document.getElementById("serverSettingsApplyBtn");
     const restartBtn = document.getElementById("serverSettingsRestartBtn");
     const resetBtn = document.getElementById("serverSettingsResetBtn");
+    const previewIcon = document.getElementById("serverPreviewIcon");
+    const iconInput = document.getElementById("serverIconInput");
+    
 
     if (!modal || !openBtn) return;
 
@@ -73,6 +79,36 @@ function setupServerSettingsModal() {
 
     if (resetBtn) {
         resetBtn.addEventListener("click", resetServerSettingsToDefault);
+    }
+
+    if (previewIcon && iconInput) {
+        previewIcon.addEventListener("click", () => {
+            iconInput.click();
+        });
+
+        iconInput.addEventListener("change", () => {
+            const file = iconInput.files?.[0];
+            if (!file) return;
+
+            if (!["image/png", "image/jpeg"].includes(file.type)) {
+                alert("目前只支援 PNG / JPG 圖片。");
+                iconInput.value = "";
+                return;
+            }
+
+            pendingServerIconFile = file;
+            serverIconNeedsRestart = true;
+
+            if (pendingServerIconPreviewUrl) {
+                URL.revokeObjectURL(pendingServerIconPreviewUrl);
+            }
+
+            pendingServerIconPreviewUrl = URL.createObjectURL(file);
+            previewIcon.src = pendingServerIconPreviewUrl;
+
+            updateServerSettingsStatusCard();
+
+        });
     }
 
     modal.addEventListener("click", (event) => {
@@ -487,6 +523,37 @@ export async function saveServerSettings(showAlert = true) {
             return false;
         }
 
+        if (pendingServerIconFile) {
+            const iconForm = new FormData();
+            iconForm.append("icon", pendingServerIconFile);
+
+            const iconResponse = await fetch("/api/server/icon", {
+                method: "POST",
+                body: iconForm
+            });
+
+            const iconData = await iconResponse.json();
+
+            if (!iconData.success) {
+                alert("伺服器圖示儲存失敗：" + (iconData.message || "未知錯誤"));
+                return false;
+            }
+
+            pendingServerIconFile = null;
+
+            if (serverSettingsServerState !== "ready") {
+                serverIconNeedsRestart = false;
+            }
+
+            if (pendingServerIconPreviewUrl) {
+                URL.revokeObjectURL(pendingServerIconPreviewUrl);
+                pendingServerIconPreviewUrl = null;
+            }
+
+            updateServerSettingsStatusCard();
+            
+        }
+
         if (showAlert) {
             if (serverSettingsServerState === "ready") {
                 alert(`
@@ -705,7 +772,7 @@ function updateServerPreviewCard() {
     const icon =
         document.getElementById("serverPreviewIcon");
 
-    if (icon) {
+    if (icon && !pendingServerIconFile) {
         icon.src =
             `/api/server/icon-preview?t=${Date.now()}`;
     }
@@ -726,7 +793,7 @@ function updateServerSettingsStatusSummary() {
     const summary = document.getElementById("settingsStatusSummary");
     if (!summary) return;
 
-    const dirtyCount = getDirtySettingKeys().length;
+    const dirtyCount = getDirtySettingKeys().length + (serverIconNeedsRestart ? 1 : 0);
 
     if (dirtyCount <= 0) {
         summary.textContent = "所有設定已生效";
@@ -745,12 +812,19 @@ function updateServerSettingsDirtyList() {
 
     const dirtyKeys = getDirtySettingKeys();
 
-    if (dirtyKeys.length <= 0) {
+    if (dirtyKeys.length <= 0 && !serverIconNeedsRestart) {
         list.innerHTML = `<div class="settings-dirty-item">無</div>`;
         return;
     }
 
     list.innerHTML = "";
+
+    if (serverIconNeedsRestart) {
+        const div = document.createElement("div");
+        div.className = "settings-dirty-item";
+        div.textContent = "▸ 伺服器圖示：已選擇新圖片";
+        list.appendChild(div);
+    }
 
     dirtyKeys.forEach((key) => {
 

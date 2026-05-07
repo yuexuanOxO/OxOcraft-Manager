@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request, send_file
-
+from PIL import Image
+from werkzeug.utils import secure_filename
 from backend.config_files import load_or_create_config, save_config
 from backend.server_config_sync import init_rcon_config
 from backend.server_effective_settings import load_effective_settings_snapshot
@@ -207,3 +208,53 @@ def api_server_icon_preview():
             default_icon_path,
             mimetype="image/png"
         )
+    
+
+@settings_bp.route("/api/server/icon", methods=["POST"])
+def api_upload_server_icon():
+    upload_file = request.files.get("icon")
+
+    if not upload_file:
+        return jsonify({
+            "success": False,
+            "message": "沒有收到圖片檔案"
+        }), 400
+
+    filename = secure_filename(upload_file.filename or "")
+    lower_name = filename.lower()
+
+    if not (
+        lower_name.endswith(".png")
+        or lower_name.endswith(".jpg")
+        or lower_name.endswith(".jpeg")
+    ):
+        return jsonify({
+            "success": False,
+            "message": "目前只支援 PNG / JPG 圖片"
+        }), 400
+
+    try:
+        image = Image.open(upload_file.stream).convert("RGBA")
+
+        width, height = image.size
+
+        if width != 64 or height != 64:
+            side = min(width, height)
+            left = (width - side) // 2
+            top = (height - side) // 2
+            image = image.crop((left, top, left + side, top + side))
+            image = image.resize((64, 64), Image.Resampling.LANCZOS)
+
+        server_icon_path = MC_ROOT / "server-icon.png"
+        image.save(server_icon_path, "PNG")
+
+        return jsonify({
+            "success": True,
+            "message": "伺服器圖示已更新"
+        })
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error)
+        }), 500

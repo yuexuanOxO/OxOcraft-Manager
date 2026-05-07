@@ -37,11 +37,28 @@
 
         <div id="serverPreviewCard" class="server-preview-card">
 
-            <img
-                id="serverPreviewIcon"
-                class="server-preview-icon"
-                src="/api/server/icon-preview"
-                alt="server icon"
+            <div class="server-preview-icon-wrapper">
+                <img
+                    id="serverPreviewIcon"
+                    class="server-preview-icon"
+                    src="/api/server/icon-preview"
+                    alt="server icon"
+                >
+
+                <div class="server-preview-icon-tooltip">
+                    點擊更換伺服器圖示<br>
+                    支援 PNG / JPG<br>
+                    會自動將畫質轉換為符合icon的畫質(64X64)
+                </div>
+
+            </div>
+            
+
+            <input
+                id="serverIconInput"
+                type="file"
+                accept="image/png,image/jpeg"
+                class="hidden"
             >
 
             <div class="server-preview-main">

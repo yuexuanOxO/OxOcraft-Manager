@@ -37,6 +37,7 @@ import {
 } from "./server_settings.js";
 
 let serverEvents = null;
+let isBackendDead = false;
 
 
 
@@ -55,9 +56,13 @@ export function initServerEvents() {
     });
 
     serverEvents.onerror = () => {
+        if (isBackendDead) return;
+
         console.warn("SSE 暫時中斷，檢查後端連線...");
 
         setTimeout(async () => {
+            if (isBackendDead) return;
+
             try {
                 const response = await fetch("/api/server/query-status", {
                     cache: "no-store"
@@ -68,6 +73,13 @@ export function initServerEvents() {
                 }
 
             } catch (error) {
+                isBackendDead = true;
+
+                if (serverEvents) {
+                    serverEvents.close();
+                    serverEvents = null;
+                }
+
                 handleBackendDisconnected();
             }
         }, 1500);

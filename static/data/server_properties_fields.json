@@ -241,7 +241,7 @@
     "key": "enable-query",
     "label": "啟用 Query",
     "type": "boolean",
-    "default": "false",
+    "default": "true",
     "description": "允許使用GameSpy4協議的伺服器監聽器。用於取得伺服器資訊。"
   },
   {

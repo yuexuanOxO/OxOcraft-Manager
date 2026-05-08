@@ -11,24 +11,7 @@ import {
 
 
 let isTransitioning = false;
-let isBackupLockingServerControl = false;
 
-export function setPowerButtonBackupLocked(isLocked) {
-    isBackupLockingServerControl = isLocked;
-
-    const powerBtn = document.getElementById("powerBtn");
-    if (!powerBtn) return;
-
-    if (isLocked) {
-        powerBtn.disabled = true;
-        powerBtn.classList.add("loading");
-        powerBtn.title = "備份中，暫時無法開啟伺服器";
-    } else if (!isTransitioning) {
-        powerBtn.disabled = false;
-        powerBtn.classList.remove("loading");
-        powerBtn.title = "";
-    }
-}
 
 export function initServerControl() {
     const powerBtn = document.getElementById("powerBtn");
@@ -87,11 +70,6 @@ async function toggleServer() {
         isTransitioning = true;
         setPowerButtonLoading(true, actionText);
 
-        updateServerSettingsFooterModeByState({
-            state: targetOnline ? "starting" : "stopping",
-            online: statusData.online
-        });
-
         const response = await fetch(url, {
             method: "POST"
         });
@@ -115,7 +93,6 @@ async function toggleServer() {
         }
 
         isTransitioning = false;
-        setPowerButtonLoading(false);
 
         await updateStatus();
 
@@ -141,30 +118,18 @@ async function toggleServer() {
 
 export function setPowerButtonLoading(isLoading, actionText = "") {
     const powerBtn = document.getElementById("powerBtn");
-    const statusText = document.getElementById("statusText");
 
-    if (!powerBtn || !statusText) return;
+    if (!powerBtn) return;
 
     if (isLoading) {
-        powerBtn.disabled = true;
-        powerBtn.classList.add("loading");
+    powerBtn.disabled = true;
+    powerBtn.classList.add("loading");
 
-        const statusLight = document.getElementById("statusLight");
-
-        if (statusLight) {
-            statusLight.classList.remove("online", "offline");
-            statusLight.classList.add("starting");
-        }
-
-        if (actionText) {
-            statusText.textContent = actionText;
-        }
     } else {
-        if (!isBackupLockingServerControl) {
-            powerBtn.disabled = false;
-            powerBtn.classList.remove("loading");
-            powerBtn.title = "";
-        }
+        powerBtn.disabled = false;
+        powerBtn.classList.remove("loading");
+        powerBtn.title = "";
+        
     }
 }
 
@@ -523,6 +488,5 @@ export async function saveAndRestartServer() {
 
     } finally {
         await updateServerSettingsFooterMode();
-        setPowerButtonLoading(false);
     }
 }

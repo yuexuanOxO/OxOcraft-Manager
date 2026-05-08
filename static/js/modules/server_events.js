@@ -115,13 +115,12 @@ export function initServerEvents() {
         clearLogTextOnly();
     });
 
-    serverEvents.addEventListener("backup_started", async (event) => {
+    serverEvents.addEventListener("backup_started", (event) => {
         const data = JSON.parse(event.data);
+
         renderBackupProgress(data);
         updateBackupTaskState("local", data);
         setBackupRunning(true);
-
-        await updateStatusForce();
     });
 
     serverEvents.addEventListener("backup_progress", (event) => {
@@ -136,7 +135,6 @@ export function initServerEvents() {
         updateBackupTaskState("local", data);
         setBackupRunning(false);
 
-        await updateStatusForce();
     });
 
     serverEvents.addEventListener("backup_failed", async (event) => {
@@ -145,7 +143,6 @@ export function initServerEvents() {
         updateBackupTaskState("local", data);
         setBackupRunning(false);
 
-        await updateStatusForce();
     });
 
     serverEvents.addEventListener("backup_canceled", async (event) => {
@@ -154,7 +151,6 @@ export function initServerEvents() {
         updateBackupTaskState("local", data);
         setBackupRunning(false);
 
-        await updateStatusForce();
     });
 
     serverEvents.addEventListener("backup_record_added", (event) => {
@@ -163,7 +159,6 @@ export function initServerEvents() {
     });
 
     serverEvents.addEventListener("cloud_upload_started", (event) => {
-        console.log("[SSE] cloud_upload_started", event.data);
         const data = JSON.parse(event.data);
         renderCloudUploadProgress(data);
         updateBackupTaskState("cloud", data);
@@ -171,7 +166,6 @@ export function initServerEvents() {
     });
 
     serverEvents.addEventListener("cloud_upload_progress", (event) => {
-        console.log("[SSE] cloud_upload_progress", event.data);
         const data = JSON.parse(event.data);
         renderCloudUploadProgress(data);
         updateBackupTaskState("cloud", data);
@@ -209,12 +203,8 @@ export function initServerEvents() {
         setCloudUploadRunning(false);
     });
 
-    serverEvents.addEventListener("auto_backup_started", async (event) => {
-        await updateStatusForce();
-    });
 
     serverEvents.addEventListener("auto_backup_finished", async (event) => {
-        await updateStatusForce();
         await loadAutoBackupConfig();
     });
 
@@ -223,7 +213,6 @@ export function initServerEvents() {
 
         alert("自動備份失敗：" + (data.message || "未知錯誤"));
 
-        await updateStatusForce();
         await loadAutoBackupConfig();
     });
 

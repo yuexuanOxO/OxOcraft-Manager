@@ -1,7 +1,3 @@
-import {
-    setPowerButtonBackupLocked
-} from "./server_control.js";
-
 
 const taskState = {
     local: null,
@@ -38,15 +34,7 @@ export function updateBackupTaskState(type, data) {
         type
     };
 
-    if (type === "local") {
-        const localRunning =
-            isRunningStatus(data) &&
-            !isEndStatus(data);
-
-        setPowerButtonBackupLocked(localRunning);
-        renderBackupFloatingProgress();
-
-    }
+    renderBackupFloatingProgress();
 }
 
 function renderBackupFloatingProgress() {
@@ -159,7 +147,7 @@ function updateCloudTaskButton(percent, ended) {
             ring.style.strokeDashoffset = circumference;
         }, 3000);
     }
-    console.log("[cloud task button]", { percent, ended });
+
 }
 
 const fadeTimers = {

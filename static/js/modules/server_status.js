@@ -239,8 +239,10 @@ export function applyServerStatusPayload(payload) {
         if (powerBtn) {
             powerBtn.disabled = true;
             powerBtn.classList.add("loading");
+
+            console.log("[stopping]", powerBtn?.disabled);
         }
-        
+
     }else if (data.state === "starting") {
         statusLight.classList.remove("online", "offline");
         statusLight.classList.add("starting");

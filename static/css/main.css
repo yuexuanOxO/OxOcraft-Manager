@@ -2026,6 +2026,7 @@ h1 {
     width: 420px;
     box-sizing: border-box;
     z-index: 99999;
+    transition: opacity 0.8s ease;
 }
 
 /* 本機備份框 */

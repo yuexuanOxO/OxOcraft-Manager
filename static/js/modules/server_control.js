@@ -5,7 +5,6 @@ import {
 import {
     saveServerSettings,
     updateServerSettingsFooterMode,
-    updateServerSettingsFooterModeByState,
     loadServerSettings
 } from "./server_settings.js";
 
@@ -68,7 +67,7 @@ async function toggleServer() {
         }
 
         isTransitioning = true;
-        setPowerButtonLoading(true, actionText);
+        setPowerButtonLoading(true);
 
         const response = await fetch(url, {
             method: "POST"
@@ -94,7 +93,6 @@ async function toggleServer() {
 
         isTransitioning = false;
 
-        await updateStatus();
 
         if (!reachedTarget) {
             alert(targetOnline ? "伺服器啟動逾時，請查看 log。" : "伺服器關閉逾時，請查看 log。");
@@ -144,9 +142,16 @@ export async function waitForServerStatus(targetOnline, timeoutMs = 30000, inter
 
             const data = payload.data || payload;
 
-            if (data.online === targetOnline) {
-                return true;
+            if (targetOnline) {
+                if (data.online === true && data.state === "ready") {
+                    return true;
+                }
+            } else {
+                if (data.online === false && data.state === "offline") {
+                    return true;
+                }
             }
+
         } catch (error) {
             console.error("等待 server 狀態時發生錯誤:", error);
         }
@@ -429,12 +434,7 @@ export async function saveAndRestartServer() {
         const saved = await saveServerSettings(false);
         if (!saved) return;
 
-        setPowerButtonLoading(true, "關閉中...");
-
-        updateServerSettingsFooterModeByState({
-            state: "stopping",
-            online: true
-        });
+        setPowerButtonLoading(true);
 
         let response = await fetch("/api/server/stop", {
             method: "POST"
@@ -453,12 +453,7 @@ export async function saveAndRestartServer() {
             return;
         }
 
-        setPowerButtonLoading(true, "啟動中...");
-
-        updateServerSettingsFooterModeByState({
-            state: "starting",
-            online: false
-        });
+        setPowerButtonLoading(true);
 
         response = await fetch("/api/server/start", {
             method: "POST"

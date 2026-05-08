@@ -15,7 +15,8 @@ import {
     renderBackupProgress,
     setBackupRunning,
     prependBackupRecord,
-    updateBackupRecordItem
+    updateBackupRecordItem,
+    updateManualCloudUploadButtons
 } from "./backup.js";
 
 import {
@@ -163,6 +164,7 @@ export function initServerEvents() {
         renderCloudUploadProgress(data);
         updateBackupTaskState("cloud", data);
         setCloudUploadRunning(true);
+        updateManualCloudUploadButtons(data);
     });
 
     serverEvents.addEventListener("cloud_upload_progress", (event) => {
@@ -176,6 +178,7 @@ export function initServerEvents() {
         renderCloudUploadProgress(data);
         updateBackupTaskState("cloud", data);
         setCloudUploadRunning(false);
+        updateManualCloudUploadButtons(data);
 
         const btn = document.getElementById("cloudUploadLatestBtn");
         if (btn) btn.disabled = false;
@@ -186,6 +189,7 @@ export function initServerEvents() {
         renderCloudUploadProgress(data);
         updateBackupTaskState("cloud", data);
         setCloudUploadRunning(false);
+        updateManualCloudUploadButtons(data);
 
         const btn = document.getElementById("cloudUploadLatestBtn");
         if (btn) btn.disabled = false;
@@ -201,6 +205,7 @@ export function initServerEvents() {
         renderCloudUploadProgress(data);
         updateBackupTaskState("cloud", data);
         setCloudUploadRunning(false);
+        updateManualCloudUploadButtons(data);
     });
 
 

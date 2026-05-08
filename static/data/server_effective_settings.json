@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-05-08T17:08:01",
-    "properties_modified_comment": "Fri May 08 17:07:34 CST 2026",
+    "captured_at": "2026-05-08T17:25:33",
+    "properties_modified_comment": "Fri May 08 17:25:17 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -21,7 +21,7 @@
         "max-tick-time": "60000",
         "require-resource-pack": "false",
         "use-native-transport": "true",
-        "max-players": "5",
+        "max-players": "6",
         "online-mode": "true",
         "enable-status": "true",
         "allow-flight": "false",
@@ -66,7 +66,7 @@
         "management-server-enabled": "false",
         "management-server-host": "localhost",
         "management-server-port": "0",
-        "management-server-secret": "TBdpLQQQgsqlqOCY7PSCJ9UiJbvtFgTDF7Cgi3hX",
+        "management-server-secret": "0VuqjxdRJ1WDSBILRvZQNfuSUQPFJqQk41tJjNLH",
         "management-server-tls-enabled": "true",
         "management-server-tls-keystore": "",
         "management-server-tls-keystore-password": "",

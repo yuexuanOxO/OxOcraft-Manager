@@ -6,6 +6,9 @@ let currentBackupLevelName = "world";
 let manualBackupSelectedWorld = null;
 let currentServerWorldPath = "";
 let manualBackupUploadCloud = false;
+let manualLocalBackupRunning = false;
+let manualCloudUploadRunning = false;
+let isCloudConnected = false;
 
 import {
     updateDefaultCloudBackupFolderText,
@@ -16,6 +19,29 @@ import {
 import {
     loadAutoBackupConfig
 } from "./auto_backup.js";
+
+
+export function setCloudConnectionState(connected) {
+    isCloudConnected = connected;
+    updateManualCloudBackupButtonState();
+}
+
+function updateManualCloudBackupButtonState() {
+    const btn = document.getElementById("manualLocalCloudBackupBtn");
+
+    if (!btn) return;
+
+    const shouldDisable =
+        manualLocalBackupRunning ||
+        manualCloudUploadRunning ||
+        !isCloudConnected;
+
+    if (shouldDisable) {
+        btn.setAttribute("disabled", "disabled");
+    } else {
+        btn.removeAttribute("disabled");
+    }
+}
 
 
 export function initBackup() {
@@ -61,6 +87,7 @@ function setupBackupModal() {
 
         await loadBackupConfig();
         await loadAutoBackupConfig();
+        await loadCloudStatus();
     });
 
 
@@ -313,6 +340,72 @@ function setupBackupRecordFilters() {
 }
 
 
+export function updateManualCloudUploadButtons(data) {
+    const localCloudBtn = document.getElementById("manualLocalCloudBackupBtn");
+
+    if (!localCloudBtn) return;
+
+    const status = String(data?.status || "").toLowerCase();
+
+    const isRunning =
+        data?.running ||
+        status === "running" ||
+        status === "uploading";
+
+    const isEnded =
+        status === "success" ||
+        status === "failed" ||
+        status === "canceled" ||
+        status === "cancelled" ||
+        status.includes("cancel");
+
+    if (isRunning) {
+        manualCloudUploadRunning = true;
+        localCloudBtn.setAttribute("disabled", "disabled");
+        return;
+    }
+
+    if (isEnded) {
+        manualCloudUploadRunning = false;
+
+        if (!manualLocalBackupRunning) {
+            updateManualCloudBackupButtonState();
+        }
+    }
+}
+
+
+export function updateManualBackupButtons(data) {
+    const localBtn = document.getElementById("manualLocalBackupBtn");
+    const localCloudBtn = document.getElementById("manualLocalCloudBackupBtn");
+
+    if (!localBtn && !localCloudBtn) return;
+
+    const isRunning = data.running || data.status === "running";
+    const isEnded = isBackupEndStatus(data);
+
+    if (isRunning) {
+        manualLocalBackupRunning = true;
+
+        localBtn?.setAttribute("disabled", "disabled");
+        localCloudBtn?.setAttribute("disabled", "disabled");
+        return;
+    }
+
+    if (isEnded) {
+        manualLocalBackupRunning = false;
+
+        // 本機備份結束後，本機備份按鈕可以解鎖
+        localBtn?.removeAttribute("disabled");
+
+        // 本機&雲端按鈕要等雲端也結束才能解鎖
+        if (!manualCloudUploadRunning) {
+            updateManualCloudBackupButtonState();
+        }
+    }
+}
+
+
 export function renderBackupProgress(data) {
     const manualStatusText = document.getElementById("manualBackupStatusText");
     const manualProgressBar = document.getElementById("manualBackupProgressBar");
@@ -342,21 +435,7 @@ export function renderBackupProgress(data) {
         mapName.textContent = data.map_name;
     }
 
-    if (data.running || data.status === "running") {
-        document.getElementById("manualLocalBackupBtn")
-            ?.setAttribute("disabled", "disabled");
-
-        document.getElementById("manualLocalCloudBackupBtn")
-            ?.setAttribute("disabled", "disabled");
-
-    } else if (isBackupEndStatus(data)) {
-
-        document.getElementById("manualLocalBackupBtn")
-            ?.removeAttribute("disabled");
-
-        document.getElementById("manualLocalCloudBackupBtn")
-            ?.removeAttribute("disabled");
-    }
+    updateManualBackupButtons(data);
 }
 
 

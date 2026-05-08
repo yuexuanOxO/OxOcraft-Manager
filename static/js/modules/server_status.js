@@ -240,7 +240,6 @@ export function applyServerStatusPayload(payload) {
             powerBtn.disabled = true;
             powerBtn.classList.add("loading");
 
-            console.log("[stopping]", powerBtn?.disabled);
         }
 
     }else if (data.state === "starting") {

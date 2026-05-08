@@ -1,6 +1,5 @@
 import {
     applyServerStatusPayload,
-    updateStatusForce,
     addPlayerFromLog,
     removePlayerFromLog,
     handleBackendDisconnected
@@ -30,14 +29,6 @@ import {
 } from "./auto_backup.js";
 
 import {
-    setPowerButtonLoading
-} from "./server_control.js";
-
-import {
-    updateServerSettingsFooterModeByState
-} from "./server_settings.js";
-
-import {
     updateBackupTaskState
 } from "./backup_tasks.js";
 
@@ -58,7 +49,6 @@ export function initServerEvents() {
         const payload = JSON.parse(event.data);
 
         applyServerStatusPayload(payload);
-        updateServerSettingsFooterModeByState(payload.data);
     });
 
     serverEvents.onerror = () => {
@@ -102,12 +92,10 @@ export function initServerEvents() {
 
         if (joinMatch) {
             addPlayerFromLog(joinMatch[1]);
-            setTimeout(updateStatusForce, 3000); // 延後用 Query 校正
         }
 
         if (leftMatch) {
             removePlayerFromLog(leftMatch[1]);
-            setTimeout(updateStatusForce, 3000); // 延後用 Query 校正
         }
 
     });

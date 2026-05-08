@@ -1,25 +1,26 @@
 import { showOfflineCat } from "./log_console.js";
 
-let statusPollingTimer = null;
+let fallbackPollingTimer = null;
 let backendDisconnected = false;
 let wasServerOnline = false;
 let hasReceivedFirstStatus = false;
 let lastServerStatusRevision = null;
 let currentPlayers = new Set();
+let previousServerState = null;
 export let latestServerStatusData = null;
 
 
 export function initServerStatus() {
-    statusPollingTimer = setInterval(updateStatus, 10000);
+    fallbackPollingTimer = setInterval(updateStatus, 10000);
     updateStatus();
 }
 
 
 
 function stopAllPolling() {
-    if (statusPollingTimer !== null) {
-        clearInterval(statusPollingTimer);
-        statusPollingTimer = null;
+    if (fallbackPollingTimer !== null) {
+        clearInterval(fallbackPollingTimer);
+        fallbackPollingTimer = null;
     }
 }
 
@@ -60,22 +61,6 @@ export async function updateStatus() {
 
     } catch (error) {
         console.error("更新狀態失敗:", error);
-        handleBackendDisconnected();
-    }
-}
-
-
-export async function updateStatusForce() {
-    try {
-        const response = await fetch("/api/server/query-status?force=1", {
-            cache: "no-store"
-        });
-
-        const payload = await response.json();
-        applyServerStatusPayload(payload);
-
-    } catch (error) {
-        console.error("強制更新狀態失敗:", error);
         handleBackendDisconnected();
     }
 }
@@ -194,12 +179,12 @@ export function applyServerStatusPayload(payload) {
 
     
 
-    if (isFirstStatus && !data.online && data.state !== "starting") {
+    if (isFirstStatus && data.state === "offline") {
         showOfflineCat();
         clearPlayersList();
     }
 
-    if (!isFirstStatus && wasServerOnline && !data.online && data.state !== "starting") {
+    if (!isFirstStatus && previousServerState !== "offline" && data.state === "offline") {
         showOfflineCat();
         clearPlayersList();
     }
@@ -274,4 +259,5 @@ export function applyServerStatusPayload(payload) {
     }
 
     wasServerOnline = data.online;
+    previousServerState = data.state;
 }

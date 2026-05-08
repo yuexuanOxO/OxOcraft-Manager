@@ -33,7 +33,7 @@
             </div>
 
             <div class="backup-row">
-                <div class="backup-label">目前世界</div>
+                <div class="backup-label">目前選擇世界</div>
                 <div id="manualBackupWorldInfo" class="backup-value">請選擇世界資料夾</div>
             </div>
 
@@ -75,7 +75,7 @@
             </div>
 
             <div class="backup-row">
-                <div class="backup-label">目前世界</div>
+                <div class="backup-label">目前使用世界</div>
                 <div id="backupMapName" class="backup-value">讀取中...</div>
             </div>
 
@@ -93,7 +93,7 @@
                 <div id="autoBackupAdvancedSettings" class="auto-backup-advanced hidden">
                     <div class="backup-row">
                         <div class="backup-label">備份週期</div>
-                        <select id="autoBackupFrequency" class="setting-input">
+                        <select id="autoBackupFrequency" class="setting-input-cycle">
                             <option value="daily">每日</option>
                             <option value="weekly">每週</option>
                             <option value="monthly">每月</option>
@@ -107,19 +107,19 @@
                     </div>
 
                     <div class="backup-row">
-                        <div class="backup-label">本機完成後上傳雲端</div>
+                        <div class="backup-label">雲端同步備份</div>
                         <button id="autoBackupUploadCloudBtn" class="setting-switch-btn off" type="button" >
                             False
                         </button>
                     </div>
 
                     <div class="backup-row">
-                        <div class="backup-label">下次備份</div>
-                        <div id="autoBackupNextRunText" class="backup-value">未啟用</div>
+                        <div class="backup-label">下次備份時間</div>
+                        <div id="autoBackupNextRunText" class="backup-value">尚未設定</div>
                     </div>
 
                     <div class="backup-actions">
-                        <button id="autoBackupSaveBtn" type="button">儲存自動備份設定</button>
+                        <button id="autoBackupSaveBtn" type="button">套用設定</button>
                     </div>
 
                 </div>

@@ -44,7 +44,7 @@ function updateAutoBackupAdvancedVisible() {
 
 
 function formatAutoBackupTime(value) {
-    if (!value) return "未啟用";
+    if (!value) return "尚未套用";
 
     return value.replace("T", " ");
 }

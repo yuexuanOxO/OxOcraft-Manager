@@ -23,6 +23,27 @@ pending_deaths: dict[str, dict] = {}
 CURRENT_LEVEL_NAME: str | None = None
 CURRENT_WORLD_PATH: Path | None = None
 
+SERVER_RUNTIME_STATE = "offline"
+_runtime_state_lock = threading.Lock()
+
+
+def set_server_runtime_state(state: str) -> None:
+    global SERVER_RUNTIME_STATE
+
+    with _runtime_state_lock:
+        SERVER_RUNTIME_STATE = state
+
+    try:
+        from backend.server_monitor import refresh_server_status_now
+        refresh_server_status_now()
+    except Exception:
+        pass
+
+
+def get_server_runtime_state() -> str:
+    with _runtime_state_lock:
+        return SERVER_RUNTIME_STATE
+
 
 def is_server_running() -> bool:
     global server_process
@@ -47,6 +68,9 @@ def handle_server_output() -> None:
         line = line.strip()
         print(line)
         append_log_line(line)
+
+        if "Done (" in line and "For help, type" in line:
+            set_server_runtime_state("ready")
 
         death_result = parse_death_message(line)
         if death_result:
@@ -83,6 +107,8 @@ def handle_server_output() -> None:
                 raw_log=death_data["message"],
             )
 
+    set_server_runtime_state("offline")
+
 
 def start_server() -> tuple[bool, str]:
     global server_process
@@ -92,6 +118,8 @@ def start_server() -> tuple[bool, str]:
 
     if not SERVER_JAR_PATH.exists():
         return False, f"找不到 server.jar：{SERVER_JAR_PATH}"
+
+    set_server_runtime_state("starting")
     
     lock_current_server_port()
     lock_current_world_path()
@@ -123,6 +151,7 @@ def start_server() -> tuple[bool, str]:
         threading.Thread(target=handle_server_output, daemon=True).start()
         return True, "伺服器啟動成功"
     except Exception as error:
+        set_server_runtime_state("offline")
         return False, f"伺服器啟動失敗：{error}"
 
 
@@ -133,6 +162,7 @@ def stop_server() -> tuple[bool, str]:
         return False, "伺服器未運行"
 
     try:
+        set_server_runtime_state("stopping")
         send_command("stop")
         return True, "正在關閉伺服器"
     except Exception as error:

@@ -214,14 +214,52 @@ export function applyServerStatusPayload(payload) {
         statusLight.classList.remove("offline", "starting");
         statusLight.classList.add("online");
         statusText.textContent = "在線";
-    } else if (data.state === "starting") {
+
+        if (powerBtn) {
+            powerBtn.disabled = false;
+            powerBtn.classList.remove("loading");
+        }
+        
+    }else if (data.state === "backuping") {
+        statusLight.classList.remove("online", "offline");
+        statusLight.classList.add("starting");
+
+        statusText.textContent = "備份中...";
+
+        if (powerBtn) {
+            powerBtn.disabled = true;
+            powerBtn.classList.add("loading");
+        }
+    }else if (data.state === "stopping") {
+        statusLight.classList.remove("online", "offline");
+        statusLight.classList.add("starting");
+
+        statusText.textContent = "關閉中...";
+
+        if (powerBtn) {
+            powerBtn.disabled = true;
+            powerBtn.classList.add("loading");
+        }
+        
+    }else if (data.state === "starting") {
         statusLight.classList.remove("online", "offline");
         statusLight.classList.add("starting");
         statusText.textContent = "啟動中...";
+
+        if (powerBtn) {
+            powerBtn.disabled = true;
+            powerBtn.classList.add("loading");
+        }
+
     } else {
         statusLight.classList.remove("online", "starting");
         statusLight.classList.add("offline");
         statusText.textContent = "離線";
+
+        if (powerBtn) {
+            powerBtn.disabled = false;
+            powerBtn.classList.remove("loading");
+        }
     }
 
     if (powerBtn) {

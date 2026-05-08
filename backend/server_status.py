@@ -1,5 +1,5 @@
 import socket
-
+from pathlib import Path
 from backend.paths import SERVER_PROPERTIES_PATH
 from backend.server_settings.server_properties import read_properties_file
 from mcstatus import JavaServer
@@ -48,7 +48,63 @@ def get_query_port() -> int:
     return get_current_server_port()
 
 
+def is_backup_state_active() -> bool:
+    try:
+        from backend.backup_service import (
+            is_backup_running,
+            get_backup_status,
+        )
+
+        from backend.server_runtime import get_current_world_path
+
+        if not is_backup_running():
+            return False
+
+        status = get_backup_status()
+        backup_source = status.get("source_path")
+
+        if not backup_source:
+            return False
+
+        backup_path = Path(backup_source).resolve()
+        current_path = Path(get_current_world_path()).resolve()
+
+        return backup_path == current_path
+
+    except Exception:
+        return False
+
+
 def get_server_query_status(host: str = "127.0.0.1") -> dict:
+    if is_backup_state_active():
+        return {
+            "online": False,
+            "state": "backuping",
+            "message": "備份中",
+        }
+
+    runtime_state = "offline"
+
+    try:
+        from backend.server_runtime import get_server_runtime_state
+        runtime_state = get_server_runtime_state()
+    except Exception:
+        pass
+
+    if runtime_state == "starting":
+        return {
+            "online": False,
+            "state": "starting",
+            "message": "伺服器啟動中",
+        }
+
+    if runtime_state == "stopping":
+        return {
+            "online": False,
+            "state": "stopping",
+            "message": "伺服器關閉中",
+        }
+
     port = get_query_port()
 
     try:

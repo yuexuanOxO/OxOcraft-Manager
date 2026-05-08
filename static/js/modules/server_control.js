@@ -11,6 +11,24 @@ import {
 
 
 let isTransitioning = false;
+let isBackupLockingServerControl = false;
+
+export function setPowerButtonBackupLocked(isLocked) {
+    isBackupLockingServerControl = isLocked;
+
+    const powerBtn = document.getElementById("powerBtn");
+    if (!powerBtn) return;
+
+    if (isLocked) {
+        powerBtn.disabled = true;
+        powerBtn.classList.add("loading");
+        powerBtn.title = "備份中，暫時無法開啟伺服器";
+    } else if (!isTransitioning) {
+        powerBtn.disabled = false;
+        powerBtn.classList.remove("loading");
+        powerBtn.title = "";
+    }
+}
 
 export function initServerControl() {
     const powerBtn = document.getElementById("powerBtn");
@@ -142,8 +160,11 @@ export function setPowerButtonLoading(isLoading, actionText = "") {
             statusText.textContent = actionText;
         }
     } else {
-        powerBtn.disabled = false;
-        powerBtn.classList.remove("loading");
+        if (!isBackupLockingServerControl) {
+            powerBtn.disabled = false;
+            powerBtn.classList.remove("loading");
+            powerBtn.title = "";
+        }
     }
 }
 

@@ -105,6 +105,13 @@ def mark_backup_canceled(target_zip: Path | None = None) -> None:
     }
 
     publish_event("backup_canceled", _backup_status)
+
+    try:
+        from backend.server_monitor import refresh_server_status_now
+        refresh_server_status_now()
+    except Exception:
+        pass
+
     publish_or_update_backup_record(_backup_status)
 
 
@@ -228,8 +235,21 @@ def backup_worker(source_root: Path | None, backup_root: Path, task: dict | None
         }
 
         publish_event("backup_started", _backup_status)
+
+        try:
+            from backend.server_monitor import refresh_server_status_now
+            refresh_server_status_now()
+        except Exception:
+            pass
+
         publish_or_update_backup_record(_backup_status)
 
+
+        try:
+            from backend.server_monitor import refresh_server_status_now
+            refresh_server_status_now()
+        except Exception:
+            pass
 
 
         with zipfile.ZipFile(target_zip, "w", compression=zipfile.ZIP_DEFLATED) as zipf:
@@ -277,6 +297,13 @@ def backup_worker(source_root: Path | None, backup_root: Path, task: dict | None
             start_cloud_upload_latest(backup_folder)
 
         publish_event("backup_finished", _backup_status)
+
+        try:
+            from backend.server_monitor import refresh_server_status_now
+            refresh_server_status_now()
+        except Exception:
+            pass
+
         publish_or_update_backup_record(_backup_status)
 
     except BackupCanceled:
@@ -304,7 +331,15 @@ def backup_worker(source_root: Path | None, backup_root: Path, task: dict | None
         }
 
         publish_event("backup_failed", _backup_status)
+
+        try:
+            from backend.server_monitor import refresh_server_status_now
+            refresh_server_status_now()
+        except Exception:
+            pass
+
         publish_or_update_backup_record(_backup_status)
+
 
     finally:
         _is_running = False

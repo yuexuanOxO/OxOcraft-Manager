@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-05-07T16:09:02",
-    "properties_modified_comment": "Thu May 07 16:07:23 CST 2026",
+    "captured_at": "2026-05-08T16:17:02",
+    "properties_modified_comment": "Fri May 08 16:17:00 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -11,7 +11,7 @@
         "generator-settings": "{}",
         "enforce-secure-profile": "true",
         "level-name": "world",
-        "motd": "Hello",
+        "motd": "Hello OxO",
         "query.port": "25565",
         "pvp": "true",
         "generate-structures": "true",
@@ -21,7 +21,7 @@
         "max-tick-time": "60000",
         "require-resource-pack": "false",
         "use-native-transport": "true",
-        "max-players": "20",
+        "max-players": "5",
         "online-mode": "true",
         "enable-status": "true",
         "allow-flight": "false",

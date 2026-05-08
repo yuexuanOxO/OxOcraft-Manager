@@ -1,3 +1,7 @@
+import {
+    setPowerButtonBackupLocked
+} from "./server_control.js";
+
 
 const taskState = {
     local: null,
@@ -34,7 +38,15 @@ export function updateBackupTaskState(type, data) {
         type
     };
 
-    renderBackupFloatingProgress();
+    if (type === "local") {
+        const localRunning =
+            isRunningStatus(data) &&
+            !isEndStatus(data);
+
+        setPowerButtonBackupLocked(localRunning);
+        renderBackupFloatingProgress();
+
+    }
 }
 
 function renderBackupFloatingProgress() {

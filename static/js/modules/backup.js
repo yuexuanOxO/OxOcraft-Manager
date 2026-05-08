@@ -858,7 +858,7 @@ function createBackupRecordItem(record) {
                 ? `<span class="cloud-link-deleted">已刪除的雲端備份</span>`
                 : record.cloud_link
                     ? `<a class="cloud-link-active" href="${record.cloud_link}" target="_blank" rel="noopener noreferrer">開啟雲端備份</a>`
-                    : `<span class="cloud-link-missing">沒有連結</span>`;
+                    : `<span class="cloud-link-missing">備份中</span>`;
 
         item.innerHTML = `
             <div class="backup-record-main">

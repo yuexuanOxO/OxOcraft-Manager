@@ -79,47 +79,54 @@
                 <div id="backupMapName" class="backup-value">讀取中...</div>
             </div>
 
+            
             <div class="auto-backup-box">
                 <div class="auto-backup-title">自動備份</div>
 
                 <div class="backup-row">
                     <div class="backup-label">啟用自動備份</div>
-                    <button id="autoBackupEnabledBtn" class="setting-bool-btn false" type="button" data-value="false">
+                    <button id="autoBackupEnabledBtn" class="setting-switch-btn off" type="button">
                         False
                     </button>
                 </div>
 
-                <div class="backup-row">
-                    <div class="backup-label">備份週期</div>
-                    <select id="autoBackupFrequency" class="setting-input">
-                        <option value="daily">每日</option>
-                        <option value="weekly">每週</option>
-                        <option value="monthly">每月</option>
-                        <option value="yearly">每年</option>
-                    </select>
+                <div id="autoBackupAdvancedSettings" class="auto-backup-advanced hidden">
+                    <div class="backup-row">
+                        <div class="backup-label">備份週期</div>
+                        <select id="autoBackupFrequency" class="setting-input">
+                            <option value="daily">每日</option>
+                            <option value="weekly">每週</option>
+                            <option value="monthly">每月</option>
+                            <option value="yearly">每年</option>
+                        </select>
+                    </div>
+
+                    <div class="backup-row">
+                        <div class="backup-label">開始時間</div>
+                        <input id="autoBackupStartAt" class="setting-input" type="datetime-local">
+                    </div>
+
+                    <div class="backup-row">
+                        <div class="backup-label">本機完成後上傳雲端</div>
+                        <button id="autoBackupUploadCloudBtn" class="setting-switch-btn off" type="button" >
+                            False
+                        </button>
+                    </div>
+
+                    <div class="backup-row">
+                        <div class="backup-label">下次備份</div>
+                        <div id="autoBackupNextRunText" class="backup-value">未啟用</div>
+                    </div>
+
+                    <div class="backup-actions">
+                        <button id="autoBackupSaveBtn" type="button">儲存自動備份設定</button>
+                    </div>
+
                 </div>
 
-                <div class="backup-row">
-                    <div class="backup-label">開始時間</div>
-                    <input id="autoBackupStartAt" class="setting-input" type="datetime-local">
-                </div>
-
-                <div class="backup-row">
-                    <div class="backup-label">本機完成後上傳雲端</div>
-                    <button id="autoBackupUploadCloudBtn" class="setting-bool-btn false" type="button" data-value="false">
-                        False
-                    </button>
-                </div>
-
-                <div class="backup-row">
-                    <div class="backup-label">下次備份</div>
-                    <div id="autoBackupNextRunText" class="backup-value">未啟用</div>
-                </div>
-
-                <div class="backup-actions">
-                    <button id="autoBackupSaveBtn" type="button">儲存自動備份設定</button>
-                </div>
             </div>
+
+            
 
             
         </div>

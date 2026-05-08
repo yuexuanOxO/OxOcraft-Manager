@@ -19,10 +19,27 @@ function setBoolButton(btn, value) {
     if (!btn) return;
 
     btn.dataset.value = value ? "true" : "false";
-    btn.textContent = value ? "True" : "False";
+    btn.classList.toggle("on", value);
+    btn.classList.toggle("off", !value);
 
-    btn.classList.toggle("true", value);
-    btn.classList.toggle("false", !value);
+    btn.innerHTML = `
+        <span class="setting-switch-visual">
+            <span class="setting-switch-track"></span>
+            <span class="setting-switch-thumb"></span>
+        </span>
+        <span class="setting-switch-text">${value ? "true" : "false"}</span>
+    `;
+}
+
+
+function updateAutoBackupAdvancedVisible() {
+    const enabledBtn = document.getElementById("autoBackupEnabledBtn");
+    const advanced = document.getElementById("autoBackupAdvancedSettings");
+
+    if (!enabledBtn || !advanced) return;
+
+    const enabled = enabledBtn.dataset.value === "true";
+    advanced.classList.toggle("hidden", !enabled);
 }
 
 
@@ -59,6 +76,7 @@ export async function loadAutoBackupConfig() {
 
         setBoolButton(enabledBtn, autoBackupState.enabled);
         setBoolButton(uploadBtn, autoBackupState.uploadCloud);
+        updateAutoBackupAdvancedVisible();
 
         if (frequency) frequency.value = autoBackupState.frequency;
         if (startAt) startAt.value = autoBackupState.startAt;
@@ -132,6 +150,7 @@ function setupAutoBackupSettings() {
         enabledBtn.addEventListener("click", () => {
             const nextValue = enabledBtn.dataset.value !== "true";
             setBoolButton(enabledBtn, nextValue);
+            updateAutoBackupAdvancedVisible();
 
             if (nextValue) {
                 alert(

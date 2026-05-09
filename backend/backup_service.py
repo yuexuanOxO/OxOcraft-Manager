@@ -288,6 +288,8 @@ def backup_worker(source_root: Path | None, backup_root: Path, task: dict | None
             "upload_cloud": bool(task.get("upload_cloud")) if task else False,
         }
 
+        cleanup_old_local_backups(world_backup_root, map_name)
+
         if task and task.get("upload_cloud"):
             from backend.routes.cloud_routes import start_cloud_upload_latest
 
@@ -399,3 +401,64 @@ def _start_backup_task(task: dict) -> None:
         daemon=True,
     )
     _backup_thread.start()
+
+
+def is_valid_world_backup_zip(zip_path: Path) -> bool:
+    try:
+        if not zip_path.is_file() or zip_path.suffix.lower() != ".zip":
+            return False
+
+        with zipfile.ZipFile(zip_path, "r") as zipf:
+            names = zipf.namelist()
+
+            if "level.dat" not in names:
+                return False
+
+            markers = (
+                "data/",
+                "region/",
+                "DIM1/",
+                "DIM-1/",
+                "dimensions/",
+                "players/",
+                "datapacks/",
+            )
+
+            return any(
+                name.startswith(marker)
+                for name in names
+                for marker in markers
+            )
+
+    except zipfile.BadZipFile:
+        return False
+    except Exception:
+        return False
+    
+
+LOCAL_BACKUP_KEEP_COUNT = 5
+
+def cleanup_old_local_backups(
+    world_backup_root: Path,
+    map_name: str,
+    keep_count: int = LOCAL_BACKUP_KEEP_COUNT
+) -> None:
+    if keep_count <= 0 or not world_backup_root.exists():
+        return
+
+    valid_backups = [
+        zip_path for zip_path in world_backup_root.glob(f"{map_name}_backup_*.zip")
+        if is_valid_world_backup_zip(zip_path)
+    ]
+
+    valid_backups.sort(
+        key=lambda path: path.stat().st_mtime,
+        reverse=True
+    )
+
+    for zip_path in valid_backups[keep_count:]:
+        try:
+            zip_path.unlink()
+            print(f"[Backup] 已刪除舊本機備份：{zip_path}")
+        except OSError as error:
+            print(f"[Backup] 無法刪除舊本機備份 {zip_path}：{error}")

@@ -35,6 +35,7 @@ SCOPES = [
     "email",
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/drive.file",
+    "https://www.googleapis.com/auth/drive.metadata.readonly",
 ]
 
 REDIRECT_URI = "http://127.0.0.1:5000/api/cloud/google/callback"
@@ -427,16 +428,42 @@ def api_google_status():
 
     email = "已連接 Google 帳號"
     picture = ""
+    quota = None
 
     if r.status_code == 200:
         user = r.json()
         email = user.get("email", email)
         picture = user.get("picture", "")
 
+    try:
+        service = get_drive_service()
+
+        if service:
+            about = service.about().get(
+                fields="storageQuota"
+            ).execute()
+
+            storage = about.get("storageQuota", {})
+
+            limit = int(storage.get("limit", 0) or 0)
+            usage = int(storage.get("usage", 0) or 0)
+            remaining = max(limit - usage, 0) if limit else 0
+
+            quota = {
+                "limit": limit,
+                "usage": usage,
+                "remaining": remaining,
+                "usage_percent": round((usage / limit) * 100, 1) if limit else 0,
+            }
+
+    except Exception as error:
+        print(f"[GoogleDrive] 讀取容量資訊失敗：{error}")
+
     return jsonify({
         "connected": True,
         "email": email,
-        "picture": picture
+        "picture": picture,
+        "quota": quota,
     })
 
 

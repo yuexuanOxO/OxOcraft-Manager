@@ -311,6 +311,27 @@ def api_backup_select_folder():
     })
 
 
+@backup_bp.route("/api/backup/select-zip-file", methods=["POST"])
+def api_backup_select_zip_file():
+    root = tk.Tk()
+    root.withdraw()
+    root.attributes("-topmost", True)
+
+    file_path = filedialog.askopenfilename(
+        title="選擇 ZIP 備份檔",
+        filetypes=[
+            ("ZIP files", "*.zip")
+        ]
+    )
+
+    root.destroy()
+
+    return jsonify({
+        "success": True,
+        "path": file_path or ""
+    })
+
+
 @backup_bp.route("/api/backup/worlds", methods=["POST"])
 def api_backup_worlds():
     data = request.get_json(silent=True) or {}

@@ -766,6 +766,21 @@ export async function openFolderPicker() {
 }
 
 
+export async function openZipFilePicker() {
+    const response = await fetch("/api/backup/select-zip-file", {
+        method: "POST"
+    });
+
+    const data = await response.json();
+
+    if (!data.success || !data.path) {
+        return "";
+    }
+
+    return data.path;
+}
+
+
 function setupBackupPathEditButtons() {
     document.querySelectorAll(".backup-path-edit-btn").forEach((btn) => {
         btn.addEventListener("click", async () => {

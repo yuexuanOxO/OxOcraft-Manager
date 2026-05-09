@@ -206,10 +206,23 @@
                 <div id="cloudStatusText">Google Drive：未連接</div>
                 <div id="cloudEmailText"></div>
 
+                <div id="cloudQuotaBox" class="cloud-quota-box hidden">
+                    <div class="cloud-quota-title">Google Drive 容量使用</div>
+
+                    <div class="cloud-quota-bar-wrap">
+                        <div id="cloudQuotaBar" class="cloud-quota-bar"></div>
+                    </div>
+
+                    <div class="cloud-quota-info">
+                        <span id="cloudQuotaUsedText">-- / --</span>
+                        <span id="cloudQuotaRemainText">剩餘 --</span>
+                    </div>
+                </div>
+
                 <button id="cloudConnectBtn">連接 Google Drive</button>
 
                 <div class="cloud-backup-folder-row">
-                    <div class="cloud-backup-folder-label">指定備份資料夾</div>
+                    <div class="cloud-backup-folder-label">選擇ZIP備份檔：</div>
 
                     <div class="cloud-backup-folder-wrap">
                         <div id="cloudBackupFolderText" class="cloud-backup-folder-text">
@@ -226,8 +239,7 @@
                     </div>
                 </div>
 
-                <button id="cloudUploadLatestBtn" type="button">上傳雲端備份</button>
-                <div id="cloudUploadStatus"></div>
+                <button id="cloudUploadLatestBtn" class="backup-main-action-btn">上傳ZIP備份</button>
 
             </div>
 

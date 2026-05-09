@@ -2074,7 +2074,8 @@ h1 {
 }
 
 #manualLocalBackupBtn,
-#manualLocalCloudBackupBtn{
+#manualLocalCloudBackupBtn,
+#cloudUploadLatestBtn{
     min-width: 150px;
     height: 38px;
     padding: 0 14px;
@@ -2089,14 +2090,16 @@ h1 {
 }
 
 #manualLocalBackupBtn:hover,
-#manualLocalCloudBackupBtn:hover{
+#manualLocalCloudBackupBtn:hover,
+#cloudUploadLatestBtn:hover{
     background: #2e2e2e;
     border-color: #65ff65;
     color: #65ff65;
 }
 
 #manualLocalBackupBtn:disabled,
-#manualLocalCloudBackupBtn:disabled{
+#manualLocalCloudBackupBtn:disabled,
+#cloudUploadLatestBtn:disabled{
     opacity: 0.45;
     cursor: not-allowed;
     border-color: #444;
@@ -2325,3 +2328,55 @@ button.disabled {
     font-size: 18px;
     word-break: break-all;
 }
+
+
+.cloud-quota-box{
+    margin-top: 12px;
+    margin-bottom: 14px;
+    padding: 12px;
+
+    background: #0b0b0b;
+    border: 2px solid #333;
+}
+
+.cloud-quota-title{
+    color: #ddd;
+    font-size: 15px;
+    margin-bottom: 8px;
+}
+
+.cloud-quota-bar-wrap{
+    width: 100%;
+    max-width: 460px;
+    height: 22px;
+
+    background: #1b1b1b;
+    border: 2px solid #555;
+    overflow: hidden;
+}
+
+.cloud-quota-bar{
+    width: 0%;
+    height: 100%;
+    background: #65ff65;
+}
+
+.cloud-quota-bar.warning{
+    background: #ffd95a;
+}
+
+.cloud-quota-bar.danger{
+    background: #ff5555;
+}
+
+.cloud-quota-info{
+    margin-top: 8px;
+
+    display: flex;
+    justify-content: space-between;
+    max-width: 464px;
+
+    color: #65ff65;
+    font-size: 14px;
+}
+

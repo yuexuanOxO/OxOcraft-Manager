@@ -1,5 +1,5 @@
 import {
-    openFolderPicker,
+    openZipFilePicker,
     getCurrentBackupLevelName,
     setCloudConnectionState
 } from "./backup.js";
@@ -10,7 +10,7 @@ import {
 } from "./auto_backup.js";
 
 
-let selectedCloudBackupFolder = "";
+let selectedCloudBackupFile = "";
 
 
 export function initCloudBackup() {
@@ -28,9 +28,9 @@ export function initCloudBackup() {
 
 export function updateDefaultCloudBackupFolderText() {
     const text = document.getElementById("cloudBackupFolderText");
-    if (!text || selectedCloudBackupFolder) return;
+    if (!text || selectedCloudBackupFile) return;
 
-    text.textContent = `未指定，使用伺服器上次開啟的世界${getCurrentBackupLevelName()}備份`;
+    text.textContent = "未選擇 ZIP 備份檔";
 }
 
 
@@ -44,21 +44,21 @@ function setupCloudBackupFolderPicker() {
             selectBtn.disabled = true;
 
             try {
-                const path = await openFolderPicker();
+                const path = await openZipFilePicker();
 
                 if (!path) {
                     return;
                 }
 
-                selectedCloudBackupFolder = path;
+                selectedCloudBackupFile = path;
 
                 if (text) {
                     text.textContent = path;
                 }
 
             } catch (error) {
-                console.error("選擇雲端備份資料夾失敗:", error);
-                alert("選擇資料夾失敗，請查看 console。");
+                console.error("選擇 ZIP 備份檔失敗:", error);
+                alert("選擇 ZIP 備份檔失敗，請查看 console。");
 
             } finally {
                 selectBtn.disabled = false;
@@ -68,7 +68,7 @@ function setupCloudBackupFolderPicker() {
 
     if (clearBtn) {
         clearBtn.addEventListener("click", () => {
-            selectedCloudBackupFolder = "";
+            selectedCloudBackupFile = "";
 
             if (text) {
                 updateDefaultCloudBackupFolderText();
@@ -96,6 +96,7 @@ export async function loadCloudStatus() {
         setAutoBackupCloudConnectionState(true);
         updateAutoBackupCloudUploadAvailability(true);
         status.textContent = "Google Drive：已連接";
+        renderCloudQuota(data.quota);
         status.classList.remove("cloud-status-disconnected");
         status.classList.add("cloud-status-connected");
 
@@ -126,6 +127,7 @@ export async function loadCloudStatus() {
         updateAutoBackupCloudUploadAvailability(false);
         setAutoBackupCloudConnectionState(false);
         status.textContent = "Google Drive：未連接";
+        renderCloudQuota(null);
         status.classList.remove("cloud-status-connected");
         status.classList.add("cloud-status-disconnected");
 
@@ -153,7 +155,6 @@ async function disconnectGoogleDrive() {
 
 
 async function uploadLatestBackupToGoogleDrive() {
-    const status = document.getElementById("cloudUploadStatus");
     const btn = document.getElementById("cloudUploadLatestBtn");
 
     if (btn && btn.dataset.mode === "cancel") {
@@ -161,9 +162,6 @@ async function uploadLatestBackupToGoogleDrive() {
         return;
     }
 
-    if (status) {
-        status.textContent = "準備雲端上傳...";
-    }
 
     if (btn) {
         btn.disabled = true;
@@ -176,25 +174,19 @@ async function uploadLatestBackupToGoogleDrive() {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                backup_folder: selectedCloudBackupFolder
+                backup_file: selectedCloudBackupFile
             })
         });
 
         const data = await response.json();
 
         if (!data.success) {
-            if (status) status.textContent = data.message || "上傳失敗";
             if (btn) btn.disabled = false;
             return;
         }
 
-        if (status) {
-            status.textContent = data.message || "已開始雲端上傳";
-        }
-
     } catch (error) {
         console.error("Google Drive 上傳失敗:", error);
-        if (status) status.textContent = "上傳失敗，請查看 console。";
         if (btn) btn.disabled = false;
     }
 }
@@ -209,7 +201,7 @@ export function setCloudUploadRunning(isRunning) {
         btn.dataset.mode = "cancel";
         btn.disabled = false;
     } else {
-        btn.textContent = "立即上傳最新備份";
+        btn.textContent = "上傳ZIP備份";
         btn.dataset.mode = "start";
         btn.disabled = false;
     }
@@ -226,7 +218,6 @@ export function renderCloudUploadProgress(data) {
 
 
 export async function cancelGoogleDriveUpload() {
-    const status = document.getElementById("cloudUploadStatus");
     const btn = document.getElementById("cloudUploadLatestBtn");
 
     if (btn) {
@@ -240,17 +231,58 @@ export async function cancelGoogleDriveUpload() {
 
         const data = await response.json();
 
-        if (status) {
-            status.textContent = data.message || "已送出取消雲端上傳請求";
-        }
 
     } catch (error) {
         console.error("取消 Google Drive 上傳失敗:", error);
-        if (status) status.textContent = "取消上傳失敗，請查看 console。";
 
     } finally {
         if (btn) {
             btn.disabled = false;
         }
     }
+}
+
+
+function formatCloudBytes(bytes) {
+    if (!bytes) return "0 B";
+
+    const units = ["B", "KB", "MB", "GB", "TB"];
+    let size = Number(bytes);
+    let index = 0;
+
+    while (size >= 1024 && index < units.length - 1) {
+        size /= 1024;
+        index++;
+    }
+
+    return `${size.toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
+}
+
+
+function renderCloudQuota(quota) {
+    const box = document.getElementById("cloudQuotaBox");
+    const bar = document.getElementById("cloudQuotaBar");
+    const usedText = document.getElementById("cloudQuotaUsedText");
+    const remainText = document.getElementById("cloudQuotaRemainText");
+
+    if (!box || !bar || !usedText || !remainText) return;
+
+    if (!quota || !quota.limit) {
+        box.classList.add("hidden");
+        return;
+    }
+
+    const percent = Math.min(Number(quota.usage_percent || 0), 100);
+
+    box.classList.remove("hidden");
+    bar.style.width = `${percent}%`;
+
+    usedText.textContent =
+        `${formatCloudBytes(quota.usage)} / ${formatCloudBytes(quota.limit)} (${percent}%)`;
+
+    remainText.textContent =
+        `剩餘 ${formatCloudBytes(quota.remaining)}`;
+
+    bar.classList.toggle("warning", percent >= 70 && percent < 90);
+    bar.classList.toggle("danger", percent >= 90);
 }

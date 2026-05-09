@@ -95,6 +95,7 @@ export async function loadAutoBackupConfig() {
         if (frequency) frequency.value = autoBackupState.frequency;
         if (startAt) startAt.value = autoBackupState.startAt;
         if (nextText) nextText.textContent = formatAutoBackupTime(autoBackupState.nextRunAt);
+        updateAutoBackupTaskButton();
 
         if (config.auto_backup_missed_pending) {
             await handleAutoBackupMissed({
@@ -178,11 +179,44 @@ export function updateAutoBackupCloudUploadAvailability(connected) {
 }
 
 
+function updateAutoBackupTaskButton() {
+    const btn = document.getElementById("autoBackupTaskBtn");
+
+    if (!btn) return;
+
+    if (autoBackupState.enabled && autoBackupState.nextRunAt) {
+        btn.classList.remove("hidden");
+        btn.title = `自動備份已啟用\n下次備份時間：${formatAutoBackupTime(autoBackupState.nextRunAt)}`;
+    } else {
+        btn.classList.add("hidden");
+        btn.title = "自動備份未啟用";
+    }
+}
+
+
 function setupAutoBackupSettings() {
     const enabledBtn = document.getElementById("autoBackupEnabledBtn");
     const uploadBtn = document.getElementById("autoBackupUploadCloudBtn");
     const saveBtn = document.getElementById("autoBackupSaveBtn");
     const cloudWarningText = document.getElementById("autoBackupCloudWarningText");
+    const autoBackupTaskBtn = document.getElementById("autoBackupTaskBtn");
+
+    if (autoBackupTaskBtn) {
+        autoBackupTaskBtn.addEventListener("click", async () => {
+            document.getElementById("backupModal")?.classList.remove("hidden");
+
+            document.querySelectorAll(".backup-tab").forEach(tab => {
+                tab.classList.toggle("active", tab.dataset.tab === "settings");
+            });
+
+            document.getElementById("backupManualPage")?.classList.add("hidden");
+            document.getElementById("backupSettingsPage")?.classList.remove("hidden");
+            document.getElementById("backupRecordsPage")?.classList.add("hidden");
+            document.getElementById("backupCloudPage")?.classList.add("hidden");
+
+            await loadAutoBackupConfig();
+        });
+    }
 
     if (cloudWarningText) {
         cloudWarningText.addEventListener("click", () => {

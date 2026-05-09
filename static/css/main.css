@@ -2277,3 +2277,25 @@ button:disabled,
 button.disabled {
     cursor: not-allowed;
 }
+
+.setting-switch-btn:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.setting-switch-btn:disabled .setting-switch-visual {
+    filter: grayscale(.7);
+}
+
+
+.auto-backup-cloud-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.auto-backup-cloud-warning{
+    color:#ff5555;
+    font-size:14px;
+    font-weight:bold;
+}

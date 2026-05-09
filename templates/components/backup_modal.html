@@ -108,9 +108,17 @@
 
                     <div class="backup-row">
                         <div class="backup-label">雲端同步備份</div>
-                        <button id="autoBackupUploadCloudBtn" class="setting-switch-btn off" type="button" >
-                            False
-                        </button>
+
+                        <div class="auto-backup-cloud-row">
+                            <button id="autoBackupUploadCloudBtn" class="setting-switch-btn off" type="button">
+                                False
+                            </button>
+
+                            <div id="autoBackupCloudWarningText"
+                                class="auto-backup-cloud-warning hidden">
+                                需先連接 Google Drive
+                            </div>
+                        </div>
                     </div>
 
                     <div class="backup-row">

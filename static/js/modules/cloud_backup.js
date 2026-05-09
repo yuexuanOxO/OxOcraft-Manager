@@ -4,6 +4,11 @@ import {
     setCloudConnectionState
 } from "./backup.js";
 
+import {
+    setAutoBackupCloudConnectionState,
+    updateAutoBackupCloudUploadAvailability
+} from "./auto_backup.js";
+
 
 let selectedCloudBackupFolder = "";
 
@@ -88,6 +93,8 @@ export async function loadCloudStatus() {
 
     if (data.connected) {
         setCloudConnectionState(true);
+        setAutoBackupCloudConnectionState(true);
+        updateAutoBackupCloudUploadAvailability(true);
         status.textContent = "Google Drive：已連接";
         status.classList.remove("cloud-status-disconnected");
         status.classList.add("cloud-status-connected");
@@ -116,6 +123,8 @@ export async function loadCloudStatus() {
 
     } else {
         setCloudConnectionState(false);
+        updateAutoBackupCloudUploadAvailability(false);
+        setAutoBackupCloudConnectionState(false);
         status.textContent = "Google Drive：未連接";
         status.classList.remove("cloud-status-connected");
         status.classList.add("cloud-status-disconnected");

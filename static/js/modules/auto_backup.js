@@ -1,4 +1,5 @@
 let autoBackupMissedPromptOpen = false;
+let isCloudConnected = false;
 
 let autoBackupState = {
     enabled: false,
@@ -12,6 +13,11 @@ let autoBackupState = {
 export function initAutoBackup() {
     setupAutoBackupSettings();
     loadAutoBackupConfig();
+}
+
+
+export function setAutoBackupCloudConnectionState(connected) {
+    isCloudConnected = !!connected;
 }
 
 
@@ -151,6 +157,27 @@ async function saveAutoBackupConfig(showAlert = true) {
 }
 
 
+export function updateAutoBackupCloudUploadAvailability(connected) {
+    const uploadBtn = document.getElementById("autoBackupUploadCloudBtn");
+    const warningText = document.getElementById("autoBackupCloudWarningText");
+
+    if (!uploadBtn) return;
+
+    // 未連接時強制關閉雲端同步備份
+    if (!connected) {
+        setBoolButton(uploadBtn, false);
+    }
+
+    uploadBtn.disabled = !connected;
+
+    uploadBtn.title = connected
+        ? ""
+        : "需先連接 Google Drive";
+
+    warningText?.classList.toggle("hidden", connected);
+}
+
+
 function setupAutoBackupSettings() {
     const enabledBtn = document.getElementById("autoBackupEnabledBtn");
     const uploadBtn = document.getElementById("autoBackupUploadCloudBtn");
@@ -192,6 +219,13 @@ function setupAutoBackupSettings() {
     if (uploadBtn) {
         uploadBtn.addEventListener("click", () => {
             const nextValue = uploadBtn.dataset.value !== "true";
+
+            // 要開啟雲端同步時先檢查 Google 是否已連接
+            if (nextValue && !isCloudConnected) {
+                alert("需先綁定雲端備份帳號後才能啟用此功能。");
+                return;
+            }
+
             setBoolButton(uploadBtn, nextValue);
         });
     }
@@ -199,6 +233,9 @@ function setupAutoBackupSettings() {
     if (saveBtn) {
         saveBtn.addEventListener("click", saveAutoBackupConfig);
     }
+
+    updateAutoBackupCloudUploadAvailability(false);
+
 }
 
 

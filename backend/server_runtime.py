@@ -146,7 +146,8 @@ def start_server() -> tuple[bool, str]:
             errors="replace",
         )
 
-        save_effective_settings_snapshot()
+        if SERVER_PROPERTIES_PATH.exists():
+            save_effective_settings_snapshot()
 
         threading.Thread(target=handle_server_output, daemon=True).start()
         return True, "伺服器啟動成功"

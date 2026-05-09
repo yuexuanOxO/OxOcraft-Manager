@@ -32,6 +32,10 @@ import {
     updateBackupTaskState
 } from "./backup_tasks.js";
 
+import {
+    updateServerSettingsFooterModeByState
+} from "./server_settings.js";
+
 
 let serverEvents = null;
 let isBackendDead = false;
@@ -49,6 +53,7 @@ export function initServerEvents() {
         const payload = JSON.parse(event.data);
 
         applyServerStatusPayload(payload);
+        updateServerSettingsFooterModeByState(payload.data);
     });
 
     serverEvents.onerror = () => {

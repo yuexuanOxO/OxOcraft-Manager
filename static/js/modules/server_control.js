@@ -421,14 +421,14 @@ export async function saveAndRestartServer() {
     const restartBtn = document.getElementById("serverSettingsRestartBtn");
     const applyBtn = document.getElementById("serverSettingsApplyBtn");
 
-    if (restartBtn) {
-        restartBtn.disabled = true;
-        restartBtn.textContent = "重啟中...";
-    }
+    // if (restartBtn) {
+    //     restartBtn.disabled = true;
+    //     restartBtn.textContent = "重啟中...";
+    // }
 
-    if (applyBtn) {
-        applyBtn.disabled = true;
-    }
+    // if (applyBtn) {
+    //     applyBtn.disabled = true;
+    // }
 
     try {
         const saved = await saveServerSettings(false);

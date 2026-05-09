@@ -490,7 +490,7 @@ export async function loadBackupConfig() {
         if (!data.success) return;
 
         const sourceInput = document.getElementById("backupSourceRootInput");
-        const backupInput = document.getElementById("backupRootInput");
+        // const backupInput = document.getElementById("backupRootInput");
         const manualSourceInput = document.getElementById("manualBackupSourceInput");
         const manualBackupInput = document.getElementById("manualBackupRootInput");
         const mapName = document.getElementById("backupMapName");
@@ -506,8 +506,7 @@ export async function loadBackupConfig() {
             sourceText.textContent = data.source_root || "";
         }
 
-        if (backupInput && backupText && !backupInput.value.trim()) {
-            backupInput.value = data.backup_root || "";
+        if (backupText) {
             backupText.textContent = data.backup_root || "";
         }
 

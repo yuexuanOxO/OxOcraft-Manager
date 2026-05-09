@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-05-09T17:23:08",
-    "properties_modified_comment": "Sat May 09 17:22:59 CST 2026",
+    "captured_at": "2026-05-09T22:08:12",
+    "properties_modified_comment": "Sat May 09 22:08:01 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -10,7 +10,7 @@
         "enable-query": "true",
         "generator-settings": "{}",
         "enforce-secure-profile": "true",
-        "level-name": "world",
+        "level-name": "world2",
         "motd": "A Minecraft Server",
         "query.port": "25565",
         "pvp": "true",
@@ -66,7 +66,7 @@
         "management-server-enabled": "false",
         "management-server-host": "localhost",
         "management-server-port": "0",
-        "management-server-secret": "RUK43oRywaxoTFaHoEvSq2vw6QcNIavYlfmZWQFT",
+        "management-server-secret": "I5ZFGnY2RXXXVSrIVPQMLTeVIkFft0WFKcRGkSQ3",
         "management-server-tls-enabled": "true",
         "management-server-tls-keystore": "",
         "management-server-tls-keystore-password": "",

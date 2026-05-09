@@ -1,9 +1,6 @@
 import sqlite3
 from datetime import datetime
-from pathlib import Path
-
-BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / "instance" / "oxocraft.db"
+from backend.paths import DB_PATH
 
 
 def get_connection() -> sqlite3.Connection:
@@ -13,6 +10,8 @@ def get_connection() -> sqlite3.Connection:
 
 
 def init_db() -> None:
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    
     with get_connection() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS achievements (

@@ -4,3 +4,8 @@ venv/
 *.pyc
 backend/credentials/
 *.env
+build/
+dist/
+*.spec
+backend/instance/*.db
+backend/credentials/google_token*

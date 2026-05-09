@@ -111,12 +111,18 @@ def wait_for_backup_done() -> dict:
     return get_backup_status()
 
 
-def wait_for_server_online(target_online: bool, timeout: int = 120) -> bool:
+def wait_for_server_state(target_state: str, timeout: int = 120) -> bool:
     start = time.time()
+
     while time.time() - start < timeout:
-        if is_cached_server_online() == target_online:
+        status = get_cached_server_status()
+        data = status.get("data", status)
+
+        if data.get("state") == target_state:
             return True
+
         time.sleep(1)
+
     return False
 
 
@@ -142,7 +148,7 @@ def manual_safe_backup_worker(source_root: str, backup_root: str, upload_cloud: 
     try:
         if need_stop_server:
             stop_server()
-            wait_for_server_online(False, timeout=120)
+            wait_for_server_state("offline", timeout=120)
 
         success, message = enqueue_backup(
             source_root=source_root,

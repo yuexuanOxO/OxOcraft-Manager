@@ -182,6 +182,20 @@ function setupAutoBackupSettings() {
     const enabledBtn = document.getElementById("autoBackupEnabledBtn");
     const uploadBtn = document.getElementById("autoBackupUploadCloudBtn");
     const saveBtn = document.getElementById("autoBackupSaveBtn");
+    const cloudWarningText = document.getElementById("autoBackupCloudWarningText");
+
+    if (cloudWarningText) {
+        cloudWarningText.addEventListener("click", () => {
+            document.querySelectorAll(".backup-tab").forEach(tab => {
+                tab.classList.toggle("active", tab.dataset.tab === "cloud");
+            });
+
+            document.getElementById("backupManualPage")?.classList.add("hidden");
+            document.getElementById("backupSettingsPage")?.classList.add("hidden");
+            document.getElementById("backupRecordsPage")?.classList.add("hidden");
+            document.getElementById("backupCloudPage")?.classList.remove("hidden");
+        });
+    }
 
     if (enabledBtn) {
         enabledBtn.addEventListener("click", async () => {
@@ -233,6 +247,10 @@ function setupAutoBackupSettings() {
     if (saveBtn) {
         saveBtn.addEventListener("click", saveAutoBackupConfig);
     }
+
+
+    
+
 
     updateAutoBackupCloudUploadAvailability(false);
 

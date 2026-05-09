@@ -2299,3 +2299,18 @@ button.disabled {
     font-size:14px;
     font-weight:bold;
 }
+
+.auto-backup-cloud-warning{
+    border: none;
+    background: transparent;
+    padding: 0;
+    color: #ff5555;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.auto-backup-cloud-warning:hover{
+    color: #ff8888;
+    text-decoration: underline;
+}

@@ -4,4 +4,3 @@ venv/
 *.pyc
 backend/credentials/
 *.env
-backend/credentials/google_token*

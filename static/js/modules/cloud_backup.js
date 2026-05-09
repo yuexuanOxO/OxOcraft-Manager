@@ -30,7 +30,7 @@ export function updateDefaultCloudBackupFolderText() {
     const text = document.getElementById("cloudBackupFolderText");
     if (!text || selectedCloudBackupFile) return;
 
-    text.textContent = "未選擇 ZIP 備份檔";
+    text.textContent = "請選擇世界備份ZIP檔";
 }
 
 

@@ -18,6 +18,11 @@ from backend.db import (
     update_backup_record_status,
 )
 
+from backend.crypto_utils import (
+    encrypt_text,
+    decrypt_text,
+)
+
 
 cloud_bp = Blueprint("cloud", __name__)
 
@@ -25,7 +30,7 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 CREDENTIAL_DIR = BASE_DIR / "credentials"
 
 CLIENT_SECRET_FILE = CREDENTIAL_DIR / "google_credentials.json"
-TOKEN_FILE = CREDENTIAL_DIR / "google_token.json"
+TOKEN_FILE = CREDENTIAL_DIR / "google_token.enc"
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = "1"
 DEFAULT_CLOUD_KEEP_COUNT = 2
@@ -42,17 +47,30 @@ REDIRECT_URI = "http://127.0.0.1:5000/api/cloud/google/callback"
 
 
 def save_token(creds):
-    TOKEN_FILE.write_text(creds.to_json(), encoding="utf-8")
+    encrypted = encrypt_text(creds.to_json())
+
+    TOKEN_FILE.write_bytes(encrypted)
 
 
 def load_token():
     if not TOKEN_FILE.exists():
         return None
 
-    return Credentials.from_authorized_user_file(
-        str(TOKEN_FILE),
-        SCOPES
-    )
+    try:
+        encrypted = TOKEN_FILE.read_bytes()
+
+        token_json = decrypt_text(encrypted)
+
+        token_data = json.loads(token_json)
+
+        return Credentials.from_authorized_user_info(
+            token_data,
+            SCOPES
+        )
+
+    except Exception as error:
+        print(f"[GoogleDrive] Token 解密失敗：{error}")
+        return None
 
 
 def get_drive_service():

@@ -126,6 +126,18 @@ def get_server_query_status(host: str = "127.0.0.1") -> dict:
         }
 
     except Exception as error:
+        if runtime_state in ("starting", "stopping"):
+            return {
+                "online": False,
+                "state": runtime_state,
+                "message": (
+                    "伺服器啟動中"
+                    if runtime_state == "starting"
+                    else "伺服器關閉中"
+                ),
+                "error": str(error),
+            }
+
         if is_server_online(host=host):
             return {
                 "online": False,

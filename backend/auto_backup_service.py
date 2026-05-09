@@ -338,7 +338,7 @@ def run_auto_backup_flow(scheduled_time: datetime) -> None:
 
         if server_was_online:
             stop_server()
-            wait_for_server_online(False, timeout=120)
+            wait_for_server_state("offline", timeout=120)
 
         while is_backup_running():
             time.sleep(1)
@@ -361,7 +361,7 @@ def run_auto_backup_flow(scheduled_time: datetime) -> None:
 
         if server_was_online:
             start_server()
-            wait_for_server_online(True, timeout=120)
+            wait_for_server_state("ready", timeout=120)
 
         start_cloud_upload_after_success(backup_result)
         set_next_run_after_now()
@@ -514,3 +514,18 @@ def get_missed_backup_status() -> dict:
         "pending": _missed_backup_pending,
         "missed_run_at": _missed_backup_at,
     }
+
+
+def wait_for_server_state(target_state: str, timeout: int = 120) -> bool:
+    start = time.time()
+
+    while time.time() - start < timeout:
+        status = get_cached_server_status()
+        data = status.get("data", status)
+
+        if data.get("state") == target_state:
+            return True
+
+        time.sleep(1)
+
+    return False

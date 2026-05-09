@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-05-09T22:08:12",
-    "properties_modified_comment": "Sat May 09 22:08:01 CST 2026",
+    "captured_at": "2026-05-10T00:12:41",
+    "properties_modified_comment": "Sun May 10 00:12:32 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -66,7 +66,7 @@
         "management-server-enabled": "false",
         "management-server-host": "localhost",
         "management-server-port": "0",
-        "management-server-secret": "I5ZFGnY2RXXXVSrIVPQMLTeVIkFft0WFKcRGkSQ3",
+        "management-server-secret": "E0rKwNDf4d9QmuU5AV7vRFkO4Gm8xFJoYUysQW10",
         "management-server-tls-enabled": "true",
         "management-server-tls-keystore": "",
         "management-server-tls-keystore-password": "",

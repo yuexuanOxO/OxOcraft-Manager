@@ -38,13 +38,21 @@ function updateAutoBackupAdvancedVisible() {
 
     if (!enabledBtn || !advanced) return;
 
-    const enabled = enabledBtn.dataset.value === "true";
-    advanced.classList.toggle("hidden", !enabled);
+    const editingEnabled =
+        enabledBtn.dataset.value === "true";
+
+    const appliedEnabled =
+        autoBackupState.enabled;
+
+    const shouldShow =
+        editingEnabled || appliedEnabled;
+
+    advanced.classList.toggle("hidden", !shouldShow);
 }
 
 
 function formatAutoBackupTime(value) {
-    if (!value) return "尚未套用";
+    if (!value) return "尚未設定";
 
     return value.replace("T", " ");
 }
@@ -96,7 +104,7 @@ export async function loadAutoBackupConfig() {
 }
 
 
-async function saveAutoBackupConfig() {
+async function saveAutoBackupConfig(showAlert = true) {
     const enabledBtn = document.getElementById("autoBackupEnabledBtn");
     const uploadBtn = document.getElementById("autoBackupUploadCloudBtn");
     const frequency = document.getElementById("autoBackupFrequency");
@@ -131,7 +139,9 @@ async function saveAutoBackupConfig() {
             return;
         }
 
-        alert(data.message || "自動備份設定已儲存");
+        if (showAlert) {
+            alert(data.message || "自動備份設定已儲存");
+        }
         await loadAutoBackupConfig();
 
     } catch (error) {
@@ -147,17 +157,35 @@ function setupAutoBackupSettings() {
     const saveBtn = document.getElementById("autoBackupSaveBtn");
 
     if (enabledBtn) {
-        enabledBtn.addEventListener("click", () => {
-            const nextValue = enabledBtn.dataset.value !== "true";
-            setBoolButton(enabledBtn, nextValue);
+        enabledBtn.addEventListener("click", async () => {
+            const currentValue = enabledBtn.dataset.value === "true";
+            const nextValue = !currentValue;
+
+            // 關閉自動備份：直接詢問並立即套用
+            if (!nextValue) {
+                const ok = confirm("確定要關閉自動備份嗎？\n\n關閉後將會取消目前的自動備份排程。");
+
+                if (!ok) {
+                    setBoolButton(enabledBtn, true);
+                    updateAutoBackupAdvancedVisible();
+                    return;
+                }
+
+                setBoolButton(enabledBtn, false);
+                updateAutoBackupAdvancedVisible();
+
+                await saveAutoBackupConfig(false);
+                return;
+            }
+
+            // 開啟自動備份：只展開設定，不立即生效
+            setBoolButton(enabledBtn, true);
             updateAutoBackupAdvancedVisible();
 
-            if (nextValue) {
-                alert(
-                    "若要自動備份，請確保 OxOcraft-Manager 在預定備份時間是執行中的。\n\n" +
-                    "若預定時間未執行，系統會在下次啟動時詢問是否補做該次備份。"
-                );
-            }
+            alert(
+                "若要自動備份，請確保 OxOcraft-Manager 在預定備份時間是執行中的。\n\n" +
+                "若預定時間未執行，系統會在下次啟動時詢問是否補做該次備份。"
+            );
         });
     }
 

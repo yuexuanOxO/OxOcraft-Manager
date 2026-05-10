@@ -578,6 +578,7 @@ async function startSafeManualBackup(uploadCloud) {
         if (localBtn) localBtn.disabled = true;
         if (cloudBtn) cloudBtn.disabled = true;
 
+        resetManualBackupProgressUI();
         document.getElementById("manualBackupProgressBox")?.classList.remove("hidden");
 
         const cloudBar = document.getElementById("manualCloudUploadProgressBar");
@@ -686,7 +687,7 @@ function formatDisplayPath(path, maxLength = 38) {
     return `...${rawPath.slice(-(maxLength - 3))}`;
 }
 
-function setPathText(element, path) {
+export function setPathText(element, path) {
     if (!element) return;
 
     element.textContent = formatDisplayPath(path);
@@ -1135,4 +1136,17 @@ export function updateBackupRecordItem(record) {
     }
 
     renderFilteredBackupRecords();
+}
+
+
+function resetManualBackupProgressUI() {
+    const statusText = document.getElementById("manualBackupStatusText");
+    const progressBar = document.getElementById("manualBackupProgressBar");
+    const progressText = document.getElementById("manualBackupProgressText");
+    const currentFile = document.getElementById("manualBackupCurrentFile");
+
+    if (statusText) statusText.textContent = "狀態：準備開始備份";
+    if (progressBar) progressBar.style.width = "0%";
+    if (progressText) progressText.textContent = "0%";
+    if (currentFile) currentFile.textContent = "目前檔案：等待建立備份任務";
 }

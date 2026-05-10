@@ -1,7 +1,8 @@
 import {
     openZipFilePicker,
     getCurrentBackupLevelName,
-    setCloudConnectionState
+    setCloudConnectionState,
+    setPathText
 } from "./backup.js";
 
 import {
@@ -53,7 +54,7 @@ function setupCloudBackupFolderPicker() {
                 selectedCloudBackupFile = path;
 
                 if (text) {
-                    text.textContent = path;
+                    setPathText(text, path);
                 }
 
             } catch (error) {

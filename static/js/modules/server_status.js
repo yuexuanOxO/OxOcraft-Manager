@@ -55,7 +55,7 @@ export function handleBackendDisconnected() {
 
 export async function updateStatus() {
     try {
-        const response = await fetch("/api/server/query-status", { cache: "no-store" });
+        const response = await fetch("/api/server/query-status?force=1", { cache: "no-store" });
         const payload = await response.json();
         applyServerStatusPayload(payload);
 
@@ -189,7 +189,7 @@ export function applyServerStatusPayload(payload) {
         clearPlayersList();
     }
 
-    if (data.online) {
+    if (data.online && data.query_ready !== false) {
         setPlayersFromQuery(data.players || []);
     }
 

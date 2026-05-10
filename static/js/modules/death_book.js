@@ -81,7 +81,7 @@ function getKillerDisplayInfo(killer) {
 
 function renderDeathRecordPage() {
     if (!deathRecords.length) {
-        document.getElementById("deathPlayerAvatar").src = "";
+        document.getElementById("deathPlayerAvatar").src = "/static/icons/death_record/steve_avatar.png";
         document.getElementById("deathPlayerName").textContent = "目前沒有死亡紀錄";
         document.getElementById("deathPageInfo").textContent = "第 0 頁 / 第 0 頁";
         document.getElementById("deathText").textContent = "目前沒有資料";

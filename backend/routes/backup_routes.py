@@ -19,10 +19,12 @@ from backend.backup_service import (
     is_backup_running,
     is_world_folder,
 )
+
 from backend.auto_backup_service import (
     get_missed_backup_status,
     run_missed_backup_now,
     skip_missed_backup,
+    start_auto_backup_scheduler,
 )
 
 CONFIG_PATH = Path("static/data/config.json")
@@ -439,6 +441,9 @@ def api_backup_auto_config_save():
     config["auto_backup_upload_cloud"] = upload_cloud
 
     save_app_config(config)
+    
+    if enabled:
+        start_auto_backup_scheduler()
 
     return jsonify({
         "success": True,

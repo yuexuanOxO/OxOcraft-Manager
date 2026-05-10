@@ -23,10 +23,12 @@ from backend.server_runtime import start_server, stop_server
 CONFIG_PATH = Path("static/data/config.json")
 
 _scheduler_started = False
+_scheduler_thread = None
 _auto_backup_running = False
 _auto_backup_control_locked = False
 _missed_backup_pending = False
 _missed_backup_at = ""
+_current_flow_target_time: datetime | None = None
 
 
 def load_config() -> dict:
@@ -237,12 +239,13 @@ def start_cloud_upload_after_success(backup_result: dict) -> None:
 
 
 def run_auto_backup_flow(scheduled_time: datetime) -> None:
-    global _auto_backup_running
+    global _auto_backup_running, _current_flow_target_time
 
     if _auto_backup_running:
         return
 
     _auto_backup_running = True
+    _current_flow_target_time = scheduled_time
 
     try:
         publish_event("auto_backup_warning", {
@@ -392,10 +395,13 @@ def run_auto_backup_flow(scheduled_time: datetime) -> None:
 
         set_auto_backup_control_locked(False)
         _auto_backup_running = False
+        _current_flow_target_time = None
 
 
 def scheduler_loop() -> None:
+    print("[AutoBackup] Scheduler loop started")
     while True:
+        # print("[AutoBackup] scheduler ticking...", datetime.now())
         try:
             config = load_config()
 
@@ -414,7 +420,15 @@ def scheduler_loop() -> None:
 
             now = datetime.now()
 
-            if now >= next_run and not _auto_backup_running:
+            # print("[AutoBackup] next_run =", next_run)
+            # print("[AutoBackup] now =", now)
+            # print("[AutoBackup] running =", _auto_backup_running)
+
+            if (
+                now >= next_run
+                and not _auto_backup_running
+                and _current_flow_target_time != next_run
+            ):
                 notify_missed_backup(next_run)
 
                 time.sleep(5)
@@ -443,20 +457,20 @@ def scheduler_loop() -> None:
 
 
 def start_auto_backup_scheduler() -> None:
-    global _scheduler_started
+    global _scheduler_started, _scheduler_thread
 
-    if _scheduler_started:
+    if _scheduler_thread is not None and _scheduler_thread.is_alive():
         return
 
     _scheduler_started = True
 
-    thread = threading.Thread(
+    _scheduler_thread = threading.Thread(
         target=scheduler_loop,
-        daemon=True
+        daemon=False
     )
-    thread.start()
+    _scheduler_thread.start()
 
-    print("自動備份排程器已啟動")
+    print("[AutoBackup] 自動備份排程器已啟動")
 
 
 def is_auto_backup_control_locked() -> bool:

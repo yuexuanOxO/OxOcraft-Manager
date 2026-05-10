@@ -503,23 +503,23 @@ export async function loadBackupConfig() {
 
         if (sourceInput && sourceText) {
             sourceInput.value = data.source_root || "";
-            sourceText.textContent = data.source_root || "";
+            setPathText(sourceText, data.source_root || "");
         }
 
         if (backupText) {
-            backupText.textContent = data.backup_root || "";
+            setPathText(backupText, data.backup_root || "");
         }
 
         if (manualSourceInput && manualSourceText) {
             const manualScanRoot = data.manual_scan_root || data.source_root || "";
             manualSourceInput.value = manualScanRoot;
-            manualSourceText.textContent = manualScanRoot;
+            setPathText(manualSourceText, manualScanRoot);
             await loadManualBackupWorlds(manualScanRoot, data.world_path || "");
         }
 
         if (manualBackupInput && manualBackupText && !manualBackupInput.value.trim()) {
             manualBackupInput.value = data.manual_backup_root || data.backup_root || "";
-            manualBackupText.textContent = manualBackupInput.value;
+            setPathText(manualBackupText, manualBackupInput.value);
         }
 
         currentBackupLevelName = data.level_name || "world";
@@ -665,6 +665,35 @@ function normalizePath(path) {
 }
 
 
+function formatDisplayPath(path, maxLength = 38) {
+    const rawPath = String(path || "");
+
+    if (rawPath.length <= maxLength) {
+        return rawPath;
+    }
+
+    const parts = rawPath.split(/[\\/]/).filter(Boolean);
+
+    if (parts.length >= 3) {
+        const tail = parts.slice(-2).join("\\");
+        return `...\\${tail}`;
+    }
+
+    if (parts.length >= 2) {
+        return `...\\${parts.at(-1)}`;
+    }
+
+    return `...${rawPath.slice(-(maxLength - 3))}`;
+}
+
+function setPathText(element, path) {
+    if (!element) return;
+
+    element.textContent = formatDisplayPath(path);
+    element.title = path || "";
+}
+
+
 function renderManualBackupWorlds(worlds, currentWorldPath = "") {
     const list = document.getElementById("manualBackupWorldList");
     const info = document.getElementById("manualBackupWorldInfo");
@@ -721,7 +750,7 @@ function renderManualBackupWorlds(worlds, currentWorldPath = "") {
             const parentPath = (world.path || "").replace(/[\\/][^\\/]+$/, "");
 
             if (sourceInput) sourceInput.value = parentPath || world.path || "";
-            if (sourceText) sourceText.textContent = parentPath || world.path || "";
+            if (sourceText) setPathText(sourceText, parentPath || world.path || "");
 
             if (info) {
                 info.textContent = `${world.name} | ${formatBytes(world.total_bytes || 0)}`;
@@ -741,7 +770,7 @@ function renderManualBackupWorlds(worlds, currentWorldPath = "") {
     }
 
     if (sourceText) {
-        sourceText.textContent = selectedParentPath || manualBackupSelectedWorld.path || "";
+        setPathText(sourceText, selectedParentPath || manualBackupSelectedWorld.path || "");
     }
 
     if (info) {
@@ -814,7 +843,7 @@ function setupBackupPathEditButtons() {
                 }
 
                 inputEl.value = path;
-                textEl.textContent = path;
+                setPathText(textEl, path);
 
                 if (target === "manual-source") {
                     await loadManualBackupWorlds(path);

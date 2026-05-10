@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-05-10T00:12:41",
-    "properties_modified_comment": "Sun May 10 00:12:32 CST 2026",
+    "captured_at": "2026-05-10T10:25:13",
+    "properties_modified_comment": "Sun May 10 10:25:11 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -21,7 +21,7 @@
         "max-tick-time": "60000",
         "require-resource-pack": "false",
         "use-native-transport": "true",
-        "max-players": "10",
+        "max-players": "6",
         "online-mode": "true",
         "enable-status": "true",
         "allow-flight": "false",
@@ -58,23 +58,7 @@
         "enforce-whitelist": "false",
         "spawn-protection": "16",
         "resource-pack-sha1": "",
-        "max-world-size": "29999984",
-        "accepts-transfers": "false",
-        "bug-report-link": "",
-        "enable-code-of-conduct": "false",
-        "management-server-allowed-origins": "",
-        "management-server-enabled": "false",
-        "management-server-host": "localhost",
-        "management-server-port": "0",
-        "management-server-secret": "E0rKwNDf4d9QmuU5AV7vRFkO4Gm8xFJoYUysQW10",
-        "management-server-tls-enabled": "true",
-        "management-server-tls-keystore": "",
-        "management-server-tls-keystore-password": "",
-        "pause-when-empty-seconds": "60",
-        "region-file-compression": "deflate",
-        "resource-pack-id": "",
-        "status-heartbeat-interval": "0",
-        "text-filtering-version": "0"
+        "max-world-size": "29999984"
     },
     "runtime_config": {
         "java_xms": "2G",

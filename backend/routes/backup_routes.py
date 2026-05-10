@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from backend.paths import MC_ROOT
-from backend.server_runtime import get_current_level_name, get_current_world_path, start_server, stop_server
+from backend.server_runtime import get_current_level_name, get_current_world_path, start_server, stop_server, is_server_running
 from backend.server_monitor import get_cached_server_status
 from backend.db import get_backup_records
 import tkinter as tk
@@ -133,7 +133,7 @@ def normalize_path_text(path_text: str) -> str:
 def manual_safe_backup_worker(source_root: str, backup_root: str, upload_cloud: bool) -> None:
     global _manual_safe_backup_running
 
-    server_was_online = is_cached_server_online()
+    server_was_online = is_server_running()
 
     selected_world_path = Path(source_root).expanduser()
     current_world_path = get_current_world_path()
@@ -174,9 +174,6 @@ def manual_safe_backup_worker(source_root: str, backup_root: str, upload_cloud: 
 
 
     finally:
-        if need_stop_server and not is_cached_server_online():
-            start_server()
-
         _manual_safe_backup_running = False
 
 

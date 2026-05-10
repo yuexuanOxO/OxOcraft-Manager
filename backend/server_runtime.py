@@ -70,7 +70,18 @@ def handle_server_output() -> None:
         append_log_line(line)
 
         if "Done (" in line and "For help, type" in line:
+            print("[Runtime Debug] Detected server ready from log.")
             set_server_runtime_state("ready")
+
+        
+        if "Query running on" in line:
+            print("[Runtime Debug] Query listener ready from log.")
+            try:
+                from backend.server_monitor import refresh_server_status_now
+                refresh_server_status_now()
+            except Exception:
+                pass
+
 
         death_result = parse_death_message(line)
         if death_result:
@@ -145,6 +156,8 @@ def start_server() -> tuple[bool, str]:
             encoding="utf-8",
             errors="replace",
         )
+
+        print("[Runtime Debug] server process started:", server_process.pid)
 
         if SERVER_PROPERTIES_PATH.exists():
             save_effective_settings_snapshot()

@@ -347,6 +347,13 @@ def backup_worker(source_root: Path | None, backup_root: Path, task: dict | None
         _is_running = False
         _cancel_requested = False
         _current_backup_record_id = None
+
+        try:
+            from backend.server_monitor import refresh_server_status_now
+            refresh_server_status_now()
+        except Exception:
+            pass
+
         _start_next_backup_task()
 
 

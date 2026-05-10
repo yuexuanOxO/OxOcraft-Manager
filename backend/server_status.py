@@ -91,19 +91,19 @@ def get_server_query_status(host: str = "127.0.0.1") -> dict:
     except Exception:
         pass
 
-    if runtime_state == "starting":
-        return {
-            "online": False,
-            "state": "starting",
-            "message": "伺服器啟動中",
-        }
-
     if runtime_state == "stopping":
-        return {
-            "online": False,
-            "state": "stopping",
-            "message": "伺服器關閉中",
-        }
+        try:
+            from backend.server_runtime import is_server_running, set_server_runtime_state
+
+            if not is_server_running() and not is_server_online(host=host):
+                set_server_runtime_state("offline")
+                return {
+                    "online": False,
+                    "state": "offline",
+                    "message": "伺服器離線",
+                }
+        except Exception:
+            pass
 
     port = get_query_port()
 
@@ -114,6 +114,7 @@ def get_server_query_status(host: str = "127.0.0.1") -> dict:
         return {
             "online": True,
             "state": "ready",
+            "query_ready": True,
             "message": "伺服器在線",
             "motd": query.motd.raw,
             "map_name": query.map_name,
@@ -138,7 +139,20 @@ def get_server_query_status(host: str = "127.0.0.1") -> dict:
                 "error": str(error),
             }
 
+
         if is_server_online(host=host):
+            if runtime_state == "ready":
+                return {
+                    "online": True,
+                    "state": "ready",
+                    "query_ready": False,
+                    "message": "伺服器在線，但 Query 尚未回應",
+                    "players_online": 0,
+                    "players_max": 0,
+                    "players": [],
+                    "error": str(error),
+                }
+
             return {
                 "online": False,
                 "state": "starting",

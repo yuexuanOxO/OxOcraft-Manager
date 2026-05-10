@@ -85,18 +85,18 @@ def get_manual_backup_default_scan_root(world_path: Path) -> Path:
     """
     手動備份頁面的預設掃描根目錄。
 
-    get_current_world_path() 是 Minecraft 實際使用中的世界資料夾，
-    例如：
+    get_current_world_path() 代表實際世界資料夾：
+        D:/Minecraft/server/world
         D:/Minecraft/server/All_Save/world2
 
-    但手動備份頁面需要掃描的是世界集合資料夾，
-    例如：
+    手動備份頁需要掃描的是它的上一層：
+        D:/Minecraft/server
         D:/Minecraft/server/All_Save
     """
-    if is_world_folder(world_path):
+    if world_path and world_path.name:
         return world_path.parent
 
-    return world_path
+    return MC_ROOT
 
 
 def is_cached_server_online() -> bool:
@@ -276,11 +276,8 @@ def api_backup_config():
     return jsonify({
         "success": True,
 
-        # 手動備份頁面上方的「伺服器世界路徑」
-        "manual_scan_root": str(config.get("manual_scan_root") or manual_scan_root),
-
-        # 先保留 source_root，避免前端目前還吃這個欄位時壞掉
-        "source_root": str(config.get("manual_scan_root") or manual_scan_root),
+        "manual_scan_root": str(manual_scan_root),
+        "source_root": str(manual_scan_root),
 
         "backup_root": config.get("backup_root") or str(MC_ROOT / "world_backup"),
         "manual_backup_root": config.get("manual_backup_root") or str(MC_ROOT / "world_backup"),
@@ -352,10 +349,6 @@ def api_backup_worlds():
 
     worlds = find_world_folders(root)
 
-    config = load_app_config()
-    config["manual_scan_root"] = str(root)
-    save_app_config(config)
-
     return jsonify({
         "success": True,
         "root": str(root),
@@ -394,11 +387,6 @@ def api_backup_manual_safe_start():
 
     config = load_app_config()
     config["manual_backup_root"] = backup_root
-
-    # 如果前端有傳 manual_scan_root，就順便記住
-    manual_scan_root = data.get("manual_scan_root")
-    if manual_scan_root:
-        config["manual_scan_root"] = manual_scan_root
 
     save_app_config(config)
 

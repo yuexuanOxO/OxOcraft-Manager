@@ -511,9 +511,14 @@ export async function loadBackupConfig() {
         }
 
         if (manualSourceInput && manualSourceText) {
-            const manualScanRoot = data.manual_scan_root || data.source_root || "";
+            const worldPath = data.world_path || data.source_root || "";
+            const defaultScanRoot = getParentPath(worldPath) || worldPath;
+
+            const manualScanRoot = data.manual_scan_root || defaultScanRoot || "";
+
             manualSourceInput.value = manualScanRoot;
             setPathText(manualSourceText, manualScanRoot);
+
             await loadManualBackupWorlds(manualScanRoot, data.world_path || "");
         }
 
@@ -692,6 +697,11 @@ export function setPathText(element, path) {
 
     element.textContent = formatDisplayPath(path);
     element.title = path || "";
+}
+
+
+function getParentPath(path) {
+    return String(path || "").replace(/[\\/][^\\/]+$/, "");
 }
 
 

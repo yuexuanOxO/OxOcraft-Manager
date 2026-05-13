@@ -1,0 +1,527 @@
+.settings-panel{
+    width: 760px;
+    max-width: 92vw;
+    height: 760px;
+    max-height: 92vh;
+
+    background: #111;
+    border: 3px solid #6b6b6b;
+    box-shadow: 0 0 0 3px #2d2d2d;
+
+    display: flex;
+    flex-direction: column;
+    padding: 18px;
+    box-sizing: border-box;
+}
+
+.settings-status-card{
+    width: 420px;
+
+    padding: 16px;
+
+    background: rgba(10,10,10,.96);
+
+    border: 3px solid #5a5a5a;
+    box-shadow: 0 0 0 3px #232323;
+
+    box-sizing: border-box;
+
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.settings-title{
+    font-size: 32px;
+    color: white;
+    font-weight: bold;
+    margin-bottom: 0;
+}
+
+.settings-body{
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    border: 2px solid #333;
+    padding: 14px;
+    background: #0a0a0a;
+}
+
+.settings-placeholder{
+    color: #65ff65;
+    font-size: 18px;
+}
+
+.settings-header{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    position:relative;
+}
+
+.settings-header-tools{
+    display: flex;
+    align-items: stretch;
+    margin-left: auto;
+}
+
+.settings-modified-time{
+    color: #ff3b3b;
+    padding: 6px 12px;
+    font-size: 14px;
+    line-height: 1.4;
+    white-space: pre-line;
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+}
+
+
+.settings-footer{
+    margin-top: 16px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    gap: 18px;
+
+    position: relative;
+}
+
+.settings-status-section{
+    padding: 4px 0;
+}
+
+.settings-status-main{
+    font-size: 22px;
+    font-weight: bold;
+    color: #f5f5f5;
+
+    margin-bottom: 10px;
+}
+
+.settings-status-summary{
+    font-size: 15px;
+    line-height: 1.5;
+
+    color: #d8d8d8;
+}
+
+.settings-status-section-title{
+    font-size: 17px;
+    color: #e8e8e8;
+
+    margin-bottom: 10px;
+}
+
+.settings-dirty-list{
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    max-height: 220px;
+    overflow-y: auto;
+
+    color: #e2a34d;
+}
+
+.settings-dirty-item{
+    font-size: 15px;
+    line-height: 1.35;
+}
+
+.settings-status-meta{
+    font-size: 13px;
+    color: #b8b8b8;
+}
+
+.settings-status-section.dirty-box{
+    background: rgba(255,255,255,.03);
+    border: 2px solid #333;
+    padding: 12px;
+}
+
+.settings-status-main{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.settings-status-icon{
+    width: 32px;
+    height: 32px;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    flex-shrink: 0;
+}
+
+.settings-side-preview-area{
+    margin-left: 22px;
+    margin-top: -220px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.setting-row{
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.setting-child-row{
+    margin-left: 34px;
+    padding-left: 18px;
+    border-left: 3px solid #555;
+}
+
+.setting-label{
+    width: 240px;
+    color: white;
+}
+
+.setting-value{
+    flex: 1;
+}
+
+
+
+.setting-bool-btn{
+    min-width: 86px;
+    height: 34px;
+    border: none;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.setting-bool-btn.true{
+    background: #22aa44;
+}
+
+.setting-bool-btn.false{
+    background: #cc2222;
+}
+
+.setting-label-main{
+    font-size: 18px;
+    line-height: 1.2;
+}
+
+.setting-label-key{
+    font-size: 12px;
+    color: #777;
+    margin-top: 2px;
+}
+
+
+.setting-label-main{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 18px;
+    line-height: 1.2;
+}
+
+.setting-help-btn{
+    width: 22px;
+    height: 22px;
+    border: 1px solid #5d5c5c99;
+    border-radius: 50%;
+    background: transparent;
+    color: #5d5c5c99;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.setting-help-btn:hover{
+    background: #5d5c5c99;
+    color: #111;
+}
+
+
+.setting-bool-wrap{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.setting-default-text{
+    font-size: 13px;
+    color: #777;
+    white-space: nowrap;
+}
+
+.server-preview-icon-wrapper{
+    position: relative;
+}
+
+.server-preview-icon-tooltip{
+    position: absolute;
+    left: 0;
+    top: -78px;
+    min-width: 180px;
+    padding: 8px 10px;
+    background: rgba(0,0,0,0.95);
+    border: 2px solid #4a4a4a;
+    color: #ffffff;
+    font-size: 13px;
+    line-height: 1.5;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(4px);
+    transition:
+        opacity 0.12s ease,
+        transform 0.12s ease;
+    z-index: 50;
+}
+
+.server-preview-icon-wrapper:hover
+.server-preview-icon-tooltip{
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.server-preview-card{
+    width: 520px;
+    height: 92px;
+    padding: 8px;
+    background: #0a0a0a;
+    border: 3px solid #6a6a6a;
+    box-shadow: 0 0 0 3px #222;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.server-preview-icon{
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.server-preview-main{
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transform: translateY(-14px);
+}
+
+.server-preview-top-row{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.server-preview-name{
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.server-preview-players{
+    color: #d8d8d8;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.server-preview-motd{
+    margin-top: 6px;
+    color: #aaaaaa;
+    font-size: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.server-preview-signal{
+    width: 28px;
+    height: 20px;
+    margin-top: -4px;
+    align-self: flex-start;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    flex-shrink: 0;
+}
+
+#serverSettingSearchBtn{
+    width: 40px;
+    height: 34px;
+    border: 2px solid #555;
+    background: #111;
+    cursor: pointer;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+#serverSettingSearchBtn img{
+    width: 28px;
+    height: 28px;
+
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+
+    display:block;
+    margin:auto;
+}
+
+
+
+#serverSettingsApplyBtn,
+#serverSettingsRestartBtn{
+    min-width: 180px;
+    height: 52px;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+#serverSettingsApplyBtn:disabled,
+#serverSettingsRestartBtn:disabled,
+#serverSettingsResetBtn:disabled {
+    cursor: not-allowed;
+}
+
+
+
+#serverSettingsResetBtn{
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+
+    width: 44px;
+    height: 44px;
+
+    background: transparent;
+    border: none;
+    color: #d8d8d8;
+
+    font-size: 34px;
+    font-weight: bold;
+    line-height: 1;
+
+    cursor: pointer;
+    transition:color .15s;
+}
+
+#serverSettingsResetBtn:hover{
+    color: white;
+}
+
+#serverSettingsResetBtn:disabled{
+    opacity: .35;
+    cursor: default;
+    transform: translateY(-50%);
+}
+
+.setting-switch-btn.locked .setting-switch-visual{
+    filter: grayscale(.5);
+}
+
+
+.eula-panel{
+    width: 560px;
+    background: #111;
+    border: 3px solid #777;
+    box-shadow: 0 0 0 3px #2d2d2d;
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+.eula-title{
+    font-size: 28px;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 18px;
+}
+
+.eula-message{
+    color: #ddd;
+    font-size: 16px;
+    line-height: 1.7;
+    margin-bottom: 16px;
+}
+
+.eula-link{
+    color: #66ccff;
+    display: inline-block;
+    margin-bottom: 12px;
+}
+
+.eula-date{
+    color: #888;
+    font-size: 14px;
+    margin-bottom: 22px;
+}
+
+.eula-actions{
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+}
+
+#eulaAcceptBtn,
+#eulaDeclineBtn{
+    min-width: 120px;
+    height: 44px;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.eula-closed-message{
+    font-size: 22px;
+    color: #ff5555;
+    text-align: center;
+    padding: 40px 0;
+}
+
+
+.server-init-panel{
+    width: 560px;
+    background: #111;
+    border: 3px solid #777;
+    box-shadow: 0 0 0 3px #2d2d2d;
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+.server-init-title{
+    font-size: 30px;
+    color: white;
+    font-weight: bold;
+    margin-bottom: 18px;
+}
+
+.server-init-text{
+    color: #ddd;
+    font-size: 17px;
+    line-height: 1.8;
+    margin-bottom: 24px;
+}
+
+.server-init-actions{
+    text-align: center;
+}
+
+#serverInitBtn{
+    min-width: 220px;
+    height: 48px;
+    font-size: 22px;
+    cursor: pointer;
+}

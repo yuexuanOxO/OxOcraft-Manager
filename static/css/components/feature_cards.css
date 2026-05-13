@@ -1,0 +1,268 @@
+.feature-grid{
+    margin-bottom: 0;
+    border: 2px solid #2f2f2f;
+    background: rgba(0,0,0,.18);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 1;
+
+    flex: 1;
+    min-height: 0;
+}
+
+.feature-item{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: visible;
+    z-index: 1;
+}
+
+.feature-btn{
+    width: 74px;
+    height: 74px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 3;
+}
+
+.feature-btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: url("/static/icons/feature_card/advancement_plain_raw.png") no-repeat center center;
+    background-size: contain;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    z-index: 1;
+}
+
+.feature-btn img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    position: relative;
+    z-index: 2;
+}
+
+.feature-btn:hover {
+    filter: none;
+}
+
+.feature-btn-placeholder{
+    width: 74px;
+    height: 74px;
+    flex-shrink: 0;
+}
+
+.global-feature-button-host{
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    pointer-events: auto;
+}
+
+.global-feature-card{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 320px;
+    z-index: 9998;
+    pointer-events: none;
+}
+
+.global-feature-card.hidden{
+    display: none !important;
+}
+
+
+.global-feature-card{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 320px;
+    z-index: 9998;
+    pointer-events: none;
+}
+
+
+.global-feature-card.hidden,
+.global-feature-button-host.hidden{
+    display: none !important;
+}
+
+.feature-hover-card{
+    display: none !important;
+}
+
+.feature-title-box {
+    position: relative;
+    height: 82px;
+    z-index: 2;
+}
+
+.feature-label{
+    position: relative;
+    z-index: 1;   /* 功能名稱也留在 card 上面 */
+}
+
+.feature-header{
+    text-align: center;
+    padding: 8px 0;
+    font-size: 22px;
+    color: #e8e8e8;
+    background: rgba(70,70,70,.7);
+    border-bottom: 2px solid #2a2a2a;
+}
+
+.feature-list{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px 10px;
+    padding: 12px;
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    align-content: start;
+}
+
+
+.feature-title-left,
+.feature-title-right {
+    position: absolute;
+    top: 0;
+    width: 24px;   /* 依你的素材邊框寬度調整 */
+    height: 100%;
+    background-size: auto 100%;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.feature-title-left {
+    left: 0;
+    background-image: url("/static/icons/feature_card/box_unobtained_left.png");
+    background-position: left top;
+}
+
+.feature-title-right {
+    right: 0;
+    background-image: url("/static/icons/feature_card/box_unobtained_right.png");
+    background-position: right top;
+}
+
+.feature-title-center {
+    position: absolute;
+    top: 0;
+    left: 24px;
+    right: 24px;
+    height: 100%;
+    background-image: url("/static/icons/feature_card/box_unobtained_center.png");
+    background-repeat: repeat-x;
+    background-size: auto 100%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+
+
+.feature-desc-box {
+    position: relative;
+    margin-top: -35px;
+    height: 98px;
+    z-index: 1;
+}
+
+
+.feature-desc-left,
+.feature-desc-right {
+    position: absolute;
+    top: 0;
+    width: 24px;        
+    height: 100%;
+
+    background-size: auto 100%;
+    background-repeat: no-repeat;
+
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+/* 左邊 */
+
+.feature-desc-left {
+    left: 0;
+    background-image: url("/static/icons/feature_card/title_box_left.png");
+    background-position: left top;
+}
+
+/* 右邊 */
+
+.feature-desc-right {
+    right: 0;
+    background-image: url("/static/icons/feature_card/title_box_right.png");
+    background-position: right top;
+}
+
+/* 中間延伸 */
+
+.feature-desc-center {
+    position: absolute;
+    top: 0;
+    left: 24px;
+    right: 24px;
+    height: 100%;
+
+    background-image: url("/static/icons/feature_card/title_box_center.png");
+    background-repeat: repeat-x;
+    background-size: auto 100%;
+
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+/* 文字層 */
+
+.feature-desc-text {
+    position: relative;
+    z-index: 2;
+
+    padding: 30px 16px 12px 16px;
+
+    color: #69ff4f;
+    font-size: 15px;
+    line-height: 1.45;
+
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+
+.feature-title-text {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding-left: 98px;
+    padding-right: 18px;
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+    box-sizing: border-box;
+}

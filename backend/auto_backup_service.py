@@ -470,7 +470,7 @@ def start_auto_backup_scheduler() -> None:
     )
     _scheduler_thread.start()
 
-    print("[AutoBackup] 自動備份排程器已啟動")
+    # print("[AutoBackup] 自動備份排程器已啟動")
 
 
 def is_auto_backup_control_locked() -> bool:

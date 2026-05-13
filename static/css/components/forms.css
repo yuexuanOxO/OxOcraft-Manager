@@ -1,0 +1,70 @@
+.setting-input{
+    width: 220px;
+    height: 34px;
+    padding: 0 8px;
+    background: #050505;
+    border: 2px solid #555;
+    color: #fff;
+    font-size: 16px;
+}
+
+.setting-input-cycle{
+    width: 70px;
+    height: 34px;
+    padding: 0 8px;
+    background: #050505;
+    border: 2px solid #555;
+    color: #fff;
+    font-size: 16px;
+
+}
+
+.setting-input::placeholder{
+    color: #666;
+    opacity: 1;
+}
+
+.setting-input.locked,
+.setting-switch-btn.locked{
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.setting-input.dirty {
+    border-color: #c8842c !important;
+    box-shadow: 0 0 8px rgba(200, 132, 44, 0.75);
+}
+
+select.setting-input.dirty {
+    border-color: #c8842c !important;
+    box-shadow: 0 0 8px rgba(200, 132, 44, 0.75);
+}
+
+#serverSettingSearch{
+    width: 210px;
+    height: 34px;
+    background: #050505;
+    border: 2px solid #555;
+    border-right: none;
+    color: white;
+    padding: 0 10px;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.backup-record-search-input{
+    width: 330px;
+    height: 38px;
+    padding: 0 10px;
+    box-sizing: border-box;
+
+    background: #050505;
+    border: 2px solid #ddd;
+    color: #fff;
+    font-size: 15px;
+    outline: none;
+}
+
+.backup-record-search-input:focus{
+    border-color: #65ff65;
+}

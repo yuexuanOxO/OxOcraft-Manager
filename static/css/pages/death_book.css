@@ -100,10 +100,11 @@
 }
 
 .death-book-nav {
-    display: flex;
+    display: grid;
+    grid-template-columns: 98px 98px;
     justify-content: center;
-    gap: 240px;
-    padding-bottom: 0px;
+    column-gap: 240px;
+    padding-bottom: 0;
 }
 
 .death-book-page-btn {
@@ -134,7 +135,7 @@
     background-image: url("/static/icons/death_record/page_next_hover.png");
 }
 
-.death-book-page-btn:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
+.death-book-page-btn-hidden {
+    visibility: hidden;
+    pointer-events: none;
 }

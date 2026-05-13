@@ -89,6 +89,8 @@ function renderDeathRecordPage() {
         document.getElementById("deathTime").textContent = "";
         document.getElementById("deathKillerSection").classList.add("hidden");
         document.getElementById("deathWeaponSection").classList.add("hidden");
+        document.getElementById("deathPrevBtn").classList.add("hidden");
+        document.getElementById("deathNextBtn").classList.add("hidden");
         return;
     }
 
@@ -134,8 +136,13 @@ function renderDeathRecordPage() {
         weaponText.textContent = record.item;
     }
 
-    document.getElementById("deathPrevBtn").disabled = currentDeathPage <= 0;
-    document.getElementById("deathNextBtn").disabled = currentDeathPage >= deathRecords.length - 1;
+    const prevBtn = document.getElementById("deathPrevBtn");
+    const nextBtn = document.getElementById("deathNextBtn");
+
+    prevBtn.classList.toggle("death-book-page-btn-hidden", currentDeathPage <= 0);
+    nextBtn.classList.toggle("death-book-page-btn-hidden", currentDeathPage >= deathRecords.length -1);
+
+
 }
 
 async function openDeathBook() {

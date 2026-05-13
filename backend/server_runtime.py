@@ -139,7 +139,7 @@ def start_server() -> tuple[bool, str]:
     command = [
         "java",
         "-jar",
-        str(SERVER_JAR_PATH),
+        "server.jar",
         "nogui",
     ]
 

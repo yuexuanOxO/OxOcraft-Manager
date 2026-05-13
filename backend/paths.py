@@ -2,7 +2,20 @@ from pathlib import Path
 
 BACKEND_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BACKEND_DIR.parent
-MC_ROOT = PROJECT_ROOT.parent
+
+def find_mc_root() -> Path:
+    current = PROJECT_ROOT
+
+    for _ in range(5):
+        if (current / "server.jar").exists():
+            return current
+
+        current = current.parent
+
+    return PROJECT_ROOT.parent
+
+
+MC_ROOT = find_mc_root()
 
 SERVER_JAR_PATH = MC_ROOT / "server.jar"
 SERVER_PROPERTIES_PATH = MC_ROOT / "server.properties"

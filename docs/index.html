@@ -1,1 +1,143 @@
-<h1>Test</h1>
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OxOcraft-Manager</title>
+
+    <style>
+        body{
+            margin:0;
+            padding:40px 20px;
+            background:#111;
+            color:#e8e8e8;
+            font-family:"Segoe UI","Microsoft JhengHei",sans-serif;
+            line-height:1.8;
+        }
+
+        .container{
+            max-width:900px;
+            margin:auto;
+        }
+
+        h1{
+            font-size:48px;
+            margin-bottom:8px;
+            color:#65ff65;
+        }
+
+        h2{
+            margin-top:48px;
+            color:#ffffff;
+            border-left:5px solid #65ff65;
+            padding-left:12px;
+        }
+
+        .subtitle{
+            color:#aaa;
+            margin-bottom:40px;
+        }
+
+        .card{
+            background:#1b1b1b;
+            border:1px solid #333;
+            border-radius:12px;
+            padding:24px;
+            margin-top:20px;
+        }
+
+        ul{
+            padding-left:22px;
+        }
+
+        a{
+            color:#66ccff;
+            text-decoration:none;
+        }
+
+        a:hover{
+            text-decoration:underline;
+        }
+
+        .footer{
+            margin-top:60px;
+            color:#888;
+            font-size:14px;
+            text-align:center;
+        }
+
+        .btn{
+            display:inline-block;
+            margin-top:18px;
+            padding:12px 18px;
+            background:#2b2b2b;
+            border:1px solid #555;
+            border-radius:8px;
+            color:white;
+        }
+
+        .btn:hover{
+            background:#3a3a3a;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>OxOcraft-Manager</h1>
+
+    <div class="subtitle">
+        Minecraft Server Management Tool
+    </div>
+
+    <div class="card">
+        OxOcraft-Manager 是一款以 Flask 與 Python 開發的 Minecraft 伺服器管理工具。<br>
+        提供伺服器啟動管理、世界備份、Google Drive 雲端備份、死亡紀錄、伺服器設定等功能。
+    </div>
+
+    <h2>主要功能</h2>
+
+    <div class="card">
+        <ul>
+            <li>Minecraft Server 啟動與狀態管理</li>
+            <li>本機世界備份</li>
+            <li>Google Drive 雲端備份</li>
+            <li>自動備份系統</li>
+            <li>死亡紀錄系統</li>
+            <li>伺服器設定管理</li>
+            <li>Minecraft Query 狀態偵測</li>
+        </ul>
+    </div>
+
+    <h2>Google Drive OAuth 說明</h2>
+
+    <div class="card">
+        OxOcraft-Manager 使用 Google OAuth 進行 Google Drive 備份功能授權。<br><br>
+
+        本工具僅會要求：
+        <ul>
+            <li>Google Drive 檔案建立與存取權限</li>
+            <li>Google 帳號基本資訊</li>
+        </ul>
+
+        不會讀取或存取使用者完整 Google Drive 內容。
+    </div>
+
+    <h2>GitHub Repository</h2>
+
+    <div class="card">
+        <a class="btn" href="https://github.com/yuexuanOxO/OxOcraft-Manager" target="_blank">
+            View on GitHub
+        </a>
+    </div>
+
+    <div class="footer">
+        OxOcraft-Manager © 2026
+    </div>
+
+</div>
+
+</body>
+</html>
+

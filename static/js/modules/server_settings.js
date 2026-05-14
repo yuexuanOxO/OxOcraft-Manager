@@ -431,7 +431,7 @@ function renderServerSettings() {
             } else {
                 valueWrap.appendChild(input);
             }
-            
+
         }
 
         row.appendChild(label);
@@ -864,11 +864,20 @@ function updateServerSettingsDirtyList() {
         const div = document.createElement("div");
         div.className = "settings-dirty-item";
 
-        const oldValue = serverSettingsEffectiveState[key] ?? "無";
-        const newValue = serverSettingsState[key] ?? "無";
+        const isPasswordField =
+            key === "rcon.password" ||
+            key === "rcon_password";
 
-        div.textContent =
-            `▸ ${field?.label || key} (${key})：${oldValue} > ${newValue}`;
+        if (isPasswordField) {
+            div.textContent =
+                `▸ ${field?.label || key} (${key})：密碼已變更`;
+        } else {
+            const oldValue = serverSettingsEffectiveState[key] ?? "無";
+            const newValue = serverSettingsState[key] ?? "無";
+
+            div.textContent =
+                `▸ ${field?.label || key} (${key})：${oldValue} > ${newValue}`;
+        }
 
         list.appendChild(div);
     });

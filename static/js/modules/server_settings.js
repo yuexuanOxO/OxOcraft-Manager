@@ -138,7 +138,11 @@ function resetServerSettingsToDefault() {
 
     serverSettingFields.forEach((field) => {
 
-        if (field.default === undefined) return;
+        if(field.default === undefined){
+            return;
+        }else if(field.key === "rcon.password"){
+            return;
+        }
 
         serverSettingsState[field.key] =
             String(field.default);

@@ -13,10 +13,20 @@ EFFECTIVE_SETTINGS_PATH = DATA_DIR / "server_effective_settings.json"
 def build_effective_settings_snapshot() -> dict:
     config = load_or_create_config()
 
+    properties = get_effective_server_properties(SERVER_PROPERTIES_PATH)
+    
+    properties["enable-rcon"] = "true"
+    properties["rcon.port"] = str(config.get("rcon_port", 25575))
+    properties["rcon.password"] = str(config.get("rcon_password", ""))
+    properties["enable-query"] = "true"
+    properties["query.port"] = str(config.get("query_port", 25565))
+
     return {
         "captured_at": datetime.now().isoformat(timespec="seconds"),
         "properties_modified_comment": read_properties_modified_comment(SERVER_PROPERTIES_PATH),
-        "properties": get_effective_server_properties(SERVER_PROPERTIES_PATH),
+
+        "properties": properties,
+
         "runtime_config": {
             "java_xms": config.get("java_xms", "1G"),
             "java_xmx": config.get("java_xmx", "4G"),

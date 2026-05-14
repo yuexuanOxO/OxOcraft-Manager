@@ -150,7 +150,7 @@
     "key": "level-type",
     "label": "世界類型",
     "type": "text",
-    "default": "minecraft:normal",
+    "default": "minecraft\\:normal",
     "description": "使用世界預設ID，確定地圖所生成的類型。\n使用世界預設ID時，需要在其中的「:」前加「\\」轉義。原版世界預設ID可以省略其前面的「minecraft:」（即命名空間）。\nminecraft:normal - 帶有丘陵、河谷、海洋等的標準的世界。\nminecraft:flat - 一個沒有特性的平坦世界，可用generator-settings修改。\nminecraft:large_biomes - 如同預設的世界，但所有生態域都更大。\nminecraft:amplified - 如同預設的世界，但世界生成高度提高。\nminecraft:single_biome_surface - 單一生態域世界，可用generator-settings修改。"
   },
   {

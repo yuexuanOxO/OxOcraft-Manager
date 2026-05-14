@@ -151,7 +151,7 @@ https://yuexuanoxo.github.io/OxOcraft-Manager/terms.html
 
 ---
 
-# Disclaimer
+# 免責聲明
 
 OxOcraft-Manager 為非官方 Minecraft 工具。
 

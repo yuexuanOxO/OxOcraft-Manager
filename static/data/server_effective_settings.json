@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-05-14T17:59:23",
-    "properties_modified_comment": "Thu May 14 17:59:21 CST 2026",
+    "captured_at": "2026-05-14T19:29:16",
+    "properties_modified_comment": "Thu May 14 19:26:30 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -40,7 +40,7 @@
         "resource-pack": "",
         "entity-broadcast-range-percentage": "100",
         "simulation-distance": "10",
-        "rcon.password": "4Kv79uyg1umFFmuWHJpWZ5BRGE5Z0zTy",
+        "rcon.password": "m7oJUa1m2aVZBFHXHoAcXRQLwhkfJ4jS",
         "player-idle-timeout": "0",
         "force-gamemode": "false",
         "rate-limit": "0",
@@ -58,7 +58,23 @@
         "enforce-whitelist": "false",
         "spawn-protection": "16",
         "resource-pack-sha1": "",
-        "max-world-size": "29999984"
+        "max-world-size": "29999984",
+        "accepts-transfers": "false",
+        "bug-report-link": "",
+        "enable-code-of-conduct": "false",
+        "management-server-allowed-origins": "",
+        "management-server-enabled": "false",
+        "management-server-host": "localhost",
+        "management-server-port": "0",
+        "management-server-secret": "oG0PHAAr5A9wVknQKlmz11SS3Eo8RVNyyDA3qQ6g",
+        "management-server-tls-enabled": "true",
+        "management-server-tls-keystore": "",
+        "management-server-tls-keystore-password": "",
+        "pause-when-empty-seconds": "60",
+        "region-file-compression": "deflate",
+        "resource-pack-id": "",
+        "status-heartbeat-interval": "0",
+        "text-filtering-version": "0"
     },
     "runtime_config": {
         "java_xms": "2G",

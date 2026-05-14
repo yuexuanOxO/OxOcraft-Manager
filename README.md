@@ -1,4 +1,3 @@
-````md
 # OxOcraft-Manager
 
 一款以 Minecraft 像素風格打造的 Minecraft Server 管理工具。  
@@ -167,4 +166,3 @@ Minecraft 為 Mojang Studios 的商標。
 GitHub：
 
 https://github.com/yuexuanOxO
-````

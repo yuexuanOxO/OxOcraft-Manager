@@ -665,10 +665,21 @@ export function updateServerSettingsFooterModeByState(data) {
     if (serverSettingsBusyMode) {
         const canUnlock = now >= serverSettingsBusyUnlockAt;
 
-        if (serverSettingsBusyMode === "starting" && state === "ready" && canUnlock) {
+        if (
+            serverSettingsBusyMode === "starting" &&
+            state !== "starting" &&
+            canUnlock
+        ) {
             serverSettingsBusyMode = null;
-        } else if (serverSettingsBusyMode === "stopping" && !online && state !== "starting" && canUnlock) {
+
+        } else if (
+            serverSettingsBusyMode === "stopping" &&
+            !online &&
+            state !== "starting" &&
+            canUnlock
+        ) {
             serverSettingsBusyMode = null;
+
         } else {
             scheduleServerSettingsFooterRecheck();
         }

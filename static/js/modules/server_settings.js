@@ -374,7 +374,16 @@ function renderServerSettings() {
                 input.title = field.lockedReason || "此設定由 OxOcraft-Manager 管理，不能修改。";
             }
 
-            input.type = field.type === "number" ? "number" : "text";
+            const isPasswordField =
+                field.key === "rcon.password" ||
+                field.key === "rcon_password";
+
+            input.type = isPasswordField
+                ? "password"
+                : field.type === "number"
+                    ? "number"
+                    : "text";
+
             input.value = serverSettingsState[field.key] || "";
 
             if (isFieldDirty(field.key)) {
@@ -400,7 +409,29 @@ function renderServerSettings() {
                 updateServerSettingsStatusCard();
             });
 
-            valueWrap.appendChild(input);
+            if (isPasswordField) {
+                const passwordWrap = document.createElement("div");
+                passwordWrap.className = "setting-password-wrap";
+
+                const toggleBtn = document.createElement("button");
+                toggleBtn.type = "button";
+                toggleBtn.className = "setting-password-toggle";
+                toggleBtn.textContent = "👁";
+                toggleBtn.title = "顯示/隱藏密碼";
+
+                toggleBtn.addEventListener("click", () => {
+                    const isHidden = input.type === "password";
+                    input.type = isHidden ? "text" : "password";
+                    toggleBtn.classList.toggle("showing", isHidden);
+                });
+
+                passwordWrap.appendChild(input);
+                passwordWrap.appendChild(toggleBtn);
+                valueWrap.appendChild(passwordWrap);
+            } else {
+                valueWrap.appendChild(input);
+            }
+            
         }
 
         row.appendChild(label);

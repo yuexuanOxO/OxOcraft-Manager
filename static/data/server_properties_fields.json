@@ -286,7 +286,7 @@
     "key": "rcon.password",
     "label": "RCON 密碼",
     "type": "text",
-    "default": "OxO123456",
+    "default": "自動生成",
     "description": "設定RCON遠程訪問的密碼（參見enable-rcon）。RCON：能允許其他應用程式透過網際網路與Minecraft伺服器連接並互動的遠程控制台協議。",
     "dependsOn": {
       "key": "enable-rcon",

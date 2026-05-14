@@ -102,6 +102,12 @@ def api_get_runtime_config():
             "config": {
                 "java_xms": config.get("java_xms", "1G"),
                 "java_xmx": config.get("java_xmx", "4G"),
+
+                "rcon.password": config.get("rcon_password", ""),
+                "rcon.port": str(config.get("rcon_port", 25575)),
+                "query.port": str(config.get("query_port", 25565)),
+                "enable-rcon": "true",
+                "enable-query": "true",
             }
         })
 

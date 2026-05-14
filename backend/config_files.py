@@ -1,18 +1,23 @@
 import json
 import re
+import secrets
+import string
+
 from typing import Dict
 
 from backend.paths import CONFIG_PATH, EULA_PATH
 
+def generate_rcon_password(length: int = 32) -> str:
+    chars = string.ascii_letters + string.digits
+    return "".join(secrets.choice(chars) for _ in range(length))
+
 DEFAULT_CONFIG = {
     "rcon_host": "127.0.0.1",
     "rcon_port": 25575,
-    "rcon_password": "OxO123456",
+    "rcon_password": generate_rcon_password(),
     "java_xms": "2G",
     "java_xmx": "4G",
 }
-
-
 
 def load_or_create_config() -> Dict:
     CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)

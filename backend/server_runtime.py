@@ -7,7 +7,7 @@ from pathlib import Path
 
 from backend.death_record.death_rules import parse_death_message, location_pattern
 from backend.db import insert_player_death
-from backend.server_status import lock_current_server_port
+from backend.server_status import lock_current_server_port,lock_current_server_host
 from backend.server_monitor import append_log_line, clear_log_cache
 from backend.paths import SERVER_JAR_PATH, CONFIG_PATH, MC_ROOT, SERVER_PROPERTIES_PATH
 from backend.server_settings.server_properties import read_properties_file
@@ -133,6 +133,7 @@ def start_server() -> tuple[bool, str]:
     set_server_runtime_state("starting")
     
     lock_current_server_port()
+    lock_current_server_host()
     lock_current_world_path()
 
 

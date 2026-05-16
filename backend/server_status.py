@@ -7,6 +7,7 @@ from mcstatus import JavaServer
 
 DEFAULT_SERVER_PORT = 25565
 CURRENT_SERVER_PORT = None
+CURRENT_SERVER_HOST = None
 
 
 def load_server_port_from_properties() -> int:
@@ -18,6 +19,47 @@ def load_server_port_from_properties() -> int:
         return int(server_properties.get("server-port", DEFAULT_SERVER_PORT))
     except Exception:
         return DEFAULT_SERVER_PORT
+
+
+def load_server_host_from_properties() -> str:
+    if not SERVER_PROPERTIES_PATH.exists():
+        return "127.0.0.1"
+
+    try:
+        server_properties = read_properties_file(
+            SERVER_PROPERTIES_PATH
+        )
+
+        server_ip = (
+            server_properties
+            .get("server-ip", "")
+            .strip()
+        )
+
+        if server_ip:
+            return server_ip
+
+        return "127.0.0.1"
+
+    except Exception:
+        return "127.0.0.1"
+
+
+def lock_current_server_host() -> str:
+    global CURRENT_SERVER_HOST
+
+    CURRENT_SERVER_HOST = (
+        load_server_host_from_properties()
+    )
+
+    return CURRENT_SERVER_HOST
+
+
+def get_current_server_host() -> str:
+    if CURRENT_SERVER_HOST is not None:
+        return CURRENT_SERVER_HOST
+
+    return load_server_host_from_properties()
 
 
 def lock_current_server_port() -> int:
@@ -34,8 +76,10 @@ def get_current_server_port() -> int:
     return load_server_port_from_properties()
 
 
-def is_server_online(host: str = "127.0.0.1", timeout: int = 1) -> bool:
+def is_server_online(host: str | None = None,timeout: int = 1) -> bool:
     port = get_current_server_port()
+    if host is None:
+        host = get_current_server_host()
 
     try:
         with socket.create_connection((host, port), timeout=timeout):
@@ -75,7 +119,7 @@ def is_backup_state_active() -> bool:
         return False
 
 
-def get_server_query_status(host: str = "127.0.0.1") -> dict:
+def get_server_query_status(host: str | None = None) -> dict:
     if is_backup_state_active():
         return {
             "online": False,
@@ -106,6 +150,9 @@ def get_server_query_status(host: str = "127.0.0.1") -> dict:
             pass
 
     port = get_query_port()
+
+    if host is None:
+        host = get_current_server_host()
 
     try:
         server = JavaServer.lookup(f"{host}:{port}")

@@ -53,7 +53,8 @@ export function showConfirm({
     message = "",
     confirmText = "確定",
     cancelText = "取消",
-    showCancel = true
+    showCancel = true,
+    variant = ""
 }) {
 
     return new Promise((resolve) => {
@@ -76,6 +77,17 @@ export function showConfirm({
             document.getElementById("systemDialogConfirmBtn");
 
         titleBox.textContent = title;
+
+        titleBox.classList.remove(
+            "success",
+            "error",
+            "warning"
+        );
+
+        if (variant) {
+            titleBox.classList.add(variant);
+        }
+
         messageBox.textContent = message;
 
         confirmBtn.textContent = confirmText;

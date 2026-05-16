@@ -637,7 +637,8 @@ export async function saveServerSettings(showAlert = true) {
 
             showInfo({
                 title: "儲存失敗!",
-                message: data.message || "未知錯誤"
+                message: data.message || "未知錯誤",
+                variant: "error"
             });
 
             return false;
@@ -702,13 +703,15 @@ export async function saveServerSettings(showAlert = true) {
                 await showInfo({
                     title: "設定已保留",
                     message:
-                `請注意：若設定值不符合格式，伺服器重啟後將自動修正或恢復預設值。`
+                `請注意：若設定值不符合格式，伺服器重啟後將自動修正或恢復預設值。`,
+                variant: "success"
                 });
             } else {
                 await showInfo({
                     title: "參數已修改",
                     message:
-                `請注意：若設定值不符合格式，伺服器重啟後將自動修正或恢復預設值。`
+                `請注意：若設定值不符合格式，伺服器重啟後將自動修正或恢復預設值。`,
+                variant: "success"
                 });
             }
         }

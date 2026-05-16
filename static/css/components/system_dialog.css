@@ -84,3 +84,15 @@
 .system-dialog-btn.cancel{
     background: #252525;
 }
+
+.system-dialog-title.success{
+    color: #55ff55;
+}
+
+.system-dialog-title.error{
+    color: #ff5555;
+}
+
+.system-dialog-title.warning{
+    color: #ffaa00;
+}

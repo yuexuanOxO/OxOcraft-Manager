@@ -8,6 +8,10 @@ import {
     loadServerSettings
 } from "./server_settings.js";
 
+import {
+    showConfirm,
+    showInfo
+} from "./system_dialog.js";
 
 let isTransitioning = false;
 
@@ -43,7 +47,12 @@ async function toggleServer() {
 
         if (statusData.online) {
 
-            const ok = confirm("你是否要關閉伺服器？");
+            const ok = await showConfirm({
+                title: "關閉伺服器",
+                message: "你是否要關閉伺服器？",
+                confirmText: "關閉",
+                cancelText: "取消"
+            });
 
             if (!ok) {
                 return;
@@ -76,7 +85,10 @@ async function toggleServer() {
         const data = await response.json();
 
         if (!data.success) {
-            alert(data.message || "操作失敗");
+            await showInfo({
+                title: "操作失敗",
+                message: data.message || "未知錯誤"
+            });
             isTransitioning = false;
             setPowerButtonLoading(false);
             updateStatus();
@@ -95,13 +107,26 @@ async function toggleServer() {
 
 
         if (!reachedTarget) {
-            alert(targetOnline ? "伺服器啟動逾時，請查看 log。" : "伺服器關閉逾時，請查看 log。");
+            await showInfo({
+                title: targetOnline
+                    ? "伺服器啟動逾時"
+                    : "伺服器關閉逾時",
+
+                message: "請查看 log。"
+            });
         } else if (targetOnline && setupStage === "need_first_run") {
             await fetch("/api/server/sync-rcon", {
                 method: "POST"
             });
 
-            alert("伺服器必要檔案已產生，RCON 設定已同步。請同意 Minecraft EULA 後再啟動伺服器。");
+            await showInfo({
+                title: "初始化完成",
+                message:
+            `伺服器必要檔案已產生。
+
+            RCON 設定已同步，
+            請同意 Minecraft EULA 後再啟動伺服器。`
+            });
             await checkEulaStatus();
         }
 
@@ -264,7 +289,10 @@ function setupEulaModal() {
                 const data = await response.json();
 
                 if (!data.success) {
-                    alert(data.message || "同意 EULA 失敗");
+                    await showInfo({
+                        title: "同意 EULA 失敗",
+                        message: data.message || "未知錯誤"
+                    });
                     return;
                 }
 
@@ -272,7 +300,10 @@ function setupEulaModal() {
                     modal.classList.add("hidden");
                 }
 
-                alert("已同意 EULA，可以繼續使用。");
+                await showInfo({
+                    title: "EULA 已同意",
+                    message: "現在可以啟動 Minecraft 伺服器。"
+                });
 
             } catch (error) {
                 console.error("同意 EULA 失敗:", error);
@@ -338,7 +369,11 @@ async function ensureEulaAcceptedBeforeStart() {
                 showEulaModal(eulaData);
             }
 
-            alert("請先同意 Minecraft EULA 後再啟動伺服器。");
+            await showInfo({
+                title: "需要同意 EULA",
+                message:
+            "請先同意 Minecraft EULA 後再啟動伺服器。"
+            });
             return false;
         }
 
@@ -412,7 +447,15 @@ async function checkFirstRunGuide() {
 
 
 export async function saveAndRestartServer() {
-    const ok = confirm("若要變動立即生效，須重啟伺服器。\n請問是否要重啟伺服器？");
+    const ok = await showConfirm({
+        title: "重新啟動伺服器",
+        message:
+    `若要讓變更立即生效，
+    需要重新啟動伺服器。`,
+
+        confirmText: "重新啟動",
+        cancelText: "取消"
+    });
 
     if (!ok) {
         return;
@@ -472,7 +515,10 @@ export async function saveAndRestartServer() {
 
         if (started) {
             await loadServerSettings();
-            alert("設定已套用，伺服器已重啟。");
+            await showInfo({
+                title: "重新啟動完成",
+                message: "設定已套用，伺服器已重新啟動。"
+            });
         } else {
             alert("伺服器啟動逾時，請查看 log。");
         }

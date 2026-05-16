@@ -3,8 +3,8 @@ from __future__ import annotations
 import subprocess
 import threading
 import json
+import socket
 from pathlib import Path
-
 from backend.death_record.death_rules import parse_death_message, location_pattern
 from backend.db import insert_player_death
 from backend.server_status import lock_current_server_port,lock_current_server_host
@@ -121,6 +121,57 @@ def handle_server_output() -> None:
     set_server_runtime_state("offline")
 
 
+def get_local_ipv4_addresses() -> set[str]:
+    ips = {
+        "127.0.0.1",
+        "0.0.0.0",
+        "localhost",
+    }
+
+    try:
+        hostname = socket.gethostname()
+
+        for item in socket.getaddrinfo(hostname, None):
+            ip = item[4][0]
+
+            if ":" not in ip:
+                ips.add(ip)
+
+    except Exception:
+        pass
+
+    return ips
+
+
+def validate_server_bind_ip(server_ip: str) -> tuple[bool, str]:
+
+    try:
+        server_ip = server_ip.strip()
+        if not server_ip:
+            return True, ""
+
+        if not server_ip:
+            return True, ""
+
+        local_ips = get_local_ipv4_addresses()
+
+        if server_ip in local_ips:
+            return True, ""
+
+        available_ips = "\n".join(sorted(local_ips))
+
+        return False, (
+            "server-ip 綁定失敗!\n\n"
+            "server-ip 只能填這台電腦目前擁有的 IP。\n"
+            "如果不確定，建議將 server-ip 留空。\n\n"
+            f"目前設定的 server-ip：\n{server_ip}\n\n"
+            f"目前可用 IP：\n{available_ips}"
+        )
+
+    except Exception as error:
+        return False, f"檢查 server-ip 時發生錯誤：{error}"
+
+
 def start_server() -> tuple[bool, str]:
     global server_process
 
@@ -129,6 +180,17 @@ def start_server() -> tuple[bool, str]:
 
     if not SERVER_JAR_PATH.exists():
         return False, f"找不到 server.jar：{SERVER_JAR_PATH}"
+    
+    props = read_properties_file(SERVER_PROPERTIES_PATH)
+
+    server_ip = props.get("server-ip", "")
+
+    bind_ip_ok, bind_ip_message = (
+        validate_server_bind_ip(server_ip)
+    )
+
+    if not bind_ip_ok:
+        return False, bind_ip_message
 
     set_server_runtime_state("starting")
     

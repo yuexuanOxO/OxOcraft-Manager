@@ -626,10 +626,20 @@ export async function saveServerSettings(showAlert = true) {
         const data = await response.json();
 
         if (!data.success) {
+            if (data.fallback) {
+                Object.entries(data.fallback).forEach(([key, value]) => {
+                    serverSettingsState[key] = value;
+                });
+
+                renderServerSettings();
+                updateServerSettingsStatusCard();
+            }
+
             showInfo({
-                title: "儲存失敗",
+                title: "儲存失敗!",
                 message: data.message || "未知錯誤"
             });
+
             return false;
         }
 

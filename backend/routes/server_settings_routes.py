@@ -4,6 +4,7 @@ from werkzeug.utils import secure_filename
 from backend.config_files import load_or_create_config, save_config,generate_rcon_password
 from backend.server_config_sync import init_rcon_config
 from backend.server_effective_settings import load_effective_settings_snapshot
+from backend.server_runtime import validate_server_bind_ip
 
 from backend.paths import SERVER_PROPERTIES_PATH,MC_ROOT,STATIC_DIR
 
@@ -68,13 +69,44 @@ def api_update_server_properties():
     try:
         current_props = read_properties_file(SERVER_PROPERTIES_PATH)
 
+        next_props = current_props.copy()
+
         for key, value in updates.items():
             if key not in DEFAULT_SERVER_PROPERTIES:
                 continue
 
-            current_props[key] = str(value)
+            next_props[key] = str(value)
 
-        lines = format_properties_for_write(current_props)
+        server_ip = (
+            next_props
+            .get("server-ip", "")
+            .strip()
+        )
+
+        bind_ok, bind_message = (
+            validate_server_bind_ip(server_ip)
+        )
+
+        if not bind_ok:
+            old_server_ip = (
+                current_props
+                .get("server-ip", "")
+                .strip()
+            )
+
+            old_ok, _ = validate_server_bind_ip(old_server_ip)
+
+            fallback_server_ip = old_server_ip if old_ok else ""
+
+            return jsonify({
+                "success": False,
+                "message": bind_message,
+                "fallback": {
+                    "server-ip": fallback_server_ip
+                }
+            }), 400
+
+        lines = format_properties_for_write(next_props)
         write_properties_file(SERVER_PROPERTIES_PATH, lines)
 
         return jsonify({

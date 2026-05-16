@@ -37,7 +37,7 @@ export function handleBackendDisconnected() {
 
     if (statusLight) {
         statusLight.classList.remove("online", "offline", "starting");
-        statusLight.classList.add("disconnected");
+        statusLight.src = "/static/icons/server_settings/status_disconnected.png";
     }
 
     if (statusText) {
@@ -48,6 +48,15 @@ export function handleBackendDisconnected() {
         powerBtn.disabled = true;
         powerBtn.classList.add("loading");
     }
+
+    latestServerStatusData = {
+        state: "disconnected",
+        online: false
+    };
+
+    window.dispatchEvent(new CustomEvent("server-status-changed", {
+        detail: latestServerStatusData
+    }));
 
     console.error("Flask 後端已失聯，已停止輪詢。");
 }
@@ -197,7 +206,7 @@ export function applyServerStatusPayload(payload) {
 
     if (data.state === "ready") {
         statusLight.classList.remove("offline", "starting");
-        statusLight.classList.add("online");
+        statusLight.src = "/static/icons/server_settings/status_online.png";
         statusText.textContent = "在線";
 
         if (powerBtn) {
@@ -207,7 +216,7 @@ export function applyServerStatusPayload(payload) {
         
     }else if (data.state === "backuping") {
         statusLight.classList.remove("online", "offline");
-        statusLight.classList.add("starting");
+        statusLight.src = "/static/icons/server_settings/status_busy.png";
 
         statusText.textContent = "備份中...";
 
@@ -217,7 +226,7 @@ export function applyServerStatusPayload(payload) {
         }
     }else if (data.state === "stopping") {
         statusLight.classList.remove("online", "offline");
-        statusLight.classList.add("starting");
+        statusLight.src = "/static/icons/server_settings/status_busy.png";
 
         statusText.textContent = "關閉中...";
 
@@ -229,7 +238,7 @@ export function applyServerStatusPayload(payload) {
 
     }else if (data.state === "starting") {
         statusLight.classList.remove("online", "offline");
-        statusLight.classList.add("starting");
+        statusLight.src = "/static/icons/server_settings/status_busy.png";
         statusText.textContent = "啟動中...";
 
         if (powerBtn) {
@@ -239,7 +248,7 @@ export function applyServerStatusPayload(payload) {
 
     } else {
         statusLight.classList.remove("online", "starting");
-        statusLight.classList.add("offline");
+        statusLight.src = "/static/icons/server_settings/status_offline.png";
         statusText.textContent = "離線";
 
         if (powerBtn) {
@@ -260,4 +269,8 @@ export function applyServerStatusPayload(payload) {
 
     wasServerOnline = data.online;
     previousServerState = data.state;
+
+    window.dispatchEvent(new CustomEvent("server-status-changed", {
+        detail: data
+    }));
 }

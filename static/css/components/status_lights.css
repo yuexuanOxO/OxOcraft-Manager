@@ -5,28 +5,11 @@
 }
 
 .status-light{
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    display: inline-block;
-}
+    width: 32px;
+    height: 32px;
 
-.status-light.online{
-    background-color: #33cc66;
-    box-shadow: 0 0 8px #33cc66;
-}
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
 
-.status-light.offline{
-    background-color: #ff4d4f;
-    box-shadow: 0 0 8px #ff4d4f;
-}
-
-.status-light.starting{
-    background: #f7d046;
-    box-shadow: 0 0 10px #f7d046;
-}
-
-.status-light.disconnected {
-    background-color: #888;
-    box-shadow: 0 0 8px #888;
+    flex-shrink: 0;
 }

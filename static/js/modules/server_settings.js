@@ -24,6 +24,14 @@ export function initServerSettings() {
     setupServerSettingsModal();
     setupServerSettingSearch();
     setupServerSettingHelp();
+    setupServerSettingsStatusSync();
+}
+
+
+function setupServerSettingsStatusSync() {
+    window.addEventListener("server-status-changed", (event) => {
+        updateServerSettingsFooterModeByState(event.detail);
+    });
 }
 
 
@@ -815,27 +823,27 @@ function updateServerSettingsStatusState(state) {
 
     const statusMap = {
         ready: {
-            icon: "/static/icons/server_settings/status_online.ico",
+            icon: "/static/icons/server_settings/status_online.png",
             text: "伺服器運行中"
         },
         starting: {
-            icon: "/static/icons/server_settings/status_busy.ico",
+            icon: "/static/icons/server_settings/status_busy.png",
             text: "伺服器啟動中"
         },
         stopping: {
-            icon: "/static/icons/server_settings/status_busy.ico",
+            icon: "/static/icons/server_settings/status_busy.png",
             text: "伺服器關閉中"
         },
         offline: {
-            icon: "/static/icons/server_settings/status_offline.ico",
+            icon: "/static/icons/server_settings/status_offline.png",
             text: "伺服器未啟動"
         },
         disconnected: {
-            icon: "/static/icons/server_settings/status_disconnected.ico",
+            icon: "/static/icons/server_settings/status_disconnected.png",
             text: "管理介面中斷"
         },
         unknown: {
-            icon: "/static/icons/server_settings/status_disconnected.ico",
+            icon: "/static/icons/server_settings/status_disconnected.png",
             text: "狀態未知"
         }
     };

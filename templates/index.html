@@ -6,6 +6,19 @@
     <title>OxOcraft-Manager</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <link rel="icon" href="/static/icons/OxOcraft-Manager_icon/OxOcraft-Manager_icon_128b.png">
+
+    <link rel="preload" as="image"
+      href="/static/icons/server_settings/status_disconnected.png">
+
+    <link rel="preload" as="image"
+        href="/static/icons/server_settings/status_online.png">
+
+    <link rel="preload" as="image"
+        href="/static/icons/server_settings/status_busy.png">
+
+    <link rel="preload" as="image"
+        href="/static/icons/server_settings/status_offline.png">
+
 </head>
 <body>
 
@@ -687,8 +700,14 @@
             <div class="panel">
                 <div class="panel-header">
                     <div class="status-group">
-                        <span id="statusLight" class="status-light {{ 'online' if server_online else 'offline' }}"></span>
-                        <span id="statusText">{{ '在線' if server_online else '離線' }}</span>
+                        <img
+                            id="statusLight"
+                            class="status-light"
+                            src="/static/icons/server_settings/status_offline.png"
+                            alt="status"
+                        >
+
+                        <span id="statusText">離線</span>
                     </div>
                     <button id="powerBtn" class="power-btn">⏻</button>
                 </div>

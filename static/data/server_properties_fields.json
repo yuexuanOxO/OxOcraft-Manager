@@ -13,21 +13,21 @@
     "type": "text",
     "default": "4G",
     "source": "config",
-    "description": "Minecraft Server 可使用的最大記憶體，例如 2G、4G、8G。"
+    "description": "Minecraft Server可使用的最大記憶體，例如 2G、4G、8G。"
   },
   {
     "key": "server-port",
     "label": "伺服器連線埠",
     "type": "number",
     "default": "25565",
-    "description": "改變伺服器（監聽的）埠號。如果伺服器在使用NAT的網路中執行，該埠必須被轉發（在你有家用路由器/防火牆的前提下）。"
+    "description": "改變伺服器埠號，預設為25565，一般情況下不建議改動。"
   },
   {
     "key": "server-ip",
     "label": "綁定 IP",
     "type": "text",
     "default": "",
-    "description": "將伺服器與一個特定IP綁定。強烈建議留空該屬性值！\n留空，或是填入你想讓伺服器綁定（監聽）的IP。"
+    "description": "將伺服器與一個特定IP綁定。\n強烈建議留空該屬性值！\n"
   },
   {
     "key": "motd",
@@ -41,14 +41,14 @@
     "label": "最大玩家數",
     "type": "number",
     "default": "20",
-    "description": "伺服器同時能容納的最大玩家數量。請注意，線上玩家越多，對伺服器造成的負擔也就越大。同樣注意，伺服器的OP具有在人滿的情況下強行進入伺服器的能力：找到在伺服器根目錄下叫ops.json的檔案並打開，將需要此能力的OP下的bypassesPlayerLimit選項設定為true即可（預設值為false），這意味著OP將不需要在伺服器人滿時等待有玩家離開後再加入。過大的數值會使用戶端顯示的玩家列表崩壞。"
+    "description": "伺服器同時能容納的最大玩家數量。\n請注意：線上玩家越多，對伺服器造成的負擔也就越大。\n同樣注意，伺服器的OP具有在人滿的情況下強行進入伺服器的能力。"
   },
   {
     "key": "online-mode",
     "label": "正版驗證",
     "type": "boolean",
     "default": "true",
-    "description": "是否讓伺服器對比Minecraft帳號資料庫驗證登入資訊。只有在你的伺服器並未與Internet連接時，才將這個值設為false。如果設為false，駭客就能夠使用任意假帳號連接伺服器！如果minecraft.net伺服器宕機或不可訪問，那麼該值設為true的伺服器會因為無法驗證玩家身份而拒絕所有玩家加入。通常，這個值設為true的伺服器被稱為「正版伺服器」。故意設定該變數為false的伺服器稱為「破解伺服器」（也稱離線伺服器），這類伺服器允許擁有未授權的Minecraft副本的玩家加入。\ntrue - 啟用。伺服器會認為自己具有Internet連接，並檢查每一位連入的玩家。\nfalse - 停用。伺服器不會嘗試檢查玩家。"
+    "description": "是否讓非正版玩家進入伺服器，如果是true則限制只有正版玩家可進入，false則不限制，但是你的skin跟披風將不會顯示(變回原版skin)"
   },
   {
     "key": "enable-status",
@@ -62,14 +62,14 @@
     "label": "隱藏線上玩家",
     "type": "boolean",
     "default": "false",
-    "description": "如果設為 true，伺服器端在響應用戶端狀態請求時不會返回線上玩家列表。"
+    "description": "如果設為true，伺服器端在響應用戶端狀態請求時不會返回線上玩家列表。"
   },
   {
     "key": "player-idle-timeout",
     "label": "閒置踢出時間",
     "type": "number",
     "default": "0",
-    "description": "如果不為0，伺服器將在玩家的空閒時間達到設定的時間（單位為分鐘）時將玩家踢出伺服器\n註：當伺服器接受到下列資料包之一時將會重設空閒時間：\n點擊窗口\n附魔物品\n更新告示牌\n玩家挖掘方塊\n玩家放置方塊\n更換拿著的物品\n動畫（揮動手臂）\n實體動作\n用戶端狀態\n聊天資訊\n使用實體"
+    "description": "如果不為0，伺服器將在玩家的空閒時間達到設定的時間（單位為分鐘）時將玩家踢出伺服器。\n\n註：當伺服器接受到下列資料包之一時將會重設空閒時間：點擊窗口﹑附魔物品﹑更新告示牌﹑玩家挖掘方塊﹑玩家放置方塊﹑更換拿著的物品﹑動畫(揮動手臂)﹑實體動作﹑用戶端狀態﹑聊天資訊﹑使用實體。"
   },
   {
     "key": "difficulty",
@@ -82,7 +82,7 @@
       { "value": "normal", "label": "普通 (normal)" },
       { "value": "hard", "label": "困難 (hard)" }
     ],
-    "description": "定義伺服器的遊戲難易度（例如生物對玩家造成的傷害，飢餓和中毒對玩家的影響方式等）。\n如果設定了舊的數字ID，則會自動轉化為英文的難易度名稱。\npeaceful (0) - 和平\neasy (1) - 簡單\nnormal (2) - 普通\nhard (3) - 困難"
+    "description": "定義伺服器的遊戲難易度（例如生物對玩家造成的傷害，飢餓和中毒對玩家的影響方式等）。\n\n如果設定了舊的數字ID，則會自動轉化為英文的難易度名稱。\npeaceful (0) - 和平\neasy (1) - 簡單\nnormal (2) - 普通\nhard (3) - 困難"
   },
   {
     "key": "gamemode",
@@ -102,35 +102,35 @@
     "label": "強制遊戲模式",
     "type": "boolean",
     "default": "false",
-    "description": "強制玩家加入時為預設遊戲模式。\nfalse - 玩家將以退出前的遊戲模式加入\ntrue - 玩家總是以預設遊戲模式加入"
+    "description": "強制玩家加入時為預設遊戲模式。\nfalse：玩家將以退出前的遊戲模式加入\ntrue：玩家總是以預設遊戲模式加入"
   },
   {
     "key": "hardcore",
     "label": "極限模式",
     "type": "boolean",
     "default": "false",
-    "description": "如果設為 true，伺服器難易度的設定會被忽略並且設為hard（困難），玩家在死後會自動切換至旁觀者模式，\n若要此參數生效需要重新建立世界或是修改世界名稱(level-name)建立新世界。"
+    "description": "如果設為 true，伺服器難易度的設定會被忽略並且設為hard(困難)，玩家在死後會自動切換至旁觀者模式，\n註：若要此參數生效需要重新建立世界之前開啟，或是修改世界名稱(level-name)來建立新世界。"
   },
   {
     "key": "pvp",
     "label": "允許玩家互相傷害",
     "type": "boolean",
     "default": "true",
-    "description": "是否允許PvP。也只有在允許PvP時玩家自己的箭才會受到傷害。\ntrue - 玩家可以互相傷害。\nfalse - 玩家無法互相造成傷害（也稱作玩家對戰環境（PvE））。\n註：由玩家造成的間接傷害（例如熔岩，火，TNT等，某種程度上還有水，沙和礫石）還是會傷害其他玩家。"
+    "description": "是否允許PvP。也只有在允許PvP時玩家自己的箭才會受到傷害。\ntrue：玩家可以互相傷害。\nfalse：玩家無法互相造成傷害(也稱作玩家對戰環境(PvE))。\n註：由玩家造成的間接傷害(例如熔岩，火，TNT等，某種程度上還有水，沙和礫石)還是會傷害其他玩家。"
   },
   {
     "key": "allow-flight",
     "label": "允許飛行",
     "type": "boolean",
     "default": "false",
-    "description": "允許玩家在安裝加入飛行功能的mod前提下在生存模式下飛行。\n允許飛行可能會使惡意破壞者更加常見，因為此設定會使他們更容易達成目的。在創造模式下無作用。\nfalse - 不允許飛行。懸空超過5秒的玩家會被踢出伺服器。\ntrue - 允許飛行。玩家得以使用任何能飛行的mod飛行。"
+    "description": "允許玩家在安裝加入飛行功能的mod前提下在生存模式下飛行。\n\n允許飛行可能會使惡意破壞者更加常見，因為此設定會使他們更容易達成目的。在創造模式下無作用。\nfalse-不允許飛行。懸空超過5秒的玩家會被踢出伺服器。\ntrue-允許飛行。玩家得以使用任何能飛行的mod飛行。"
   },
   {
     "key": "allow-nether",
     "label": "允許進入地獄",
     "type": "boolean",
     "default": "true",
-    "description": "允許玩家進入地獄。\nfalse - 地獄傳送門不會生效。\ntrue - 玩家可以透過地獄傳送門前往地獄。"
+    "description": "允許玩家進入地獄。\nfalse-地獄傳送門不會生效。\ntrue-玩家可以透過地獄傳送門前往地獄。"
   },
   {
     "key": "level-name",
@@ -141,17 +141,17 @@
   },
   {
     "key": "level-seed",
-    "label": "世界種子",
+    "label": "世界種子碼",
     "type": "text",
     "default": "",
-    "description": "與單人遊戲類似，為你的世界定義一個種子。\n這裡有一些例子：minecraft，404，1a2b3c。"
+    "description": "這個世界生成時使用的種子碼。\n\n註：若要建立其他新世界記得把這裡清除，避免又生成到一樣的世界。"
   },
   {
     "key": "level-type",
     "label": "世界類型",
     "type": "text",
     "default": "minecraft\\:normal",
-    "description": "使用世界預設ID，確定地圖所生成的類型。\n使用世界預設ID時，需要在其中的「:」前加「\\」轉義。原版世界預設ID可以省略其前面的「minecraft:」（即命名空間）。\nminecraft:normal - 帶有丘陵、河谷、海洋等的標準的世界。\nminecraft:flat - 一個沒有特性的平坦世界，可用generator-settings修改。\nminecraft:large_biomes - 如同預設的世界，但所有生態域都更大。\nminecraft:amplified - 如同預設的世界，但世界生成高度提高。\nminecraft:single_biome_surface - 單一生態域世界，可用generator-settings修改。"
+    "description": "使用世界預設ID，確定地圖所生成的類型。\n使用世界預設ID時，需要在其中的「:」前加「\\」轉義。原版世界預設ID可以省略其前面的「minecraft:」（即命名空間）。\nminecraft:normal：帶有丘陵、河谷、海洋等的標準的世界。\nminecraft:flat - 一個沒有特性的平坦世界，可用generator-settings修改。\nminecraft:large_biomes：如同預設的世界，但所有生態域都更大。\nminecraft:amplified：如同預設的世界，但世界生成高度提高。\nminecraft:single_biome_surface：單一生態域世界，可用generator-settings修改。"
   },
   {
     "key": "generator-settings",
@@ -165,7 +165,7 @@
     "label": "生成結構",
     "type": "boolean",
     "default": "true",
-    "description": "定義是否能生成結構（例如村莊）。\nfalse - 新生成的區塊中將不包含結構。\ntrue - 新生成的區塊中將包含結構。\n註：由於地牢和沙漠水井在技術上屬於地物，因而即使此項設為false，其仍然會生成。"
+    "description": "定義是否能生成結構（例如村莊）。\nfalse：新生成的區塊中將不包含結構。\ntrue：新生成的區塊中將包含結構。\n註：由於地牢和沙漠水井在技術上屬於地物，因而即使此項設為false，其仍然會生成。"
   },
   {
     "key": "max-world-size",
@@ -186,21 +186,21 @@
     "label": "生成怪物",
     "type": "boolean",
     "default": "true",
-    "description": "決定攻擊型生物（怪物）是否可以生成。\ntrue - 啟用。怪物會生成於夜晚和黑暗處。\nfalse - 停用。不會有任何怪物。\n如果difficulty=0（即難易度設定為和平）的話，該屬性值不會有任何影響。\n提示：如果你有嚴重的卡頓，可以設為false。"
+    "description": "決定攻擊型生物（怪物）是否可以生成。\ntrue：啟用。怪物會生成於夜晚和黑暗處。\nfalse：停用。不會有任何怪物。\n如果difficulty=0（即難易度設定為和平）的話，該屬性值不會有任何影響。\n提示：如果你有嚴重的卡頓，可以設為false。"
   },
   {
     "key": "spawn-animals",
     "label": "生成動物",
     "type": "boolean",
     "default": "true",
-    "description": "決定動物是否可以生成。\ntrue - 動物可以正常生成。\nfalse - 動物生成後會立即消失。\n提示：如果你有嚴重的卡頓，可以設為false。"
+    "description": "決定動物是否可以生成。\ntrue：動物可以正常生成。\nfalse：動物生成後會立即消失。\n提示：如果你有嚴重的卡頓，可以設為false。"
   },
   {
     "key": "spawn-npcs",
     "label": "生成村民",
     "type": "boolean",
     "default": "true",
-    "description": "決定是否生成村民。\ntrue - 啟用。生成村民。\nfalse - 停用。不生成村民。"
+    "description": "決定是否生成村民。\ntrue：啟用。生成村民。\nfalse：停用。不生成村民。"
   },
   {
     "key": "view-distance",
@@ -228,21 +228,21 @@
     "label": "啟用白名單",
     "type": "boolean",
     "default": "false",
-    "description": "啟用伺服器的白名單。\n當啟用時，只有白名單上的使用者才能連接伺服器。白名單主要用於私人伺服器，例如提供給相識的朋友、透過應用流程謹慎選擇的陌生人等。\nfalse - 不使用白名單。\ntrue - 從whitelist.json檔案載入白名單。\n注: OP會自動被視為在白名單上，所以無需再將OP加入白名單。"
+    "description": "啟用伺服器的白名單。\n當啟用時，只有白名單上的使用者才能連接伺服器。白名單主要用於私人伺服器，例如提供給相識的朋友、透過應用流程謹慎選擇的陌生人等。\nfalse：不使用白名單。\ntrue：從whitelist.json檔案載入白名單。\n注: OP會自動被視為在白名單上，所以無需再將OP加入白名單。"
   },
   {
     "key": "enforce-whitelist",
     "label": "強制白名單",
     "type": "boolean",
     "default": "false",
-    "description": "在伺服器上強制執行白名單。\n當啟用後，不在白名單（前提是啟用）中的使用者將在伺服器重新載入白名單檔案後從伺服器踢出。\ntrue - 不在白名單上的使用者會被踢出。\nfalse - 不在白名單上的線上使用者不會被踢出。"
+    "description": "在伺服器上強制執行白名單。\n當啟用後，不在白名單（前提是啟用）中的使用者將在伺服器重新載入白名單檔案後從伺服器踢出。\ntrue：不在白名單上的使用者會被踢出。\nfalse：不在白名單上的線上使用者不會被踢出。"
   },
   {
     "key": "enable-query",
     "label": "啟用 Query",
     "type": "boolean",
     "default": "true",
-    "description": "允許使用GameSpy4協議的伺服器監聽器。用於取得伺服器資訊。",
+    "description": "允許使用GameSpy4協議的伺服器監聽器。用於取得伺服器資訊。\n\n註：此設定由OxOcraft-Manager用於偵測伺服器狀態，不能關閉，若修改會造成OxOcraft-Manager異常。",
     "locked": true,
     "lockedReason": "此設定由 OxOcraft-Manager 用於偵測伺服器狀態，不能關閉。"
   },
@@ -251,7 +251,7 @@
     "label": "Query 連線埠",
     "type": "number",
     "default": "25565",
-    "description": "設定監聽伺服器的埠號（參見 enable-query）。",
+    "description": "設定監聽伺服器的埠號（參見 enable-query）。\n\n註：此設定由OxOcraft-Manager用於偵測伺服器狀態，不能修改，若修改會造成OxOcraft-Manager異常。",
     "dependsOn": {
       "key": "enable-query",
       "value": "true"
@@ -265,7 +265,7 @@
     "label": "啟用 RCON",
     "type": "boolean",
     "default": "true",
-    "description": "是否允許遠程訪問伺服器控制台。\n由於RCON協議傳輸資料時沒有加密，所以不建議把RCON暴露在網際網路上。RCON用戶端和伺服器端交換的所有資料（包括RCON密碼）都會洩露給正在監聽此連接的人。\n但是OxOcraft-Manager需要使用所以會開啟方便UI對伺服器進行操作,若關閉大部分功能都將受影響。",
+    "description": "是否允許遠程訪問伺服器控制台。\n由於RCON協議傳輸資料時沒有加密，所以不建議把RCON暴露在網際網路上。RCON用戶端和伺服器端交換的所有資料(包括RCON密碼)都會洩露給正在監聽此連接的人。\n但是OxOcraft-Manager需要使用所以會開啟方便UI對伺服器進行操作,若關閉大部分功能都將受影響。",
     "locked": true,
     "lockedReason": "此設定由 OxOcraft-Manager 用於偵測伺服器狀態，不能關閉。"
   },
@@ -314,7 +314,7 @@
     "label": "OP 權限等級",
     "type": "number",
     "default": "4",
-    "description": "設定使用/op指令時OP的權限等級。所有存檔會從之前的存檔繼承能力和指令。\n1 - OP可以繞過重生點保護。\n2 - OP可以使用所有單人遊戲作弊指令（除了/publish，因為不能在伺服器上使用；/debug也是）並使用指令方塊。指令方塊和領域服服主/管理員有此等級權限。\n3 - OP可以使用大多數多人遊戲中獨有的指令，包括 /debug，以及管理玩家的指令（/ban，/op等等）。\n4 - OP可以使用所有指令，包括 /stop, /save-all, /save-on 和 /save-off。"
+    "description": "設定使用/op指令時OP的權限等級。所有存檔會從之前的存檔繼承能力和指令。\n1.OP可以繞過重生點保護。\n2.OP可以使用所有單人遊戲作弊指令（除了/publish，因為不能在伺服器上使用；/debug也是）並使用指令方塊。指令方塊和領域服服主/管理員有此等級權限。\n3.OP可以使用大多數多人遊戲中獨有的指令，包括 /debug，以及管理玩家的指令（/ban，/op等等）。\n4.OP可以使用所有指令，包括 /stop, /save-all, /save-on 和 /save-off。"
   },
   {
     "key": "function-permission-level",
@@ -349,14 +349,14 @@
     "label": "防止代理連線",
     "type": "boolean",
     "default": "false",
-    "description": "如果伺服器發送的ISP/AS和Mojang的驗證伺服器的不一樣，玩家將會被踢出。\ntrue - 啟用。伺服器將會禁止玩家使用虛擬專用網路或代理。\nfalse - 停用。伺服器將不會禁止玩家使用虛擬專用網路或代理。"
+    "description": "如果伺服器發送的ISP/AS和Mojang的驗證伺服器的不一樣，玩家將會被踢出。\ntrue：啟用。伺服器將會禁止玩家使用虛擬專用網路或代理。\nfalse：停用。伺服器將不會禁止玩家使用虛擬專用網路或代理。"
   },
   {
     "key": "enforce-secure-profile",
     "label": "強制安全玩家檔案",
     "type": "boolean",
     "default": "true",
-    "description": "要求玩家必須具有Mojang簽名的公鑰才能進入伺服器。\ntrue - 不具有Mojang簽名的公鑰的玩家不能進入伺服器。\nfalse - 不具有Mojang簽名的公鑰的玩家也可進入伺服器。"
+    "description": "要求玩家必須具有Mojang簽名的公鑰才能進入伺服器。\ntrue：不具有Mojang簽名的公鑰的玩家不能進入伺服器。\nfalse：不具有Mojang簽名的公鑰的玩家也可進入伺服器。"
   },
   {
     "key": "sync-chunk-writes",
@@ -370,7 +370,7 @@
     "label": "使用原生網路傳輸",
     "type": "boolean",
     "default": "true",
-    "description": "是否使用針對Linux平台的資料包收發最佳化。此選項僅會在Linux平台上生成。\ntrue - 啟用。啟用Linux資料包收發最佳化。\nfalse - 停用。停用Linux資料包收發最佳化。"
+    "description": "是否使用針對Linux平台的資料包收發最佳化。此選項僅會在Linux平台上生成。\ntrue：啟用。啟用Linux資料包收發最佳化。\nfalse：停用。停用Linux資料包收發最佳化。"
   },
   {
     "key": "enable-jmx-monitoring",
@@ -384,7 +384,7 @@
     "label": "記錄玩家 IP",
     "type": "boolean",
     "default": "true",
-    "description": "是否在有新玩家加入遊戲時，在伺服器日誌中記錄其IP位址。\ntrue - 在日誌中記錄新加入玩家的IP位址。\nfalse - 在日誌中隱藏新加入玩家的IP位址。"
+    "description": "是否在有新玩家加入遊戲時，在伺服器日誌中記錄其IP位址。\ntrue：在日誌中記錄新加入玩家的IP位址。\nfalse：在日誌中隱藏新加入玩家的IP位址。"
   },
   {
     "key": "max-tick-time",
@@ -426,7 +426,7 @@
     "label": "強制使用資源包",
     "type": "boolean",
     "default": "false",
-    "description": "當此選項啟用（設為true）時，玩家會被提示作出選擇（是否啟用伺服器資源包）。如果玩家拒絕則會被伺服器斷開連接。\n但是，若玩家使用Linux系統加入伺服器，遊戲目錄內的server-resource-packs沒有寫權限，則會提示「無法應用伺服器資源包」「所有依賴自訂資源包的功能都有可能不按預期工作」，並提示玩家「繼續」或「斷開連接」。若玩家選擇「繼續」，則仍可在此伺服器中遊戲。"
+    "description": "當此選項啟用(設為true)時，玩家會被提示作出選擇(是否啟用伺服器資源包)。如果玩家拒絕則會被伺服器斷開連接。\n但是，若玩家使用Linux系統加入伺服器，遊戲目錄內的server-resource-packs沒有寫權限，則會提示「無法應用伺服器資源包」「所有依賴自訂資源包的功能都有可能不按預期工作」，並提示玩家「繼續」或「斷開連接」。若玩家選擇「繼續」，則仍可在此伺服器中遊戲。"
   },
   {
     "key": "initial-enabled-packs",

@@ -20,6 +20,11 @@ import {
     saveAndRestartServer
 } from "./server_control.js";
 
+import {
+    showConfirm,
+    showInfo
+} from "./system_dialog.js";
+
 export function initServerSettings() {
     setupServerSettingsModal();
     setupServerSettingSearch();
@@ -44,7 +49,11 @@ function setupServerSettingHelp() {
         const field = serverSettingFields.find(item => item.key === key);
         if (!field) return;
 
-        alert(`${field.label} (${field.key})\n\n${field.description || "目前沒有說明。"}`);
+        showInfo({
+            title: `${field.label}\n(${field.key})`,
+            message: `${field.description || "目前沒有說明。"}`
+        });
+
     });
 }
 
@@ -103,7 +112,11 @@ function setupServerSettingsModal() {
             if (!file) return;
 
             if (!["image/png", "image/jpeg"].includes(file.type)) {
-                alert("目前只支援 PNG / JPG 圖片。");
+                showInfo({
+                    title: "圖片格式錯誤",
+                    message: "目前只支援 PNG / JPG 圖片。"
+                });
+
                 iconInput.value = "";
                 return;
             }
@@ -137,14 +150,17 @@ function setupServerSettingsModal() {
 }
 
 
-function resetServerSettingsToDefault() {
+async function resetServerSettingsToDefault() {
 
-    const confirmed = confirm(`
-是否將所有設定恢復為 Minecraft 原版預設值？
+    const confirmed = await showConfirm({
+        title: "恢復預設值",
+        message:
+    `是否將所有設定恢復為 Minecraft 原版預設值？
 
-此操作不會立即套用，
-需再次按下「確定套用」或「套用後並重啟」。
-`);
+請注意：若伺服器在線時恢復成預設值，不代表馬上就套用，仍須重啟才會生效！。`,
+        confirmText: "恢復預設",
+        cancelText: "取消"
+    });
 
     if (!confirmed) return;
 
@@ -449,11 +465,12 @@ function renderServerSettings() {
 
                 regenBtn.addEventListener("click", async () => {
 
-                    const confirmed = confirm(`
-                是否重新生成 RCON 密碼？
-
-                重新啟動伺服器後才會生效。
-                `);
+                    const confirmed = await showConfirm({
+                        title: "重新生成 RCON 密碼",
+                        message: "請問是否要重新生成RCON的密碼?",
+                        confirmText: "確定",
+                        cancelText: "取消"
+                    });
 
                     if (!confirmed) return;
 
@@ -471,7 +488,10 @@ function renderServerSettings() {
                         const data = await response.json();
 
                         if (!data.success) {
-                            alert("重新生成失敗：" + (data.message || "未知錯誤"));
+                            showInfo({
+                                title: "重新生成失敗",
+                                message: data.message || "未知錯誤"
+                            });
                             return;
                         }
 
@@ -486,7 +506,10 @@ function renderServerSettings() {
                     } catch (error) {
 
                         console.error(error);
-                        alert("重新生成失敗");
+                        showInfo({
+                            title: "重新生成失敗",
+                            message: "請查看 console。"
+                        });
 
                     } finally {
 
@@ -603,7 +626,10 @@ export async function saveServerSettings(showAlert = true) {
         const data = await response.json();
 
         if (!data.success) {
-            alert("儲存失敗：" + (data.message || "未知錯誤"));
+            showInfo({
+                title: "儲存失敗",
+                message: data.message || "未知錯誤"
+            });
             return false;
         }
 
@@ -620,7 +646,10 @@ export async function saveServerSettings(showAlert = true) {
         const runtimeData = await runtimeResponse.json();
 
         if (!runtimeData.success) {
-            alert("記憶體設定儲存失敗：" + (runtimeData.message || "未知錯誤"));
+            showInfo({
+                title: "記憶體設定儲存失敗",
+                message: runtimeData.message || "未知錯誤"
+            });
             return false;
         }
 
@@ -636,7 +665,10 @@ export async function saveServerSettings(showAlert = true) {
             const iconData = await iconResponse.json();
 
             if (!iconData.success) {
-                alert("伺服器圖示儲存失敗：" + (iconData.message || "未知錯誤"));
+                showInfo({
+                    title: "伺服器圖示儲存失敗",
+                    message: iconData.message || "未知錯誤"
+                });
                 return false;
             }
 
@@ -657,17 +689,17 @@ export async function saveServerSettings(showAlert = true) {
 
         if (showAlert) {
             if (serverSettingsServerState === "ready") {
-                alert(`
-                此次變更已保留。
-
-                若設定值不符合格式，
-                伺服器重啟後將自動修正或恢復預設值。`);
+                await showInfo({
+                    title: "設定已保留",
+                    message:
+                `請注意：若設定值不符合格式，伺服器重啟後將自動修正或恢復預設值。`
+                });
             } else {
-                alert(`
-                參數已修改。
-
-                若設定值不符合格式，
-                伺服器啟動時將自動修正或恢復預設值。`);
+                await showInfo({
+                    title: "參數已修改",
+                    message:
+                `請注意：若設定值不符合格式，伺服器重啟後將自動修正或恢復預設值。`
+                });
             }
         }
 
@@ -681,7 +713,10 @@ export async function saveServerSettings(showAlert = true) {
 
     } catch (error) {
         console.error("儲存 server.properties 失敗:", error);
-        alert("儲存失敗，請查看 console。");
+        showInfo({
+            title: "儲存失敗",
+            message: "請查看 console。"
+        });
         return false;
 
     } finally {

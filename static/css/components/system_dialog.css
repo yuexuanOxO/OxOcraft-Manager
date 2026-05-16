@@ -1,0 +1,86 @@
+.system-dialog{
+    position: fixed;
+    inset: 0;
+
+    background: rgba(0,0,0,.6);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 99999;
+}
+
+.system-dialog.hidden{
+    display: none;
+}
+
+.system-dialog-panel{
+    width: 420px;
+    max-width: calc(100vw - 40px);
+
+    background: #101010;
+
+    border: 3px solid #4a4a4a;
+
+    padding: 22px;
+
+    box-shadow: 0 0 0 2px #1d1d1d;
+
+    color: white;
+
+    position: relative;
+    z-index: 1;
+}
+
+.system-dialog-title{
+    font-size: 30px;
+    margin-bottom: 18px;
+
+    text-align: center;
+    white-space: pre-wrap;
+}
+
+.system-dialog-message{
+    font-size: 18px;
+    line-height: 1.7;
+
+    white-space: pre-wrap;
+
+    color: #d0d0d0;
+
+    margin-bottom: 28px;
+}
+
+.system-dialog-actions{
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+}
+
+.system-dialog-btn{
+    min-width: 120px;
+    height: 48px;
+
+    border: 2px solid #5c5c5c;
+
+    background: #2b2b2b;
+
+    color: white;
+
+    font-size: 20px;
+
+    cursor: pointer;
+}
+
+.system-dialog-btn:hover{
+    border-color: white;
+}
+
+.system-dialog-btn.confirm{
+    background: #3b3b3b;
+}
+
+.system-dialog-btn.cancel{
+    background: #252525;
+}

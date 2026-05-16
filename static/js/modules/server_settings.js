@@ -49,6 +49,10 @@ function setupServerSettingsModal() {
     const resetBtn = document.getElementById("serverSettingsResetBtn");
     const previewIcon = document.getElementById("serverPreviewIcon");
     const iconInput = document.getElementById("serverIconInput");
+
+    if (resetBtn) {
+        resetBtn.innerHTML = `<img src="/static/icons/server_settings/refresh_16.png" alt="reset"> `;
+    }
     
 
     if (!modal || !openBtn) return;
@@ -420,8 +424,14 @@ function renderServerSettings() {
                 const toggleBtn = document.createElement("button");
                 toggleBtn.type = "button";
                 toggleBtn.className = "setting-password-toggle";
-                toggleBtn.textContent = "👁";
+                toggleBtn.innerHTML = `<img src="/static/icons/server_settings/eye_16.png" alt="toggle-password">`;
                 toggleBtn.title = "顯示/隱藏密碼";
+
+                const regenBtn = document.createElement("button");
+                regenBtn.type = "button";
+                regenBtn.className = "setting-password-regenerate";
+                regenBtn.innerHTML = `<img src="/static/icons/server_settings/refresh_16.png" alt="refresh">`;
+                regenBtn.title = "重新生成 RCON 密碼";
 
                 toggleBtn.addEventListener("click", () => {
                     const isHidden = input.type === "password";
@@ -429,8 +439,56 @@ function renderServerSettings() {
                     toggleBtn.classList.toggle("showing", isHidden);
                 });
 
+                regenBtn.addEventListener("click", async () => {
+
+                    const confirmed = confirm(`
+                是否重新生成 RCON 密碼？
+
+                重新啟動伺服器後才會生效。
+                `);
+
+                    if (!confirmed) return;
+
+                    try {
+
+                        regenBtn.disabled = true;
+
+                        const response = await fetch(
+                            "/api/server/regenerate-rcon-password",
+                            {
+                                method: "POST"
+                            }
+                        );
+
+                        const data = await response.json();
+
+                        if (!data.success) {
+                            alert("重新生成失敗：" + (data.message || "未知錯誤"));
+                            return;
+                        }
+
+                        input.value = data.password;
+
+                        serverSettingsState[field.key] = data.password;
+
+                        input.classList.add("dirty");
+
+                        updateServerSettingsStatusCard();
+
+                    } catch (error) {
+
+                        console.error(error);
+                        alert("重新生成失敗");
+
+                    } finally {
+
+                        regenBtn.disabled = false;
+                    }
+                });
+
                 passwordWrap.appendChild(input);
                 passwordWrap.appendChild(toggleBtn);
+                passwordWrap.appendChild(regenBtn);
                 valueWrap.appendChild(passwordWrap);
             } else {
                 valueWrap.appendChild(input);

@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-05-17T17:55:47",
-    "properties_modified_comment": "Sun May 17 17:49:06 CST 2026",
+    "captured_at": "2026-05-17T18:27:45",
+    "properties_modified_comment": "Sun May 17 18:27:24 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -28,7 +28,7 @@
         "initial-disabled-packs": "",
         "broadcast-rcon-to-ops": "true",
         "view-distance": "10",
-        "server-ip": "192.168.0.98",
+        "server-ip": "",
         "resource-pack-prompt": "",
         "allow-nether": "true",
         "server-port": "25565",
@@ -66,7 +66,7 @@
         "management-server-enabled": "false",
         "management-server-host": "localhost",
         "management-server-port": "0",
-        "management-server-secret": "NUhX52iYesPlo07h8eroIUWxWuRgusyBN1fuAZSP",
+        "management-server-secret": "75hczkr67fxaKX4eKDd1i3YfKHIX1qMifn4p9HXg",
         "management-server-tls-enabled": "true",
         "management-server-tls-keystore": "",
         "management-server-tls-keystore-password": "",

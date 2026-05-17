@@ -61,6 +61,14 @@ async function toggleServer() {
             url = "/api/server/stop";
             targetOnline = false;
             actionText = "關閉中...";
+
+            window.dispatchEvent(new CustomEvent("server-status-changed", {
+                detail: {
+                    state: "stopping",
+                    online: true,
+                }
+            }));
+
         } else {
             const setupStatus = await getServerSetupStatus();
             setupStage = setupStatus.stage;

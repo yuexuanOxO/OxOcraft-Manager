@@ -159,7 +159,6 @@
 
 .settings-side-preview-area{
     margin-left: 22px;
-    margin-top: -220px;
 
     display: flex;
     flex-direction: column;
@@ -616,4 +615,13 @@
     image-rendering: crisp-edges;
 
     pointer-events: none;
+}
+
+.settings-layout{
+    display: flex;
+    align-items: flex-start;
+
+    transform: translateX(270px);
+
+    gap: 0;
 }

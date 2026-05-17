@@ -12,8 +12,18 @@ export let latestServerStatusData = null;
 
 export function initServerStatus() {
     warmStatusLightCache();
+
     fallbackPollingTimer = setInterval(updateStatus, 10000);
+
     updateStatus();
+
+    window.addEventListener("server-status-changed", (event) => {
+        const data = event.detail;
+
+        if (!data) return;
+
+        applyTemporaryServerState(data);
+    });
 }
 
 
@@ -275,6 +285,30 @@ export function applyServerStatusPayload(payload) {
         detail: data
     }));
 }
+
+
+function applyTemporaryServerState(data) {
+    const statusLight = document.getElementById("statusLight");
+    const statusText = document.getElementById("statusText");
+    const powerBtn = document.getElementById("powerBtn");
+
+    if (!statusLight || !statusText) return;
+
+    if (data.state === "stopping") {
+
+        statusLight.classList.remove("online", "offline");
+
+        setStatusLightImage(statusLight, "busy");
+
+        statusText.textContent = "關閉中...";
+
+        if (powerBtn) {
+            powerBtn.disabled = true;
+            powerBtn.classList.add("loading");
+        }
+    }
+}
+
 
 const statusLightCache = {};
 

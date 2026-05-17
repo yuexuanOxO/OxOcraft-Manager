@@ -1,114 +1,115 @@
 <div id="serverSettingsModal" class="settings-modal hidden">
-    <div class="settings-panel">
+    <div class="settings-layout">
+        <div class="settings-panel">
+            <div class="settings-header">
+                <div class="settings-title">伺服器設定</div>
 
-        <div class="settings-header">
-            <div class="settings-title">伺服器設定</div>
+                
+                <div class="settings-header-tools">
+                    <input id="serverSettingSearch" autocomplete="off" type="text" placeholder="搜尋參數...">
+                    <button id="serverSettingSearchBtn" type="button">
+                        <img src="/static/icons/server_settings/spyglass.png" alt="搜尋">
+                    </button>
+                </div>
+            </div>
 
-            
-            <div class="settings-header-tools">
-                <input id="serverSettingSearch" autocomplete="off" type="text" placeholder="搜尋參數...">
-                <button id="serverSettingSearchBtn" type="button">
-                    <img src="/static/icons/server_settings/spyglass.png" alt="搜尋">
+            <div id="serverSettingsBody" class="settings-body">
+                <div class="settings-placeholder">讀取中...</div>
+            </div>
+
+            <div class="settings-footer">
+                <button id="serverSettingsApplyBtn" type="button">
+                    確定套用
+                </button>
+
+                <button id="serverSettingsRestartBtn" type="button" class="hidden">
+                    套用後並重啟
+                </button>
+
+                <button id="serverSettingsResetBtn" type="button" title="恢復 Minecraft 原版預設值">
+                    ⟳
                 </button>
             </div>
+
         </div>
 
-        <div id="serverSettingsBody" class="settings-body">
-            <div class="settings-placeholder">讀取中...</div>
-        </div>
+        <div class="settings-side-preview-area">
 
-        <div class="settings-footer">
-            <button id="serverSettingsApplyBtn" type="button">
-                確定套用
-            </button>
+            <div id="serverPreviewCard" class="server-preview-card">
 
-            <button id="serverSettingsRestartBtn" type="button" class="hidden">
-                套用後並重啟
-            </button>
+                <div class="server-preview-icon-wrapper">
+                    <img
+                        id="serverPreviewIcon"
+                        class="server-preview-icon"
+                        src="/api/server/icon-preview"
+                        alt="server icon"
+                    >
 
-            <button id="serverSettingsResetBtn" type="button" title="恢復 Minecraft 原版預設值">
-                ⟳
-            </button>
-        </div>
+                    <div class="server-preview-icon-tooltip">
+                        點擊更換伺服器圖示,<br>
+                        支援PNG/JPG格式的圖片。<br>
+                        自動轉換畫質為符合icon限制,<br>
+                        (但仍建議使用64X64的效果最好)。
+                    </div>
 
-    </div>
+                </div>
+                
 
-    <div class="settings-side-preview-area">
-
-        <div id="serverPreviewCard" class="server-preview-card">
-
-            <div class="server-preview-icon-wrapper">
-                <img
-                    id="serverPreviewIcon"
-                    class="server-preview-icon"
-                    src="/api/server/icon-preview"
-                    alt="server icon"
+                <input
+                    id="serverIconInput"
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    class="hidden"
                 >
 
-                <div class="server-preview-icon-tooltip">
-                    點擊更換伺服器圖示,<br>
-                    支援PNG/JPG格式的圖片。<br>
-                    自動轉換畫質為符合icon限制,<br>
-                    (但仍建議使用64X64的效果最好)。
-                </div>
+                <div class="server-preview-main">
 
-            </div>
-            
+                    <div class="server-preview-top-row">
 
-            <input
-                id="serverIconInput"
-                type="file"
-                accept="image/png,image/jpeg"
-                class="hidden"
-            >
+                        <div id="serverPreviewName" class="server-preview-name">Minecraft 伺服器</div>
+                        <div id="serverPreviewPlayers" class="server-preview-players">0/20</div>
 
-            <div class="server-preview-main">
+                    </div>
 
-                <div class="server-preview-top-row">
-
-                    <div id="serverPreviewName" class="server-preview-name">Minecraft 伺服器</div>
-                    <div id="serverPreviewPlayers" class="server-preview-players">0/20</div>
+                    <div id="serverPreviewMotd" class="server-preview-motd">A Minecraft Server</div>
 
                 </div>
 
-                <div id="serverPreviewMotd" class="server-preview-motd">A Minecraft Server</div>
+                <img
+                    id="serverPreviewSignal"
+                    class="server-preview-signal"
+                    src="/static/icons/server_settings/status_online_signal.png"
+                    alt="signal"
+                >
 
             </div>
 
-            <img
-                id="serverPreviewSignal"
-                class="server-preview-signal"
-                src="/static/icons/server_settings/status_online_signal.png"
-                alt="signal"
-            >
+            <div id="serverSettingsStatusCard" class="settings-status-card">
+                <div class="settings-status-section">
+                    <div id="settingsStatusServerState" class="settings-status-main">⚫ 伺服器狀態未知</div>
+                    <div id="settingsStatusSummary" class="settings-status-summary">所有設定已生效</div>
 
-        </div>
+                </div>
 
-        <div id="serverSettingsStatusCard" class="settings-status-card">
-            <div class="settings-status-section">
-                <div id="settingsStatusServerState" class="settings-status-main">⚫ 伺服器狀態未知</div>
-                <div id="settingsStatusSummary" class="settings-status-summary">所有設定已生效</div>
+                <div class="settings-status-section dirty-box">
+                    <div class="settings-status-section-title">未生效設定：</div>
+                    <div id="settingsDirtyList" class="settings-dirty-list">無</div>
 
-            </div>
+                </div>
 
-            <div class="settings-status-section dirty-box">
-                <div class="settings-status-section-title">未生效設定：</div>
-                <div id="settingsDirtyList" class="settings-dirty-list">無</div>
+                <div class="settings-status-section settings-status-meta">
+                    <div id="settingsStatusModifiedTime">
+                        最近修改：未知
+                    </div>
 
-            </div>
-
-            <div class="settings-status-section settings-status-meta">
-                <div id="settingsStatusModifiedTime">
-                    最近修改：未知
                 </div>
 
             </div>
+
 
         </div>
 
 
     </div>
-
-    
 
 </div>

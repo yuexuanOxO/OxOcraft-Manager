@@ -998,22 +998,34 @@ function createBackupRecordItem(record) {
                 <div class="backup-record-title">
                     ${statusText}｜${providerIconHtml} ${providerText}｜${record.map_name || "未知世界"}
                 </div>
+
                 <div class="backup-record-time">
                     ${record.created_at || ""}
                 </div>
             </div>
+
             <div class="backup-record-message">
                 ${record.message || ""}
             </div>
+
             <div class="backup-record-meta">
                 帳號：${record.cloud_account || "未知"}
             </div>
-            <div class="backup-record-meta">
-                檔案：${fileName}
-            </div>
-            <div class="backup-record-meta">
-                大小：${sizeText}
-            </div>
+
+            ${
+                record.status !== "deleted"
+                    ? `
+                        <div class="backup-record-meta">
+                            檔案：${fileName}
+                        </div>
+
+                        <div class="backup-record-meta">
+                            大小：${sizeText}
+                        </div>
+                    `
+                    : ""
+            }
+
             <div class="backup-record-path">
                 連結：${linkHtml}
             </div>
@@ -1027,19 +1039,30 @@ function createBackupRecordItem(record) {
             <div class="backup-record-title">
                 ${statusText}｜${providerIconHtml} 本機｜${record.map_name || "未知世界"}
             </div>
+
             <div class="backup-record-time">
                 ${record.created_at || ""}
             </div>
         </div>
+
         <div class="backup-record-message">
             ${record.message || ""}
         </div>
+
         <div class="backup-record-path">
             ${record.backup_path || ""}
         </div>
-        <div class="backup-record-meta">
-            檔案數：${record.total_files || 0}　大小：${sizeText}
-        </div>
+
+        ${
+            record.status !== "deleted"
+                ? `
+                    <div class="backup-record-meta">
+                        檔案數：${record.total_files || 0}
+                        　大小：${sizeText}
+                    </div>
+                `
+                : ""
+        }
     `;
 
     return item;

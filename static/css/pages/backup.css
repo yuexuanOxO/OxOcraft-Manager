@@ -191,7 +191,7 @@
 }
 
 .backup-record-item{
-    border: 2px solid #444;
+    border: 2px solid #d6a23a;
     background: #111;
     padding: 10px 12px;
     color: #ddd;
@@ -206,7 +206,7 @@
 }
 
 .backup-record-item.canceled{
-    border-color: #d6a23a;
+    border-color: #444;
 }
 
 .backup-record-main{

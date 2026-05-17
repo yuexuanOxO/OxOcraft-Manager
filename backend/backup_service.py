@@ -469,11 +469,27 @@ def cleanup_old_local_backups(
             zip_path.unlink()
             print(f"[Backup] 已刪除舊本機備份：{zip_path}")
 
+            message = f"本機備份保留數量上限為({keep_count})份，已刪除舊備份：{zip_path.name}"
+
             create_notification(
                 type="warning",
                 title="已刪除舊本機備份",
-                message=f"本機備份保留數量上限為 {keep_count}，已刪除：{zip_path.name}",
+                message=message,
                 source="backup",
             )
+
+            record = insert_backup_record(
+                status="deleted",
+                map_name=map_name,
+                source_path=str(zip_path),
+                backup_path=str(zip_path),
+                total_files=0,
+                total_bytes=0,
+                message=message,
+                backup_type="local",
+            )
+
+            publish_event("backup_record_added", record)
+
         except OSError as error:
             print(f"[Backup] 無法刪除舊本機備份 {zip_path}：{error}")

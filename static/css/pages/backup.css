@@ -209,6 +209,10 @@
     border-color: #444;
 }
 
+.backup-record-item.deleted{
+    border-color: #444;
+}
+
 .backup-record-main{
     display: flex;
     justify-content: space-between;

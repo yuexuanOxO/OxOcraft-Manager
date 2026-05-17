@@ -1051,6 +1051,7 @@ function getBackupStatusLabel(status) {
     if (status === "failed") return "失敗";
     if (status === "canceled") return "已取消";
     if (status === "running") return "備份中";
+    if (status === "deleted") return "已清除";
     return "未知";
 }
 

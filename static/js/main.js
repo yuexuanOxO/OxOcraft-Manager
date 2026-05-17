@@ -11,6 +11,7 @@ import {initAutoBackup} from "./modules/auto_backup.js";
 import {initServerControl} from "./modules/server_control.js";
 import {initServerEvents} from "./modules/server_events.js";
 import { initSystemDialog } from "./modules/system_dialog.js";
+import { initNotificationUI } from "./modules/notification.js";
 
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -28,5 +29,6 @@ document.addEventListener("DOMContentLoaded", () => {
     initCommandConsole();
     initPlayerActions();
     initSystemDialog();
+    initNotificationUI();
     
 });

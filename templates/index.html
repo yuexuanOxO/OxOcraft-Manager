@@ -77,6 +77,28 @@
         </div>
 
 
+        <div id="notificationBell" class="notification-bell" title="通知">
+            <img
+                src="{{ url_for('static', filename='icons/notification/notify.png') }}"
+                class="notification-bell-icon"
+                alt="通知"
+            >
+
+        </div>
+
+        <div id="notificationPanel" class="notification-panel hidden">
+            <div class="notification-panel-header">
+                <div class="notification-panel-title">通知紀錄</div>
+            </div>
+
+            <div id="notificationList" class="notification-list"></div>
+
+            <button id="loadMoreNotificationsBtn" class="notification-load-more-btn" type="button">
+                顯示更早之前的通知
+            </button>
+        </div>
+
+
         <div id="backgroundTaskBar" class="background-task-bar">
             <button id="backupTaskBtn" class="background-task-btn hidden" type="button">
                 <img src="{{ url_for('static', filename='icons/backup/save_16b.png') }}" class="task-icon">

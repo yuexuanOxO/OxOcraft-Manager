@@ -9,9 +9,10 @@ import zipfile
 from collections import deque
 from uuid import uuid4
 from backend.paths import MC_ROOT
-from backend.server_monitor import publish_event, get_cached_server_status
+from backend.server_monitor import publish_event
 from backend.server_runtime import get_current_world_path, get_current_level_name
 from backend.db import insert_backup_record, update_backup_record_status
+from backend.notification_service import create_notification
 
 _backup_thread = None
 _cancel_requested = False
@@ -467,5 +468,12 @@ def cleanup_old_local_backups(
         try:
             zip_path.unlink()
             print(f"[Backup] 已刪除舊本機備份：{zip_path}")
+
+            create_notification(
+                type="warning",
+                title="已刪除舊本機備份",
+                message=f"本機備份保留數量上限為 {keep_count}，已刪除：{zip_path.name}",
+                source="backup",
+            )
         except OSError as error:
             print(f"[Backup] 無法刪除舊本機備份 {zip_path}：{error}")

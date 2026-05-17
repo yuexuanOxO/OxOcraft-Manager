@@ -21,6 +21,7 @@ from backend.server_monitor import start_server_monitor
 from backend.routes.backup_routes import backup_bp
 from backend.routes.cloud_routes import cloud_bp
 from backend.auto_backup_service import start_auto_backup_scheduler
+from backend.routes.notification_routes import notification_bp
 
 
 
@@ -37,6 +38,7 @@ app.register_blueprint(settings_bp)
 app.register_blueprint(eula_bp)
 app.register_blueprint(backup_bp)
 app.register_blueprint(cloud_bp)
+app.register_blueprint(notification_bp)
 
 
 def open_browser():

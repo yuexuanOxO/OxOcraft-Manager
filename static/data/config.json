@@ -3,5 +3,6 @@
     "rcon_port": 25575,
     "rcon_password": "EHo1iS5PPPUNJZ01sHUHLpOvStTIme96",
     "java_xms": "2G",
-    "java_xmx": "4G"
+    "java_xmx": "4G",
+    "manual_backup_root": "D:\\Minecraft\\server\\world_backup"
 }

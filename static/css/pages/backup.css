@@ -753,7 +753,7 @@
     width: 58px;
     height: 58px;
     background: #1b1b1b;
-    border: 3px solid #666;
+    border: none;
     cursor: pointer;
     padding: 0;
 }
@@ -766,28 +766,31 @@
     image-rendering: crisp-edges;
 }
 
-.task-progress-ring{
+.task-progress-ring {
     position: absolute;
-    inset: 5px;
-    width: 42px;
-    height: 42px;
-    transform: rotate(-90deg);
+    inset: 0;
+    width: 58px;
+    height: 58px;
+    overflow: visible;
     pointer-events: none;
 }
 
-.ring-bg{
+.ring-bg,
+.ring-progress {
     fill: none;
-    stroke: #333;
-    stroke-width: 4;
+    stroke-width: 3;
+    shape-rendering: crispEdges;
 }
 
-.ring-progress{
-    fill: none;
-    stroke: #65ff65;
-    stroke-width: 4;
-    stroke-linecap: round;
-    stroke-dasharray: 106.8;
-    stroke-dashoffset: 106.8;
+.ring-bg {
+    stroke: #666;
+}
+
+.ring-progress {
+    stroke: #4caf50;
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    transition: stroke-dashoffset 0.2s linear;
 }
 
 

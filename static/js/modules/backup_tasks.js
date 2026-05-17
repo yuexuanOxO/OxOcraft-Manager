@@ -118,13 +118,14 @@ function updateLocalTaskButton(percent, ended) {
 
     btn.classList.remove("hidden");
 
-    const circumference = 106.8;
+    const frameLength = 100;
     ring.style.strokeDashoffset =
-        circumference - (circumference * percent / 100);
+        frameLength - (frameLength * percent / 100);
 
     if (ended) {
         setTimeout(() => {
             btn.classList.add("hidden");
+            ring.style.strokeDashoffset = frameLength;
         }, 3000);
     }
 }
@@ -137,14 +138,14 @@ function updateCloudTaskButton(percent, ended) {
 
     btn.classList.remove("hidden");
 
-    const circumference = 106.8;
+   const frameLength = 100;
     ring.style.strokeDashoffset =
-        circumference - (circumference * percent / 100);
+        frameLength - (frameLength * percent / 100);
 
     if (ended) {
         setTimeout(() => {
             btn.classList.add("hidden");
-            ring.style.strokeDashoffset = circumference;
+            ring.style.strokeDashoffset = frameLength;
         }, 3000);
     }
 

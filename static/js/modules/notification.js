@@ -1,5 +1,7 @@
 let notificationOffset = 0;
 let notificationEventSource = null;
+let notificationSseReconnectTimer = null;
+let notificationSseStopped = false;
 const notificationLimit = 10;
 
 
@@ -127,8 +129,16 @@ function connectNotificationEvents() {
     notificationEventSource.onerror = () => {
         console.warn("[Notification] SSE disconnected");
 
-        setTimeout(() => {
-            connectNotificationEvents();
+        if (notificationSseStopped) return;
+
+        if (notificationSseReconnectTimer) {
+            clearTimeout(notificationSseReconnectTimer);
+        }
+
+        notificationSseReconnectTimer = setTimeout(() => {
+            if (!notificationSseStopped) {
+                connectNotificationEvents();
+            }
         }, 3000);
     };
 }
@@ -168,4 +178,24 @@ export function initNotificationUI() {
     updateUnreadNotificationBadge();
     connectNotificationEvents();
 
+    window.addEventListener("server-status-changed", (event) => {
+        if (event.detail?.state === "disconnected") {
+            stopNotificationEvents();
+        }
+    });
+
+}
+
+function stopNotificationEvents() {
+    notificationSseStopped = true;
+
+    if (notificationSseReconnectTimer) {
+        clearTimeout(notificationSseReconnectTimer);
+        notificationSseReconnectTimer = null;
+    }
+
+    if (notificationEventSource) {
+        notificationEventSource.close();
+        notificationEventSource = null;
+    }
 }

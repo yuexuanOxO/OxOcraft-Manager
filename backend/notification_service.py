@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from backend.db import get_connection
+from queue import Queue
+
 
 NOTIFICATION_KEEP_LIMIT = 500
 NOTIFICATION_KEEP_DAYS = 30
+_notification_listeners: list[Queue] = []
 
 
 def create_notification(
@@ -48,7 +51,11 @@ def create_notification(
 
     cleanup_notifications_if_needed()
 
-    return dict(row)
+    notification = dict(row)
+
+    publish_notification_event(notification)
+
+    return notification
 
 
 def get_notifications(limit: int = 10, offset: int = 0) -> list[dict]:
@@ -106,3 +113,26 @@ def cleanup_notifications_if_needed() -> None:
         """, (cutoff_text,))
 
         conn.commit()
+
+def subscribe_notification_events() -> Queue:
+    queue = Queue()
+    _notification_listeners.append(queue)
+    return queue
+
+
+def unsubscribe_notification_events(queue: Queue) -> None:
+    if queue in _notification_listeners:
+        _notification_listeners.remove(queue)
+
+
+def publish_notification_event(notification: dict) -> None:
+    dead_queues = []
+
+    for queue in _notification_listeners:
+        try:
+            queue.put(notification)
+        except Exception:
+            dead_queues.append(queue)
+
+    for queue in dead_queues:
+        unsubscribe_notification_events(queue)

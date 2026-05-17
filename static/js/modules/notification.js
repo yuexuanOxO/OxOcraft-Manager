@@ -1,5 +1,7 @@
 let notificationOffset = 0;
+let notificationEventSource = null;
 const notificationLimit = 10;
+
 
 function getNotificationElements() {
     return {
@@ -85,6 +87,53 @@ async function markAllNotificationsRead() {
     }
 }
 
+
+function connectNotificationEvents() {
+    if (notificationEventSource) {
+        notificationEventSource.close();
+    }
+
+    notificationEventSource = new EventSource("/api/notifications/events");
+
+    notificationEventSource.addEventListener("notification", async (event) => {
+        const notification = JSON.parse(event.data);
+
+        const { bell, panel, list } = getNotificationElements();
+
+        if (bell) {
+            bell.classList.add("has-unread");
+        }
+
+        if (
+            panel &&
+            list &&
+            !panel.classList.contains("hidden")
+        ) {
+            const empty = list.querySelector(".notification-empty");
+
+            if (empty) {
+                empty.remove();
+            }
+
+            list.insertAdjacentHTML(
+                "afterbegin",
+                renderNotificationItem(notification)
+            );
+
+            notificationOffset += 1;
+        }
+    });
+
+    notificationEventSource.onerror = () => {
+        console.warn("[Notification] SSE disconnected");
+
+        setTimeout(() => {
+            connectNotificationEvents();
+        }, 3000);
+    };
+}
+
+
 export function initNotificationUI() {
     const { bell, panel, loadMoreBtn } = getNotificationElements();
 
@@ -117,6 +166,6 @@ export function initNotificationUI() {
     }
 
     updateUnreadNotificationBadge();
+    connectNotificationEvents();
 
-    setInterval(updateUnreadNotificationBadge, 10000);
 }

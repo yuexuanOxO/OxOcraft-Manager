@@ -1,9 +1,12 @@
-from flask import Blueprint, jsonify, request
+import json
 
+from flask import Blueprint, jsonify, request, Response
 from backend.notification_service import (
     get_notifications,
     get_unread_notification_count,
     mark_all_notifications_read,
+    subscribe_notification_events,
+    unsubscribe_notification_events,
 )
 
 notification_bp = Blueprint("notification", __name__)
@@ -40,3 +43,31 @@ def api_notifications_mark_all_read():
         "success": True,
         "unread_count": 0,
     })
+
+
+@notification_bp.route("/api/notifications/events")
+def api_notification_events():
+
+    def stream():
+        queue = subscribe_notification_events()
+
+        try:
+            while True:
+                notification = queue.get()
+
+                yield (
+                    "event: notification\n"
+                    f"data: {json.dumps(notification, ensure_ascii=False)}\n\n"
+                )
+
+        except GeneratorExit:
+            unsubscribe_notification_events(queue)
+
+    return Response(
+        stream(),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        }
+    )

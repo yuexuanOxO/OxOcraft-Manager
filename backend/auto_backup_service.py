@@ -104,13 +104,27 @@ def set_next_run_after_now() -> None:
 
 
 def send_tellraw(text: str, color: str = "red") -> bool:
-    # 走現有 /api/command 會繞一圈，不如之後接 rcon_service。
-    # 第二階段先用 server_runtime 的狀態流程，公告指令下一步可接 rcon_service。
+
+    try:
+        from backend.server_status import get_server_query_status
+
+        status = get_server_query_status()
+
+        if not status.get("online"):
+            return False
+
+    except Exception:
+        return False
+
     try:
         from backend.rcon_service import send_rcon_command
 
-        command = f'tellraw @a {{"text":"{text}","color":"{color}"}}'
+        command = (
+            f'tellraw @a {{"text":"{text}","color":"{color}"}}'
+        )
+
         send_rcon_command(command)
+
         return True
 
     except Exception as error:
@@ -150,23 +164,46 @@ def is_current_scheduled_time(scheduled_time: datetime) -> bool:
     return configured_next_run.replace(second=0, microsecond=0) == scheduled_time.replace(second=0, microsecond=0)
 
 
-def send_private_backup_notice(player_name: str, scheduled_time: datetime) -> bool:
+def send_private_backup_notice(
+    player_name: str,
+    scheduled_time: datetime
+) -> bool:
+
+    try:
+        from backend.server_status import get_server_query_status
+
+        status = get_server_query_status()
+
+        if not status.get("online"):
+            return False
+
+    except Exception:
+        return False
+
     try:
         from backend.rcon_service import send_rcon_command
 
-        remaining_text = format_remaining_backup_time(scheduled_time)
+        remaining_text = format_remaining_backup_time(
+            scheduled_time
+        )
+
         payload = json.dumps(
             {
-                "text": f"<OxO>伺服器還有{remaining_text}就要關閉進行備份了喔!",
+                "text":
+                    f"<OxO>伺服器還有{remaining_text}"
+                    "就要關閉進行備份了喔!",
                 "color": "light_purple",
             },
             ensure_ascii=False,
         )
+
         send_rcon_command(f"tellraw {player_name} {payload}")
+
         return True
 
     except Exception as error:
         print(f"[AutoBackup] 發送玩家備份提醒失敗：{player_name}：{error}")
+
         return False
 
 

@@ -8,6 +8,7 @@ from mcstatus import JavaServer
 DEFAULT_SERVER_PORT = 25565
 CURRENT_SERVER_PORT = None
 CURRENT_SERVER_HOST = None
+CURRENT_RCON_PORT = None
 
 
 def load_server_port_from_properties() -> int:
@@ -213,3 +214,73 @@ def get_server_query_status(host: str | None = None) -> dict:
             "message": "伺服器離線",
             "error": str(error),
         }
+    
+
+def load_rcon_host_from_properties() -> str:
+    if not SERVER_PROPERTIES_PATH.exists():
+        return "127.0.0.1"
+
+    try:
+        server_properties = read_properties_file(
+            SERVER_PROPERTIES_PATH
+        )
+
+        server_ip = (
+            server_properties
+            .get("server-ip", "")
+            .strip()
+        )
+
+        if server_ip:
+            return server_ip
+
+        return "127.0.0.1"
+
+    except Exception:
+        return "127.0.0.1"
+    
+def load_rcon_port_from_properties() -> int:
+    if not SERVER_PROPERTIES_PATH.exists():
+        return 25575
+
+    try:
+        server_properties = read_properties_file(
+            SERVER_PROPERTIES_PATH
+        )
+
+        return int(
+            server_properties.get("rcon.port", 25575)
+        )
+
+    except Exception:
+        return 25575
+    
+def lock_current_rcon_settings() -> tuple[str, int]:
+    global CURRENT_RCON_HOST
+    global CURRENT_RCON_PORT
+
+    CURRENT_RCON_HOST = (
+        load_rcon_host_from_properties()
+    )
+
+    CURRENT_RCON_PORT = (
+        load_rcon_port_from_properties()
+    )
+
+    return (
+        CURRENT_RCON_HOST,
+        CURRENT_RCON_PORT,
+    )
+
+def get_current_rcon_host() -> str:
+    if CURRENT_RCON_HOST is not None:
+        return CURRENT_RCON_HOST
+
+    return load_rcon_host_from_properties()
+
+
+def get_current_rcon_port() -> int:
+    if CURRENT_RCON_PORT is not None:
+        return CURRENT_RCON_PORT
+
+    return load_rcon_port_from_properties()

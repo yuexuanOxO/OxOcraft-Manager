@@ -4,15 +4,19 @@ from mcrcon import MCRcon
 
 from backend.config_files import load_or_create_config
 
+from backend.server_status import (
+    get_current_rcon_host,
+    get_current_rcon_port,
+)
 
 def send_rcon_command(command: str) -> str:
     """透過 RCON 發送 Minecraft 指令。"""
     config = load_or_create_config()
 
     with MCRcon(
-        host=config["rcon_host"],
         password=config["rcon_password"],
-        port=int(config["rcon_port"]),
+        host=get_current_rcon_host(),
+        port=get_current_rcon_port()
     ) as mcr:
         result = mcr.command(command)
 

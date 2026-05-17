@@ -81,24 +81,36 @@
 
     max-height: 350px;
     overflow-y: auto;
+
+    padding-right: 6px;
 }
 
 .notification-item{
-    padding: 10px;
-    background: #0a0a0a;
-    border: 2px solid #444;
+    position: relative;
+
+    padding: 12px;
+
+    background: #111;
+
+    border: 1px solid #2a2a2a;
+
+    box-sizing: border-box;
 }
 
 .notification-item.warning{
-    border-color: #d6a23a;
+    border-left: 4px solid #d6a23a;
 }
 
 .notification-item.error{
-    border-color: #cc4444;
+    border-left: 4px solid #d85a5a;
 }
 
 .notification-item.success{
-    border-color: #3fa65a;
+    border-left: 4px solid #5ac85a;
+}
+
+.notification-item.info{
+    border-left: 4px solid #5aa8d8;
 }
 
 .notification-item-title{

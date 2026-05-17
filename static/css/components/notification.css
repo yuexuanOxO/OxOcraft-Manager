@@ -10,19 +10,29 @@
     align-items: center;
     justify-content: center;
 
-    background: transparent;
+    background: url("/static/icons/notification/item_frame.png") center / 58px 58px no-repeat;
     border: none;
 
     cursor: pointer;
     z-index: 1200;
-}
-
-.notification-bell-icon{
-    width: 42px;
-    height: 42px;
 
     image-rendering: pixelated;
     image-rendering: crisp-edges;
+}
+
+.notification-bell.has-unread{
+    background-image:
+        url("/static/icons/notification/glow_item_frame.png");
+}
+
+.notification-bell img{
+    width: 46px;
+    height: 46px;
+
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+
+    pointer-events: none;
 }
 
 .notification-exclamation{
@@ -151,9 +161,9 @@
     cursor: pointer;
 }
 
-.notification-bell.has-unread .notification-bell-icon{
+/* .notification-bell.has-unread .notification-bell-icon{
     filter:
         drop-shadow(0 0 4px #ffcc33)
         drop-shadow(0 0 10px #ffcc33);
-}
+} */
 

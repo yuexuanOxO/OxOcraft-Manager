@@ -750,17 +750,29 @@
 
 .background-task-btn{
     position: relative;
+
     width: 58px;
     height: 58px;
-    background: #1b1b1b;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background:
+        url("/static/icons/notification/item_frame.png")
+        center / 58px 58px no-repeat;
+
     border: none;
+
     cursor: pointer;
-    padding: 0;
+
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
 }
 
 .task-icon{
-    width: 48px;
-    height: 48px;
+    width: 46px;
+    height: 46px;
 
     image-rendering: pixelated;
     image-rendering: crisp-edges;

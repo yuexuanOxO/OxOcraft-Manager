@@ -1,3 +1,9 @@
+import {
+    showInfo,
+    showConfirm
+} from "./system_dialog.js";
+
+
 let autoBackupMissedPromptOpen = false;
 let isCloudConnected = false;
 
@@ -121,7 +127,12 @@ async function saveAutoBackupConfig(showAlert = true) {
     const uploadCloud = uploadBtn?.dataset.value === "true";
 
     if (enabled && !startAt?.value) {
-        alert("請先選擇自動備份開始時間。");
+        await showInfo({
+            title: "自動備份",
+            message: "請先選擇自動備份開始時間。",
+            confirmText: "關閉",
+            variant: "warning"
+        });
         return;
     }
 
@@ -142,18 +153,33 @@ async function saveAutoBackupConfig(showAlert = true) {
         const data = await response.json();
 
         if (!data.success) {
-            alert(data.message || "儲存自動備份設定失敗");
+            await showInfo({
+                title: "儲存失敗",
+                message: data.message || "儲存自動備份設定失敗",
+                confirmText: "關閉",
+                variant: "error"
+            });
             return;
         }
 
         if (showAlert) {
-            alert(data.message || "自動備份設定已儲存");
+            await showInfo({
+                title: "設定已儲存",
+                message: data.message || "自動備份設定已儲存",
+                confirmText: "關閉",
+                variant: "success"
+            });
         }
         await loadAutoBackupConfig();
 
     } catch (error) {
         console.error("儲存自動備份設定失敗:", error);
-        alert("儲存自動備份設定失敗，請查看 console。");
+        await showInfo({
+            title: "儲存失敗",
+            message: "儲存自動備份設定失敗，請查看 console。",
+            confirmText: "關閉",
+            variant: "error"
+        });
     }
 }
 
@@ -238,7 +264,14 @@ function setupAutoBackupSettings() {
 
             // 關閉自動備份：直接詢問並立即套用
             if (!nextValue) {
-                const ok = confirm("確定要關閉自動備份嗎？\n\n關閉後將會取消目前的自動備份排程。");
+                const ok = await showConfirm({
+                    title: "關閉自動備份",
+                    message:
+                        "確定要關閉自動備份嗎？\n\n關閉後將會取消目前的自動備份排程。",
+                    confirmText: "關閉",
+                    cancelText: "取消",
+                    variant: "warning"
+                });
 
                 if (!ok) {
                     setBoolButton(enabledBtn, true);
@@ -257,20 +290,30 @@ function setupAutoBackupSettings() {
             setBoolButton(enabledBtn, true);
             updateAutoBackupAdvancedVisible();
 
-            alert(
-                "若要自動備份，請確保 OxOcraft-Manager 在預定備份時間是執行中的。\n\n" +
-                "若預定時間未執行，系統會在下次啟動時詢問是否補做該次備份。"
-            );
+            await showInfo({
+                title: "自動備份提醒",
+                message:
+                    "若要自動備份，請確保 OxOcraft-Manager 在預定備份時間是執行中的。\n\n" +
+                    "若預定時間未執行，系統會在下次啟動時詢問是否補做該次備份。",
+                confirmText: "了解",
+                variant: "warning"
+            });
+
         });
     }
 
     if (uploadBtn) {
-        uploadBtn.addEventListener("click", () => {
+        uploadBtn.addEventListener("click", async () => {
             const nextValue = uploadBtn.dataset.value !== "true";
 
             // 要開啟雲端同步時先檢查 Google 是否已連接
             if (nextValue && !isCloudConnected) {
-                alert("需先綁定雲端備份帳號後才能啟用此功能。");
+                await showInfo({
+                    title: "尚未綁定雲端備份",
+                    message: "需先綁定雲端備份帳號後才能啟用此功能。",
+                    confirmText: "關閉",
+                    variant: "warning"
+                });
                 return;
             }
 
@@ -304,7 +347,16 @@ export async function handleAutoBackupMissed(event) {
         const promptText = missedRunAt
             ? `偵測到上次自動備份排程 (${missedRunAt}) 沒有執行。\n\n是否要跳過這次排程？\n\n按「確定」：跳過並更新下次備份時間。\n按「取消」：現在補做備份。`
             : "偵測到上次自動備份排程沒有執行。\n\n是否要跳過這次排程？\n\n按「確定」：跳過並更新下次備份時間。\n按「取消」：現在補做備份。";
-        const skipMissedBackup = confirm(promptText);
+
+        const skipMissedBackup =
+            await showConfirm({
+                title: "偵測到未執行的自動備份",
+                message: promptText,
+                confirmText: "跳過",
+                cancelText: "現在補做",
+                variant: "warning"
+            });
+
         const endpoint = skipMissedBackup
             ? "/api/backup/auto-missed/skip"
             : "/api/backup/auto-missed/run-now";
@@ -318,7 +370,12 @@ export async function handleAutoBackupMissed(event) {
         const result = await response.json();
 
         if (!result.success) {
-            alert(result.message || "處理上次未執行的自動備份排程失敗");
+            await showInfo({
+                title: "處理失敗",
+                message: result.message || "處理上次未執行的自動備份排程失敗",
+                confirmText: "關閉",
+                variant: "error"
+            });
             return;
         }
 
@@ -326,7 +383,12 @@ export async function handleAutoBackupMissed(event) {
 
     } catch (error) {
         console.error("處理未執行自動備份排程失敗:", error);
-        alert("處理未執行自動備份排程失敗，請查看 console。");
+        await showInfo({
+            title: "處理失敗",
+            message: "處理未執行自動備份排程失敗，請查看 console。",
+            confirmText: "關閉",
+            variant: "error"
+        });
 
     } finally {
         autoBackupMissedPromptOpen = false;

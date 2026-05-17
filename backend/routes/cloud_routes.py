@@ -3,6 +3,7 @@ import os
 import requests
 import threading
 
+from backend.notification_service import create_notification
 from flask import Blueprint, jsonify, redirect, request, session
 from pathlib import Path
 from backend.server_monitor import publish_event
@@ -16,6 +17,7 @@ from backend.db import (
     insert_cloud_backup_record,
     mark_cloud_backup_deleted,
     update_backup_record_status,
+    insert_backup_record
 )
 
 from backend.crypto_utils import (
@@ -122,7 +124,12 @@ def get_or_create_drive_folder(service, folder_name, parent_id=None):
 
     return folder["id"]
 
-def cleanup_old_cloud_backups(service, folder_id, keep_count=DEFAULT_CLOUD_KEEP_COUNT):
+def cleanup_old_cloud_backups(
+    service,
+    folder_id,
+    keep_count=DEFAULT_CLOUD_KEEP_COUNT,
+    cloud_account=None,
+):
     if keep_count <= 0:
         return
 
@@ -139,12 +146,42 @@ def cleanup_old_cloud_backups(service, folder_id, keep_count=DEFAULT_CLOUD_KEEP_
 
     for file in old_files:
         file_id = file["id"]
+        file_name = file["name"]
 
         service.files().delete(
             fileId=file_id
         ).execute()
 
         mark_cloud_backup_deleted(file_id)
+
+        message = (
+            f"雲端備份保留數量上限為({keep_count})份，"
+            f"已刪除舊備份：{file_name}"
+        )
+
+        create_notification(
+            type="warning",
+            title="已刪除舊雲端備份",
+            message=message,
+            source="cloud_backup",
+        )
+
+        record = insert_backup_record(
+            status="deleted",
+            map_name=Path(file_name).stem.split("_backup_")[0],
+            source_path=file_name,
+            backup_path=file_name,
+            total_files=0,
+            total_bytes=0,
+            message=message,
+            backup_type="cloud",
+            cloud_provider="google_drive",
+            cloud_account=cloud_account,
+            cloud_file_id=file_id,
+            cloud_file_status="deleted",
+        )
+
+        publish_event("backup_record_added", record)
 
     if old_files:
         print(f"雲端舊備份清理完成，刪除 {len(old_files)} 筆")
@@ -323,7 +360,8 @@ def cloud_upload_latest_worker(backup_folder: str = ""):
         cleanup_old_cloud_backups(
             service,
             world_folder_id,
-            keep_count=DEFAULT_CLOUD_KEEP_COUNT
+            keep_count=DEFAULT_CLOUD_KEEP_COUNT,
+            cloud_account=cloud_account,
         )
 
         if cloud_record:

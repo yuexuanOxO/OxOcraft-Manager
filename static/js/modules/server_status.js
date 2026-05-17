@@ -9,6 +9,8 @@ let currentPlayers = new Set();
 let previousServerState = null;
 export let latestServerStatusData = null;
 
+const STATUS_DISCONNECTED_DATA_URL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGHaVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8P3hwYWNrZXQgYmVnaW49J++7vycgaWQ9J1c1TTBNcENlaGlIenJlU3pOVGN6a2M5ZCc/Pg0KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyI+PHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj48cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0idXVpZDpmYWY1YmRkNS1iYTNkLTExZGEtYWQzMS1kMzNkNzUxODJmMWIiIHhtbG5zOnRpZmY9Imh0dHA6Ly9ucy5hZG9iZS5jb20vdGlmZi8xLjAvIj48dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPjwvcmRmOkRlc2NyaXB0aW9uPjwvcmRmOlJERj48L3g6eG1wbWV0YT4NCjw/eHBhY2tldCBlbmQ9J3cnPz4slJgLAAACOklEQVQ4T6WSMUgbURjHfxpCMCQleeUICelwHOE6ZBGHqlUI18GGihQMbkIHHVysQ23XQKeC7eZuheASukpVQkGS2lqrBBHPi9uVND1MUKxiI2mHek+ztt/y4PH//d//+97X0R0L/+Y/qhPAG0/gniOT04xMThPQklIU0JK8yb1jdm6+TQvgiQa7sq2TOt54gnQ6LaFQKMT59wpn503uPRiiVqtxdHTE8PAwm3sWTduCmwlmZmbQdR0AXdc5Li7h1M8AOC4ukUqlADBNk3Q6LRN0Avh8PjY2NiT8/vVTytVLAlqSwcw45eolC8/GpInLSAPDMAiHwwASfvIiSyaTobe3t80EoFAoYBgGuDP4dvwTVVXZevuScvWSwcw4uq5j2zaVSgVN0whG77D5eQdfdYvuoTEKhQK/Gj/ocL9REX6c+hkBLcnU1BSmacq4APv7+/T397PwKiu1uC0A8iIWi+E4jgQbjQa6rhOJRCiVSm1aXIPZuXkCWhJF+DlYX5HgzarVahysr6AIf9ueeKLBrqzn1m0GBga4//Ax1pcPlNZWqV+06OnpQQjB4uIi1Z2PKMJP3+gEAKqqYn799DeBpmkAOI5D3+gEivBzerhLPp8nn89zerjbBgshZLJOgFwuB4CiKABtJjdhdx4Ay8vL1wZN25ImruDR5HMU4QfgrjEKV3Pg6kF3lT3RYFfWG0/QtC029yy2t7cJhUIIISitrQJQv2ihqirlcplisUjTtvDGE7RO6td78K/1BwpL7TSFok7aAAAAAElFTkSuQmCC";
+
 
 export function initServerStatus() {
     warmStatusLightCache();
@@ -313,7 +315,7 @@ function applyTemporaryServerState(data) {
 const statusLightCache = {};
 
 const STATUS_LIGHT_SRC = {
-    disconnected: "/static/icons/server_settings/status_disconnected.png",
+    disconnected: STATUS_DISCONNECTED_DATA_URL,
     online: "/static/icons/server_settings/status_online.png",
     busy: "/static/icons/server_settings/status_busy.png",
     offline: "/static/icons/server_settings/status_offline.png",

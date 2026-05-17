@@ -241,8 +241,8 @@
 }
 
 .backup-provider-img-icon{
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     object-fit: contain;
 
     display: inline-flex;
@@ -357,20 +357,6 @@
     line-height: 1;
 }
 
-.backup-provider-img-icon{
-    width: 20px;
-    height: 20px;
-    object-fit: contain;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    vertical-align: middle;
-    position: static;
-
-    image-rendering: auto;
-}
 
 .backup-filter-footer{
     display: flex;

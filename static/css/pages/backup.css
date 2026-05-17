@@ -174,20 +174,30 @@
     overflow: hidden;
 }
 
-
-
 .backup-path-edit-btn{
     width: 38px;
     height: 38px;
     padding: 0;
     box-sizing: border-box;
 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
     cursor: pointer;
+
     background: #111;
     border: 2px solid #555;
+}
 
-    color: #fff;
-    font-size: 18px;
+.backup-path-edit-btn img{
+    width: 32px;
+    height: 32px;
+
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+
+    pointer-events: none;
 }
 
 .backup-record-item{

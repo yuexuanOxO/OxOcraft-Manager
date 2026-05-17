@@ -11,6 +11,7 @@ export let latestServerStatusData = null;
 
 
 export function initServerStatus() {
+    warmStatusLightCache();
     fallbackPollingTimer = setInterval(updateStatus, 10000);
     updateStatus();
 }
@@ -37,7 +38,7 @@ export function handleBackendDisconnected() {
 
     if (statusLight) {
         statusLight.classList.remove("online", "offline", "starting");
-        statusLight.src = "/static/icons/server_settings/status_disconnected.png";
+        setStatusLightImage(statusLight, "disconnected");
     }
 
     if (statusText) {
@@ -206,7 +207,7 @@ export function applyServerStatusPayload(payload) {
 
     if (data.state === "ready") {
         statusLight.classList.remove("offline", "starting");
-        statusLight.src = "/static/icons/server_settings/status_online.png";
+        setStatusLightImage(statusLight, "online");
         statusText.textContent = "在線";
 
         if (powerBtn) {
@@ -216,7 +217,7 @@ export function applyServerStatusPayload(payload) {
         
     }else if (data.state === "backuping") {
         statusLight.classList.remove("online", "offline");
-        statusLight.src = "/static/icons/server_settings/status_busy.png";
+        setStatusLightImage(statusLight, "busy");
 
         statusText.textContent = "備份中...";
 
@@ -226,7 +227,7 @@ export function applyServerStatusPayload(payload) {
         }
     }else if (data.state === "stopping") {
         statusLight.classList.remove("online", "offline");
-        statusLight.src = "/static/icons/server_settings/status_busy.png";
+        setStatusLightImage(statusLight, "busy");
 
         statusText.textContent = "關閉中...";
 
@@ -238,7 +239,7 @@ export function applyServerStatusPayload(payload) {
 
     }else if (data.state === "starting") {
         statusLight.classList.remove("online", "offline");
-        statusLight.src = "/static/icons/server_settings/status_busy.png";
+        setStatusLightImage(statusLight, "busy");
         statusText.textContent = "啟動中...";
 
         if (powerBtn) {
@@ -248,7 +249,7 @@ export function applyServerStatusPayload(payload) {
 
     } else {
         statusLight.classList.remove("online", "starting");
-        statusLight.src = "/static/icons/server_settings/status_offline.png";
+        setStatusLightImage(statusLight, "offline");
         statusText.textContent = "離線";
 
         if (powerBtn) {
@@ -273,4 +274,34 @@ export function applyServerStatusPayload(payload) {
     window.dispatchEvent(new CustomEvent("server-status-changed", {
         detail: data
     }));
+}
+
+const statusLightCache = {};
+
+const STATUS_LIGHT_SRC = {
+    disconnected: "/static/icons/server_settings/status_disconnected.png",
+    online: "/static/icons/server_settings/status_online.png",
+    busy: "/static/icons/server_settings/status_busy.png",
+    offline: "/static/icons/server_settings/status_offline.png",
+};
+
+function warmStatusLightCache() {
+    Object.entries(STATUS_LIGHT_SRC).forEach(([key, src]) => {
+        const img = new Image();
+        img.src = src;
+        statusLightCache[key] = img;
+    });
+}
+
+function setStatusLightImage(statusLight, key) {
+    if (!statusLight) return;
+
+    const cachedImage = statusLightCache[key];
+
+    if (cachedImage && cachedImage.complete) {
+        statusLight.src = cachedImage.src;
+        return;
+    }
+
+    statusLight.src = STATUS_LIGHT_SRC[key];
 }

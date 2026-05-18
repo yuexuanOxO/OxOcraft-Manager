@@ -137,16 +137,27 @@ function setupServerSettingsModal() {
     }
 
     modal.addEventListener("click", (event) => {
-        if (event.target === modal) {
+        const clickedInsidePanel =
+            event.target.closest(".settings-panel");
+
+        const clickedInsidePreview =
+            event.target.closest(".settings-side-preview-area");
+
+        if (!clickedInsidePanel && !clickedInsidePreview) {
+
             modal.classList.add("hidden");
+
             serverSettingKeyword = "";
 
-            const searchInput = document.getElementById("serverSettingSearch");
+            const searchInput =
+                document.getElementById("serverSettingSearch");
+
             if (searchInput) {
                 searchInput.value = "";
             }
         }
     });
+
 }
 
 

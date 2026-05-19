@@ -55,8 +55,66 @@ const mobIconMap = {
     zombie: "/static/img/mobs/zombie.png",
     "zombie nautilus":"/static/img/mobs/zombie_nautilus.png",
     "zombified piglin":"/static/img/mobs/zombified_piglin.png"
-    
+
 };
+
+
+const mobNameZhMap = {
+    bee: "蜜蜂",
+    blaze: "烈焰使者",
+    bogged: "沼骸",
+    breeze: "旋風使者",
+    "cave spider": "洞穴蜘蛛",
+    creaking: "嘎枝",
+    creeper: "苦力怕",
+    drowned: "沉屍",
+    "elder guardian": "遠古深海守衛",
+    "ender dragon": "終界龍",
+    enderman: "終界使者",
+    endermite: "終界蟎",
+    evoker: "喚魔者",
+    fox: "狐狸",
+    ghast: "地獄幽靈",
+    goat: "山羊",
+    hoglin: "豬布獸",
+    "hoglin baby": "幼年豬布獸",
+    husk: "屍殼",
+    illusioner: "幻術師",
+    "iron golem": "鐵魔像",
+    "killer bunny": "殺手兔",
+    llama: "駱馬",
+    "magma cube": "岩漿立方怪",
+    nautilus: "鸚鵡螺",
+    panda: "貓熊",
+    parched: "枯骸",
+    phantom: "夜魅",
+    piglin: "豬布林",
+    "piglin brute": "豬布林蠻兵",
+    pillager: "掠奪者",
+    "polar bear": "北極熊",
+    pufferfish: "河豚",
+    ravager: "劫毀獸",
+    shulker: "界伏蚌",
+    silverfish: "蠹魚",
+    skeleton: "骷髏",
+    slime: "史萊姆",
+    spider: "蜘蛛",
+    stray: "流髑",
+    "trader llama": "商駝",
+    vex: "惱鬼",
+    villager: "村民",
+    vindicator: "衛道士",
+    warden: "伏守者",
+    witch: "女巫",
+    wither: "凋零怪",
+    "wither skeleton": "凋零骷髏",
+    wolf: "狼",
+    zoglin: "豬屍獸",
+    zombie: "殭屍",
+    "zombie nautilus": "殭屍鸚鵡螺",
+    "zombified piglin": "殭屍化豬布林"
+};
+
 
 function formatDimensionName(dimension) {
     if (!dimension) return "未知維度";
@@ -101,7 +159,7 @@ function getKillerDisplayInfo(killer) {
     if (mobIconMap[normalized]) {
         return {
             type: "mob",
-            text: killer,
+            text: mobNameZhMap[normalized] || killer,
             icon: mobIconMap[normalized]
         };
     }

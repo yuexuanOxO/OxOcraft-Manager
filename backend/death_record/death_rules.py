@@ -77,6 +77,8 @@ player_killer_messages = [
     rf"was killed while fighting {KILLER}",
     rf"walked into the danger zone due to {KILLER}",
     rf"suffocated in a wall while fighting {KILLER}",
+    rf"tried to swim in lava to escape {KILLER}",
+    rf"was struck by lightning while fighting {KILLER}",
     rf"was killed by {KILLER} using magic",
     rf"was killed by {KILLER}",
     rf"was killed by magic while trying to escape {KILLER}",
@@ -122,6 +124,12 @@ player_killer_item_messages = [
 ]
 
 
+fixed_killer_messages = {
+    "was obliterated by a sonically-charged shriek": "Warden",
+    "was stung to death": "Bee",
+}
+
+
 death_rules = []
 
 for message in player_killer_item_messages:
@@ -148,13 +156,24 @@ def parse_death_message(line: str):
         if prefix_match:
             death_text = prefix_match.group("death_text")
 
+        player = data.get("player")
+        death_message = death_text
+
+        if player and death_message.startswith(player + " "):
+            death_message = death_message[len(player) + 1:]
+
+        fixed_killer = fixed_killer_messages.get(death_message)
+        killer = data.get("killer") or fixed_killer
+
         return {
             "type": rule["type"],
-            "player": data.get("player"),
-            "killer": data.get("killer"),
+            "player": player,
+            "killer": killer,
             "item": data.get("item"),
             "message": line,
             "death_text": death_text,
         }
 
     return None
+
+

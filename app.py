@@ -52,15 +52,21 @@ if __name__ == "__main__":
         mark_interrupted_cloud_uploads_failed()
         mark_interrupted_local_backups_failed()
         print("SQLite 資料庫初始化完成")
-        
+
         init_rcon_config()
         print("RCON 設定已同步到 server.properties")
         print("請確認 Minecraft server 已重啟，否則新的 RCON 設定不會生效。")
+
         start_server_monitor()
+        print("ServerMonitor 已啟動")
+
         start_auto_backup_scheduler()
-        
+        print("AutoBackupScheduler 已啟動")
+
     except Exception as error:
+        import traceback
         print(f"初始化失敗：{error}")
+        traceback.print_exc()
 
     threading.Timer(1, open_browser).start()
     app.run(debug=False)

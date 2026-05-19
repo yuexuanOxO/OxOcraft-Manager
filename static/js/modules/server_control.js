@@ -130,10 +130,7 @@ async function toggleServer() {
             await showInfo({
                 title: "初始化完成",
                 message:
-            `伺服器必要檔案已產生。
-
-            RCON 設定已同步，
-            請同意 Minecraft EULA 後再啟動伺服器。`
+            `伺服器必要檔案已產生。\nRCON 設定已同步，請同意 Minecraft EULA 後再啟動伺服器。`
             });
             await checkEulaStatus();
         }

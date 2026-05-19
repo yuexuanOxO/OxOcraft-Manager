@@ -165,11 +165,16 @@ def parse_death_message(line: str):
         fixed_killer = fixed_killer_messages.get(death_message)
         killer = data.get("killer") or fixed_killer
 
+        item = data.get("item")
+
+        if item == "magic":
+            item = None
+
         return {
             "type": rule["type"],
             "player": player,
             "killer": killer,
-            "item": data.get("item"),
+            "item": item,
             "message": line,
             "death_text": death_text,
         }

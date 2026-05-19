@@ -116,6 +116,148 @@ const mobNameZhMap = {
 };
 
 
+const deathTextZhMap = [
+    // item 版要放前面，避免先被普通版吃掉
+    { pattern: /^was shot by (.+) using (.+)$/, text: "{player} 被 {killer} 用 {item} 射殺" },
+    { pattern: /^went off with a bang due to a firework fired from (.+) by (.+)$/, text: "{player} 在 {killer} 用 {item} 發射的煙火所產生的爆炸中犧牲了" },
+    { pattern: /^was fireballed by (.+) using (.+)$/, text: "{player} 被 {killer} 用 {item} 打出的火球殺死" },
+    { pattern: /^was killed by (.+) using magic$/, text: "{player} 被 {killer} 用魔法殺死" },
+    { pattern: /^was killed by (.+) using (.+)$/, text: "{player} 被 {killer} 用 {item} 殺死" },
+    { pattern: /^was slain by (.+) using (.+)$/, text: "{player} 被 {killer} 用 {item} 殺死" },
+    { pattern: /^was blown up by (.+) using (.+)$/, text: "{player} 被 {killer} 用 {item} 炸死" },
+    { pattern: /^was smashed by (.+) with (.+)$/, text: "{player} 被 {killer} 用 {item} 重擊致死" },
+    { pattern: /^was speared by (.+) using (.+)$/, text: "{player} 被 {killer} 用 {item} 刺穿了" },
+    { pattern: /^was burned to a crisp while fighting (.+) wielding (.+)$/, text: "{player} 在與手持 {item} 的 {killer} 戰鬥時被火焰燒成灰燼" },
+    { pattern: /^was obliterated by a sonically-charged shriek while trying to escape (.+) wielding (.+)$/, text: "{player} 在試圖逃離手持 {item} 的 {killer} 時被一道聲波尖嘯抹殺了" },
+    { pattern: /^was stung to death by (.+) using (.+)$/, text: "{player} 被 {killer} 以 {item} 螫死了" },
+    { pattern: /^was killed by (.+) while trying to hurt (.+)$/, text: "{player} 試圖攻擊 {killer} 時死於 {item}" },
+    { pattern: /^was pummeled by (.+) using (.+)$/, text: "{player} 被 {killer} 用 {item} 揍死" },
+    { pattern: /^was impaled by (.+) with (.+)$/, text: "{player} 被 {killer} 用 {item} 刺穿了" },
+    { pattern: /^was shot by a skull from (.+) using (.+)$/, text: "{player} 被 {killer} 以 {item} 發射的頭顱射死了" },
+    { pattern: /^fell too far and was finished by (.+) using (.+)$/, text: "{player} 摔傷後被 {killer} 以 {item} 擊殺" },
+    { pattern: /^was doomed to fall by (.+) using (.+)$/, text: "{player} 被 {killer} 以 {item} 擊落" },
+
+    // 有 killer
+    { pattern: /^was shot by (.+)$/, text: "{player} 被 {killer} 射殺了" },
+    { pattern: /^walked into a cactus while trying to escape (.+)$/, text: "{player} 在試圖逃離 {killer} 時被仙人掌刺死了" },
+    { pattern: /^walked into fire while fighting (.+)$/, text: "{player} 在與 {killer} 戰鬥時踏入了火中" },
+    { pattern: /^was squashed by (.+)$/, text: "{player} 遭到 {killer} 擠壓致死" },
+    { pattern: /^was roasted in dragon's breath by (.+)$/, text: "{player} 被 {killer} 的龍之吐息烤熟了" },
+    { pattern: /^drowned while trying to escape (.+)$/, text: "{player} 在試圖逃離 {killer} 時在水中溺斃" },
+    { pattern: /^died from dehydration while trying to escape (.+)$/, text: "{player} 在試圖逃離 {killer} 時脫水而死" },
+    { pattern: /^hit the ground too hard while trying to escape (.+)$/, text: "{player} 在試圖逃離 {killer} 時失足墜地" },
+    { pattern: /^was blown up by (.+)$/, text: "{player} 被 {killer} 炸死了" },
+    { pattern: /^was squashed by a falling anvil while fighting (.+)$/, text: "{player} 在與 {killer} 戰鬥時被落下的鐵砧壓扁" },
+    { pattern: /^was squashed by a falling block while fighting (.+)$/, text: "{player} 在與 {killer} 戰鬥時被落下的方塊壓扁" },
+    { pattern: /^was skewered by a falling stalactite while fighting (.+)$/, text: "{player} 在與 {killer} 戰鬥時被落下的鐘乳石刺穿" },
+    { pattern: /^was fireballed by (.+)$/, text: "{player} 被 {killer} 的火球殺死了" },
+    { pattern: /^went off with a bang while fighting (.+)$/, text: "{player} 在與 {killer} 戰鬥時隨著爆炸逝去" },
+    { pattern: /^experienced kinetic energy while trying to escape (.+)$/, text: "{player} 在試圖逃離 {killer} 時體驗了動能" },
+    { pattern: /^was frozen to death by (.+)$/, text: "{player} 被 {killer} 凍死了" },
+    { pattern: /^died because of (.+)$/, text: "{player} 因 {killer} 而死" },
+    { pattern: /^was killed while fighting (.+)$/, text: "{player} 在與 {killer} 戰鬥時被殺死了" },
+    { pattern: /^walked into the danger zone due to (.+)$/, text: "{player} 因為 {killer} 而走進了危險地帶" },
+    { pattern: /^suffocated in a wall while fighting (.+)$/, text: "{player} 在與 {killer} 戰鬥時卡進牆裡窒息" },
+    { pattern: /^tried to swim in lava to escape (.+)$/, text: "{player} 跳入熔岩試圖逃離 {killer} 的追殺" },
+    { pattern: /^was struck by lightning while fighting (.+)$/, text: "{player} 在與 {killer} 戰鬥時被閃電擊斃" },
+    { pattern: /^was killed by magic while trying to escape (.+)$/, text: "{player} 在試圖逃離 {killer} 時被魔法殺死了" },
+    { pattern: /^was killed by (.+)$/, text: "{player} 被 {killer} 殺死了" },
+    { pattern: /^was slain by (.+)$/, text: "{player} 被 {killer} 殺死了" },
+    { pattern: /^was smashed by (.+)$/, text: "{player} 被 {killer} 重擊致死" },
+    { pattern: /^didn't want to live in the same world as (.+)$/, text: "{player} 不想和 {killer} 活在同一個世界" },
+    { pattern: /^left the confines of this world while fighting (.+)$/, text: "{player} 在與 {killer} 戰鬥時脫離了這個世界" },
+    { pattern: /^was obliterated by a sonically-charged shriek while trying to escape (.+)$/, text: "{player} 在試圖逃離 {killer} 時被一道聲波尖嘯抹殺了" },
+    { pattern: /^was speared by (.+)$/, text: "{player} 被 {killer} 刺穿了" },
+    { pattern: /^was impaled on a stalagmite while fighting (.+)$/, text: "{player} 在與 {killer} 戰鬥時在石筍上被刺穿" },
+    { pattern: /^starved to death while fighting (.+)$/, text: "{player} 在與 {killer} 戰鬥時餓死了" },
+    { pattern: /^was stung to death by (.+)$/, text: "{player} 被 {killer} 螫死了" },
+    { pattern: /^was poked to death by a sweet berry bush while trying to escape (.+)$/, text: "{player} 在試圖逃離 {killer} 時被甜莓灌木叢刺死了" },
+    { pattern: /^was killed while trying to hurt (.+)$/, text: "{player} 試圖襲擊 {killer} 時被反將一軍" },
+    { pattern: /^was pummeled by (.+)$/, text: "{player} 被 {killer} 活生生揍死了" },
+    { pattern: /^was impaled by (.+)$/, text: "{player} 被 {killer} 刺穿了" },
+    { pattern: /^was burned to a crisp while fighting (.+)$/, text: "{player} 在與 {killer} 戰鬥時被火焰燒成灰燼" },
+    { pattern: /^withered away while fighting (.+)$/, text: "{player} 在與 {killer} 戰鬥時凋零了" },
+    { pattern: /^was shot by a skull from (.+)$/, text: "{player} 被 {killer} 發射的頭顱射死了" },
+    { pattern: /^fell too far and was finished by (.+)$/, text: "{player} 摔傷後被 {killer} 殺了" },
+    { pattern: /^was doomed to fall by (.+)$/, text: "{player} 被 {killer} 擊落" },
+
+    // 無 killer
+    { pattern: /^was pricked to death$/, text: "{player} 被仙人掌刺死了" },
+    { pattern: /^went up in flames$/, text: "{player} 在火焰中昇天" },
+    { pattern: /^was squished too much$/, text: "{player} 遭到擠壓致死" },
+    { pattern: /^was roasted in dragon's breath$/, text: "{player} 被龍之吐息烤熟了" },
+    { pattern: /^drowned$/, text: "{player} 溺死了" },
+    { pattern: /^died from dehydration$/, text: "{player} 脫水而死" },
+    { pattern: /^hit the ground too hard$/, text: "{player} 以為能安然無恙的著地" },
+    { pattern: /^blew up$/, text: "{player} 被炸飛了" },
+    { pattern: /^was squashed by a falling anvil$/, text: "{player} 被墜落下來的鐵砧壓扁了" },
+    { pattern: /^was squashed by a falling block$/, text: "{player} 被墜落下來的方塊壓扁了" },
+    { pattern: /^was skewered by a falling stalactite$/, text: "{player} 被墜落的鐘乳石刺穿了" },
+    { pattern: /^went off with a bang$/, text: "{player} 在爆炸中犧牲了" },
+    { pattern: /^experienced kinetic energy$/, text: "{player} 體驗了動能" },
+    { pattern: /^froze to death$/, text: "{player} 凍死了" },
+    { pattern: /^died$/, text: "{player} 死亡" },
+    { pattern: /^was killed$/, text: "{player} 被殺死了" },
+    { pattern: /^discovered the floor was lava$/, text: "{player} 察覺地面是片熔岩" },
+    { pattern: /^suffocated in a wall$/, text: "{player} 在牆壁裡窒息" },
+    { pattern: /^tried to swim in lava$/, text: "{player} 試圖在熔岩中游泳" },
+    { pattern: /^was struck by lightning$/, text: "{player} 被閃電擊斃" },
+    { pattern: /^was killed by magic$/, text: "{player} 被魔法殺死了" },
+    { pattern: /^burned to death$/, text: "{player} 被燒死了" },
+    { pattern: /^fell out of the world$/, text: "{player} 掉到世界外面了" },
+    { pattern: /^left the confines of this world$/, text: "{player} 脫離了這個世界" },
+    { pattern: /^was obliterated by a sonically-charged shriek$/, text: "{player} 被一道聲波尖嘯抹殺了" },
+    { pattern: /^was impaled on a stalagmite$/, text: "{player} 在石筍上被刺穿" },
+    { pattern: /^starved to death$/, text: "{player} 餓死了" },
+    { pattern: /^was stung to death$/, text: "{player} 被螫死了" },
+    { pattern: /^was poked to death by a sweet berry bush$/, text: "{player} 被甜莓灌木叢刺死了" },
+    { pattern: /^withered away$/, text: "{player} 凋零了" },
+    { pattern: /^fell from a high place$/, text: "{player} 從高處跌落" },
+];
+
+
+function translateMobOrPlayerName(name) {
+    if (!name) return "";
+
+    const normalized = name.trim().toLowerCase();
+    return mobNameZhMap[normalized] || name;
+}
+
+function translateDeathText(deathText, playerName) {
+    if (!deathText) return "未知死因";
+
+    let message = deathText.trim();
+    const player = playerName || "";
+
+    if (player && message.startsWith(player + " ")) {
+        message = message.slice(player.length + 1);
+    }
+
+    for (const rule of deathTextZhMap) {
+        const match = message.match(rule.pattern);
+
+        if (!match) {
+            continue;
+        }
+
+        let result = rule.text.replaceAll("{player}", player || "玩家");
+
+        if (match[1]) {
+            result = result.replaceAll("{killer}", translateMobOrPlayerName(match[1]));
+            result = result.replaceAll("{item}", match[1]);
+        }
+
+        if (match[2]) {
+            result = result.replaceAll("{item}", match[2]);
+        }
+
+        return result;
+    }
+
+    return deathText;
+}
+
+
 function formatDimensionName(dimension) {
     if (!dimension) return "未知維度";
 
@@ -195,7 +337,7 @@ function renderDeathRecordPage() {
         `第 ${currentDeathPage + 1} 頁 / 第 ${deathRecords.length} 頁`;
 
     document.getElementById("deathText").textContent =
-        record.death_text || "未知死因";
+        translateDeathText(record.death_text, record.player_name);
 
     const dimensionName = formatDimensionName(record.dimension);
     document.getElementById("deathLocation").textContent =

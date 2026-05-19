@@ -21,7 +21,7 @@ def api_eula_status():
             "accepted": info["accepted"],
             "url": info["url"],
             "date": info["date"],
-            "message_zh": "若要繼續使用Minecraft伺服器，你必須同意Minecraft使用者授權合約(EULA)。同意後，系統會將eula.txt中的eula設為true。"
+            "message_zh": "若要繼續使用Minecraft伺服器，你必須同意Minecraft使用者授權合約(EULA)。同意後，系統會將eula.txt中的eula設為true。\n若不同意將無法繼續開啟伺服器OxOcraft-Manager也即將關閉。"
         })
 
     except Exception as error:

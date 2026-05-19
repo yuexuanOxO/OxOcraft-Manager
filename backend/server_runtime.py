@@ -186,7 +186,10 @@ def start_server() -> tuple[bool, str]:
     if not SERVER_JAR_PATH.exists():
         return False, f"找不到 server.jar：{SERVER_JAR_PATH}"
     
-    props = read_properties_file(SERVER_PROPERTIES_PATH)
+    props = {}
+
+    if SERVER_PROPERTIES_PATH.exists():
+        props = read_properties_file(SERVER_PROPERTIES_PATH)
 
     server_ip = props.get("server-ip", "")
 

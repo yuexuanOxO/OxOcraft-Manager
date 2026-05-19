@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify
 
-from backend.db import get_recent_player_deaths
+from backend.db import get_recent_player_deaths_grouped
 
 
 death_bp = Blueprint("death", __name__)
@@ -9,10 +9,10 @@ death_bp = Blueprint("death", __name__)
 @death_bp.route("/api/deaths")
 def api_deaths():
     try:
-        deaths = get_recent_player_deaths(limit=10)
+        players = get_recent_player_deaths_grouped(limit_per_player=5)
         return jsonify({
             "success": True,
-            "deaths": deaths
+            "players": players
         })
     except Exception as error:
         return jsonify({

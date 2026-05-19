@@ -155,16 +155,37 @@ def insert_player_death(
         conn.commit()
 
 
-def get_recent_player_deaths(limit: int = 10) -> list[dict]:
+def get_recent_player_deaths_grouped(limit_per_player: int = 5) -> list[dict]:
     with get_connection() as conn:
-        rows = conn.execute("""
-            SELECT *
+
+        players = conn.execute("""
+            SELECT DISTINCT player_name
             FROM player_deaths
             ORDER BY death_time DESC, id DESC
-            LIMIT ?
-        """, (limit,)).fetchall()
+        """).fetchall()
 
-    return [dict(row) for row in rows]
+        result = []
+
+        for player_row in players:
+            player_name = player_row["player_name"]
+
+            death_rows = conn.execute("""
+                SELECT *
+                FROM player_deaths
+                WHERE player_name = ?
+                ORDER BY death_time DESC, id DESC
+                LIMIT ?
+            """, (
+                player_name,
+                limit_per_player
+            )).fetchall()
+
+            result.append({
+                "player_name": player_name,
+                "deaths": [dict(row) for row in death_rows]
+            })
+
+    return result
 
 
 def insert_backup_record(

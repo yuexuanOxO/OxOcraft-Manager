@@ -1,4 +1,6 @@
-let deathRecords = [];
+let deathPlayers = [];
+
+let currentPlayerIndex = 0;
 let currentDeathPage = 0;
 
 const mobIconMap = {
@@ -314,6 +316,10 @@ function getKillerDisplayInfo(killer) {
 }
 
 function renderDeathRecordPage() {
+
+    
+    const deathRecords = getCurrentDeathRecords();
+
     if (!deathRecords.length) {
         document.getElementById("deathPlayerAvatar").src = "/static/icons/death_record/steve_avatar.png";
         document.getElementById("deathPlayerName").textContent = "目前沒有死亡紀錄";
@@ -373,6 +379,17 @@ function renderDeathRecordPage() {
     const prevBtn = document.getElementById("deathPrevBtn");
     const nextBtn = document.getElementById("deathNextBtn");
 
+    const playerPrevBtn = document.getElementById("deathPlayerPrevBtn");
+    const playerNextBtn = document.getElementById("deathPlayerNextBtn");
+
+    playerPrevBtn.textContent = "◀";
+    playerNextBtn.textContent = "▶";
+
+    playerPrevBtn.disabled = currentPlayerIndex <= 0;
+    playerNextBtn.disabled = currentPlayerIndex >= deathPlayers.length - 1;
+
+
+
     prevBtn.classList.toggle("death-book-page-btn-hidden", currentDeathPage <= 0);
     nextBtn.classList.toggle("death-book-page-btn-hidden", currentDeathPage >= deathRecords.length -1);
 
@@ -389,7 +406,11 @@ async function openDeathBook() {
             return;
         }
 
-        deathRecords = Array.isArray(data.deaths) ? data.deaths : [];
+        deathPlayers = Array.isArray(data.players)
+            ? data.players
+            : [];
+
+        currentPlayerIndex = 0;
         currentDeathPage = 0;
 
         renderDeathRecordPage();
@@ -405,6 +426,8 @@ function closeDeathBook() {
 }
 
 function showPrevDeathPage() {
+    const deathRecords = getCurrentDeathRecords();
+
     if (currentDeathPage > 0) {
         currentDeathPage -= 1;
         renderDeathRecordPage();
@@ -412,6 +435,8 @@ function showPrevDeathPage() {
 }
 
 function showNextDeathPage() {
+    const deathRecords = getCurrentDeathRecords();
+
     if (currentDeathPage < deathRecords.length - 1) {
         currentDeathPage += 1;
         renderDeathRecordPage();
@@ -419,6 +444,19 @@ function showNextDeathPage() {
 }
 
 export function initDeathBook() {
+
+    const deathPlayerPrevBtn = document.getElementById("deathPlayerPrevBtn");
+
+    if (deathPlayerPrevBtn) {
+        deathPlayerPrevBtn.addEventListener("click", showPrevPlayer);
+    }
+
+    const deathPlayerNextBtn = document.getElementById("deathPlayerNextBtn");
+
+    if (deathPlayerNextBtn) {
+        deathPlayerNextBtn.addEventListener("click", showNextPlayer);
+    }
+
     const deathRecordBtn = document.getElementById("deathRecordBtn");
     if (deathRecordBtn) {
         deathRecordBtn.addEventListener("click", openDeathBook);
@@ -447,4 +485,40 @@ export function initDeathBook() {
             }
         });
     }
+}
+
+
+function getCurrentPlayerData() {
+    return deathPlayers[currentPlayerIndex] || null;
+}
+
+function getCurrentDeathRecords() {
+    const playerData = getCurrentPlayerData();
+
+    return playerData?.deaths || [];
+}
+
+
+function showPrevPlayer() {
+    if (currentPlayerIndex <= 0) {
+        return;
+    }
+
+    currentPlayerIndex -= 1;
+
+    currentDeathPage = 0;
+
+    renderDeathRecordPage();
+}
+
+function showNextPlayer() {
+    if (currentPlayerIndex >= deathPlayers.length - 1) {
+        return;
+    }
+
+    currentPlayerIndex += 1;
+
+    currentDeathPage = 0;
+
+    renderDeathRecordPage();
 }

@@ -379,16 +379,6 @@ function renderDeathRecordPage() {
     const prevBtn = document.getElementById("deathPrevBtn");
     const nextBtn = document.getElementById("deathNextBtn");
 
-    const playerPrevBtn = document.getElementById("deathPlayerPrevBtn");
-    const playerNextBtn = document.getElementById("deathPlayerNextBtn");
-
-    playerPrevBtn.textContent = "◀";
-    playerNextBtn.textContent = "▶";
-
-    playerPrevBtn.disabled = currentPlayerIndex <= 0;
-    playerNextBtn.disabled = currentPlayerIndex >= deathPlayers.length - 1;
-
-
 
     prevBtn.classList.toggle("death-book-page-btn-hidden", currentDeathPage <= 0);
     nextBtn.classList.toggle("death-book-page-btn-hidden", currentDeathPage >= deathRecords.length -1);
@@ -413,6 +403,7 @@ async function openDeathBook() {
         currentPlayerIndex = 0;
         currentDeathPage = 0;
 
+        renderPlayerDropdown();
         renderDeathRecordPage();
         document.getElementById("deathBookModal").classList.remove("hidden");
     } catch (error) {
@@ -444,6 +435,20 @@ function showNextDeathPage() {
 }
 
 export function initDeathBook() {
+
+    const deathPlayerDropdownBtn =
+        document.getElementById("deathPlayerDropdownBtn");
+
+    const deathPlayerDropdown =
+        document.getElementById("deathPlayerDropdown");
+
+    if (deathPlayerDropdownBtn && deathPlayerDropdown) {
+
+        deathPlayerDropdownBtn.addEventListener("click", () => {
+
+            deathPlayerDropdown.classList.toggle("hidden");
+        });
+    }
 
     const deathPlayerPrevBtn = document.getElementById("deathPlayerPrevBtn");
 
@@ -521,4 +526,49 @@ function showNextPlayer() {
     currentDeathPage = 0;
 
     renderDeathRecordPage();
+}
+
+
+function renderPlayerDropdown() {
+
+    const dropdown = document.getElementById("deathPlayerDropdown");
+
+    if (!dropdown) {
+        return;
+    }
+
+    dropdown.innerHTML = "";
+
+    deathPlayers.forEach((playerData, index) => {
+
+        const item = document.createElement("button");
+
+        item.type = "button";
+
+        item.className =
+            "death-book-player-dropdown-item";
+
+        item.innerHTML = `
+            <img
+                class="death-book-player-dropdown-avatar"
+                src="https://mc-heads.net/avatar/${encodeURIComponent(playerData.player_name)}">
+
+            <div class="death-book-player-dropdown-name">
+                ${playerData.player_name}
+            </div>
+        `;
+
+        item.addEventListener("click", () => {
+
+            currentPlayerIndex = index;
+
+            currentDeathPage = 0;
+
+            dropdown.classList.add("hidden");
+
+            renderDeathRecordPage();
+        });
+
+        dropdown.appendChild(item);
+    });
 }

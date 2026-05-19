@@ -4,31 +4,35 @@
             <div class="death-book-inner">
                 <div class="death-book-top">
 
-                    <div class="death-book-player-block">
+                    <div class="death-book-player-selector">
 
                         <button
-                            id="deathPlayerPrevBtn"
-                            class="death-player-switch-btn"
+                            id="deathPlayerDropdownBtn"
+                            class="death-book-player-dropdown-btn"
                             type="button">
-                        </button>
 
-                        <img
-                            id="deathPlayerAvatar"
-                            class="death-book-avatar"
-                            src=""
-                            alt="player avatar">
+                            <img
+                                id="deathPlayerAvatar"
+                                class="death-book-avatar"
+                                src=""
+                                alt="player avatar">
+
+                            <div
+                                id="deathPlayerName"
+                                class="death-book-player-name">
+                                玩家名稱
+                            </div>
+
+                            <div class="death-book-player-arrow">
+                                ▼
+                            </div>
+
+                        </button>
 
                         <div
-                            id="deathPlayerName"
-                            class="death-book-player-name">
-                            玩家名稱
+                            id="deathPlayerDropdown"
+                            class="death-book-player-dropdown hidden">
                         </div>
-
-                        <button
-                            id="deathPlayerNextBtn"
-                            class="death-player-switch-btn"
-                            type="button">
-                        </button>
 
                     </div>
 

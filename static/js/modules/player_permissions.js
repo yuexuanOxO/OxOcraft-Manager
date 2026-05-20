@@ -91,6 +91,10 @@ async function loadPlayerPermissions() {
 
         allPlayers = data.players || [];
 
+        updatePermissionModeSummary(
+            data.online_mode
+        );
+
         renderPlayerPermissionList();
 
     } catch (error) {
@@ -105,6 +109,31 @@ async function loadPlayerPermissions() {
             variant: "error"
         });
     }
+}
+
+
+function updatePermissionModeSummary(
+    onlineMode
+) {
+    const summary =
+        document.getElementById(
+            "playerPermissionSummary"
+        );
+
+    if (!summary) return;
+
+    summary.innerHTML = `
+        <span class="
+            player-permission-mode
+            ${onlineMode ? "online" : "offline"}
+        ">
+            ${
+                onlineMode
+                    ? "✓ 已開啟正版驗證"
+                    : "⚠ 未開啟正版驗證"
+            }
+        </span>
+    `;
 }
 
 
@@ -149,8 +178,15 @@ function renderPlayerPermissionList() {
         });
     }
 
-    summary.textContent =
-        `共 ${players.length} 位玩家`;
+    const playerCount =
+        document.getElementById(
+            "playerPermissionPlayerCount"
+        );
+
+    if (playerCount) {
+        playerCount.textContent =
+            `共 ${players.length} 位玩家`;
+    }
 
     list.innerHTML = "";
 
@@ -178,7 +214,9 @@ function createPlayerPermissionCard(player) {
         "player-permission-card";
 
     const avatarUrl =
-        `https://mc-heads.net/avatar/${encodeURIComponent(player.player_name)}`;
+        player.uuid_type === "online"
+            ? `https://mc-heads.net/avatar/${encodeURIComponent(player.player_name)}`
+            : "/static/img/player/steve_avatar.png";
 
     card.innerHTML = `
         <img
@@ -200,15 +238,6 @@ function createPlayerPermissionCard(player) {
                     ${player.op ? "op" : "normal"}
                 ">
                     ${player.op ? "管理員" : "一般玩家"}
-                </div>
-
-                <div class="
-                    player-permission-badge
-                    ${player.uuid_type}
-                ">
-                    ${player.uuid_type === "online"
-                        ? "正版"
-                        : "離線"}
                 </div>
 
             </div>
@@ -265,6 +294,7 @@ async function togglePlayerOp(player) {
         );
 
         const data = await response.json();
+        console.log("toggle-op response:", data);
 
         if (!data.success) {
             throw new Error(
@@ -274,7 +304,13 @@ async function togglePlayerOp(player) {
 
         player.op = data.op;
 
+        if (data.op_since) {
+            player.op_since = data.op_since;
+        }
+
         renderPlayerPermissionList();
+
+        
 
         await showInfo({
             title: "玩家權限",

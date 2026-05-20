@@ -6,6 +6,7 @@ from backend.rcon_service import send_rcon_command
 from backend.db import update_player_op_since
 from backend.server_monitor import get_cached_server_status
 from backend.player_permissions.player_identity_service import get_known_players
+from backend.server_effective_settings import load_effective_settings_snapshot
 
 
 OPS_FILE = MC_ROOT / "ops.json"
@@ -35,10 +36,19 @@ def load_ops_uuid_set() -> set[str]:
 def get_player_permission_list() -> list[dict]:
     players = get_known_players()
     ops_uuid_set = load_ops_uuid_set()
+    online_mode = get_effective_online_mode()
 
     result = []
 
     for player in players:
+        uuid_type = player.get("uuid_type")
+
+        if online_mode and uuid_type != "online":
+            continue
+
+        if not online_mode and uuid_type != "offline":
+            continue
+
         player_uuid = str(player.get("player_uuid", "")).lower()
 
         result.append({
@@ -47,6 +57,15 @@ def get_player_permission_list() -> list[dict]:
         })
 
     return result
+
+
+def get_effective_online_mode() -> bool:
+    snapshot = load_effective_settings_snapshot()
+    properties = snapshot.get("properties", {})
+
+    return str(
+        properties.get("online-mode", "true")
+    ).lower() == "true"
 
 
 def is_server_ready() -> bool:
@@ -73,6 +92,7 @@ def set_player_op(player_uuid: str, player_name: str) -> dict:
             "message": f"已將 {player_name} 設為管理員",
             "result": result,
             "op": True,
+            "op_since": now,
         }
 
     entries = load_ops_entries()
@@ -99,6 +119,7 @@ def set_player_op(player_uuid: str, player_name: str) -> dict:
         "message": f"已將 {player_name} 設為管理員",
         "result": "offline-edit",
         "op": True,
+        "op_since": now,
     }
 
 
@@ -138,3 +159,5 @@ def toggle_player_op(player_uuid: str, player_name: str) -> dict:
         return remove_player_op(player_uuid, player_name)
 
     return set_player_op(player_uuid, player_name)
+
+

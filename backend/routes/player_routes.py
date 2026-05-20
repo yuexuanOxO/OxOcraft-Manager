@@ -149,7 +149,7 @@ def api_player_action():
 
             return jsonify({
                 "success": True,
-                "message": f"已將 {player} 設為管理員",
+                "message": f"已將 {player} 設為管理員!",
                 "result": result,
                 "op": True
             })
@@ -195,9 +195,14 @@ def api_player_op_status():
 
 @player_bp.route("/api/player/permissions")
 def api_player_permissions():
+    from backend.player_permissions.player_permission_service import (
+        get_effective_online_mode
+    )
+
     return jsonify({
         "success": True,
-        "players": get_player_permission_list()
+        "players": get_player_permission_list(),
+        "online_mode": get_effective_online_mode(),
     })
 
 

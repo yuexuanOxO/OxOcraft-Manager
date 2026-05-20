@@ -246,10 +246,29 @@ function createPlayerPermissionCard(player) {
                 UUID: ${escapeHtml(player.player_uuid)}
             </div>
 
-            <div class="player-permission-meta">
-                成為管理員時間：
-                ${player.op_since || "未知"}
-            </div>
+            ${
+                player.op
+                    ? `
+                        <div class="player-permission-meta">
+                            成為管理員時間：
+                            ${player.op_since ? escapeHtml(player.op_since) : "未知"}
+                        </div>
+                    `
+                    : (
+                        player.op_since
+                            ? `
+                                <div class="player-permission-meta">
+                                    曾成為管理員：
+                                    ${escapeHtml(player.op_since)}
+                                </div>
+                            `
+                            : `
+                                <div class="player-permission-meta empty">
+                                    　
+                                </div>
+                            `
+                    )
+            }
 
         </div>
 

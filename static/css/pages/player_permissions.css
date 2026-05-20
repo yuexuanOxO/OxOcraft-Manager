@@ -133,6 +133,12 @@
 .player-permission-info {
     min-width: 0;
     flex: 1;
+
+    min-height: 56px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .player-permission-name-row {
@@ -182,6 +188,7 @@
     font-size: 12px;
     color: #aaa;
     word-break: break-all;
+    line-height: 1.35;
 }
 
 .player-permission-action {
@@ -242,4 +249,8 @@
     border-color: #c08b42;
     color: #f0c36a;
     background: rgba(192, 139, 66, 0.12);
+}
+
+.player-permission-meta.empty {
+    visibility: hidden;
 }

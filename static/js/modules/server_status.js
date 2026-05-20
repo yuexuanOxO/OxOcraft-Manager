@@ -153,6 +153,15 @@ function renderPlayersFromQuery(players) {
         menu.className = "player-menu";
         menu.hidden = true;
 
+
+        const opBtn = document.createElement("button");
+        opBtn.className = "player-menu-item";
+        opBtn.type = "button";
+        opBtn.textContent = "檢查權限中...";
+        opBtn.disabled = true;
+        opBtn.dataset.action = "toggle-op";
+        opBtn.dataset.player = player;
+
         const kickBtn = document.createElement("button");
         kickBtn.className = "player-menu-item";
         kickBtn.type = "button";
@@ -160,7 +169,11 @@ function renderPlayersFromQuery(players) {
         kickBtn.dataset.action = "kick";
         kickBtn.dataset.player = player;
 
+        menu.appendChild(opBtn);
+        loadPlayerOpStatus(player, opBtn);
+
         menu.appendChild(kickBtn);
+
         menuWrap.appendChild(menuBtn);
         menuWrap.appendChild(menu);
 
@@ -168,6 +181,36 @@ function renderPlayersFromQuery(players) {
         item.appendChild(menuWrap);
         playersList.appendChild(item);
     });
+}
+
+
+async function loadPlayerOpStatus(player, opBtn) {
+    try {
+        const response = await fetch(
+            `/api/player/op-status?player=${encodeURIComponent(player)}`,
+            { cache: "no-store" }
+        );
+
+        const data = await response.json();
+
+        if (!data.success) {
+            opBtn.textContent = "設為/收回管理員";
+            opBtn.disabled = false;
+            return;
+        }
+
+        opBtn.textContent = data.op
+            ? "收回管理員權限"
+            : "設為管理員";
+
+        opBtn.disabled = false;
+
+    } catch (error) {
+        console.error("讀取玩家 OP 狀態失敗:", error);
+
+        opBtn.textContent = "設為/收回管理員";
+        opBtn.disabled = false;
+    }
 }
 
 

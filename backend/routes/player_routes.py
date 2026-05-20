@@ -1,11 +1,103 @@
+import hashlib
+import json
+import urllib.request
+import uuid
+
 from flask import Blueprint, jsonify, request
 
+from backend.paths import MC_ROOT, SERVER_PROPERTIES_PATH
 from backend.rcon_service import send_rcon_command
 
 
 player_bp = Blueprint("player", __name__)
 
+OPS_FILE = MC_ROOT / "ops.json"
 
+
+def read_server_property(key: str, default: str = "") -> str:
+    if not SERVER_PROPERTIES_PATH.exists():
+        return default
+
+    with SERVER_PROPERTIES_PATH.open("r", encoding="utf-8") as file:
+        for line in file:
+            line = line.strip()
+
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+
+            prop_key, prop_value = line.split("=", 1)
+
+            if prop_key.strip() == key:
+                return prop_value.strip()
+
+    return default
+
+
+def is_online_mode() -> bool:
+    return read_server_property("online-mode", "true").lower() == "true"
+
+
+def get_offline_player_uuid(player_name: str) -> str:
+    raw = ("OfflinePlayer:" + player_name).encode("utf-8")
+    digest = bytearray(hashlib.md5(raw).digest())
+
+    digest[6] &= 0x0f
+    digest[6] |= 0x30
+    digest[8] &= 0x3f
+    digest[8] |= 0x80
+
+    return str(uuid.UUID(bytes=bytes(digest)))
+
+
+def get_mojang_uuid(player_name: str) -> str | None:
+    url = f"https://api.mojang.com/users/profiles/minecraft/{player_name}"
+
+    try:
+        request_obj = urllib.request.Request(
+            url,
+            headers={"User-Agent": "OxOcraft-Manager"}
+        )
+
+        with urllib.request.urlopen(request_obj, timeout=5) as response:
+            if response.status == 204:
+                return None
+
+            data = json.loads(response.read().decode("utf-8"))
+
+        raw_uuid = data.get("id")
+
+        if not raw_uuid:
+            return None
+
+        return str(uuid.UUID(raw_uuid))
+
+    except Exception:
+        return None
+
+
+def resolve_player_uuid(player_name: str) -> str | None:
+    if is_online_mode():
+        return get_mojang_uuid(player_name)
+
+    return get_offline_player_uuid(player_name)
+
+
+def is_player_op(player_name: str) -> bool:
+    player_uuid = resolve_player_uuid(player_name)
+
+    if not player_uuid:
+        return False
+
+    if not OPS_FILE.exists():
+        return False
+
+    with OPS_FILE.open("r", encoding="utf-8") as file:
+        ops_data = json.load(file)
+
+    return any(
+        str(entry.get("uuid", "")).lower() == player_uuid.lower()
+        for entry in ops_data
+    )
 
 
 @player_bp.route("/api/player/action", methods=["POST"])
@@ -23,19 +115,75 @@ def api_player_action():
     try:
         if action == "kick":
             result = send_rcon_command(f"kick {player}")
+
+            return jsonify({
+                "success": True,
+                "message": f"已踢出玩家 {player}",
+                "result": result
+            })
+
+        elif action == "toggle-op":
+            player_uuid = resolve_player_uuid(player)
+
+            if not player_uuid:
+                return jsonify({
+                    "success": False,
+                    "message": f"無法取得玩家 {player} 的 UUID，請確認網路連線或玩家名稱是否正確"
+                }), 400
+
+            if is_player_op(player):
+                result = send_rcon_command(f"deop {player}")
+
+                return jsonify({
+                    "success": True,
+                    "message": f"已收回 {player} 的管理員權限",
+                    "result": result,
+                    "op": False
+                })
+
+            result = send_rcon_command(f"op {player}")
+
+            return jsonify({
+                "success": True,
+                "message": f"已將 {player} 設為管理員",
+                "result": result,
+                "op": True
+            })
+
         else:
             return jsonify({
                 "success": False,
                 "message": "不支援的操作"
             }), 400
 
-        return jsonify({
-            "success": True,
-            "result": result
-        })
-
     except Exception as error:
         return jsonify({
             "success": False,
             "message": str(error)
         }), 500
+    
+
+@player_bp.route("/api/player/op-status")
+def api_player_op_status():
+    player = str(request.args.get("player", "")).strip()
+
+    if not player:
+        return jsonify({
+            "success": False,
+            "message": "缺少玩家名稱"
+        }), 400
+
+    player_uuid = resolve_player_uuid(player)
+
+    if not player_uuid:
+        return jsonify({
+            "success": False,
+            "message": f"無法取得玩家 {player} 的 UUID"
+        }), 400
+
+    return jsonify({
+        "success": True,
+        "player": player,
+        "uuid": player_uuid,
+        "op": is_player_op(player)
+    })

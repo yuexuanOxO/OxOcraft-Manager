@@ -98,6 +98,19 @@ def init_db() -> None:
             )
         """)
 
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS players (
+                player_uuid TEXT PRIMARY KEY,
+                player_name TEXT NOT NULL,
+                uuid_type TEXT NOT NULL DEFAULT 'unknown',
+                first_seen_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                last_seen_at DATETIME,
+                usercache_expires_on TEXT,
+                op_since DATETIME,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
         conn.commit()
 
 
@@ -390,5 +403,86 @@ def mark_interrupted_local_backups_failed() -> None:
             WHERE backup_type = 'local'
               AND status = 'running'
         """)
+
+        conn.commit()
+
+
+def upsert_player_from_usercache(
+    player_uuid: str,
+    player_name: str,
+    uuid_type: str,
+    usercache_expires_on: str | None,
+) -> None:
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with get_connection() as conn:
+        conn.execute("""
+            INSERT INTO players (
+                player_uuid,
+                player_name,
+                uuid_type,
+                first_seen_at,
+                last_seen_at,
+                usercache_expires_on,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(player_uuid) DO UPDATE SET
+                player_name = excluded.player_name,
+                uuid_type = excluded.uuid_type,
+                last_seen_at = excluded.last_seen_at,
+                usercache_expires_on = excluded.usercache_expires_on,
+                updated_at = excluded.updated_at
+        """, (
+            player_uuid,
+            player_name,
+            uuid_type,
+            now,
+            now,
+            usercache_expires_on,
+            now,
+        ))
+
+        conn.commit()
+
+
+def get_all_players() -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute("""
+            SELECT *
+            FROM players
+            ORDER BY player_name COLLATE NOCASE ASC, updated_at DESC
+        """).fetchall()
+
+    return [dict(row) for row in rows]
+
+
+def update_player_op_since(
+    player_uuid: str,
+    player_name: str,
+    op_since: str,
+) -> None:
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with get_connection() as conn:
+        conn.execute("""
+            INSERT INTO players (
+                player_uuid,
+                player_name,
+                uuid_type,
+                op_since,
+                updated_at
+            )
+            VALUES (?, ?, 'unknown', ?, ?)
+            ON CONFLICT(player_uuid) DO UPDATE SET
+                player_name = excluded.player_name,
+                op_since = excluded.op_since,
+                updated_at = excluded.updated_at
+        """, (
+            player_uuid,
+            player_name,
+            op_since,
+            now,
+        ))
 
         conn.commit()

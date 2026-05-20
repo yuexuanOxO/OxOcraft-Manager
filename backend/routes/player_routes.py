@@ -7,6 +7,10 @@ from flask import Blueprint, jsonify, request
 
 from backend.paths import MC_ROOT, SERVER_PROPERTIES_PATH
 from backend.rcon_service import send_rcon_command
+from backend.player_permissions.player_permission_service import (
+    get_player_permission_list,
+    toggle_player_op,
+)
 
 
 player_bp = Blueprint("player", __name__)
@@ -187,3 +191,39 @@ def api_player_op_status():
         "uuid": player_uuid,
         "op": is_player_op(player)
     })
+
+
+@player_bp.route("/api/player/permissions")
+def api_player_permissions():
+    return jsonify({
+        "success": True,
+        "players": get_player_permission_list()
+    })
+
+
+@player_bp.route("/api/player/permission/toggle-op", methods=["POST"])
+def api_player_permission_toggle_op():
+    data = request.get_json(silent=True) or {}
+
+    player_uuid = str(data.get("uuid", "")).strip()
+    player_name = str(data.get("name", "")).strip()
+
+    if not player_uuid or not player_name:
+        return jsonify({
+            "success": False,
+            "message": "缺少玩家 UUID 或名稱"
+        }), 400
+
+    try:
+        result = toggle_player_op(
+            player_uuid=player_uuid,
+            player_name=player_name,
+        )
+
+        return jsonify(result)
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error)
+        }), 500

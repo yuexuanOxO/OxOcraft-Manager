@@ -39,6 +39,7 @@
     font-size: 22px;
     font-weight: bold;
     color: #f5f5f5;
+    text-align: center;
 }
 
 .player-whitelist-summary {
@@ -418,9 +419,8 @@
 
 .player-whitelist-title-row {
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     align-items: center;
-    gap: 12px;
 }
 
 .player-whitelist-status-row {
@@ -480,4 +480,8 @@
     color: #888;
 
     box-shadow: none;
+}
+
+.player-whitelist-header-main {
+    flex: 1;
 }

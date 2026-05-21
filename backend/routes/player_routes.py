@@ -18,6 +18,8 @@ from backend.player_permissions.player_whitelist_service import (
     toggle_player_whitelist,
     add_player_whitelist_by_name,
     delete_whitelist_candidate,
+    get_whitelist_settings,
+    toggle_whitelist_setting,
 )
 
 
@@ -345,6 +347,31 @@ def api_player_whitelist_candidate_delete():
         )
 
         return jsonify(result)
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error)
+        }), 500
+    
+
+@player_bp.route("/api/player/whitelist/settings")
+def api_player_whitelist_settings():
+    return jsonify({
+        "success": True,
+        **get_whitelist_settings(),
+    })
+
+
+@player_bp.route("/api/player/whitelist/settings/toggle", methods=["POST"])
+def api_player_whitelist_settings_toggle():
+    data = request.get_json(silent=True) or {}
+    key = str(data.get("key", "")).strip()
+
+    try:
+        result = toggle_whitelist_setting(key)
+        status = 200 if result.get("success") else 400
+        return jsonify(result), status
 
     except Exception as error:
         return jsonify({

@@ -3,7 +3,7 @@ import hashlib
 import uuid
 import urllib.request
 
-from backend.paths import MC_ROOT
+from backend.paths import MC_ROOT,SERVER_PROPERTIES_PATH
 from backend.rcon_service import send_rcon_command
 from backend.server_monitor import get_cached_server_status
 
@@ -328,4 +328,131 @@ def delete_whitelist_candidate(
         "message": (
             f"已刪除 {player_name} 的玩家紀錄"
         ),
+    }
+
+
+def read_server_property(key: str, default: str = "false") -> str:
+    if not SERVER_PROPERTIES_PATH.exists():
+        return default
+
+    with SERVER_PROPERTIES_PATH.open("r", encoding="utf-8") as file:
+        for line in file:
+            line = line.strip()
+
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+
+            prop_key, prop_value = line.split("=", 1)
+
+            if prop_key.strip() == key:
+                return prop_value.strip()
+
+    return default
+
+
+def write_server_property(key: str, value: str) -> None:
+    lines = []
+
+    if SERVER_PROPERTIES_PATH.exists():
+        with SERVER_PROPERTIES_PATH.open("r", encoding="utf-8") as file:
+            lines = file.readlines()
+
+    found = False
+    new_lines = []
+
+    for line in lines:
+        if line.strip() and not line.lstrip().startswith("#") and "=" in line:
+            prop_key, _ = line.split("=", 1)
+
+            if prop_key.strip() == key:
+                new_lines.append(f"{key}={value}\n")
+                found = True
+                continue
+
+        new_lines.append(line)
+
+    if not found:
+        new_lines.append(f"{key}={value}\n")
+
+    with SERVER_PROPERTIES_PATH.open("w", encoding="utf-8") as file:
+        file.writelines(new_lines)
+
+
+def get_whitelist_settings() -> dict:
+    status = get_cached_server_status()
+    data = status.get("data", {})
+    server_state = data.get("state", "offline")
+
+    return {
+        "white_list": read_server_property("white-list", "false").lower() == "true",
+        "enforce_whitelist": read_server_property("enforce-whitelist", "false").lower() == "true",
+        "server_ready": is_server_ready(),
+        "server_state": server_state,
+        "server_busy": server_state in ["starting", "stopping", "backuping"],
+    }
+
+
+def set_white_list_enabled(enabled: bool) -> dict:
+    value = "true" if enabled else "false"
+
+    if is_server_ready():
+        command = "whitelist on" if enabled else "whitelist off"
+        result = send_rcon_command(command)
+
+        write_server_property("white-list", value)
+
+        return {
+            "success": True,
+            "key": "white-list",
+            "value": enabled,
+            "result": result,
+            "message": f"已{'開啟' if enabled else '關閉'}白名單",
+        }
+
+    write_server_property("white-list", value)
+
+    return {
+        "success": True,
+        "key": "white-list",
+        "value": enabled,
+        "result": "offline-edit",
+        "message": f"已{'開啟' if enabled else '關閉'}白名單",
+    }
+
+
+def set_enforce_whitelist_enabled(enabled: bool) -> dict:
+
+    settings = get_whitelist_settings()
+
+    if settings["server_ready"]:
+        return {
+            "success": False,
+            "message": "白名單已在線啟用，請先關閉白名單或重啟後再修改 enforce-whitelist",
+        }
+
+    value = "true" if enabled else "false"
+
+    write_server_property("enforce-whitelist", value)
+
+    return {
+        "success": True,
+        "key": "enforce-whitelist",
+        "value": enabled,
+        "result": "server-properties-edit",
+        "message": f"已{'開啟' if enabled else '關閉'}強制執行白名單，重啟後生效",
+    }
+
+
+def toggle_whitelist_setting(key: str) -> dict:
+    settings = get_whitelist_settings()
+
+    if key == "white-list":
+        return set_white_list_enabled(not settings["white_list"])
+
+    if key == "enforce-whitelist":
+        return set_enforce_whitelist_enabled(not settings["enforce_whitelist"])
+
+    return {
+        "success": False,
+        "message": "不支援的白名單設定",
     }

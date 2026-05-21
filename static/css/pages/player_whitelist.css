@@ -399,3 +399,85 @@
 .whitelist-candidate-delete-btn:hover {
     background: #422e2e;
 }
+
+
+
+.setting-switch-btn.on .setting-switch-text {
+    color: #7dff7d;
+}
+
+.setting-switch-btn.off .setting-switch-text {
+    color: #ff5d5d;
+}
+
+
+.player-whitelist-setting-hint {
+    font-size: 12px;
+    color: #aaa;
+}
+
+.player-whitelist-title-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.player-whitelist-status-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 36px;
+}
+
+.player-whitelist-status-left {
+    flex: 0 0 130px;
+}
+
+.player-whitelist-switch-area {
+    display: flex;
+    align-items: center;
+    gap: 36px;
+    padding-top: 4px;
+}
+
+.player-whitelist-switch-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.player-whitelist-switch-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #f0f0f0;
+    white-space: nowrap;
+}
+
+.player-whitelist-switch-group .setting-switch-btn {
+    min-width: auto;
+    gap: 8px;
+}
+
+.setting-switch-btn.on .setting-switch-text {
+    color: #7dff7d;
+}
+
+.setting-switch-btn.off .setting-switch-text {
+    color: #ff5d5d;
+}
+
+
+.player-whitelist-add-open-btn:disabled,
+.player-whitelist-refresh-btn:disabled,
+.player-whitelist-action:disabled {
+
+    opacity: 0.45;
+    cursor: not-allowed;
+
+    filter: grayscale(100%);
+
+    border-color: #555;
+    color: #888;
+
+    box-shadow: none;
+}

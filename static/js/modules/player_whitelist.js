@@ -3,6 +3,15 @@ import { showInfo } from "./system_dialog.js";
 
 let allPlayers = [];
 let candidatePlayers = [];
+let whitelistSettingsTimer = null;
+
+let whitelistSettings = {
+    white_list: false,
+    enforce_whitelist: false,
+    server_ready: false,
+    server_state: "offline",
+    server_busy: false,
+};
 
 
 export function initPlayerWhitelist() {
@@ -36,26 +45,39 @@ export function initPlayerWhitelist() {
     const addInput =
         document.getElementById("addWhitelistPlayerInput");
 
+    const whiteListToggleBtn =
+        document.getElementById("whiteListToggleBtn");
+
+    const enforceWhitelistToggleBtn =
+        document.getElementById("enforceWhitelistToggleBtn");
+
     if (!openBtn || !modal) {
         return;
     }
 
     openBtn.addEventListener("click", async () => {
         modal.classList.remove("hidden");
+
+        startWhitelistSettingsWatcher();
+
+        await loadWhitelistSettings();
         await loadPlayerWhitelist();
     });
 
     closeBtn?.addEventListener("click", () => {
         modal.classList.add("hidden");
+        stopWhitelistSettingsWatcher();
     });
 
     modal.addEventListener("click", (event) => {
         if (event.target === modal) {
             modal.classList.add("hidden");
+            stopWhitelistSettingsWatcher();
         }
     });
 
     refreshBtn?.addEventListener("click", async () => {
+        await loadWhitelistSettings();
         await loadPlayerWhitelist();
     });
 
@@ -88,6 +110,257 @@ export function initPlayerWhitelist() {
             await handleAddWhitelistPlayer();
         }
     });
+
+    whiteListToggleBtn?.addEventListener("click", async () => {
+        await toggleWhitelistSetting("white-list");
+    });
+
+    enforceWhitelistToggleBtn?.addEventListener("click", async () => {
+        await toggleWhitelistSetting("enforce-whitelist");
+    });
+
+}
+
+
+function startWhitelistSettingsWatcher() {
+    stopWhitelistSettingsWatcher();
+
+    whitelistSettingsTimer = window.setInterval(async () => {
+        const modal =
+            document.getElementById("playerWhitelistModal");
+
+        if (!modal || modal.classList.contains("hidden")) {
+            stopWhitelistSettingsWatcher();
+            return;
+        }
+
+        await loadWhitelistSettings();
+
+    }, 1000);
+}
+
+
+function stopWhitelistSettingsWatcher() {
+    if (whitelistSettingsTimer) {
+        window.clearInterval(whitelistSettingsTimer);
+        whitelistSettingsTimer = null;
+    }
+}
+
+
+async function loadWhitelistSettings() {
+    try {
+        const response = await fetch(
+            "/api/player/whitelist/settings",
+            { cache: "no-store" }
+        );
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(
+                data.message || "白名單設定載入失敗"
+            );
+        }
+
+        whitelistSettings = {
+            white_list: Boolean(data.white_list),
+            enforce_whitelist: Boolean(data.enforce_whitelist),
+            server_ready: Boolean(data.server_ready),
+            server_state: data.server_state || "offline",
+            server_busy: Boolean(data.server_busy),
+        };
+
+        renderWhitelistSettings();
+
+    } catch (error) {
+        console.error("白名單設定載入失敗:", error);
+    }
+}
+
+
+function renderWhitelistSettings() {
+    const whiteListToggleBtn =
+        document.getElementById("whiteListToggleBtn");
+
+    const enforceWhitelistToggleBtn =
+        document.getElementById("enforceWhitelistToggleBtn");
+
+    const enforceHint =
+        document.getElementById("enforceWhitelistHint");
+
+    if (whiteListToggleBtn) {
+        whiteListToggleBtn.classList.toggle(
+            "on",
+            whitelistSettings.white_list
+        );
+
+        whiteListToggleBtn.classList.toggle(
+            "off",
+            !whitelistSettings.white_list
+        );
+
+        const whiteListText =
+            whiteListToggleBtn.querySelector(".setting-switch-text");
+
+        if (whiteListText) {
+            whiteListText.textContent =
+                whitelistSettings.white_list
+                    ? "已開啟"
+                    : "已關閉";
+        }
+
+        whiteListToggleBtn.disabled =
+            whitelistSettings.server_busy;
+    }
+
+    if (enforceWhitelistToggleBtn) {
+        enforceWhitelistToggleBtn.classList.toggle(
+            "on",
+            whitelistSettings.enforce_whitelist
+        );
+
+        enforceWhitelistToggleBtn.classList.toggle(
+            "off",
+            !whitelistSettings.enforce_whitelist
+        );
+
+        const enforceWhitelistText =
+            enforceWhitelistToggleBtn.querySelector(".setting-switch-text");
+
+        if (enforceWhitelistText) {
+            enforceWhitelistText.textContent =
+                whitelistSettings.enforce_whitelist
+                    ? "已開啟"
+                    : "已關閉";
+        }
+
+        enforceWhitelistToggleBtn.disabled =
+            whitelistSettings.server_busy ||
+            whitelistSettings.server_ready;
+    }
+
+    if (enforceHint) {
+        if (whitelistSettings.server_ready) {
+            enforceHint.textContent =
+                "伺服器在線時無法修改，需關閉伺服器後變更";
+        } else {
+            enforceHint.textContent =
+                "離線修改 server.properties";
+        }
+    }
+
+    renderWhitelistActionButtons();
+
+}
+
+
+function renderWhitelistActionButtons() {
+    const whitelistEnabled =
+        whitelistSettings.white_list;
+
+    const uiLocked =
+        whitelistSettings.server_busy;
+
+    const openAddBtn =
+        document.getElementById("openAddWhitelistPlayerBtn");
+
+    const refreshBtn =
+        document.getElementById("refreshPlayerWhitelistBtn");
+
+    if (openAddBtn) {
+        openAddBtn.disabled =
+            uiLocked || !whitelistEnabled;
+    }
+
+    if (refreshBtn) {
+        refreshBtn.disabled =
+            uiLocked || !whitelistEnabled;
+    }
+
+    document
+        .querySelectorAll(".player-whitelist-action")
+        .forEach((button) => {
+            button.disabled =
+                uiLocked || !whitelistEnabled;
+        });
+}
+
+
+function setWhitelistUiBusy(busy) {
+
+    document
+        .querySelectorAll(`
+            #playerWhitelistModal button,
+            #playerWhitelistModal input
+        `)
+        .forEach((element) => {
+
+            if (
+                element.id === "closePlayerWhitelistBtn"
+            ) {
+                return;
+            }
+
+            element.disabled = busy;
+        });
+}
+
+
+async function toggleWhitelistSetting(key) {
+    const whiteListToggleBtn =
+        document.getElementById("whiteListToggleBtn");
+
+    const enforceWhitelistToggleBtn =
+        document.getElementById("enforceWhitelistToggleBtn");
+
+    setWhitelistUiBusy(true);
+
+    try {
+        const response = await fetch(
+            "/api/player/whitelist/settings/toggle",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ key })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(
+                data.message || "白名單設定切換失敗"
+            );
+        }
+
+        await loadWhitelistSettings();
+
+        await showInfo({
+            title: "玩家白名單",
+            message: data.message,
+            confirmText: "關閉",
+            variant: "success"
+        });
+
+    } catch (error) {
+        console.error("白名單設定切換失敗:", error);
+
+        await showInfo({
+            title: "錯誤",
+            message: error.message || "白名單設定切換失敗",
+            confirmText: "關閉",
+            variant: "error"
+        });
+
+    } finally {
+
+        setWhitelistUiBusy(false);
+
+        renderWhitelistSettings();
+    }
 }
 
 
@@ -208,6 +481,9 @@ function renderPlayerWhitelistList() {
             createPlayerWhitelistCard(player)
         );
     });
+
+    renderWhitelistActionButtons();
+
 }
 
 

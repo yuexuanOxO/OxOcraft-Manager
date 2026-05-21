@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-05-21T22:09:13",
-    "properties_modified_comment": "Thu May 21 22:09:07 CST 2026",
+    "captured_at": "2026-05-21T22:14:27",
+    "properties_modified_comment": "Thu May 21 22:14:09 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -45,7 +45,7 @@
         "force-gamemode": "false",
         "rate-limit": "0",
         "hardcore": "false",
-        "white-list": "true",
+        "white-list": "false",
         "broadcast-console-to-ops": "true",
         "spawn-npcs": "true",
         "spawn-animals": "true",
@@ -55,7 +55,7 @@
         "level-type": "minecraft\\:normal",
         "text-filtering-config": "",
         "spawn-monsters": "true",
-        "enforce-whitelist": "false",
+        "enforce-whitelist": "true",
         "spawn-protection": "16",
         "resource-pack-sha1": "",
         "max-world-size": "29999984"

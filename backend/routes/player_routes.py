@@ -17,6 +17,7 @@ from backend.player_permissions.player_whitelist_service import (
     get_player_whitelist_candidate_list,
     toggle_player_whitelist,
     add_player_whitelist_by_name,
+    delete_whitelist_candidate,
 )
 
 
@@ -307,6 +308,43 @@ def api_player_whitelist_add():
         result = add_player_whitelist_by_name(player_name)
         status = 200 if result.get("success") else 400
         return jsonify(result), status
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error)
+        }), 500
+    
+
+@player_bp.route(
+    "/api/player/whitelist/candidate/delete",
+    methods=["POST"]
+)
+def api_player_whitelist_candidate_delete():
+
+    data = request.get_json(silent=True) or {}
+
+    player_uuid = str(
+        data.get("uuid", "")
+    ).strip()
+
+    player_name = str(
+        data.get("name", "")
+    ).strip()
+
+    if not player_uuid or not player_name:
+        return jsonify({
+            "success": False,
+            "message": "缺少玩家 UUID 或名稱"
+        }), 400
+
+    try:
+        result = delete_whitelist_candidate(
+            player_uuid=player_uuid,
+            player_name=player_name,
+        )
+
+        return jsonify(result)
 
     except Exception as error:
         return jsonify({

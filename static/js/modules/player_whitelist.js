@@ -299,6 +299,7 @@ async function removePlayerWhitelist(player) {
         }
 
         await loadPlayerWhitelist();
+        await loadWhitelistCandidates();
 
         await showInfo({
             title: "玩家白名單",
@@ -511,20 +512,39 @@ function createWhitelistCandidateCard(player) {
 
         </div>
 
-        <button
-            class="
-                whitelist-candidate-add-btn
+        <div class="whitelist-candidate-actions">
+
+            <button
+                class="
+                    whitelist-candidate-add-btn
+                    ${player.whitelisted ? "disabled" : ""}
+                "
+                type="button"
                 ${player.whitelisted ? "disabled" : ""}
-            "
-            type="button"
-            ${player.whitelisted ? "disabled" : ""}
-        >
-            ＋
-        </button>
+            >
+                ＋
+            </button>
+
+            <button
+                class="whitelist-candidate-delete-btn"
+                type="button"
+                title="刪除玩家紀錄"
+            >
+                ✕
+            </button>
+
+        </div>
     `;
 
     const addBtn =
         card.querySelector(".whitelist-candidate-add-btn");
+
+    const deleteBtn =
+        card.querySelector(".whitelist-candidate-delete-btn");
+
+    deleteBtn?.addEventListener("click", async () => {
+        await deleteWhitelistCandidate(player);
+    });
 
     addBtn?.addEventListener("click", async () => {
         if (player.whitelisted) return;
@@ -555,6 +575,63 @@ function createWhitelistCandidateCard(player) {
     });
 
     return card;
+}
+
+
+async function deleteWhitelistCandidate(player) {
+
+    const confirmed = window.confirm(
+        `確定要刪除「${player.player_name}」的玩家紀錄嗎？\n\n這會從之前加入過的玩家清單中移除。`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            "/api/player/whitelist/candidate/delete",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    uuid: player.player_uuid,
+                    name: player.player_name,
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(
+                data.message || "刪除玩家紀錄失敗"
+            );
+        }
+
+        await loadWhitelistCandidates();
+
+        await showInfo({
+            title: "玩家白名單",
+            message: data.message,
+            confirmText: "關閉",
+            variant: "success"
+        });
+
+    } catch (error) {
+
+        console.error("刪除玩家紀錄失敗:", error);
+
+        await showInfo({
+            title: "錯誤",
+            message: error.message || "刪除玩家紀錄失敗",
+            confirmText: "關閉",
+            variant: "error"
+        });
+    }
 }
 
 

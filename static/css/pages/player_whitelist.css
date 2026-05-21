@@ -374,3 +374,28 @@
     color: #8cbcff;
     background: rgba(75, 120, 184, 0.12);
 }
+
+
+.whitelist-candidate-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.whitelist-candidate-delete-btn {
+    width: 42px;
+    height: 42px;
+    border: 1px solid #b85c5c;
+    border-radius: 6px;
+    background: #303030;
+    color: #ff9c9c;
+    font-size: 22px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.whitelist-candidate-delete-btn:hover {
+    background: #422e2e;
+}

@@ -11,6 +11,8 @@ from backend.server_monitor import get_cached_server_status
 from backend.player_permissions.player_identity_service import (
     get_known_players,
     get_uuid_type,
+    upsert_player_to_usercache,
+    remove_player_from_usercache,
 )
 
 from backend.player_permissions.player_permission_service import (
@@ -139,6 +141,11 @@ def add_player_whitelist(
         })
 
         save_whitelist_entries(entries)
+
+    upsert_player_to_usercache(
+        player_uuid=player_uuid,
+        player_name=player_name,
+    )
 
     return {
         "success": True,
@@ -307,3 +314,18 @@ def add_player_whitelist_by_name(player_name: str) -> dict:
         player_uuid=player_uuid,
         player_name=player_name,
     )
+
+
+def delete_whitelist_candidate(
+    player_uuid: str,
+    player_name: str,
+) -> dict:
+
+    remove_player_from_usercache(player_uuid)
+
+    return {
+        "success": True,
+        "message": (
+            f"已刪除 {player_name} 的玩家紀錄"
+        ),
+    }

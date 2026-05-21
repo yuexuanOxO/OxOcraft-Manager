@@ -486,3 +486,18 @@ def update_player_op_since(
         ))
 
         conn.commit()
+
+
+def delete_player_by_uuid(player_uuid: str) -> None:
+    conn = get_connection()
+
+    conn.execute(
+        """
+        DELETE FROM players
+        WHERE lower(player_uuid) = lower(?)
+        """,
+        (player_uuid,)
+    )
+
+    conn.commit()
+    conn.close()

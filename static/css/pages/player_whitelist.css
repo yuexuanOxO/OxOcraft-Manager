@@ -1,0 +1,376 @@
+.player-whitelist-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.65);
+}
+
+.player-whitelist-modal.hidden {
+    display: none;
+}
+
+.player-whitelist-panel {
+    width: min(820px, calc(100vw - 48px));
+    max-height: calc(100vh - 64px);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px;
+    background: #1f1f1f;
+    border: 2px solid #555;
+    border-radius: 10px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+    box-sizing: border-box;
+}
+
+.player-whitelist-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 12px;
+}
+
+.player-whitelist-title {
+    font-size: 22px;
+    font-weight: bold;
+    color: #f5f5f5;
+}
+
+.player-whitelist-summary {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #bbb;
+}
+
+.player-whitelist-player-count {
+    margin-top: 4px;
+    font-size: 13px;
+    color: #bbb;
+}
+
+.player-whitelist-close-btn {
+    width: 34px;
+    height: 34px;
+    border: 1px solid #666;
+    border-radius: 6px;
+    background: #2c2c2c;
+    color: #f5f5f5;
+    cursor: pointer;
+}
+
+.player-whitelist-close-btn:hover {
+    background: #3a3a3a;
+}
+
+.player-whitelist-toolbar {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 10px;
+}
+
+.player-whitelist-search {
+    flex: 1;
+    min-width: 220px;
+    padding: 10px 12px;
+    border: 1px solid #555;
+    border-radius: 6px;
+    background: #141414;
+    color: #f5f5f5;
+    box-sizing: border-box;
+}
+
+.player-whitelist-filters {
+    display: flex;
+    gap: 6px;
+}
+
+.player-whitelist-filter,
+.player-whitelist-refresh-btn {
+    padding: 9px 12px;
+    border: 1px solid #555;
+    border-radius: 6px;
+    background: #2b2b2b;
+    color: #f5f5f5;
+    cursor: pointer;
+}
+
+.player-whitelist-filter:hover,
+.player-whitelist-refresh-btn:hover {
+    background: #3a3a3a;
+}
+
+.player-whitelist-filter.active {
+    border-color: #f0c36a;
+    color: #f0c36a;
+}
+
+.player-whitelist-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.player-whitelist-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: #262626;
+}
+
+.player-whitelist-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 4px;
+    border: 2px solid #444;
+    image-rendering: pixelated;
+}
+
+.player-whitelist-info {
+    min-width: 0;
+    flex: 1;
+    min-height: 56px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.player-whitelist-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.player-whitelist-name {
+    font-size: 16px;
+    color: #f5f5f5;
+    font-weight: bold;
+}
+
+.player-whitelist-badge {
+    padding: 3px 7px;
+    border-radius: 999px;
+    font-size: 12px;
+    border: 1px solid #555;
+    color: #ccc;
+}
+
+.player-whitelist-badge.whitelisted {
+    border-color: #6c8f52;
+    color: #a9e28a;
+}
+
+.player-whitelist-badge.normal {
+    border-color: #777;
+    color: #bbb;
+}
+
+.player-whitelist-uuid,
+.player-whitelist-meta {
+    margin-top: 4px;
+    font-size: 12px;
+    color: #aaa;
+    word-break: break-all;
+    line-height: 1.35;
+}
+
+.player-whitelist-action {
+    flex-shrink: 0;
+    padding: 9px 12px;
+    border: 1px solid #666;
+    border-radius: 6px;
+    background: #303030;
+    color: #f5f5f5;
+    cursor: pointer;
+}
+
+.player-whitelist-action:hover {
+    background: #3b3b3b;
+}
+
+.player-whitelist-action.whitelisted {
+    border-color: #b85c5c;
+    color: #ff9c9c;
+}
+
+.player-whitelist-action.normal {
+    border-color: #6c8f52;
+    color: #a9e28a;
+}
+
+.player-whitelist-empty {
+    padding: 24px;
+    color: #aaa;
+    text-align: center;
+}
+
+.player-whitelist-mode {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid #555;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.player-whitelist-mode.online {
+    border-color: #4f9d69;
+    color: #8ee891;
+    background: rgba(79, 157, 105, 0.12);
+}
+
+.player-whitelist-mode.offline {
+    border-color: #c08b42;
+    color: #f0c36a;
+    background: rgba(192, 139, 66, 0.12);
+}
+
+
+.player-whitelist-add-open-btn {
+    flex-shrink: 0;
+    padding: 10px 14px;
+    border: 1px solid #c08b42;
+    border-radius: 6px;
+    background: #2b2b2b;
+    color: #f0c36a;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.player-whitelist-add-open-btn:hover {
+    background: #3a3324;
+}
+
+.add-whitelist-player-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 950;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.55);
+}
+
+.add-whitelist-player-modal.hidden {
+    display: none;
+}
+
+.add-whitelist-player-panel {
+    width: min(680px, calc(100vw - 64px));
+    max-height: calc(100vh - 120px);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px;
+    background: #1f1f1f;
+    border: 2px solid #555;
+    border-radius: 10px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+    box-sizing: border-box;
+}
+
+.add-whitelist-player-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.add-whitelist-player-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #f5f5f5;
+}
+
+.add-whitelist-player-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.add-whitelist-player-input-row .player-whitelist-search {
+    flex: 1;
+}
+
+.add-whitelist-player-subtitle {
+    margin-top: 4px;
+    color: #ddd;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.whitelist-candidate-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+    max-height: 340px;
+    padding-right: 4px;
+}
+
+.whitelist-candidate-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: #262626;
+}
+
+.whitelist-candidate-add-btn {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border: 1px solid #6c8f52;
+    border-radius: 6px;
+    background: #303030;
+    color: #a9e28a;
+    font-size: 26px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.whitelist-candidate-add-btn:hover {
+    background: #35422e;
+}
+
+.whitelist-candidate-add-btn.disabled,
+.whitelist-candidate-add-btn:disabled {
+    border-color: #555;
+    color: #777;
+    cursor: not-allowed;
+    background: #282828;
+}
+
+.player-whitelist-uuid-type {
+    padding: 3px 7px;
+    border-radius: 999px;
+    font-size: 12px;
+    border: 1px solid #555;
+}
+
+.player-whitelist-uuid-type.online {
+    border-color: #4f9d69;
+    color: #8ee891;
+    background: rgba(79, 157, 105, 0.12);
+}
+
+.player-whitelist-uuid-type.offline {
+    border-color: #4b78b8;
+    color: #8cbcff;
+    background: rgba(75, 120, 184, 0.12);
+}

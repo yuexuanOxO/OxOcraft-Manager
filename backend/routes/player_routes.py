@@ -12,6 +12,14 @@ from backend.player_permissions.player_permission_service import (
     toggle_player_op,
 )
 
+from backend.player_permissions.player_whitelist_service import (
+    get_player_whitelist_list,
+    get_player_whitelist_candidate_list,
+    toggle_player_whitelist,
+    add_player_whitelist_by_name,
+)
+
+
 
 player_bp = Blueprint("player", __name__)
 
@@ -226,6 +234,79 @@ def api_player_permission_toggle_op():
         )
 
         return jsonify(result)
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error)
+        }), 500
+    
+
+@player_bp.route("/api/player/whitelist")
+def api_player_whitelist():
+    from backend.player_permissions.player_permission_service import (
+        get_effective_online_mode
+    )
+
+    return jsonify({
+        "success": True,
+        "players": get_player_whitelist_list(),
+        "online_mode": get_effective_online_mode(),
+    })
+
+
+@player_bp.route("/api/player/whitelist/toggle", methods=["POST"])
+def api_player_whitelist_toggle():
+    data = request.get_json(silent=True) or {}
+
+    player_uuid = str(data.get("uuid", "")).strip()
+    player_name = str(data.get("name", "")).strip()
+
+    if not player_uuid or not player_name:
+        return jsonify({
+            "success": False,
+            "message": "缺少玩家 UUID 或名稱"
+        }), 400
+
+    try:
+        result = toggle_player_whitelist(
+            player_uuid=player_uuid,
+            player_name=player_name,
+        )
+
+        return jsonify(result)
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error)
+        }), 500
+    
+
+@player_bp.route("/api/player/whitelist/candidates")
+def api_player_whitelist_candidates():
+    return jsonify({
+        "success": True,
+        "players": get_player_whitelist_candidate_list(),
+    })
+
+
+@player_bp.route("/api/player/whitelist/add", methods=["POST"])
+def api_player_whitelist_add():
+    data = request.get_json(silent=True) or {}
+
+    player_name = str(data.get("name", "")).strip()
+
+    if not player_name:
+        return jsonify({
+            "success": False,
+            "message": "請輸入玩家名稱"
+        }), 400
+
+    try:
+        result = add_player_whitelist_by_name(player_name)
+        status = 200 if result.get("success") else 400
+        return jsonify(result), status
 
     except Exception as error:
         return jsonify({

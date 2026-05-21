@@ -53,6 +53,7 @@
     {% include "components/eula_modal.html" %}
     {% include "components/system_dialog.html" %}
     {% include "components/player_permissions_modal.html" %}
+    {% include "components/player_whitelist_modal.html" %}
 
     
 
@@ -482,7 +483,7 @@
 
                         <!-- 功能二預計位置 -->
                         <div class="feature-item">
-                            <button id="serverSettingBtn" class="feature-btn" type="button">
+                            <button id="playerWhitelistBtn" class="feature-btn" type="button">
                                 <img src="{{ url_for('static', filename='icons/feature_button/paper.png') }}" alt="白名單">
                             </button>
 

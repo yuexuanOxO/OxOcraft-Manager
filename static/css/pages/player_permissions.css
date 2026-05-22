@@ -429,3 +429,13 @@
     color: #8cbcff;
     background: rgba(75, 120, 184, 0.12);
 }
+
+.player-permission-title-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.player-permission-header-main {
+    flex: 1;
+}

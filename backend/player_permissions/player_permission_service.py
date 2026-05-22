@@ -11,6 +11,7 @@ from backend.player_permissions.player_identity_service import (
     get_known_players,
     get_uuid_type,
     upsert_player_to_usercache,
+    remove_player_from_usercache,
 )
 
 
@@ -188,4 +189,45 @@ def toggle_player_op(player_uuid: str, player_name: str) -> dict:
 
     return set_player_op(player_uuid, player_name)
 
+
+def get_player_permission_candidate_list() -> list[dict]:
+    players = get_known_players()
+    ops_uuid_set = load_ops_uuid_set()
+    online_mode = get_effective_online_mode()
+
+    result = []
+
+    for player in players:
+        uuid_type = player.get("uuid_type")
+
+        if online_mode and uuid_type != "online":
+            continue
+
+        if not online_mode and uuid_type != "offline":
+            continue
+
+        player_uuid = str(player.get("player_uuid", "")).lower()
+
+        if player_uuid in ops_uuid_set:
+            continue
+
+        result.append({
+            **player,
+            "op": False,
+        })
+
+    return result
+
+
+def delete_permission_candidate(
+    player_uuid: str,
+    player_name: str,
+) -> dict:
+
+    remove_player_from_usercache(player_uuid)
+
+    return {
+        "success": True,
+        "message": f"已刪除 {player_name} 的玩家紀錄",
+    }
 

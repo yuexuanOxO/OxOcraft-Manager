@@ -889,13 +889,16 @@ function createWhitelistCandidateCard(player) {
     });
 
     addBtn?.addEventListener("click", async () => {
-        if (player.whitelisted) return;
+    if (player.whitelisted || addBtn.disabled) return;
 
-        try {
-            const data =
-                await addWhitelistPlayerByName(
-                    player.player_name
-                );
+    addBtn.disabled = true;
+    addBtn.textContent = "…";
+
+    try {
+        const data =
+            await addWhitelistPlayerByName(
+                player.player_name
+            );
 
             await showInfo({
                 title: "玩家白名單",
@@ -905,6 +908,8 @@ function createWhitelistCandidateCard(player) {
             });
 
         } catch (error) {
+            addBtn.disabled = false;
+            addBtn.textContent = "＋";
             console.error("加入候選玩家失敗:", error);
 
             await showInfo({

@@ -20,7 +20,7 @@
 
         <div class="player-permission-toolbar">
 
-            <button id="addPlayerOpBtn" class="player-permission-add-btn" type="button">
+            <button id="openAddOpPlayerBtn" class="player-permission-add-open-btn" type="button">
                 + 新增玩家到管理員
             </button>
 
@@ -41,4 +41,33 @@
         </div>
 
     </div>
+
+    <div id="addOpPlayerModal" class="add-op-player-modal hidden">
+        <div class="add-op-player-panel">
+            <div class="add-op-player-header">
+                <div class="add-op-player-title">新增玩家到管理員</div>
+                <button id="closeAddOpPlayerBtn" class="player-permission-close-btn" type="button">✕</button>
+            </div>
+
+            <div class="add-op-player-input-row">
+                <input
+                    id="addOpPlayerInput"
+                    class="player-permission-search"
+                    type="text"
+                    placeholder="請輸入玩家名稱"
+                >
+
+                <button id="confirmAddOpPlayerBtn" class="player-permission-action normal" type="button">
+                    加入
+                </button>
+            </div>
+
+            <div class="add-op-player-subtitle">之前加入過的玩家</div>
+
+            <div id="opCandidateList" class="op-candidate-list">
+                <div class="player-permission-empty">尚未載入玩家資料</div>
+            </div>
+        </div>
+    </div>
+
 </div>

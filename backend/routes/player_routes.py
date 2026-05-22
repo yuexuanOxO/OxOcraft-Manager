@@ -10,6 +10,8 @@ from backend.rcon_service import send_rcon_command
 from backend.player_permissions.player_permission_service import (
     get_player_permission_list,
     toggle_player_op,
+    get_player_permission_candidate_list,
+    delete_permission_candidate
 )
 
 from backend.player_permissions.player_whitelist_service import (
@@ -19,7 +21,7 @@ from backend.player_permissions.player_whitelist_service import (
     add_player_whitelist_by_name,
     delete_whitelist_candidate,
     get_whitelist_settings,
-    toggle_whitelist_setting,
+    toggle_whitelist_setting
 )
 
 
@@ -409,6 +411,45 @@ def api_player_whitelist_settings_toggle():
         result = toggle_whitelist_setting(key)
         status = 200 if result.get("success") else 400
         return jsonify(result), status
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error)
+        }), 500
+    
+
+@player_bp.route("/api/player/permissions/candidates")
+def api_player_permission_candidates():
+    return jsonify({
+        "success": True,
+        "players": get_player_permission_candidate_list(),
+    })
+
+
+@player_bp.route(
+    "/api/player/permission/candidate/delete",
+    methods=["POST"]
+)
+def api_player_permission_candidate_delete():
+    data = request.get_json(silent=True) or {}
+
+    player_uuid = str(data.get("uuid", "")).strip()
+    player_name = str(data.get("name", "")).strip()
+
+    if not player_uuid or not player_name:
+        return jsonify({
+            "success": False,
+            "message": "缺少玩家 UUID 或名稱"
+        }), 400
+
+    try:
+        result = delete_permission_candidate(
+            player_uuid=player_uuid,
+            player_name=player_name,
+        )
+
+        return jsonify(result)
 
     except Exception as error:
         return jsonify({

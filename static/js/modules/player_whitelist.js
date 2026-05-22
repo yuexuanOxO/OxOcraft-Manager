@@ -1,4 +1,7 @@
-import { showInfo } from "./system_dialog.js";
+import {
+    showInfo,
+    showHelp
+} from "./system_dialog.js";
 
 
 let allPlayers = [];
@@ -50,6 +53,9 @@ export function initPlayerWhitelist() {
 
     const enforceWhitelistToggleBtn =
         document.getElementById("enforceWhitelistToggleBtn");
+
+    const openWhitelistHelpBtn =
+        document.getElementById("openWhitelistHelpBtn");
 
     if (!openBtn || !modal) {
         return;
@@ -117,6 +123,26 @@ export function initPlayerWhitelist() {
 
     enforceWhitelistToggleBtn?.addEventListener("click", async () => {
         await toggleWhitelistSetting("enforce-whitelist");
+    });
+
+    openWhitelistHelpBtn?.addEventListener("click", async () => {
+        await showHelp({
+            title: "白名單說明",
+
+            sections: [
+                {
+                    title: "白名單",
+                    content:
+                        "只允許白名單內玩家加入伺服器。"
+                },
+
+                {
+                    title: "強制執行白名單",
+                    content:
+                        "開啟後，非白名單玩家將被踢出伺服器。"
+                }
+            ]
+        });
     });
 
 }

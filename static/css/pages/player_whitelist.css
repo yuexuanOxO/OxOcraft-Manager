@@ -24,6 +24,7 @@
     border-radius: 10px;
     box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
     box-sizing: border-box;
+    position: relative;
 }
 
 .player-whitelist-header {
@@ -484,4 +485,42 @@
 .player-whitelist-card.disabled .player-whitelist-uuid-type {
     filter: grayscale(100%);
     opacity: 0.7;
+}
+
+.player-whitelist-tabs {
+    position: absolute;
+    top: -54px;
+    left: 18px;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    z-index: -1;
+}
+
+.player-whitelist-tab-btn {
+    width: 62px;
+    height: 56px;
+    padding: 8px;
+    border: 3px solid #050505;
+    border-bottom: 0;
+    border-radius: 8px 8px 0 0;
+    background: #2b2b2b;
+    box-shadow:
+        inset 2px 2px 0 rgba(255, 255, 255, 0.18),
+        inset -2px -2px 0 rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+    image-rendering: pixelated;
+}
+
+.player-whitelist-tab-btn:hover {
+    background: #363636;
+    transform: translateY(-2px);
+}
+
+.player-whitelist-tab-btn img {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    pointer-events: none;
 }

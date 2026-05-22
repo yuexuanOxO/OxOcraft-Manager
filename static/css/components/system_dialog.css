@@ -39,6 +39,7 @@
 
     text-align: center;
     white-space: pre-wrap;
+    font-weight: bold;
 }
 
 .system-dialog-message{
@@ -95,4 +96,58 @@
 
 .system-dialog-title.warning{
     color: #ffaa00;
+}
+
+
+.system-dialog-panel.help-mode{
+    width: min(820px, calc(100vw - 48px));
+
+    max-height: 82vh;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.system-dialog-help-sections{
+    display: flex;
+    flex-direction: column;
+
+    gap: 14px;
+
+    overflow-y: auto;
+
+    padding-right: 4px;
+
+    margin-bottom: 24px;
+}
+
+.system-dialog-help-sections.hidden{
+    display: none;
+}
+
+.system-dialog-help-section{
+    border: 2px solid #3a3a3a;
+    background: #181818;
+    padding: 12px 14px;
+    min-height: 0;
+}
+
+.system-dialog-help-section-title{
+    font-size: 22px;
+    font-weight: bold;
+    color: #ffffff;
+    margin-bottom: 8px;
+}
+
+.system-dialog-help-section-content{
+    font-size: 17px;
+    line-height: 1.6;
+    color: #d0d0d0;
+
+    white-space: pre-line;
+
+    text-align: left;
+
+    overflow-wrap: break-word;
+    word-break: break-word;
 }

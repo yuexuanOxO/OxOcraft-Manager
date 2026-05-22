@@ -7,6 +7,11 @@ from backend.db import update_player_op_since
 from backend.server_monitor import get_cached_server_status
 from backend.player_permissions.player_identity_service import get_known_players
 from backend.server_effective_settings import load_effective_settings_snapshot
+from backend.player_permissions.player_identity_service import (
+    get_known_players,
+    get_uuid_type,
+    upsert_player_to_usercache,
+)
 
 
 OPS_FILE = MC_ROOT / "ops.json"
@@ -34,14 +39,26 @@ def load_ops_uuid_set() -> set[str]:
 
 
 def get_player_permission_list() -> list[dict]:
-    players = get_known_players()
-    ops_uuid_set = load_ops_uuid_set()
+    entries = load_ops_entries()
+    known_players = get_known_players()
     online_mode = get_effective_online_mode()
+
+    known_by_uuid = {
+        str(player.get("player_uuid", "")).lower(): player
+        for player in known_players
+        if player.get("player_uuid")
+    }
 
     result = []
 
-    for player in players:
-        uuid_type = player.get("uuid_type")
+    for entry in entries:
+        player_uuid = str(entry.get("uuid", "")).strip()
+        player_name = str(entry.get("name", "")).strip()
+
+        if not player_uuid or not player_name:
+            continue
+
+        uuid_type = get_uuid_type(player_uuid)
 
         if online_mode and uuid_type != "online":
             continue
@@ -49,11 +66,17 @@ def get_player_permission_list() -> list[dict]:
         if not online_mode and uuid_type != "offline":
             continue
 
-        player_uuid = str(player.get("player_uuid", "")).lower()
+        known_player = known_by_uuid.get(
+            player_uuid.lower(),
+            {}
+        )
 
         result.append({
-            **player,
-            "op": player_uuid in ops_uuid_set,
+            **known_player,
+            "player_uuid": player_uuid,
+            "player_name": player_name,
+            "uuid_type": uuid_type,
+            "op": True,
         })
 
     return result
@@ -107,6 +130,11 @@ def set_player_op(player_uuid: str, player_name: str) -> dict:
         })
 
         save_ops_entries(entries)
+
+    upsert_player_to_usercache(
+        player_uuid=player_uuid,
+        player_name=player_name,
+    )
 
     update_player_op_since(
         player_uuid=player_uuid,

@@ -254,3 +254,16 @@
 .player-permission-meta.empty {
     visibility: hidden;
 }
+
+.player-permission-add-btn {
+    padding: 9px 12px;
+    border: 1px solid #c08b42;
+    border-radius: 6px;
+    background: #2b2b2b;
+    color: #f0c36a;
+    cursor: pointer;
+}
+
+.player-permission-add-btn:hover {
+    background: #3a3a3a;
+}

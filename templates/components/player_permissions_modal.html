@@ -19,24 +19,17 @@
         </div>
 
         <div class="player-permission-toolbar">
+
+            <button id="addPlayerOpBtn" class="player-permission-add-btn" type="button">
+                + 新增玩家到管理員
+            </button>
+
             <input
                 id="playerPermissionSearchInput"
                 class="player-permission-search"
                 type="text"
                 placeholder="搜尋玩家名稱或 UUID"
             >
-
-            <div class="player-permission-filters">
-                <button class="player-permission-filter active" type="button" data-filter="all">
-                    全部
-                </button>
-                <button class="player-permission-filter" type="button" data-filter="op">
-                    管理員
-                </button>
-                <button class="player-permission-filter" type="button" data-filter="normal">
-                    一般玩家
-                </button>
-            </div>
 
             <button id="refreshPlayerPermissionBtn" class="player-permission-refresh-btn" type="button">
                 重新整理

@@ -245,6 +245,43 @@ def api_player_permission_toggle_op():
         }), 500
     
 
+@player_bp.route("/api/player/permission/add-op", methods=["POST"])
+def api_player_permission_add_op():
+    data = request.get_json(silent=True) or {}
+
+    player_name = str(data.get("name", "")).strip()
+
+    if not player_name:
+        return jsonify({
+            "success": False,
+            "message": "請輸入玩家名稱"
+        }), 400
+
+    player_uuid = resolve_player_uuid(player_name)
+
+    if not player_uuid:
+        return jsonify({
+            "success": False,
+            "message": f"無法取得玩家 {player_name} 的 UUID，請確認玩家名稱或網路連線"
+        }), 400
+
+    try:
+        from backend.player_permissions.player_permission_service import set_player_op
+
+        result = set_player_op(
+            player_uuid=player_uuid,
+            player_name=player_name,
+        )
+
+        return jsonify(result)
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error)
+        }), 500
+
+
 @player_bp.route("/api/player/whitelist")
 def api_player_whitelist():
     from backend.player_permissions.player_permission_service import (

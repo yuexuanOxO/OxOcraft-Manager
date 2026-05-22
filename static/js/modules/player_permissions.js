@@ -1,7 +1,7 @@
 import { showInfo } from "./system_dialog.js";
 
 
-let currentFilter = "all";
+let currentFilter = "op";
 let allPlayers = [];
 
 
@@ -20,6 +20,9 @@ export function initPlayerPermissions() {
 
     const searchInput =
         document.getElementById("playerPermissionSearchInput");
+
+    const addOpBtn =
+        document.getElementById("addPlayerOpBtn");
 
     if (!openBtn || !modal) {
         return;
@@ -48,24 +51,16 @@ export function initPlayerPermissions() {
         renderPlayerPermissionList();
     });
 
-    document
-        .querySelectorAll(".player-permission-filter")
-        .forEach(button => {
+    addOpBtn?.addEventListener("click", async () => {
+        const playerName = window.prompt("請輸入要設為管理員的玩家名稱");
 
-            button.addEventListener("click", () => {
+        if (!playerName || !playerName.trim()) {
+            return;
+        }
 
-                document
-                    .querySelectorAll(".player-permission-filter")
-                    .forEach(btn => btn.classList.remove("active"));
+        await addPlayerOpByName(playerName.trim());
+    });
 
-                button.classList.add("active");
-
-                currentFilter =
-                    button.dataset.filter || "all";
-
-                renderPlayerPermissionList();
-            });
-        });
 }
 
 
@@ -358,4 +353,48 @@ function escapeHtml(text) {
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
+}
+
+async function addPlayerOpByName(playerName) {
+    try {
+        const response = await fetch(
+            "/api/player/permission/add-op",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    name: playerName
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(
+                data.message || "新增管理員失敗"
+            );
+        }
+
+        await loadPlayerPermissions();
+
+        await showInfo({
+            title: "玩家權限",
+            message: data.message,
+            confirmText: "關閉",
+            variant: "success"
+        });
+
+    } catch (error) {
+        console.error("新增管理員失敗:", error);
+
+        await showInfo({
+            title: "錯誤",
+            message: error.message || "新增管理員失敗",
+            confirmText: "關閉",
+            variant: "error"
+        });
+    }
 }

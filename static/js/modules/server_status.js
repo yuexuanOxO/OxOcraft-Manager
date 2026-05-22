@@ -30,6 +30,12 @@ export function initServerStatus() {
 
         applyTemporaryServerState(data);
     });
+
+    window.addEventListener(
+        "player-op-status-changed",
+        handlePlayerOpStatusChanged
+    );
+
 }
 
 
@@ -260,6 +266,28 @@ async function loadPlayerOpStatus(player, opBtn) {
         opBtn.textContent = "設為/收回管理員";
         opBtn.disabled = false;
     }
+}
+
+
+function handlePlayerOpStatusChanged(event) {
+    const detail = event.detail;
+
+    if (!detail) return;
+
+    const {
+        player,
+        op
+    } = detail;
+
+    const opBtn = document.querySelector(
+        `.player-menu-item[data-action="toggle-op"][data-player="${CSS.escape(player)}"]`
+    );
+
+    if (!opBtn) return;
+
+    opBtn.textContent = op
+        ? "收回管理員權限"
+        : "設為管理員";
 }
 
 

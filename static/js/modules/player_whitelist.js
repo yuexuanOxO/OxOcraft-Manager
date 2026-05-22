@@ -174,6 +174,21 @@ export function initPlayerWhitelist() {
         whitelistTooltip?.classList.add("hidden");
     });
 
+    window.addEventListener(
+        "player-whitelist-should-refresh",
+        async () => {
+            const modal =
+                document.getElementById("playerWhitelistModal");
+
+            if (!modal || modal.classList.contains("hidden")) {
+                return;
+            }
+
+            await loadPlayerWhitelist();
+            await loadWhitelistCandidates();
+        }
+    );
+
 }
 
 

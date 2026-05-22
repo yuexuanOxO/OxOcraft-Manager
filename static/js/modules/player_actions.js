@@ -104,6 +104,16 @@ async function handlePlayerMenuClick(event) {
                     variant: "success"
                 });
 
+                window.dispatchEvent(new CustomEvent(
+                    "player-op-status-changed",
+                    {
+                        detail: {
+                            player,
+                            op: data.op
+                        }
+                    }
+                ));
+
                 const playerOpBtn = document.querySelector(
                     `.player-menu-item[data-action="toggle-op"][data-player="${CSS.escape(player)}"]`
                 );

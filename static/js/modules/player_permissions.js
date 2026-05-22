@@ -90,6 +90,20 @@ export function initPlayerPermissions() {
         }
     });
 
+    window.addEventListener(
+        "player-permissions-should-refresh",
+        async () => {
+            const modal =
+                document.getElementById("playerPermissionModal");
+
+            if (!modal || modal.classList.contains("hidden")) {
+                return;
+            }
+
+            await loadPlayerPermissions();
+            await loadOpCandidates();
+        }
+    );
 
 }
 
@@ -353,8 +367,6 @@ async function togglePlayerOp(player) {
         }
 
         renderPlayerPermissionList();
-
-        
 
         await showInfo({
             title: "玩家權限",

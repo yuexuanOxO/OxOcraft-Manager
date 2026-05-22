@@ -111,13 +111,14 @@
 .system-dialog-help-sections{
     display: flex;
     flex-direction: column;
-
     gap: 14px;
+
+    flex: 1;
+    min-height: 0;
 
     overflow-y: auto;
 
-    padding-right: 4px;
-
+    padding-right: 10px;
     margin-bottom: 24px;
 }
 
@@ -128,20 +129,30 @@
 .system-dialog-help-section{
     border: 2px solid #3a3a3a;
     background: #181818;
-    padding: 12px 14px;
+    padding: 14px 16px;
     min-height: 0;
+    box-sizing: border-box;
+
+    flex: 0 0 auto;
 }
 
 .system-dialog-help-section-title{
     font-size: 22px;
+
     font-weight: bold;
+
     color: #ffffff;
-    margin-bottom: 8px;
+
+    margin-bottom: 10px;
+
+    line-height: 1.3;
 }
 
 .system-dialog-help-section-content{
     font-size: 17px;
-    line-height: 1.6;
+
+    line-height: 1.7;
+
     color: #d0d0d0;
 
     white-space: pre-line;
@@ -150,4 +161,40 @@
 
     overflow-wrap: break-word;
     word-break: break-word;
+
+    display: block;
+
+    width: 100%;
+
+    box-sizing: border-box;
+}
+
+
+.system-dialog-title-row{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+
+    margin-bottom: 18px;
+}
+
+.system-dialog-title{
+    margin-bottom: 0;
+}
+
+.system-dialog-title-icon{
+    width: 48px;
+    height: 48px;
+
+    object-fit: contain;
+
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+
+    flex-shrink: 0;
+}
+
+.system-dialog-title-icon.hidden{
+    display: none;
 }

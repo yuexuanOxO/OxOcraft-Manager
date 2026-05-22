@@ -57,6 +57,9 @@ export function initPlayerWhitelist() {
     const openWhitelistHelpBtn =
         document.getElementById("openWhitelistHelpBtn");
 
+    const whitelistTooltip =
+        document.getElementById("playerWhitelistTooltip");
+
     if (!openBtn || !modal) {
         return;
     }
@@ -129,20 +132,46 @@ export function initPlayerWhitelist() {
         await showHelp({
             title: "白名單說明",
 
+            icon: "/static/icons/player_whitelist/paper_help.png",
+
             sections: [
                 {
-                    title: "白名單",
+                    title: "白名單是甚麼?",
                     content:
-                        "只允許白名單內玩家加入伺服器。"
+                        "白名單開啟後，只有在白名單內的玩家才能加入伺服器，不在白名單內的玩家將無法進入。\n管理員(OP)不受白名單限制，即使不在白名單內也能加入伺服器。"
                 },
-
                 {
-                    title: "強制執行白名單",
+                    title: "甚麼是強制執行白名單?",
                     content:
-                        "開啟後，非白名單玩家將被踢出伺服器。"
+                        "開啟後，當白名單啟用時，目前在線但不在白名單內的玩家會被立即踢出伺服器。\n若未開啟此功能，已在線的玩家不會被踢出，但離開後將無法再次加入伺服器。\n此功能通常需要在伺服器啟動前開啟，若在伺服器運行中修改，可能需重啟後才會完全生效。"
+                },
+                {
+                    title: "白名單為甚麼需要區分是否為正版驗證?",
+                    content:
+                        "Minecraft 白名單實際是透過玩家的UUID來辨識玩家。\n正版驗證玩家的UUID是由Mojang官方帳號產生且固定，不容易被冒用。\n離線遊玩模式下，UUID是根據玩家名稱生成，只要其他玩家使用相同名稱，就可能取得相同的玩家資料、物品甚至權限，因此安全性較低。\n若有條件，仍建議使用正版帳號遊玩。"
+                },
+                {
+                    title: "如何切換白名單的正版驗證/離線遊玩?",
+                    content:
+                        "前往：伺服器設定>正版驗證(online-mode)\ntrue = 開啟正版驗證\nfalse = 離線遊玩模式\n修改後需要重新啟動伺服器才會生效。"
                 }
             ]
         });
+    });
+
+    openWhitelistHelpBtn?.addEventListener("mouseenter", () => {
+        whitelistTooltip?.classList.remove("hidden");
+    });
+
+    openWhitelistHelpBtn?.addEventListener("mousemove", (event) => {
+        if (!whitelistTooltip) return;
+
+        whitelistTooltip.style.left = `${event.clientX + 14}px`;
+        whitelistTooltip.style.top = `${event.clientY - 38}px`;
+    });
+
+    openWhitelistHelpBtn?.addEventListener("mouseleave", () => {
+        whitelistTooltip?.classList.add("hidden");
     });
 
 }

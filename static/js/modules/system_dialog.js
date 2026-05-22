@@ -133,6 +133,7 @@ export async function showInfo(options) {
 
 export async function showHelp({
     title = "說明",
+    icon = "",
     sections = [],
     confirmText = "關閉"
 }) {
@@ -150,6 +151,9 @@ export async function showHelp({
         const titleBox =
             document.getElementById("systemDialogTitle");
 
+        const titleIcon =
+            document.getElementById("systemDialogTitleIcon");
+
         const messageBox =
             document.getElementById("systemDialogMessage");
 
@@ -165,6 +169,14 @@ export async function showHelp({
         panel.classList.add("help-mode");
 
         titleBox.textContent = title;
+
+        if (icon) {
+            titleIcon.src = icon;
+            titleIcon.classList.remove("hidden");
+        } else {
+            titleIcon.src = "";
+            titleIcon.classList.add("hidden");
+        }
 
         messageBox.classList.add("hidden");
 

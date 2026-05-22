@@ -86,6 +86,9 @@ export function showConfirm({
         const titleBox =
             document.getElementById("systemDialogTitle");
 
+        const titleIcon =
+            document.getElementById("systemDialogTitleIcon");
+
         const messageBox =
             document.getElementById("systemDialogMessage");
 
@@ -96,6 +99,8 @@ export function showConfirm({
             document.getElementById("systemDialogConfirmBtn");
 
         titleBox.textContent = title;
+        titleIcon.src = "";
+        titleIcon.classList.add("hidden");
 
         titleBox.classList.remove(
             "success",

@@ -470,3 +470,18 @@
 .player-whitelist-header-main {
     flex: 1;
 }
+
+
+.player-whitelist-card.disabled {
+    opacity: 0.58;
+}
+
+.player-whitelist-card.disabled .player-whitelist-avatar {
+    filter: grayscale(100%) brightness(0.75);
+}
+
+.player-whitelist-card.disabled .player-whitelist-badge,
+.player-whitelist-card.disabled .player-whitelist-uuid-type {
+    filter: grayscale(100%);
+    opacity: 0.7;
+}

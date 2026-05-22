@@ -284,6 +284,17 @@ function renderWhitelistActionButtons() {
             button.disabled =
                 uiLocked || !whitelistEnabled;
         });
+
+    document
+        .querySelectorAll(".player-whitelist-card")
+        .forEach((card) => {
+            card.classList.toggle(
+                "disabled",
+                uiLocked || !whitelistEnabled
+            );
+        });
+
+
 }
 
 

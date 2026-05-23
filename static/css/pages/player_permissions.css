@@ -80,6 +80,19 @@
     box-sizing: border-box;
 }
 
+
+.player-permission-search:disabled {
+    background: rgba(120, 120, 120, 0.18);
+    border-color: rgba(160, 160, 160, 0.28);
+    color: rgba(210, 210, 210, 0.6);
+    cursor: not-allowed;
+}
+
+.player-permission-search:disabled::placeholder {
+    color: rgba(210, 210, 210, 0.45);
+}
+
+
 .player-permission-filters {
     display: flex;
     gap: 6px;
@@ -282,6 +295,15 @@
 
 .player-permission-add-open-btn:hover {
     background: #3a3324;
+}
+
+.player-permission-action:disabled,
+.player-permission-add-open-btn:disabled,
+.op-candidate-add-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+    filter: grayscale(35%);
 }
 
 .add-op-player-modal {

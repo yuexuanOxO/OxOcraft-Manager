@@ -35,12 +35,40 @@ def build_effective_settings_snapshot() -> dict:
 
 
 def save_effective_settings_snapshot() -> dict:
-    EFFECTIVE_SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    EFFECTIVE_SETTINGS_PATH.parent.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    old_snapshot = load_effective_settings_snapshot()
+
+    old_online_mode = (
+        get_effective_online_mode_from_snapshot(
+            old_snapshot
+        )
+    )
 
     snapshot = build_effective_settings_snapshot()
 
-    with EFFECTIVE_SETTINGS_PATH.open("w", encoding="utf-8") as file:
-        json.dump(snapshot, file, ensure_ascii=False, indent=4)
+    new_online_mode = (
+        get_effective_online_mode_from_snapshot(
+            snapshot
+        )
+    )
+
+    if old_online_mode != new_online_mode:
+        clear_access_control_files()
+
+    with EFFECTIVE_SETTINGS_PATH.open(
+        "w",
+        encoding="utf-8"
+    ) as file:
+        json.dump(
+            snapshot,
+            file,
+            ensure_ascii=False,
+            indent=4
+        )
 
     return snapshot
 
@@ -51,3 +79,31 @@ def load_effective_settings_snapshot() -> dict:
 
     with EFFECTIVE_SETTINGS_PATH.open("r", encoding="utf-8") as file:
         return json.load(file)
+    
+
+def get_effective_online_mode_from_snapshot(
+    snapshot: dict
+) -> bool:
+
+    properties = snapshot.get("properties", {})
+
+    return str(
+        properties.get("online-mode", "true")
+    ).lower() == "true"
+
+
+from backend.paths import MC_ROOT
+
+OPS_FILE = MC_ROOT / "ops.json"
+WHITELIST_FILE = MC_ROOT / "whitelist.json"
+USERCACHE_FILE = MC_ROOT / "usercache.json"
+
+
+def clear_access_control_files() -> None:
+    for path in [OPS_FILE, WHITELIST_FILE, USERCACHE_FILE]:
+
+        if not path.exists():
+            continue
+
+        with path.open("w", encoding="utf-8") as file:
+            json.dump([], file, ensure_ascii=False, indent=2)

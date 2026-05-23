@@ -12,6 +12,28 @@ from backend.db import (
 USERCACHE_FILE = MC_ROOT / "usercache.json"
 
 
+def load_usercache_data() -> list[dict]:
+    if not USERCACHE_FILE.exists():
+        return []
+
+    try:
+        with USERCACHE_FILE.open("r", encoding="utf-8") as file:
+            content = file.read().strip()
+
+        if not content:
+            return []
+
+        data = json.loads(content)
+
+        if not isinstance(data, list):
+            return []
+
+        return data
+
+    except json.JSONDecodeError:
+        return []
+
+
 def get_uuid_type(player_uuid: str) -> str:
     try:
         version = uuid.UUID(player_uuid).version
@@ -32,8 +54,7 @@ def sync_usercache_to_db() -> None:
     if not USERCACHE_FILE.exists():
         return
 
-    with USERCACHE_FILE.open("r", encoding="utf-8") as file:
-        usercache_data = json.load(file)
+    usercache_data = load_usercache_data()
 
     for entry in usercache_data:
         player_uuid = str(entry.get("uuid", "")).strip()
@@ -49,6 +70,41 @@ def sync_usercache_to_db() -> None:
             uuid_type=get_uuid_type(player_uuid),
             usercache_expires_on=expires_on,
         )
+
+
+def get_current_usercache_players() -> list[dict]:
+    if not USERCACHE_FILE.exists():
+        return []
+
+    usercache_data = load_usercache_data()
+
+    result = []
+
+    for entry in usercache_data:
+        player_uuid = str(entry.get("uuid", "")).strip()
+        player_name = str(entry.get("name", "")).strip()
+        expires_on = entry.get("expiresOn")
+
+        if not player_uuid or not player_name:
+            continue
+
+        uuid_type = get_uuid_type(player_uuid)
+
+        upsert_player_from_usercache(
+            player_uuid=player_uuid,
+            player_name=player_name,
+            uuid_type=uuid_type,
+            usercache_expires_on=expires_on,
+        )
+
+        result.append({
+            "player_uuid": player_uuid,
+            "player_name": player_name,
+            "uuid_type": uuid_type,
+            "usercache_expires_on": expires_on,
+        })
+
+    return result
 
 
 def get_known_players() -> list[dict]:

@@ -10,3 +10,4 @@ dist/
 backend/instance/*.db
 backend/credentials/google_token*
 Test_seed_death_records.py
+skin_test.py

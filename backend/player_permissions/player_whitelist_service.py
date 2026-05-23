@@ -3,6 +3,7 @@ import hashlib
 import uuid
 import urllib.request
 
+from backend.db import delete_player_by_uuid
 from backend.paths import MC_ROOT,SERVER_PROPERTIES_PATH
 from backend.rcon_service import send_rcon_command
 from backend.server_monitor import get_cached_server_status
@@ -11,8 +12,6 @@ from backend.server_monitor import get_cached_server_status
 from backend.player_permissions.player_identity_service import (
     get_known_players,
     get_uuid_type,
-    upsert_player_to_usercache,
-    remove_player_from_usercache,
 )
 
 from backend.player_permissions.player_permission_service import (
@@ -52,6 +51,13 @@ def is_server_ready() -> bool:
         data.get("state") == "ready"
         and data.get("online") is True
     )
+
+
+def reload_whitelist_if_ready() -> str:
+    if not is_server_ready():
+        return "offline-edit"
+
+    return send_rcon_command("whitelist reload")
 
 
 def get_offline_player_uuid(player_name: str) -> str:
@@ -114,27 +120,10 @@ def add_player_whitelist(
     player_name: str,
 ) -> dict:
 
-    if is_server_ready():
-
-        result = send_rcon_command(
-            f"whitelist add {player_name}"
-        )
-
-        return {
-            "success": True,
-            "message": (
-                f"已將 {player_name} 加入白名單"
-            ),
-            "result": result,
-            "whitelisted": True,
-        }
-
     entries = load_whitelist_entries()
-
     whitelist_uuid_set = load_whitelist_uuid_set()
 
     if player_uuid.lower() not in whitelist_uuid_set:
-
         entries.append({
             "uuid": player_uuid,
             "name": player_name,
@@ -142,17 +131,14 @@ def add_player_whitelist(
 
         save_whitelist_entries(entries)
 
-    upsert_player_to_usercache(
-        player_uuid=player_uuid,
-        player_name=player_name,
-    )
+    result = reload_whitelist_if_ready()
 
     return {
         "success": True,
         "message": (
             f"已將 {player_name} 加入白名單"
         ),
-        "result": "offline-edit",
+        "result": result,
         "whitelisted": True,
     }
 
@@ -161,21 +147,6 @@ def remove_player_whitelist(
     player_uuid: str,
     player_name: str,
 ) -> dict:
-
-    if is_server_ready():
-
-        result = send_rcon_command(
-            f"whitelist remove {player_name}"
-        )
-
-        return {
-            "success": True,
-            "message": (
-                f"已將 {player_name} 移出白名單"
-            ),
-            "result": result,
-            "whitelisted": False,
-        }
 
     entries = load_whitelist_entries()
 
@@ -189,12 +160,14 @@ def remove_player_whitelist(
 
     save_whitelist_entries(entries)
 
+    result = reload_whitelist_if_ready()
+
     return {
         "success": True,
         "message": (
             f"已將 {player_name} 移出白名單"
         ),
-        "result": "offline-edit",
+        "result": result,
         "whitelisted": False,
     }
 
@@ -285,18 +258,6 @@ def add_player_whitelist_by_name(player_name: str) -> dict:
             "message": "請輸入玩家名稱",
         }
 
-    if is_server_ready():
-        result = send_rcon_command(
-            f"whitelist add {player_name}"
-        )
-
-        return {
-            "success": True,
-            "message": f"已將 {player_name} 加入白名單",
-            "result": result,
-            "whitelisted": True,
-        }
-
     online_mode = get_effective_online_mode()
 
     if online_mode:
@@ -321,7 +282,7 @@ def delete_whitelist_candidate(
     player_name: str,
 ) -> dict:
 
-    remove_player_from_usercache(player_uuid)
+    delete_player_by_uuid(player_uuid)
 
     return {
         "success": True,

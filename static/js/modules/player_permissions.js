@@ -4,6 +4,8 @@ import { showInfo } from "./system_dialog.js";
 let currentFilter = "op";
 let allPlayers = [];
 let candidatePlayers = [];
+let permissionOnlineMode = true;
+let permissionServerReady = false;
 
 
 export function initPlayerPermissions() {
@@ -67,6 +69,9 @@ export function initPlayerPermissions() {
     openAddBtn?.addEventListener("click", async () => {
         addModal?.classList.remove("hidden");
         addInput.value = "";
+
+        renderAddOpInputState();
+
         await loadOpCandidates();
     });
 
@@ -130,11 +135,15 @@ async function loadPlayerPermissions() {
 
         allPlayers = data.players || [];
 
+        permissionOnlineMode = Boolean(data.online_mode);
+        permissionServerReady = Boolean(data.server_ready);
+
         updatePermissionModeSummary(
             data.online_mode
         );
 
         renderPlayerPermissionList();
+        renderAddOpInputState();
 
     } catch (error) {
         console.error("玩家權限資料載入失敗:", error);
@@ -397,6 +406,51 @@ function escapeHtml(text) {
         .replaceAll("'", "&#039;");
 }
 
+
+async function handleAddOpPlayer() {
+    const input =
+        document.getElementById("addOpPlayerInput");
+
+    const playerName =
+        (input?.value || "").trim();
+
+    if (!playerName) {
+        await showInfo({
+            title: "玩家權限",
+            message: "請輸入玩家名稱",
+            confirmText: "關閉",
+            variant: "warning"
+        });
+
+        return;
+    }
+
+    try {
+        const data =
+            await addPlayerOpByName(playerName);
+
+        input.value = "";
+
+        await showInfo({
+            title: "玩家權限",
+            message: data.message,
+            confirmText: "關閉",
+            variant: "success"
+        });
+
+    } catch (error) {
+        console.error("新增管理員失敗:", error);
+
+        await showInfo({
+            title: "錯誤",
+            message: error.message || "新增管理員失敗",
+            confirmText: "關閉",
+            variant: "error"
+        });
+    }
+}
+
+
 async function addPlayerOpByName(playerName) {
     try {
         const response = await fetch(
@@ -477,6 +531,29 @@ async function loadOpCandidates() {
                 </div>
             `;
         }
+    }
+}
+
+
+function renderAddOpInputState() {
+    const input =
+        document.getElementById("addOpPlayerInput");
+
+    const confirmBtn =
+        document.getElementById("confirmAddOpPlayerBtn");
+
+    const locked =
+        permissionServerReady && !permissionOnlineMode;
+
+    if (input) {
+        input.disabled = locked;
+        input.placeholder = locked
+            ? "離線模式且伺服器在線時，請從下方玩家清單加入"
+            : "請輸入玩家名稱";
+    }
+
+    if (confirmBtn) {
+        confirmBtn.disabled = locked;
     }
 }
 
@@ -570,7 +647,7 @@ function createOpCandidateCard(player) {
 
         try {
             const data =
-                await addPlayerOpByName(player.player_name);
+                await togglePlayerOpFromCandidate(player);
 
             await showInfo({
                 title: "玩家權限",
@@ -598,6 +675,36 @@ function createOpCandidateCard(player) {
     });
 
     return card;
+}
+
+
+async function togglePlayerOpFromCandidate(player) {
+    const response = await fetch(
+        "/api/player/permission/toggle-op",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                uuid: player.player_uuid,
+                name: player.player_name,
+            })
+        }
+    );
+
+    const data = await response.json();
+
+    if (!data.success) {
+        throw new Error(
+            data.message || "新增管理員失敗"
+        );
+    }
+
+    await loadPlayerPermissions();
+    await loadOpCandidates();
+
+    return data;
 }
 
 

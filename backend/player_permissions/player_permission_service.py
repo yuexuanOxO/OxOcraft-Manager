@@ -3,15 +3,14 @@ from datetime import datetime
 
 from backend.paths import MC_ROOT
 from backend.rcon_service import send_rcon_command
-from backend.db import update_player_op_since
+from backend.db import update_player_op_since,delete_player_by_uuid
 from backend.server_monitor import get_cached_server_status
 from backend.player_permissions.player_identity_service import get_known_players
 from backend.server_effective_settings import load_effective_settings_snapshot
 from backend.player_permissions.player_identity_service import (
     get_known_players,
     get_uuid_type,
-    upsert_player_to_usercache,
-    remove_player_from_usercache,
+    get_current_usercache_players,
 )
 
 
@@ -22,8 +21,22 @@ def load_ops_entries() -> list[dict]:
     if not OPS_FILE.exists():
         return []
 
-    with OPS_FILE.open("r", encoding="utf-8") as file:
-        return json.load(file)
+    try:
+        with OPS_FILE.open("r", encoding="utf-8") as file:
+            content = file.read().strip()
+
+        if not content:
+            return []
+
+        data = json.loads(content)
+
+        if not isinstance(data, list):
+            return []
+
+        return data
+
+    except json.JSONDecodeError:
+        return []
 
 
 def save_ops_entries(entries: list[dict]) -> None:
@@ -39,10 +52,27 @@ def load_ops_uuid_set() -> set[str]:
     }
 
 
+def remove_ops_entry_by_uuid(player_uuid: str) -> None:
+    entries = load_ops_entries()
+
+    entries = [
+        entry
+        for entry in entries
+        if str(entry.get("uuid", "")).lower()
+        != player_uuid.lower()
+    ]
+
+    save_ops_entries(entries)
+
+
 def get_player_permission_list() -> list[dict]:
     entries = load_ops_entries()
-    known_players = get_known_players()
     online_mode = get_effective_online_mode()
+
+    if is_server_ready() and not online_mode:
+        get_current_usercache_players()
+
+    known_players = get_known_players()
 
     known_by_uuid = {
         str(player.get("player_uuid", "")).lower(): player
@@ -99,6 +129,13 @@ def is_server_ready() -> bool:
     return data.get("state") == "ready" and data.get("online") is True
 
 
+def can_add_op_by_name() -> bool:
+    if not is_server_ready():
+        return True
+
+    return get_effective_online_mode()
+
+
 def set_player_op(player_uuid: str, player_name: str) -> dict:
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -132,11 +169,6 @@ def set_player_op(player_uuid: str, player_name: str) -> dict:
 
         save_ops_entries(entries)
 
-    upsert_player_to_usercache(
-        player_uuid=player_uuid,
-        player_name=player_name,
-    )
-
     update_player_op_since(
         player_uuid=player_uuid,
         player_name=player_name,
@@ -163,15 +195,7 @@ def remove_player_op(player_uuid: str, player_name: str) -> dict:
             "op": False,
         }
 
-    entries = load_ops_entries()
-
-    entries = [
-        entry
-        for entry in entries
-        if str(entry.get("uuid", "")).lower() != player_uuid.lower()
-    ]
-
-    save_ops_entries(entries)
+    remove_ops_entry_by_uuid(player_uuid)
 
     return {
         "success": True,
@@ -182,6 +206,31 @@ def remove_player_op(player_uuid: str, player_name: str) -> dict:
 
 
 def toggle_player_op(player_uuid: str, player_name: str) -> dict:
+
+    online_mode = get_effective_online_mode()
+
+    if (
+        is_server_ready()
+        and not online_mode
+    ):
+
+        known_players = get_known_players()
+
+        known_uuid_set = {
+            str(player.get("player_uuid", "")).lower()
+            for player in known_players
+        }
+
+        if player_uuid.lower() not in known_uuid_set:
+            return {
+                "success": False,
+                "message": (
+                    "離線模式且伺服器在線時，"
+                    "只能對已加入過伺服器的玩家設定 OP"
+                ),
+            }
+
+
     ops_uuid_set = load_ops_uuid_set()
 
     if player_uuid.lower() in ops_uuid_set:
@@ -191,9 +240,13 @@ def toggle_player_op(player_uuid: str, player_name: str) -> dict:
 
 
 def get_player_permission_candidate_list() -> list[dict]:
-    players = get_known_players()
     ops_uuid_set = load_ops_uuid_set()
     online_mode = get_effective_online_mode()
+
+    if is_server_ready() and not online_mode:
+        players = get_current_usercache_players()
+    else:
+        players = get_known_players()
 
     result = []
 
@@ -224,7 +277,7 @@ def delete_permission_candidate(
     player_name: str,
 ) -> dict:
 
-    remove_player_from_usercache(player_uuid)
+    delete_player_by_uuid(player_uuid)
 
     return {
         "success": True,

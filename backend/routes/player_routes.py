@@ -11,7 +11,9 @@ from backend.player_permissions.player_permission_service import (
     get_player_permission_list,
     toggle_player_op,
     get_player_permission_candidate_list,
-    delete_permission_candidate
+    delete_permission_candidate,
+    can_add_op_by_name,
+    is_server_ready
 )
 
 from backend.player_permissions.player_whitelist_service import (
@@ -51,7 +53,11 @@ def read_server_property(key: str, default: str = "") -> str:
 
 
 def is_online_mode() -> bool:
-    return read_server_property("online-mode", "true").lower() == "true"
+    from backend.player_permissions.player_permission_service import (
+        get_effective_online_mode
+    )
+
+    return get_effective_online_mode()
 
 
 def get_offline_player_uuid(player_name: str) -> str:
@@ -216,6 +222,7 @@ def api_player_permissions():
         "success": True,
         "players": get_player_permission_list(),
         "online_mode": get_effective_online_mode(),
+        "server_ready": is_server_ready(),
     })
 
 
@@ -257,6 +264,12 @@ def api_player_permission_add_op():
         return jsonify({
             "success": False,
             "message": "請輸入玩家名稱"
+        }), 400
+
+    if not can_add_op_by_name():
+        return jsonify({
+            "success": False,
+            "message": "離線模式且伺服器在線時，不能手動輸入玩家名稱新增 OP。請先讓玩家進入伺服器一次，再從「之前加入過的玩家」清單加入。"
         }), 400
 
     player_uuid = resolve_player_uuid(player_name)

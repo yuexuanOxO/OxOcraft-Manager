@@ -110,11 +110,11 @@ def get_player_whitelist_list() -> list[dict]:
 
         uuid_type = get_uuid_type(player_uuid)
 
-        if online_mode and uuid_type != "online":
-            continue
-
-        if not online_mode and uuid_type != "offline":
-            continue
+        is_valid_for_current_mode = (
+            uuid_type == "online"
+            if online_mode
+            else uuid_type == "offline"
+        )
 
         known_player = known_by_uuid.get(player_uuid.lower(), {})
 
@@ -124,6 +124,7 @@ def get_player_whitelist_list() -> list[dict]:
             "player_name": player_name,
             "uuid_type": uuid_type,
             "whitelisted": True,
+            "valid_for_current_mode": is_valid_for_current_mode,
         })
 
     return result

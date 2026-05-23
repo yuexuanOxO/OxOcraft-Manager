@@ -573,6 +573,10 @@ function createPlayerWhitelistCard(player) {
 
     card.className = "player-whitelist-card";
 
+    if (player.valid_for_current_mode === false) {
+        card.classList.add("invalid-mode");
+    }
+
     const avatarUrl = getPlayerAvatarUrl(player);
 
     card.innerHTML = `
@@ -609,6 +613,16 @@ function createPlayerWhitelistCard(player) {
             <div class="player-whitelist-uuid">
                 UUID: ${escapeHtml(player.player_uuid)}
             </div>
+
+            ${
+                player.valid_for_current_mode === false
+                    ? `
+                        <div class="player-whitelist-invalid-hint">
+                            此資料不符合目前伺服器的登入模式，可能無效
+                        </div>
+                    `
+                    : ""
+            }
 
         </div>
 

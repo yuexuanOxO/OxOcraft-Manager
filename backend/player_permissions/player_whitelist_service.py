@@ -26,8 +26,22 @@ def load_whitelist_entries() -> list[dict]:
     if not WHITELIST_FILE.exists():
         return []
 
-    with WHITELIST_FILE.open("r", encoding="utf-8") as file:
-        return json.load(file)
+    try:
+        with WHITELIST_FILE.open("r", encoding="utf-8") as file:
+            content = file.read().strip()
+
+        if not content:
+            return []
+
+        data = json.loads(content)
+
+        if not isinstance(data, list):
+            return []
+
+        return data
+
+    except json.JSONDecodeError:
+        return []
 
 
 def save_whitelist_entries(entries: list[dict]) -> None:

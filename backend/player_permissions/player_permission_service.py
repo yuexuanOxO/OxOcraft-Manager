@@ -65,6 +65,14 @@ def remove_ops_entry_by_uuid(player_uuid: str) -> None:
     save_ops_entries(entries)
 
 
+def get_ops_entry_by_uuid(player_uuid: str) -> dict | None:
+    for entry in load_ops_entries():
+        if str(entry.get("uuid", "")).lower() == player_uuid.lower():
+            return entry
+
+    return None
+
+
 def get_player_permission_list() -> list[dict]:
     entries = load_ops_entries()
     online_mode = get_effective_online_mode()
@@ -91,11 +99,11 @@ def get_player_permission_list() -> list[dict]:
 
         uuid_type = get_uuid_type(player_uuid)
 
-        if online_mode and uuid_type != "online":
-            continue
-
-        if not online_mode and uuid_type != "offline":
-            continue
+        is_valid_for_current_mode = (
+            uuid_type == "online"
+            if online_mode
+            else uuid_type == "offline"
+        )
 
         known_player = known_by_uuid.get(
             player_uuid.lower(),
@@ -108,6 +116,7 @@ def get_player_permission_list() -> list[dict]:
             "player_name": player_name,
             "uuid_type": uuid_type,
             "op": True,
+            "valid_for_current_mode": is_valid_for_current_mode,
         })
 
     return result
@@ -185,12 +194,27 @@ def set_player_op(player_uuid: str, player_name: str) -> dict:
 
 
 def remove_player_op(player_uuid: str, player_name: str) -> dict:
+    ops_entry = get_ops_entry_by_uuid(player_uuid)
+    effective_name = str(
+        ops_entry.get("name", player_name)
+    ).strip() if ops_entry else player_name
+
     if is_server_ready():
-        result = send_rcon_command(f"deop {player_name}")
+        result = send_rcon_command(f"deop {effective_name}")
+
+        still_op = player_uuid.lower() in load_ops_uuid_set()
+
+        if still_op:
+            return {
+                "success": False,
+                "message": f"嘗試收回 {effective_name} 的管理員權限，但 ops.json 仍保留該 UUID，請確認玩家名稱大小寫是否正確",
+                "result": result,
+                "op": True,
+            }
 
         return {
             "success": True,
-            "message": f"已收回 {player_name} 的管理員權限",
+            "message": f"已收回 {effective_name} 的管理員權限",
             "result": result,
             "op": False,
         }
@@ -199,7 +223,7 @@ def remove_player_op(player_uuid: str, player_name: str) -> dict:
 
     return {
         "success": True,
-        "message": f"已收回 {player_name} 的管理員權限",
+        "message": f"已收回 {effective_name} 的管理員權限",
         "result": "offline-edit",
         "op": False,
     }

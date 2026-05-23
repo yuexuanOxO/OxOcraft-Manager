@@ -461,3 +461,38 @@
 .player-permission-header-main {
     flex: 1;
 }
+
+
+.player-permission-card.invalid-mode {
+    opacity: 0.55;
+    filter: grayscale(45%);
+}
+
+.player-permission-card.invalid-mode .player-permission-action {
+    opacity: 0.55;
+}
+
+.player-permission-invalid-hint {
+    margin-top: 4px;
+    font-size: 12px;
+    color: #ffb36b;
+}
+
+.player-permission-uuid-type {
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.player-permission-uuid-type.online {
+    color: #8fd3ff;
+    border: 1px solid rgba(143, 211, 255, 0.45);
+    background: rgba(143, 211, 255, 0.12);
+}
+
+.player-permission-uuid-type.offline {
+    color: #ffd37a;
+    border: 1px solid rgba(255, 211, 122, 0.45);
+    background: rgba(255, 211, 122, 0.12);
+}

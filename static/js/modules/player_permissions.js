@@ -261,6 +261,10 @@ function createPlayerPermissionCard(player) {
     card.className =
         "player-permission-card";
 
+    if (player.valid_for_current_mode === false) {
+        card.classList.add("invalid-mode");
+    }
+
     const avatarUrl =
         player.uuid_type === "online"
             ? `https://mc-heads.net/avatar/${encodeURIComponent(player.player_name)}`
@@ -282,10 +286,10 @@ function createPlayerPermissionCard(player) {
                 </div>
 
                 <div class="
-                    player-permission-badge
-                    ${player.op ? "op" : "normal"}
+                    player-permission-uuid-type
+                    ${player.uuid_type === "online" ? "online" : "offline"}
                 ">
-                    ${player.op ? "管理員" : "一般玩家"}
+                    ${getUuidTypeLabel(player)}
                 </div>
 
             </div>
@@ -293,6 +297,16 @@ function createPlayerPermissionCard(player) {
             <div class="player-permission-uuid">
                 UUID: ${escapeHtml(player.player_uuid)}
             </div>
+
+            ${
+                player.valid_for_current_mode === false
+                    ? `
+                        <div class="player-permission-invalid-hint">
+                            此資料不符合目前伺服器的登入模式，可能無效
+                        </div>
+                    `
+                    : ""
+            }
 
             ${
                 player.op

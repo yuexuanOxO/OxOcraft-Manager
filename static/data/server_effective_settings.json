@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-05-23T21:12:47",
-    "properties_modified_comment": "Sat May 23 21:00:48 CST 2026",
+    "captured_at": "2026-05-23T22:50:33",
+    "properties_modified_comment": "Sat May 23 22:49:49 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -45,7 +45,7 @@
         "force-gamemode": "false",
         "rate-limit": "0",
         "hardcore": "false",
-        "white-list": "true",
+        "white-list": "false",
         "broadcast-console-to-ops": "true",
         "spawn-npcs": "true",
         "spawn-animals": "true",
@@ -66,7 +66,7 @@
         "management-server-enabled": "false",
         "management-server-host": "localhost",
         "management-server-port": "0",
-        "management-server-secret": "PGC827OlZrMzKGJQAn6eVpboqrzoQkUfVbNdrrpw",
+        "management-server-secret": "Iyoyvo4v9mzXMtdM5VkcrYab03bOhbti5NfxQ58c",
         "management-server-tls-enabled": "true",
         "management-server-tls-keystore": "",
         "management-server-tls-keystore-password": "",

@@ -132,7 +132,7 @@ export function initPlayerWhitelist() {
         await showHelp({
             title: "白名單說明",
 
-            icon: "/static/icons/player_whitelist/paper_help.png",
+            icon: "/static/icons/player_whitelist/knowledge_book.png",
 
             sections: [
                 {

@@ -1,6 +1,16 @@
 <div id="playerPermissionModal" class="player-permission-modal hidden">
     <div class="player-permission-panel">
 
+        <div class="player-permission-tabs">
+            <button
+                id="openPermissionHelpBtn"
+                class="player-permission-tab-btn"
+                type="button"
+            >
+                <img src="/static/icons/player_whitelist/knowledge_book.png">
+            </button>
+        </div>
+
         <div class="player-permission-header">
             <div class="player-permission-header-main"><div>
                 <div class="player-permission-title-row">
@@ -75,6 +85,10 @@
                 <div class="player-permission-empty">尚未載入玩家資料</div>
             </div>
         </div>
+    </div>
+
+    <div id="playerPermissionTooltip" class="player-permission-tooltip hidden">
+        權限管理說明
     </div>
 
 </div>

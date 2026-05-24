@@ -46,3 +46,28 @@ function getOfflineDefaultSkinName(playerUuid) {
 
     return DEFAULT_SKINS[index];
 }
+
+
+export function getOfflineDefaultSkinAvatarByPlayerName(playerName) {
+    const playerUuid =
+        getOfflinePlayerUuid(playerName);
+
+    return getOfflineDefaultSkinAvatar(playerUuid);
+}
+
+
+function getOfflinePlayerUuid(playerName) {
+    const raw =
+        `OfflinePlayer:${playerName}`;
+
+    const md5Bytes =
+        md5(raw);
+
+    md5Bytes[6] =
+        (md5Bytes[6] & 0x0f) | 0x30;
+
+    md5Bytes[8] =
+        (md5Bytes[8] & 0x3f) | 0x80;
+
+    return bytesToUuid(md5Bytes);
+}

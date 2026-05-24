@@ -141,13 +141,14 @@ export function addPlayerFromLog(playerName) {
 
     currentPlayers.set(playerName, {
         name: playerName,
-        avatar_url:
-            `https://mc-heads.net/avatar/${encodeURIComponent(playerName)}`
+        avatar_url: "/static/img/player/default_skins/steve.png"
     });
 
     renderPlayersFromQuery(
         [...currentPlayers.values()]
     );
+
+    refreshPlayerAvatarFromBackend(playerName);
 }
 
 
@@ -159,6 +160,37 @@ export function removePlayerFromLog(playerName) {
     renderPlayersFromQuery(
         [...currentPlayers.values()]
     );
+}
+
+
+async function refreshPlayerAvatarFromBackend(playerName) {
+    try {
+        const response = await fetch(
+            `/api/player/avatar?player=${encodeURIComponent(playerName)}`,
+            { cache: "no-store" }
+        );
+
+        const data = await response.json();
+
+        if (!data.success) return;
+
+        const currentPlayer =
+            currentPlayers.get(playerName);
+
+        if (!currentPlayer) return;
+
+        currentPlayers.set(playerName, {
+            ...currentPlayer,
+            avatar_url: data.avatar_url
+        });
+
+        renderPlayersFromQuery(
+            [...currentPlayers.values()]
+        );
+
+    } catch (error) {
+        console.error("更新玩家頭像失敗:", error);
+    }
 }
 
 

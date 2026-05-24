@@ -516,3 +516,32 @@ def api_player_whitelist_add_candidate():
             "success": False,
             "message": str(error)
         }), 500
+    
+
+@player_bp.route("/api/player/avatar")
+def api_player_avatar():
+    player_name = str(request.args.get("player", "")).strip()
+
+    if not player_name:
+        return jsonify({
+            "success": False,
+            "message": "缺少玩家名稱"
+        }), 400
+
+    if is_online_mode():
+        avatar_url = (
+            "https://mc-heads.net/avatar/"
+            f"{player_name}"
+        )
+    else:
+        from backend.server_status import (
+            get_offline_default_skin_avatar_url
+        )
+
+        avatar_url = get_offline_default_skin_avatar_url(player_name)
+
+    return jsonify({
+        "success": True,
+        "player": player_name,
+        "avatar_url": avatar_url,
+    })

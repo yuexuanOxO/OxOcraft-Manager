@@ -998,10 +998,7 @@ function createWhitelistCandidateCard(player) {
     addBtn.textContent = "…";
 
     try {
-        const data =
-            await addWhitelistPlayerByName(
-                player.player_name
-            );
+        const data = await addWhitelistCandidate(player);
 
             await showInfo({
                 title: "玩家白名單",
@@ -1114,4 +1111,35 @@ function escapeHtml(text) {
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
+}
+
+
+async function addWhitelistCandidate(player) {
+
+    const response = await fetch(
+        "/api/player/whitelist/add-candidate",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                uuid: player.player_uuid,
+                name: player.player_name,
+            })
+        }
+    );
+
+    const data = await response.json();
+
+    if (!data.success) {
+        throw new Error(
+            data.message || "加入白名單失敗"
+        );
+    }
+
+    await loadPlayerWhitelist();
+    await loadWhitelistCandidates();
+
+    return data;
 }

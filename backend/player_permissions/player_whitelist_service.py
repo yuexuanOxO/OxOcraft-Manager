@@ -432,3 +432,20 @@ def toggle_whitelist_setting(key: str) -> dict:
         "success": False,
         "message": "不支援的白名單設定",
     }
+
+
+def add_player_whitelist_direct(
+    player_uuid: str,
+    player_name: str,
+) -> dict:
+
+    if not player_uuid or not player_name:
+        return {
+            "success": False,
+            "message": "缺少玩家 UUID 或名稱",
+        }
+
+    return add_player_whitelist(
+        player_uuid=player_uuid,
+        player_name=player_name,
+    )

@@ -7,7 +7,6 @@ import {
 let allPlayers = [];
 let candidatePlayers = [];
 let whitelistSettingsTimer = null;
-
 let whitelistSettings = {
     white_list: false,
     enforce_whitelist: false,
@@ -15,6 +14,9 @@ let whitelistSettings = {
     server_state: "offline",
     server_busy: false,
 };
+
+const OFFLINE_WHITELIST_HELP_DISABLED_KEY = "oxo_offline_whitelist_help_disabled";
+
 
 
 export function initPlayerWhitelist() {
@@ -129,34 +131,7 @@ export function initPlayerWhitelist() {
     });
 
     openWhitelistHelpBtn?.addEventListener("click", async () => {
-        await showHelp({
-            title: "白名單說明",
-
-            icon: "/static/icons/player_whitelist/knowledge_book.png",
-
-            sections: [
-                {
-                    title: "白名單是什麼?",
-                    content:
-                        "白名單開啟後，只有在白名單內的玩家才能加入伺服器，不在白名單內的玩家將無法進入。\n管理員(OP)不受白名單限制，即使不在白名單內也能加入伺服器。"
-                },
-                {
-                    title: "什麼是強制執行白名單?",
-                    content:
-                        "開啟後，當白名單啟用時，目前在線但不在白名單內的玩家會被立即踢出伺服器。\n若未開啟此功能，已在線的玩家不會被踢出，但離開後將無法再次加入伺服器。\n此功能通常需要在伺服器啟動前開啟，若在伺服器運行中修改，可能需重啟後才會完全生效。"
-                },
-                {
-                    title: "白名單為什麼需要區分是否為正版驗證?",
-                    content:
-                        "Minecraft 白名單實際是透過玩家的UUID來辨識玩家。\n正版驗證玩家的UUID是由Mojang官方帳號產生且固定，不容易被冒用。\n離線遊玩模式下，UUID是根據玩家名稱生成，只要其他玩家使用相同名稱，就可能取得相同的玩家資料、物品甚至權限，因此安全性較低。\n若有條件，仍建議使用正版帳號遊玩。"
-                },
-                {
-                    title: "如何切換白名單的正版驗證/離線遊玩?",
-                    content:
-                        "前往：伺服器設定>正版驗證(online-mode)\ntrue = 開啟正版驗證\nfalse = 離線遊玩模式\n修改後需要重新啟動伺服器才會生效。"
-                }
-            ]
-        });
+        await showWhitelistHelp();
     });
 
     openWhitelistHelpBtn?.addEventListener("mouseenter", () => {
@@ -189,6 +164,95 @@ export function initPlayerWhitelist() {
         }
     );
 
+}
+
+
+async function showWhitelistHelp(showDontRemind = false) {
+
+    const helpPromise = showHelp({
+        title: "白名單說明",
+
+        icon: "/static/icons/player_whitelist/knowledge_book.png",
+
+        sections: [
+            {
+                title: "白名單是什麼?",
+                content:
+                    "白名單開啟後，只有在白名單內的玩家才能加入伺服器，不在白名單內的玩家將無法進入。\n管理員(OP)不受白名單限制，即使不在白名單內也能加入伺服器。"
+            },
+            {
+                title: "離線模式注意事項",
+                content:
+                    "離線模式下，Minecraft /whitelist add 可能受玩家名稱大小寫與快取影響，可能加入錯誤 UUID。\n若存在 creeper1 / Creeper1 這類只差大小寫的玩家名稱，Minecraft 可能會套用到其他玩家。"
+            },
+            {
+                title: "建議操作方式",
+                content:
+                    "請優先使用 OxOcraft 的白名單頁新增玩家。\nOxOcraft 會依目前登入模式決定 UUID，並直接寫入 whitelist.json。\n避免混用 Minecraft /whitelist add 指令。"
+            },
+            {
+                title: "如果看到灰色玩家資料?",
+                content:
+                    "代表該 UUID 不符合目前伺服器登入模式。\n通常是 online-mode 切換後殘留，或曾使用 Minecraft 指令加入錯誤 UUID。\n建議移除後重新加入。"
+            }
+        ]
+    });
+
+    window.setTimeout(() => {
+
+        const panel =
+            document.querySelector(".system-dialog-panel");
+
+        if (!panel || !showDontRemind) {
+            return;
+        }
+
+        let footer =
+            document.getElementById("whitelistHelpFooter");
+
+        if (!footer) {
+
+            footer = document.createElement("div");
+
+            footer.id = "whitelistHelpFooter";
+
+            footer.className =
+                "permission-help-footer";
+
+            footer.innerHTML = `
+                <label class="permission-help-check-row">
+                    <input
+                        id="disableOfflineWhitelistHelpCheck"
+                        type="checkbox"
+                    >
+                    <span>下次不要自動提醒</span>
+                </label>
+            `;
+
+            panel.appendChild(footer);
+        }
+
+        const checkbox =
+            document.getElementById(
+                "disableOfflineWhitelistHelpCheck"
+            );
+
+        checkbox.checked =
+            localStorage.getItem(
+                OFFLINE_WHITELIST_HELP_DISABLED_KEY
+            ) === "1";
+
+        checkbox?.addEventListener("change", () => {
+
+            localStorage.setItem(
+                OFFLINE_WHITELIST_HELP_DISABLED_KEY,
+                checkbox.checked ? "1" : "0"
+            );
+        });
+
+    }, 0);
+
+    await helpPromise;
 }
 
 
@@ -469,6 +533,16 @@ async function loadPlayerWhitelist() {
             .filter(player => player.whitelisted);
 
         updateWhitelistModeSummary(data.online_mode);
+
+        if (
+            whitelistSettings.server_ready
+            && !data.online_mode
+            && localStorage.getItem(
+                OFFLINE_WHITELIST_HELP_DISABLED_KEY
+            ) !== "1"
+        ) {
+            await showWhitelistHelp(true);
+        }
 
         renderPlayerWhitelistList();
 

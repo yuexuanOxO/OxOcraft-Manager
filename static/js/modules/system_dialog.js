@@ -32,6 +32,15 @@ export function initSystemDialog() {
 }
 
 
+function cleanupDialogExtras() {
+    document
+        .querySelectorAll(".system-dialog-extra")
+        .forEach(element => {
+            element.remove();
+        });
+}
+
+
 function closeDialog(result) {
 
     const dialog =
@@ -82,6 +91,8 @@ export function showConfirm({
 }) {
 
     return new Promise((resolve) => {
+
+        cleanupDialogExtras();
 
         currentResolver = resolve;
 
@@ -149,6 +160,8 @@ export async function showHelp({
 }) {
 
     return new Promise((resolve) => {
+
+        cleanupDialogExtras();
 
         currentResolver = resolve;
 

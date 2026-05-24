@@ -216,8 +216,7 @@ async function showPermissionHelp(showDontRemind = false) {
 
             footer.id = "permissionHelpFooter";
 
-            footer.className =
-                "permission-help-footer";
+            footer.className = "permission-help-footer system-dialog-extra";
 
             footer.innerHTML = `
                 <label class="permission-help-check-row">

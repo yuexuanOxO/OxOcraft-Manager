@@ -303,7 +303,6 @@
 .op-candidate-add-btn:disabled {
     opacity: 0.45;
     cursor: not-allowed;
-    pointer-events: none;
     filter: grayscale(35%);
 }
 
@@ -545,4 +544,38 @@
     flex: 0 0 auto;
 
     cursor: pointer;
+}
+
+
+.player-permission-add-open-btn:disabled,
+.player-permission-refresh-btn:disabled,
+.player-permission-action:disabled,
+.op-candidate-add-btn:disabled {
+
+    opacity: 0.45;
+    cursor: not-allowed;
+
+    filter: grayscale(100%);
+
+    border-color: #555;
+    color: #888;
+
+    box-shadow: none;
+}
+
+.player-permission-card.disabled,
+.op-candidate-card.disabled {
+    opacity: 0.58;
+}
+
+.player-permission-card.disabled .player-permission-avatar,
+.op-candidate-card.disabled .player-permission-avatar {
+    filter: grayscale(100%) brightness(0.75);
+}
+
+.player-permission-card.disabled .player-permission-badge,
+.player-permission-card.disabled .player-permission-uuid-type,
+.op-candidate-card.disabled .player-permission-uuid-type {
+    filter: grayscale(100%);
+    opacity: 0.7;
 }

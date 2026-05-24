@@ -214,15 +214,20 @@ def api_player_op_status():
 
 @player_bp.route("/api/player/permissions")
 def api_player_permissions():
+    from backend.server_monitor import get_cached_server_status
     from backend.player_permissions.player_permission_service import (
         get_effective_online_mode
     )
+
+    status = get_cached_server_status()
+    server_data = status.get("data", {})
 
     return jsonify({
         "success": True,
         "players": get_player_permission_list(),
         "online_mode": get_effective_online_mode(),
         "server_ready": is_server_ready(),
+        "server_state": server_data.get("state", "offline"),
     })
 
 

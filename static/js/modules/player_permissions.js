@@ -9,6 +9,7 @@ let allPlayers = [];
 let candidatePlayers = [];
 let permissionOnlineMode = true;
 let permissionServerReady = false;
+let permissionServerState = "offline";
 
 const OFFLINE_OP_HELP_DISABLED_KEY =
     "oxo_offline_op_help_disabled";
@@ -141,6 +142,25 @@ export function initPlayerPermissions() {
         }
     );
 
+    window.addEventListener(
+        "server-status-changed",
+        (event) => {
+
+            const data = event.detail;
+
+            if (!data) return;
+
+            permissionServerReady =
+                data.state === "ready";
+
+            permissionServerState =
+                data.state || "offline";
+
+            renderAddOpInputState();
+            renderPermissionActionButtons();
+        }
+    );
+
 }
 
 
@@ -267,12 +287,18 @@ async function loadPlayerPermissions() {
         permissionOnlineMode = Boolean(data.online_mode);
         permissionServerReady = Boolean(data.server_ready);
 
+        permissionServerState =
+            String(data.server_state || "offline");
+
+        console.log("[Permission] server_state =", permissionServerState, data);
+
         updatePermissionModeSummary(
             data.online_mode
         );
 
         renderPlayerPermissionList();
         renderAddOpInputState();
+        renderPermissionActionButtons();
 
         if (
             permissionServerReady
@@ -389,6 +415,9 @@ function renderPlayerPermissionList() {
             createPlayerPermissionCard(player)
         );
     });
+
+    renderPermissionActionButtons();
+
 }
 
 
@@ -486,6 +515,10 @@ function createPlayerPermissionCard(player) {
 
     const actionBtn =
         card.querySelector(".player-permission-action");
+
+    if (isPermissionActionLocked()) {
+        actionBtn.disabled = true;
+    }
 
     actionBtn?.addEventListener("click", async () => {
         await togglePlayerOp(player);
@@ -686,6 +719,66 @@ async function loadOpCandidates() {
 }
 
 
+function isPermissionActionLocked() {
+
+    return (
+        permissionServerState === "starting"
+        || permissionServerState === "stopping"
+    );
+}
+
+
+function renderPermissionActionButtons() {
+
+    const uiLocked =
+        isPermissionActionLocked();
+
+    const openAddBtn =
+        document.getElementById("openAddOpPlayerBtn");
+
+    const refreshBtn =
+        document.getElementById("refreshPlayerPermissionBtn");
+
+    if (openAddBtn) {
+        openAddBtn.disabled = uiLocked;
+    }
+
+    if (refreshBtn) {
+        refreshBtn.disabled = uiLocked;
+    }
+
+    document
+        .querySelectorAll(".player-permission-action")
+        .forEach((button) => {
+            button.disabled = uiLocked;
+        });
+
+    document
+        .querySelectorAll(".op-candidate-add-btn")
+        .forEach((button) => {
+            button.disabled = uiLocked;
+        });
+
+    document
+        .querySelectorAll(".player-permission-card")
+        .forEach((card) => {
+            card.classList.toggle(
+                "disabled",
+                uiLocked
+            );
+        });
+
+    document
+        .querySelectorAll(".op-candidate-card")
+        .forEach((card) => {
+            card.classList.toggle(
+                "disabled",
+                uiLocked
+            );
+        });
+}
+
+
 function renderAddOpInputState() {
     const input =
         document.getElementById("addOpPlayerInput");
@@ -694,7 +787,11 @@ function renderAddOpInputState() {
         document.getElementById("confirmAddOpPlayerBtn");
 
     const locked =
-        permissionServerReady && !permissionOnlineMode;
+        isPermissionActionLocked()
+        || (
+            permissionServerReady
+            && !permissionOnlineMode
+        );
 
     if (input) {
         input.disabled = locked;
@@ -786,6 +883,10 @@ function createOpCandidateCard(player) {
 
     const addBtn =
         card.querySelector(".op-candidate-add-btn");
+
+    if (isPermissionActionLocked()) {
+        addBtn.disabled = true;
+    }
 
     const deleteBtn =
         card.querySelector(".op-candidate-delete-btn");

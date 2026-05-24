@@ -1,11 +1,12 @@
 import { showOfflineCat } from "./log_console.js";
 
+
 let fallbackPollingTimer = null;
 let backendDisconnected = false;
 let wasServerOnline = false;
 let hasReceivedFirstStatus = false;
 let lastServerStatusRevision = null;
-let currentPlayers = new Set();
+let currentPlayers = new Map();
 let previousServerState = null;
 export let latestServerStatusData = null;
 let effectiveOnlineModeForAvatars = null;
@@ -95,7 +96,9 @@ export async function updateStatus() {
             await loadEffectiveOnlineModeForAvatars();
 
         if (avatarModeChanged && currentPlayers.size > 0) {
-            renderPlayersFromQuery([...currentPlayers]);
+            renderPlayersFromQuery(
+                [...currentPlayers.values()]
+            );
         }
 
     } catch (error) {
@@ -106,16 +109,45 @@ export async function updateStatus() {
 
 
 function setPlayersFromQuery(players) {
-    currentPlayers = new Set(players || []);
-    renderPlayersFromQuery([...currentPlayers]);
+
+    currentPlayers.clear();
+
+    for (const player of (players || [])) {
+
+        const playerName =
+            getPlayerName(player);
+
+        currentPlayers.set(
+            playerName,
+            player
+        );
+    }
+
+    renderPlayersFromQuery(
+        [...currentPlayers.values()]
+    );
 }
 
 
 export function addPlayerFromLog(playerName) {
     if (!playerName) return;
 
-    currentPlayers.add(playerName);
-    renderPlayersFromQuery([...currentPlayers]);
+    const existingPlayer =
+        currentPlayers.get(playerName);
+
+    if (existingPlayer) {
+        return;
+    }
+
+    currentPlayers.set(playerName, {
+        name: playerName,
+        avatar_url:
+            `https://mc-heads.net/avatar/${encodeURIComponent(playerName)}`
+    });
+
+    renderPlayersFromQuery(
+        [...currentPlayers.values()]
+    );
 }
 
 
@@ -123,7 +155,10 @@ export function removePlayerFromLog(playerName) {
     if (!playerName) return;
 
     currentPlayers.delete(playerName);
-    renderPlayersFromQuery([...currentPlayers]);
+
+    renderPlayersFromQuery(
+        [...currentPlayers.values()]
+    );
 }
 
 
@@ -157,11 +192,19 @@ async function loadEffectiveOnlineModeForAvatars() {
 
 
 function getPlayerAvatarUrl(player) {
-    if (effectiveOnlineModeForAvatars === false) {
-        return "/static/img/player/steve_avatar.png";
+    if (typeof player === "string") {
+        return `https://mc-heads.net/avatar/${encodeURIComponent(player)}`;
     }
 
-    return `https://mc-heads.net/avatar/${encodeURIComponent(player)}`;
+    return player.avatar_url
+        || `https://mc-heads.net/avatar/${encodeURIComponent(player.name)}`;
+}
+
+
+function getPlayerName(player) {
+    return typeof player === "string"
+        ? player
+        : player.name;
 }
 
 
@@ -177,6 +220,8 @@ function renderPlayersFromQuery(players) {
     }
 
     players.forEach(player => {
+        const playerName = getPlayerName(player);
+
         const item = document.createElement("div");
         item.className = "player-item";
 
@@ -186,11 +231,11 @@ function renderPlayersFromQuery(players) {
         const avatar = document.createElement("img");
         avatar.className = "player-avatar";
         avatar.src = getPlayerAvatarUrl(player);
-        avatar.alt = `${player} avatar`;
+        avatar.alt = `${playerName} avatar`;
 
         const name = document.createElement("span");
         name.className = "player-name";
-        name.textContent = player;
+        name.textContent = playerName;
 
         left.appendChild(avatar);
         left.appendChild(name);
@@ -202,12 +247,11 @@ function renderPlayersFromQuery(players) {
         menuBtn.className = "player-menu-btn";
         menuBtn.type = "button";
         menuBtn.textContent = "⋮";
-        menuBtn.dataset.player = player;
+        menuBtn.dataset.player = playerName;
 
         const menu = document.createElement("div");
         menu.className = "player-menu";
         menu.hidden = true;
-
 
         const opBtn = document.createElement("button");
         opBtn.className = "player-menu-item";
@@ -215,17 +259,17 @@ function renderPlayersFromQuery(players) {
         opBtn.textContent = "檢查權限中...";
         opBtn.disabled = true;
         opBtn.dataset.action = "toggle-op";
-        opBtn.dataset.player = player;
+        opBtn.dataset.player = playerName;
 
         const kickBtn = document.createElement("button");
         kickBtn.className = "player-menu-item";
         kickBtn.type = "button";
         kickBtn.textContent = "踢出伺服器";
         kickBtn.dataset.action = "kick";
-        kickBtn.dataset.player = player;
+        kickBtn.dataset.player = playerName;
 
         menu.appendChild(opBtn);
-        loadPlayerOpStatus(player, opBtn);
+        loadPlayerOpStatus(playerName, opBtn);
 
         menu.appendChild(kickBtn);
 

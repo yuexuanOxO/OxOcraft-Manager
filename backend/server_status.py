@@ -5,6 +5,7 @@ from backend.server_settings.server_properties import read_properties_file
 from mcstatus import JavaServer
 
 
+
 DEFAULT_SERVER_PORT = 25565
 CURRENT_SERVER_PORT = None
 CURRENT_SERVER_HOST = None
@@ -120,6 +121,80 @@ def is_backup_state_active() -> bool:
         return False
 
 
+def build_query_player_list(player_names: list[str]) -> list[dict]:
+    try:
+        from backend.player_permissions.player_permission_service import (
+            get_effective_online_mode
+        )
+
+        online_mode = get_effective_online_mode()
+
+    except Exception:
+        online_mode = True
+
+    players = []
+
+    for player_name in player_names or []:
+        if online_mode:
+            avatar_url = (
+                "https://mc-heads.net/avatar/"
+                f"{player_name}"
+            )
+        else:
+            avatar_url = get_offline_default_skin_avatar_url(
+                player_name
+            )
+
+        players.append({
+            "name": player_name,
+            "avatar_url": avatar_url,
+        })
+
+    return players
+
+
+def get_offline_default_skin_avatar_url(player_name: str) -> str:
+    from backend.routes.player_routes import get_offline_player_uuid
+
+    player_uuid = get_offline_player_uuid(player_name)
+
+    skin = get_offline_default_skin_name(player_uuid)
+
+    return f"/static/img/player/default_skins/{skin}.png"
+
+
+def get_offline_default_skin_name(player_uuid: str) -> str:
+    default_skins = [
+        "alex",
+        "ari",
+        "efe",
+        "kai",
+        "makena",
+        "noor",
+        "steve",
+        "sunny",
+        "zuri",
+    ]
+
+    clean_uuid = str(player_uuid or "").replace("-", "").lower()
+
+    if len(clean_uuid) != 32:
+        return "steve"
+
+    most = int(clean_uuid[:16], 16)
+    least = int(clean_uuid[16:], 16)
+
+    hilo = most ^ least
+    hash_code = ((hilo >> 32) ^ hilo) & 0xffffffff
+
+    if hash_code >= 0x80000000:
+        hash_code -= 0x100000000
+
+    index = hash_code % 9
+
+    return default_skins[index]
+
+
 def get_server_query_status(host: str | None = None) -> dict:
     if is_backup_state_active():
         return {
@@ -168,7 +243,7 @@ def get_server_query_status(host: str | None = None) -> dict:
             "map_name": query.map_name,
             "players_online": query.players.online,
             "players_max": query.players.max,
-            "players": query.players.list,
+            "players": build_query_player_list(query.players.list),
             "version": query.software.version,
             "brand": query.software.brand,
             "port": query.port,

@@ -132,8 +132,8 @@
 }
 
 .player-whitelist-avatar {
-    width: 42px;
-    height: 42px;
+    width: 32px;
+    height: 32px;
     border-radius: 4px;
     border: 2px solid #444;
     image-rendering: pixelated;

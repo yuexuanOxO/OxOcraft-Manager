@@ -3,6 +3,10 @@ import {
     showHelp
 } from "./system_dialog.js";
 
+import {
+    getOfflineDefaultSkinAvatar
+} from "./offline_default_skins.js";
+
 
 let currentFilter = "op";
 let allPlayers = [];
@@ -431,10 +435,7 @@ function createPlayerPermissionCard(player) {
         card.classList.add("invalid-mode");
     }
 
-    const avatarUrl =
-        player.uuid_type === "online"
-            ? `https://mc-heads.net/avatar/${encodeURIComponent(player.player_name)}`
-            : "/static/img/player/steve_avatar.png";
+    const avatarUrl = getPlayerAvatarUrl(player);
 
     card.innerHTML = `
         <img
@@ -1040,7 +1041,11 @@ function getPlayerAvatarUrl(player) {
         return `https://mc-heads.net/avatar/${encodeURIComponent(player.player_name)}`;
     }
 
-    return "/static/img/player/steve_avatar.png";
+    if (player.uuid_type === "offline") {
+        return getOfflineDefaultSkinAvatar(player.player_uuid);
+    }
+
+    return "/static/img/player/default_skins/steve.png";
 }
 
 

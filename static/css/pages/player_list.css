@@ -21,6 +21,9 @@
     border: 2px solid #444;
     object-fit: cover;
     flex-shrink: 0;
+
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
 }
 
 .players-list {

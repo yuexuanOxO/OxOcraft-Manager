@@ -773,6 +773,11 @@ async function handleAddWhitelistPlayer() {
     const playerName =
         (input?.value || "").trim();
 
+    const confirmBtn =
+        document.getElementById(
+            "confirmAddWhitelistPlayerBtn"
+        );
+
     if (!playerName) {
         await showInfo({
             title: "玩家白名單",
@@ -782,6 +787,14 @@ async function handleAddWhitelistPlayer() {
         });
 
         return;
+    }
+
+
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = "…";
+
+    if (input) {
+        input.disabled = true;
     }
 
     try {
@@ -806,7 +819,19 @@ async function handleAddWhitelistPlayer() {
             confirmText: "關閉",
             variant: "error"
         });
+    }finally {
+
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = "新增";
+        }
+
+        if (input) {
+            input.disabled = false;
+        }
     }
+
+
 }
 
 

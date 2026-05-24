@@ -598,6 +598,9 @@ async function handleAddOpPlayer() {
     const playerName =
         (input?.value || "").trim();
 
+    const confirmBtn =
+        document.getElementById("confirmAddOpPlayerBtn");
+
     if (!playerName) {
         await showInfo({
             title: "玩家權限",
@@ -607,6 +610,14 @@ async function handleAddOpPlayer() {
         });
 
         return;
+    }
+
+
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = "…";
+
+    if (input) {
+        input.disabled = true;
     }
 
     try {
@@ -631,7 +642,17 @@ async function handleAddOpPlayer() {
             confirmText: "關閉",
             variant: "error"
         });
+    } finally {
+
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = "新增";
+        }
+
+        renderAddOpInputState();
     }
+
+
 }
 
 

@@ -56,6 +56,11 @@ function closeDialog(result) {
 
     helpSections?.classList.add("hidden");
 
+    const confirmBtn =
+        document.getElementById("systemDialogConfirmBtn");
+
+    confirmBtn?.classList.remove("hidden");
+
     if (helpSections) {
         helpSections.innerHTML = "";
     }
@@ -197,6 +202,7 @@ export async function showHelp({
         confirmBtn.textContent = confirmText;
 
         cancelBtn.classList.add("hidden");
+        confirmBtn.classList.add("hidden");
 
         dialog.classList.remove("hidden");
     });

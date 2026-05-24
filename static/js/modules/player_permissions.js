@@ -1,4 +1,7 @@
-import { showInfo } from "./system_dialog.js";
+import {
+    showInfo,
+    showHelp
+} from "./system_dialog.js";
 
 
 let currentFilter = "op";
@@ -38,6 +41,12 @@ export function initPlayerPermissions() {
 
     const addInput =
         document.getElementById("addOpPlayerInput");
+
+    const openPermissionHelpBtn =
+        document.getElementById("openPermissionHelpBtn");
+
+    const permissionTooltip =
+        document.getElementById("playerPermissionTooltip");
 
     if (!openBtn || !modal) {
         return;
@@ -95,6 +104,25 @@ export function initPlayerPermissions() {
         }
     });
 
+    openPermissionHelpBtn?.addEventListener("click", async () => {
+        await showPermissionHelp();
+    });
+
+    openPermissionHelpBtn?.addEventListener("mouseenter", () => {
+        permissionTooltip?.classList.remove("hidden");
+    });
+
+    openPermissionHelpBtn?.addEventListener("mousemove", (event) => {
+        if (!permissionTooltip) return;
+
+        permissionTooltip.style.left = `${event.clientX + 14}px`;
+        permissionTooltip.style.top = `${event.clientY - 38}px`;
+    });
+
+    openPermissionHelpBtn?.addEventListener("mouseleave", () => {
+        permissionTooltip?.classList.add("hidden");
+    });
+
     window.addEventListener(
         "player-permissions-should-refresh",
         async () => {
@@ -110,6 +138,38 @@ export function initPlayerPermissions() {
         }
     );
 
+}
+
+
+async function showPermissionHelp() {
+    await showHelp({
+        title: "權限管理說明",
+
+        icon: "/static/icons/player_whitelist/knowledge_book.png",
+
+        sections: [
+            {
+                title: "離線模式注意事項",
+                content:
+                    "伺服器在離線模式且正在運行時，Minecraft /op 與 /deop 可能受玩家名稱大小寫與快取影響。\n若存在 creeper1 / Creeper1 這類只差大小寫的玩家名稱，權限可能會套用到錯誤玩家。"
+            },
+            {
+                title: "建議操作方式",
+                content:
+                    "請先讓玩家進入伺服器一次，再從「之前加入過的玩家」清單加入管理員。\n避免讓玩家使用只差大小寫的名稱。\n若看到灰色或標示無效的玩家資料，代表該 UUID 不符合目前伺服器的登入模式，建議移除。"
+            },
+            {
+                title: "為什麼會發生?",
+                content:
+                    "Minecraft 的 OP 權限實際依 UUID 判斷。\n正版驗證模式使用 Mojang UUID；離線模式則依玩家名稱產生 OfflinePlayer UUID。\n在線使用 /op 時，Minecraft 會自行解析玩家名稱，因此 OxOcraft 無法完全控制它最後套用到哪個 UUID。"
+            },
+            {
+                title: "如果權限套用錯誤怎麼辦?",
+                content:
+                    "請先從權限管理頁移除錯誤的玩家資料。\n若在線移除仍不正常，請關閉伺服器後再調整 OP 名單。\n若希望完全避免此類問題，建議改用正版驗證模式。"
+            }
+        ]
+    });
 }
 
 

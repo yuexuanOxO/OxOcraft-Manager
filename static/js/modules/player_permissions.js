@@ -10,6 +10,9 @@ let candidatePlayers = [];
 let permissionOnlineMode = true;
 let permissionServerReady = false;
 
+const OFFLINE_OP_HELP_DISABLED_KEY =
+    "oxo_offline_op_help_disabled";
+
 
 export function initPlayerPermissions() {
     const openBtn =
@@ -141,8 +144,8 @@ export function initPlayerPermissions() {
 }
 
 
-async function showPermissionHelp() {
-    await showHelp({
+async function showPermissionHelp(showDontRemind = false) {
+    const helpPromise = showHelp({
         title: "權限管理說明",
 
         icon: "/static/icons/player_whitelist/knowledge_book.png",
@@ -167,9 +170,75 @@ async function showPermissionHelp() {
                 title: "如果權限套用錯誤怎麼辦?",
                 content:
                     "請先從權限管理頁移除錯誤的玩家資料。\n若在線移除仍不正常，請關閉伺服器後再調整 OP 名單。\n若希望完全避免此類問題，建議改用正版驗證模式。"
-            }
+            },
         ]
     });
+
+    window.setTimeout(() => {
+
+        const panel =
+            document.querySelector(".system-dialog-panel");
+
+        if (!panel || !showDontRemind) {
+            return;
+        }
+
+        let footer =
+            document.getElementById("permissionHelpFooter");
+
+        if (!footer) {
+
+            footer = document.createElement("div");
+
+            footer.id = "permissionHelpFooter";
+
+            footer.className =
+                "permission-help-footer";
+
+            footer.innerHTML = `
+                <label class="permission-help-check-row">
+                    <input
+                        id="disableOfflineOpHelpCheck"
+                        type="checkbox"
+                    >
+                    <span>下次不要自動提醒</span>
+                </label>
+            `;
+
+            panel.appendChild(footer);
+        }
+
+        const checkbox =
+            document.getElementById("disableOfflineOpHelpCheck");
+
+        checkbox.checked =
+            localStorage.getItem(
+                OFFLINE_OP_HELP_DISABLED_KEY
+            ) === "1";
+
+        checkbox?.addEventListener("change", () => {
+
+            localStorage.setItem(
+                OFFLINE_OP_HELP_DISABLED_KEY,
+                checkbox.checked ? "1" : "0"
+            );
+        });
+
+    }, 0);
+
+    window.setTimeout(() => {
+        const checkbox =
+            document.getElementById("disableOfflineOpHelpCheck");
+
+        checkbox?.addEventListener("change", () => {
+            localStorage.setItem(
+                OFFLINE_OP_HELP_DISABLED_KEY,
+                checkbox.checked ? "1" : "0"
+            );
+        });
+    }, 0);
+
+    await helpPromise;
 }
 
 
@@ -204,6 +273,14 @@ async function loadPlayerPermissions() {
 
         renderPlayerPermissionList();
         renderAddOpInputState();
+
+        if (
+            permissionServerReady
+            && !permissionOnlineMode
+            && localStorage.getItem(OFFLINE_OP_HELP_DISABLED_KEY) !== "1"
+        ) {
+            await showPermissionHelp(true);
+        }
 
     } catch (error) {
         console.error("玩家權限資料載入失敗:", error);

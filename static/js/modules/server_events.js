@@ -82,6 +82,8 @@ export function initServerEvents() {
                 }
 
                 handleBackendDisconnected();
+
+                window.location.reload();
             }
         }, 1500);
     };

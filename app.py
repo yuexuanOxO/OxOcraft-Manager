@@ -9,6 +9,7 @@ from backend.db import (
     mark_interrupted_local_backups_failed,
 )
 from backend.server_config_sync import init_rcon_config
+from backend.response_headers import register_no_cache_headers
 
 from backend.routes.death_routes import death_bp
 from backend.routes.page_routes import page_bp
@@ -26,8 +27,11 @@ from backend.routes.notification_routes import notification_bp
 
 
 
+
 app = Flask(__name__)
 app.secret_key = "oxo_google_login_secret"
+
+register_no_cache_headers(app)
 
 app.register_blueprint(death_bp)
 app.register_blueprint(page_bp)

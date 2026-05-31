@@ -13,6 +13,10 @@ import {
     showInfo
 } from "./system_dialog.js";
 
+import {
+    updateUiServerState
+} from "./server_ui_state.js";
+
 let isTransitioning = false;
 
 
@@ -68,6 +72,11 @@ async function toggleServer() {
                     online: true,
                 }
             }));
+
+            updateUiServerState({
+                state: "stopping",
+                online: true,
+            });
 
         } else {
             const setupStatus = await getServerSetupStatus();

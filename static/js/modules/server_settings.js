@@ -10,7 +10,7 @@ let pendingServerIconFile = null;
 let pendingServerIconPreviewUrl = null;
 let serverIconNeedsRestart = false;
 
-const SERVER_SETTINGS_BUSY_MIN_MS = 2500;
+const SERVER_SETTINGS_BUSY_MIN_MS = 1000;
 
 import {
     latestServerStatusData

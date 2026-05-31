@@ -36,6 +36,9 @@ import {
     updateServerSettingsFooterModeByState
 } from "./server_settings.js";
 
+import {
+    updateUiServerState
+} from "./server_ui_state.js";
 
 let serverEvents = null;
 let isBackendDead = false;
@@ -51,6 +54,8 @@ export function initServerEvents() {
 
     serverEvents.addEventListener("server_status_changed", (event) => {
         const payload = JSON.parse(event.data);
+
+        updateUiServerState(payload.data);
 
         applyServerStatusPayload(payload);
         updateServerSettingsFooterModeByState(payload.data);

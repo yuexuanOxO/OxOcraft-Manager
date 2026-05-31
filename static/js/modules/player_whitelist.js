@@ -8,8 +8,9 @@ import {
 } from "./offline_default_skins.js";
 
 import {
-    isServerTransitionState
-} from "./server_state_rules.js";
+    getUiServerState,
+    isUiServerTransitionState
+} from "./server_ui_state.js";
 
 
 let allPlayers = [];
@@ -76,7 +77,11 @@ export function initPlayerWhitelist() {
     openBtn.addEventListener("click", async () => {
         modal.classList.remove("hidden");
 
-        startWhitelistSettingsWatcher();
+        whitelistSettings.server_state = getUiServerState();
+        whitelistSettings.server_ready = getUiServerState() === "ready";
+        renderWhitelistSettings();
+
+        // startWhitelistSettingsWatcher();
 
         await loadWhitelistSettings();
         await loadPlayerWhitelist();
@@ -172,7 +177,7 @@ export function initPlayerWhitelist() {
     );
 
     window.addEventListener(
-        "server-status-changed",
+        "server-ui-state-changed",
         (event) => {
             const data = event.detail;
 
@@ -323,8 +328,8 @@ async function loadWhitelistSettings() {
         whitelistSettings = {
             white_list: Boolean(data.white_list),
             enforce_whitelist: Boolean(data.enforce_whitelist),
-            server_ready: Boolean(data.server_ready),
-            server_state: data.server_state || "offline",
+            server_ready: getUiServerState() === "ready",
+            server_state: getUiServerState(),
         };
 
         renderWhitelistSettings();
@@ -411,9 +416,7 @@ function renderWhitelistSettings() {
 
 
 function isWhitelistUiLocked() {
-    return isServerTransitionState(
-        whitelistSettings.server_state
-    );
+    return isUiServerTransitionState();
 }
 
 

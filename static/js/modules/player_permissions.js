@@ -8,8 +8,9 @@ import {
 } from "./offline_default_skins.js";
 
 import {
-    isServerTransitionState
-} from "./server_state_rules.js";
+    getUiServerState,
+    isUiServerTransitionState
+} from "./server_ui_state.js";
 
 let currentFilter = "op";
 let allPlayers = [];
@@ -158,6 +159,25 @@ export function initPlayerPermissions() {
             if (!data) return;
 
             permissionServerReady =
+                getUiServerState() === "ready";
+
+            permissionServerState =
+                getUiServerState();
+
+            renderAddOpInputState();
+            renderPermissionActionButtons();
+        }
+    );
+
+    window.addEventListener(
+        "server-ui-state-changed",
+        (event) => {
+
+            const data = event.detail;
+
+            if (!data) return;
+
+            permissionServerReady =
                 data.state === "ready";
 
             permissionServerState =
@@ -291,10 +311,11 @@ async function loadPlayerPermissions() {
         allPlayers = data.players || [];
 
         permissionOnlineMode = Boolean(data.online_mode);
-        permissionServerReady = Boolean(data.server_ready);
+        permissionServerReady =
+            getUiServerState() === "ready";
 
         permissionServerState =
-            String(data.server_state || "offline");
+            getUiServerState();
 
         console.log("[Permission] server_state =", permissionServerState, data);
 
@@ -744,7 +765,7 @@ async function loadOpCandidates() {
 
 
 function isPermissionActionLocked() {
-    return isServerTransitionState(permissionServerState);
+    return isUiServerTransitionState();
 }
 
 

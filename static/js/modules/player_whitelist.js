@@ -7,6 +7,10 @@ import {
     getOfflineDefaultSkinAvatar
 } from "./offline_default_skins.js";
 
+import {
+    isServerTransitionState
+} from "./server_state_rules.js";
+
 
 let allPlayers = [];
 let candidatePlayers = [];
@@ -16,7 +20,6 @@ let whitelistSettings = {
     enforce_whitelist: false,
     server_ready: false,
     server_state: "offline",
-    server_busy: false,
 };
 
 const OFFLINE_WHITELIST_HELP_DISABLED_KEY = "oxo_offline_whitelist_help_disabled";
@@ -168,6 +171,23 @@ export function initPlayerWhitelist() {
         }
     );
 
+    window.addEventListener(
+        "server-status-changed",
+        (event) => {
+            const data = event.detail;
+
+            if (!data) return;
+
+            whitelistSettings.server_state =
+                data.state || "offline";
+
+            whitelistSettings.server_ready =
+                data.state === "ready";
+
+            renderWhitelistSettings();
+        }
+    );
+
 }
 
 
@@ -305,7 +325,6 @@ async function loadWhitelistSettings() {
             enforce_whitelist: Boolean(data.enforce_whitelist),
             server_ready: Boolean(data.server_ready),
             server_state: data.server_state || "offline",
-            server_busy: Boolean(data.server_busy),
         };
 
         renderWhitelistSettings();
@@ -347,8 +366,7 @@ function renderWhitelistSettings() {
                     : "已關閉";
         }
 
-        whiteListToggleBtn.disabled =
-            whitelistSettings.server_busy;
+        whiteListToggleBtn.disabled = isWhitelistUiLocked();
     }
 
     if (enforceWhitelistToggleBtn) {
@@ -373,7 +391,7 @@ function renderWhitelistSettings() {
         }
 
         enforceWhitelistToggleBtn.disabled =
-            whitelistSettings.server_busy ||
+            isWhitelistUiLocked() ||
             whitelistSettings.server_ready;
     }
 
@@ -392,12 +410,18 @@ function renderWhitelistSettings() {
 }
 
 
+function isWhitelistUiLocked() {
+    return isServerTransitionState(
+        whitelistSettings.server_state
+    );
+}
+
+
 function renderWhitelistActionButtons() {
     const whitelistEnabled =
         whitelistSettings.white_list;
 
-    const uiLocked =
-        whitelistSettings.server_busy;
+    const uiLocked = isWhitelistUiLocked();
 
     const openAddBtn =
         document.getElementById("openAddWhitelistPlayerBtn");

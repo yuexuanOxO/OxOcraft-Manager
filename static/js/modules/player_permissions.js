@@ -7,6 +7,9 @@ import {
     getOfflineDefaultSkinAvatar
 } from "./offline_default_skins.js";
 
+import {
+    isServerTransitionState
+} from "./server_state_rules.js";
 
 let currentFilter = "op";
 let allPlayers = [];
@@ -741,11 +744,7 @@ async function loadOpCandidates() {
 
 
 function isPermissionActionLocked() {
-
-    return (
-        permissionServerState === "starting"
-        || permissionServerState === "stopping"
-    );
+    return isServerTransitionState(permissionServerState);
 }
 
 

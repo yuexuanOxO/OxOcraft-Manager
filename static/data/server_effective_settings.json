@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-06-06T16:16:47",
-    "properties_modified_comment": "Sat Jun 06 16:10:51 CST 2026",
+    "captured_at": "2026-06-06T16:56:41",
+    "properties_modified_comment": "Sat Jun 06 16:56:39 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -22,7 +22,7 @@
         "require-resource-pack": "false",
         "use-native-transport": "true",
         "max-players": "20",
-        "online-mode": "false",
+        "online-mode": "true",
         "enable-status": "true",
         "allow-flight": "false",
         "initial-disabled-packs": "",

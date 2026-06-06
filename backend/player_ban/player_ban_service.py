@@ -12,6 +12,10 @@ from backend.routes.player_routes import (
     is_online_mode,
 )
 
+from backend.player_permissions.player_identity_service import (
+    get_known_players,
+    get_current_usercache_players,
+)
 
 BANNED_PLAYERS_FILE = MC_ROOT / "banned-players.json"
 BANNED_IPS_FILE = MC_ROOT / "banned-ips.json"
@@ -225,6 +229,7 @@ def ban_player(
     operator: str = "OxOcraft",
     expires_at: str | None = None,
     permanent: bool = True,
+    selected_from_candidate: bool = False,
 ) -> dict:
     player_name = str(player_name or "").strip()
     reason = str(reason or "").strip()
@@ -234,6 +239,20 @@ def ban_player(
         return {
             "success": False,
             "message": "請輸入玩家名稱",
+        }
+
+    if (
+        not can_add_ban_player_by_name()
+        and not selected_from_candidate
+    ):
+        return {
+            "success": False,
+            "message": (
+                "離線模式且伺服器在線時，"
+                "不能手動輸入玩家名稱新增黑名單。"
+                "請先讓玩家進入伺服器一次，再從"
+                "「之前加入過的玩家」清單加入。"
+            ),
         }
 
     player_uuid = resolve_player_uuid(player_name)
@@ -1077,3 +1096,46 @@ def deactivate_all_active_bans_by_mode_change() -> dict:
     return {
         "cleared": len(records),
     }
+
+
+def can_add_ban_player_by_name() -> bool:
+    if not is_server_running():
+        return True
+
+    return is_online_mode()
+
+
+def get_player_ban_candidate_list() -> list[dict]:
+    active_bans = get_active_bans("player")
+
+    banned_uuid_set = {
+        str(item.get("target_uuid", "")).lower()
+        for item in active_bans
+        if item.get("target_uuid")
+    }
+
+    if is_server_running() and not is_online_mode():
+        players = get_current_usercache_players()
+    else:
+        players = get_known_players()
+
+    current_uuid_type = get_uuid_type()
+
+    result = []
+
+    for player in players:
+        player_uuid = str(player.get("player_uuid", "")).lower()
+        uuid_type = player.get("uuid_type")
+
+        if uuid_type != current_uuid_type:
+            continue
+
+        if player_uuid in banned_uuid_set:
+            continue
+
+        result.append({
+            **player,
+            "banned": False,
+        })
+
+    return result

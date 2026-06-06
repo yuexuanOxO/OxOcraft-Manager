@@ -10,6 +10,7 @@ from backend.player_ban.player_ban_service import (
     parse_expire_payload,
     process_expired_bans,
     sync_banned_json_to_db,
+    get_player_ban_candidate_list,
 )
 
 player_ban_bp = Blueprint("player_ban", __name__)
@@ -57,6 +58,9 @@ def api_player_ban_player():
         operator=data.get("operator", "OxOcraft"),
         expires_at=expires_at,
         permanent=permanent,
+        selected_from_candidate=bool(
+            data.get("selected_from_candidate", False)
+        ),
     )
 
     status = 200 if result.get("success") else 400
@@ -130,4 +134,17 @@ def api_player_ban_sync_json():
     return jsonify({
         "success": True,
         **sync_banned_json_to_db(),
+    })
+
+
+@player_ban_bp.route("/api/player/ban/candidates")
+def api_player_ban_candidates():
+    from backend.player_ban.player_ban_service import (
+        can_add_ban_player_by_name
+    )
+
+    return jsonify({
+        "success": True,
+        "players": get_player_ban_candidate_list(),
+        "can_add_by_name": can_add_ban_player_by_name(),
     })

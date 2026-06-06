@@ -14,6 +14,9 @@ let currentBanTab = "players";
 let banPlayers = [];
 let banIps = [];
 let banHistory = [];
+let banCandidatePlayers = [];
+let canAddBanPlayerByName = true;
+let selectedBanCandidatePlayer = null;
 
 export function initPlayerBan() {
     const openBtn = document.getElementById("playerBanBtn");
@@ -60,8 +63,8 @@ export function initPlayerBan() {
         renderBanActionButtons();
     });
 
-    openAddBtn?.addEventListener("click", () => {
-        openAddBanModal();
+    openAddBtn?.addEventListener("click", async () => {
+        await openAddBanModal();
     });
 
     closeAddBtn?.addEventListener("click", () => {
@@ -559,7 +562,9 @@ function escapeHtml(text) {
 }
 
 
-function openAddBanModal() {
+async function openAddBanModal() {
+    selectedBanCandidatePlayer = null;
+
     const modal = document.getElementById("addPlayerBanModal");
     const title = document.getElementById("addPlayerBanTitle");
     const label = document.getElementById("addPlayerBanTargetLabel");
@@ -604,8 +609,195 @@ function openAddBanModal() {
     }
 
     renderExpireFields();
+    renderBanCandidateSection();
 
     modal.classList.remove("hidden");
+
+    if (currentBanTab === "players") {
+        await loadBanCandidates();
+    }
+}
+
+
+function renderBanCandidateSection() {
+    const section =
+        document.getElementById("playerBanCandidateSection");
+
+    const input =
+        document.getElementById("addPlayerBanTargetInput");
+
+    const label =
+        document.getElementById("addPlayerBanTargetLabel");
+
+    if (!section) return;
+
+    const isPlayerTab =
+        currentBanTab === "players";
+
+    section.classList.toggle(
+        "hidden",
+        !isPlayerTab
+    );
+
+    if (!input) return;
+
+    if (!isPlayerTab) {
+        input.disabled = false;
+        return;
+    }
+
+    input.disabled =
+        !canAddBanPlayerByName;
+
+    input.placeholder =
+        canAddBanPlayerByName
+            ? "請輸入玩家名稱"
+            : "離線模式且伺服器在線時，請從下方玩家清單選擇";
+
+    if (label) {
+        label.textContent =
+            canAddBanPlayerByName
+                ? "玩家名稱"
+                : "玩家名稱（請從下方選擇）";
+    }
+}
+
+
+async function loadBanCandidates() {
+    const list =
+        document.getElementById("playerBanCandidateList");
+
+    if (!list) return;
+
+    list.innerHTML = `
+        <div class="player-ban-empty">
+            載入玩家資料中...
+        </div>
+    `;
+
+    try {
+        const response = await fetch(
+            "/api/player/ban/candidates",
+            { cache: "no-store" }
+        );
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(
+                data.message || "候選玩家載入失敗"
+            );
+        }
+
+        banCandidatePlayers =
+            data.players || [];
+
+        canAddBanPlayerByName =
+            data.can_add_by_name !== false;
+
+        renderBanCandidateSection();
+        renderBanCandidates();
+
+    } catch (error) {
+        console.error("候選玩家載入失敗:", error);
+
+        list.innerHTML = `
+            <div class="player-ban-empty">
+                候選玩家載入失敗
+            </div>
+        `;
+    }
+}
+
+
+function renderBanCandidates() {
+    const list =
+        document.getElementById("playerBanCandidateList");
+
+    if (!list) return;
+
+    list.innerHTML = "";
+
+    if (banCandidatePlayers.length === 0) {
+        list.innerHTML = `
+            <div class="player-ban-empty">
+                尚未有可加入的玩家紀錄
+            </div>
+        `;
+        return;
+    }
+
+    banCandidatePlayers.forEach(player => {
+        list.appendChild(
+            createBanCandidateCard(player)
+        );
+    });
+}
+
+
+function createBanCandidateCard(player) {
+    const card =
+        document.createElement("div");
+
+    card.className =
+        "player-ban-candidate-card";
+
+    const avatarUrl =
+        getBanCandidateAvatarUrl(player);
+
+    card.innerHTML = `
+        <img
+            class="player-ban-candidate-avatar"
+            src="${avatarUrl}"
+            alt="${escapeHtml(player.player_name)}"
+        >
+
+        <div class="player-ban-candidate-info">
+            <div class="player-ban-candidate-name">
+                ${escapeHtml(player.player_name)}
+            </div>
+
+            <div class="player-ban-candidate-uuid">
+                UUID：${escapeHtml(player.player_uuid)}
+            </div>
+        </div>
+
+        <button
+            class="player-ban-candidate-select-btn"
+            type="button"
+        >
+            選擇
+        </button>
+    `;
+
+    const selectBtn =
+        card.querySelector(".player-ban-candidate-select-btn");
+
+    selectBtn?.addEventListener("click", () => {
+        selectedBanCandidatePlayer = player;
+
+        const input =
+            document.getElementById("addPlayerBanTargetInput");
+
+        if (input) {
+            input.value = player.player_name;
+        }
+    });
+
+    return card;
+}
+
+
+function getBanCandidateAvatarUrl(player) {
+    if (player.uuid_type === "online") {
+        return `https://mc-heads.net/avatar/${encodeURIComponent(player.player_name)}`;
+    }
+
+    if (player.uuid_type === "offline") {
+        return getOfflineDefaultSkinAvatar(player.player_uuid);
+    }
+
+    return "/static/img/player/default_skins/steve.png";
 }
 
 
@@ -690,6 +882,19 @@ async function submitAddBan() {
     const target = (targetInput?.value || "").trim();
     const reason = (reasonInput?.value || "").trim();
 
+    if (
+        currentBanTab === "players"
+        && !canAddBanPlayerByName
+        && !selectedBanCandidatePlayer
+    ) {
+        await showInfo({
+            title: "黑名單管理",
+            message: "離線模式且伺服器在線時，請從下方玩家清單選擇玩家",
+            variant: "warning"
+        });
+        return;
+    }
+
     if (!target) {
         await showInfo({
             title: "黑名單管理",
@@ -710,6 +915,8 @@ async function submitAddBan() {
         const payload = {
             reason,
             operator: "OxOcraft",
+            selected_from_candidate:
+                selectedBanCandidatePlayer !== null,
             ...buildExpirePayload()
         };
 

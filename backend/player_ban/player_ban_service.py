@@ -312,16 +312,34 @@ def ban_player(
         )
         result = "已寫入 banned-players.json"
 
-    ban_record_id = insert_ban_record(
+    existing_record = find_active_ban_record(
         target_type="player",
         target_name=player_name,
         target_uuid=player_uuid,
-        uuid_type=uuid_type,
-        reason=reason,
-        operator=operator,
-        expires_at=expires_at,
-        permanent=permanent,
     )
+
+    if existing_record:
+        ban_record_id = int(existing_record["id"])
+
+        update_ban_record_as_oxocraft(
+            record_id=ban_record_id,
+            reason=reason,
+            operator=operator,
+            expires_at=expires_at,
+            permanent=permanent,
+            uuid_type=uuid_type,
+        )
+    else:
+        ban_record_id = insert_ban_record(
+            target_type="player",
+            target_name=player_name,
+            target_uuid=player_uuid,
+            uuid_type=uuid_type,
+            reason=reason,
+            operator=operator,
+            expires_at=expires_at,
+            permanent=permanent,
+        )
 
     add_ban_history(
         action="ban_player",
@@ -339,6 +357,74 @@ def ban_player(
         "message": f"已封鎖玩家 {player_name}",
         "result": result,
     }
+
+
+def find_active_ban_record(
+    target_type: str,
+    target_name: str,
+    target_uuid: str | None = None,
+) -> dict | None:
+    with get_connection() as conn:
+        if target_type == "player":
+            row = conn.execute("""
+                SELECT *
+                FROM ban_records
+                WHERE active = 1
+                  AND target_type = 'player'
+                  AND (
+                      lower(target_uuid) = lower(?)
+                      OR lower(target_name) = lower(?)
+                  )
+                ORDER BY id DESC
+                LIMIT 1
+            """, (
+                target_uuid or "",
+                target_name or "",
+            )).fetchone()
+        else:
+            row = conn.execute("""
+                SELECT *
+                FROM ban_records
+                WHERE active = 1
+                  AND target_type = 'ip'
+                  AND target_name = ?
+                ORDER BY id DESC
+                LIMIT 1
+            """, (
+                target_name or "",
+            )).fetchone()
+
+    return dict(row) if row else None
+
+
+def update_ban_record_as_oxocraft(
+    record_id: int,
+    reason: str,
+    operator: str,
+    expires_at: str | None,
+    permanent: bool,
+    uuid_type: str | None = None,
+) -> None:
+    with get_connection() as conn:
+        conn.execute("""
+            UPDATE ban_records
+            SET reason = ?,
+                operator = ?,
+                expires_at = ?,
+                permanent = ?,
+                source = 'OxOcraft',
+                uuid_type = COALESCE(?, uuid_type)
+            WHERE id = ?
+        """, (
+            reason,
+            operator,
+            expires_at,
+            1 if permanent else 0,
+            uuid_type,
+            record_id,
+        ))
+
+        conn.commit()
 
 
 def remove_player_from_banned_json(
@@ -529,16 +615,33 @@ def ban_ip(
         )
         result = "已寫入 banned-ips.json"
 
-    ban_record_id = insert_ban_record(
+    existing_record = find_active_ban_record(
         target_type="ip",
         target_name=ip,
-        target_uuid=None,
-        uuid_type=None,
-        reason=reason,
-        operator=operator,
-        expires_at=expires_at,
-        permanent=permanent,
     )
+
+    if existing_record:
+        ban_record_id = int(existing_record["id"])
+
+        update_ban_record_as_oxocraft(
+            record_id=ban_record_id,
+            reason=reason,
+            operator=operator,
+            expires_at=expires_at,
+            permanent=permanent,
+            uuid_type=None,
+        )
+    else:
+        ban_record_id = insert_ban_record(
+            target_type="ip",
+            target_name=ip,
+            target_uuid=None,
+            uuid_type=None,
+            reason=reason,
+            operator=operator,
+            expires_at=expires_at,
+            permanent=permanent,
+        )
 
     add_ban_history(
         action="ban_ip",

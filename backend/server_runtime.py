@@ -78,6 +78,25 @@ def handle_server_output() -> None:
             print("[Runtime Debug] Detected server ready from log.")
             set_server_runtime_state("ready")
 
+            try:
+                from backend.player_ban.player_ban_service import (
+                    sync_banned_json_to_db,
+                    sync_removed_bans_from_json,
+                )
+
+                sync_banned_json_to_db()
+                sync_removed_bans_from_json()
+
+                from backend.server_monitor import publish_event
+                publish_event("player_ban_should_refresh", {
+                    "reason": "server_ready_sync_ban_json",
+                })
+
+                print("[PlayerBan] server ready sync completed")
+
+            except Exception as error:
+                print("[PlayerBan] server ready sync failed:", error)
+
         
         if "Query running on" in line:
             print("[Runtime Debug] Query listener ready from log.")

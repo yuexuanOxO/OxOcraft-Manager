@@ -1,0 +1,122 @@
+<div id="playerBanModal" class="modal hidden">
+    <div class="player-ban-panel">
+
+        <div class="player-ban-side-tabs">
+            <button class="player-ban-tab active" type="button" data-tab="players" title="封鎖玩家">
+                <img src="/static/icons/feature_button/barrier.png" alt="">
+                <span>封鎖玩家</span>
+            </button>
+
+            <button class="player-ban-tab" type="button" data-tab="ips" title="封鎖IP">
+                <img src="/static/icons/feature_button/barrier.png" alt="">
+                <span>封鎖IP</span>
+            </button>
+
+            <button class="player-ban-tab" type="button" data-tab="history" title="封鎖紀錄">
+                <img src="/static/icons/player_whitelist/knowledge_book.png" alt="">
+                <span>封鎖紀錄</span>
+            </button>
+
+            <button class="player-ban-tab" type="button" data-tab="help" title="黑名單說明">
+                <img src="/static/icons/player_whitelist/knowledge_book.png" alt="">
+                <span>說明</span>
+            </button>
+        </div>
+
+        <div class="player-ban-main">
+            <div class="player-ban-header">
+                <div id="playerBanTitle" class="player-ban-title">
+                    黑名單管理：封鎖玩家
+                </div>
+
+            </div>
+
+            <div id="playerBanSummary" class="player-ban-summary">
+                載入中...
+            </div>
+
+            <div id="playerBanToolbar" class="player-ban-toolbar">
+                <button id="openAddBanBtn" class="player-ban-add-btn" type="button">
+                    + 新增封鎖
+                </button>
+
+                <input
+                    id="playerBanSearchInput"
+                    class="player-ban-search"
+                    type="text"
+                    placeholder="搜尋"
+                >
+            </div>
+
+            <div id="playerBanContent" class="player-ban-content"></div>
+        </div>
+
+    </div>
+</div>
+
+<div id="addPlayerBanModal" class="modal hidden">
+    <div class="player-ban-add-panel">
+
+        <div class="player-ban-add-header">
+            <div id="addPlayerBanTitle" class="player-ban-add-title">
+                新增玩家黑名單
+            </div>
+        </div>
+
+        <div class="player-ban-add-body">
+
+            <label class="player-ban-form-row">
+                <span id="addPlayerBanTargetLabel">玩家名稱</span>
+                <input id="addPlayerBanTargetInput" type="text">
+            </label>
+
+            <label class="player-ban-form-row">
+                <span>封鎖原因</span>
+                <textarea id="addPlayerBanReasonInput" rows="3"></textarea>
+            </label>
+
+            <div class="player-ban-expire-box">
+                <div class="player-ban-expire-title">封鎖期限</div>
+
+                <label class="player-ban-radio-row">
+                    <input type="radio" name="playerBanExpireType" value="forever" checked>
+                    <span>永久封鎖</span>
+                </label>
+
+                <label class="player-ban-radio-row">
+                    <input type="radio" name="playerBanExpireType" value="duration">
+                    <span>封鎖一段時間</span>
+                </label>
+
+                <div id="playerBanDurationFields" class="player-ban-duration-fields hidden">
+                    <input id="playerBanDaysInput" type="number" min="0" value="0">
+                    <span>天</span>
+
+                    <input id="playerBanHoursInput" type="number" min="0" value="0">
+                    <span>小時</span>
+
+                    <input id="playerBanMinutesInput" type="number" min="0" value="10">
+                    <span>分鐘</span>
+                </div>
+
+                <label class="player-ban-radio-row">
+                    <input type="radio" name="playerBanExpireType" value="datetime">
+                    <span>封鎖到指定時間</span>
+                </label>
+
+                <div id="playerBanDateTimeFields" class="player-ban-datetime-fields hidden">
+                    <input id="playerBanDateInput" type="date">
+                    <input id="playerBanTimeInput" type="time">
+                </div>
+            </div>
+
+        </div>
+
+        <div class="player-ban-add-actions">
+            <button id="confirmAddPlayerBanBtn" type="button">
+                新增封鎖
+            </button>
+        </div>
+
+    </div>
+</div>

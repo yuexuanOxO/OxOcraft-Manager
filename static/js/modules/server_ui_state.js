@@ -75,13 +75,13 @@ function refreshUiServerState() {
         }
     }
 
-    console.log("[UI State]", {
-        rawState: uiServerState,
-        online: uiServerOnline,
-        busyMode,
-        uiState: getUiServerState(),
-        unlockIn: busyUnlockAt - Date.now()
-    });
+    // console.log("[UI State]", {
+    //     rawState: uiServerState,
+    //     online: uiServerOnline,
+    //     busyMode,
+    //     uiState: getUiServerState(),
+    //     unlockIn: busyUnlockAt - Date.now()
+    // });
 
     emitUiServerStateChanged();
 }

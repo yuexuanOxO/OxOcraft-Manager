@@ -10,6 +10,9 @@ from backend.db import (
 )
 from backend.server_config_sync import init_rcon_config
 from backend.response_headers import register_no_cache_headers
+from backend.player_ban.player_ban_scheduler import start_player_ban_scheduler
+from backend.auto_backup_service import start_auto_backup_scheduler
+from backend.server_monitor import start_server_monitor
 
 from backend.routes.death_routes import death_bp
 from backend.routes.page_routes import page_bp
@@ -18,11 +21,10 @@ from backend.routes.player_routes import player_bp
 from backend.routes.server_routes import server_bp
 from backend.routes.server_settings_routes import settings_bp
 from backend.routes.eula_routes import eula_bp
-from backend.server_monitor import start_server_monitor
 from backend.routes.backup_routes import backup_bp
 from backend.routes.cloud_routes import cloud_bp
-from backend.auto_backup_service import start_auto_backup_scheduler
 from backend.routes.notification_routes import notification_bp
+from backend.routes.player_ban_routes import player_ban_bp
 
 
 
@@ -37,6 +39,7 @@ app.register_blueprint(death_bp)
 app.register_blueprint(page_bp)
 app.register_blueprint(command_bp)
 app.register_blueprint(player_bp)
+app.register_blueprint(player_ban_bp)
 app.register_blueprint(server_bp)
 app.register_blueprint(settings_bp)
 app.register_blueprint(eula_bp)
@@ -62,6 +65,7 @@ if __name__ == "__main__":
         print("請確認 Minecraft server 已重啟，否則新的 RCON 設定不會生效。")
         start_server_monitor()
         start_auto_backup_scheduler()
+        start_player_ban_scheduler()
         
     except Exception as error:
         print(f"初始化失敗：{error}")

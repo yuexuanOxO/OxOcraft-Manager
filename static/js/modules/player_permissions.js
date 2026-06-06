@@ -151,25 +151,6 @@ export function initPlayerPermissions() {
     );
 
     window.addEventListener(
-        "server-status-changed",
-        (event) => {
-
-            const data = event.detail;
-
-            if (!data) return;
-
-            permissionServerReady =
-                getUiServerState() === "ready";
-
-            permissionServerState =
-                getUiServerState();
-
-            renderAddOpInputState();
-            renderPermissionActionButtons();
-        }
-    );
-
-    window.addEventListener(
         "server-ui-state-changed",
         (event) => {
 

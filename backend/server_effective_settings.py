@@ -97,13 +97,31 @@ from backend.paths import MC_ROOT
 OPS_FILE = MC_ROOT / "ops.json"
 WHITELIST_FILE = MC_ROOT / "whitelist.json"
 USERCACHE_FILE = MC_ROOT / "usercache.json"
+BANNED_PLAYERS_FILE = MC_ROOT / "banned-players.json"
+BANNED_IPS_FILE = MC_ROOT / "banned-ips.json"
 
 
 def clear_access_control_files() -> None:
-    for path in [OPS_FILE, WHITELIST_FILE, USERCACHE_FILE]:
+    for path in [
+        OPS_FILE,
+        WHITELIST_FILE,
+        USERCACHE_FILE,
+        BANNED_PLAYERS_FILE,
+        BANNED_IPS_FILE,
+    ]:
 
         if not path.exists():
             continue
 
         with path.open("w", encoding="utf-8") as file:
             json.dump([], file, ensure_ascii=False, indent=2)
+
+    try:
+        from backend.player_ban.player_ban_service import (
+            deactivate_all_active_bans_by_mode_change
+        )
+
+        deactivate_all_active_bans_by_mode_change()
+
+    except Exception:
+        pass

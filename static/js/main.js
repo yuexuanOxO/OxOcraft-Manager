@@ -14,6 +14,7 @@ import { initSystemDialog } from "./modules/system_dialog.js";
 import { initNotificationUI } from "./modules/notification.js";
 import { initPlayerPermissions } from "./modules/player_permissions.js";
 import { initPlayerWhitelist } from "./modules/player_whitelist.js";
+import { initPlayerBan } from "./modules/player_ban.js";
 
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -34,5 +35,6 @@ document.addEventListener("DOMContentLoaded", () => {
     initNotificationUI();
     initPlayerPermissions();
     initPlayerWhitelist();
+    initPlayerBan();
     
 });

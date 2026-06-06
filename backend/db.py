@@ -111,6 +111,69 @@ def init_db() -> None:
             )
         """)
 
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS ban_records (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                target_type TEXT NOT NULL,
+                target_name TEXT NOT NULL,
+                target_uuid TEXT,
+                uuid_type TEXT,
+
+                reason TEXT DEFAULT '',
+                operator TEXT DEFAULT 'OxOcraft',
+
+                created_at TEXT NOT NULL,
+                expires_at TEXT,
+
+                permanent INTEGER NOT NULL DEFAULT 1,
+                active INTEGER NOT NULL DEFAULT 1,
+
+                source TEXT DEFAULT 'OxOcraft',
+                note TEXT DEFAULT ''
+            )
+        """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS ban_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                action TEXT NOT NULL,
+
+                target_type TEXT NOT NULL,
+                target_name TEXT NOT NULL,
+                target_uuid TEXT,
+
+                reason TEXT DEFAULT '',
+                operator TEXT DEFAULT 'OxOcraft',
+
+                created_at TEXT NOT NULL,
+
+                ban_record_id INTEGER,
+                detail TEXT DEFAULT ''
+            )
+        """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS player_ip_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                player_name TEXT NOT NULL,
+                player_uuid TEXT,
+                uuid_type TEXT,
+
+                ip TEXT NOT NULL,
+                port TEXT,
+
+                first_seen TEXT NOT NULL,
+                last_seen TEXT NOT NULL,
+
+                seen_count INTEGER NOT NULL DEFAULT 1,
+
+                UNIQUE(player_name, ip)
+            )
+        """)
+
         conn.commit()
 
 

@@ -59,6 +59,8 @@
     {% include "components/system_dialog.html" %}
     {% include "components/player_permissions_modal.html" %}
     {% include "components/player_whitelist_modal.html" %}
+    {% include "components/player_ban_modal.html" %}
+
 
     
 
@@ -517,7 +519,7 @@
 
                         <!-- 功能三預計位置 -->
                         <div class="feature-item">
-                            <button id="serverSettingBtn" class="feature-btn" type="button">
+                            <button id="playerBanBtn" class="feature-btn" type="button">
                                 <img src="{{ url_for('static', filename='icons/feature_button/barrier.png') }}" alt="黑名單">
                             </button>
 

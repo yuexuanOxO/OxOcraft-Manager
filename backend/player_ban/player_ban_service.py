@@ -15,6 +15,7 @@ from backend.routes.player_routes import (
 from backend.player_permissions.player_identity_service import (
     get_known_players,
     get_current_usercache_players,
+    get_uuid_type as detect_uuid_type,
 )
 
 BANNED_PLAYERS_FILE = MC_ROOT / "banned-players.json"
@@ -114,13 +115,41 @@ def get_active_bans(target_type: str) -> list[dict]:
 
     records = [dict(row) for row in rows]
 
+    deduped = {}
+
+    for record in records:
+        if target_type == "player":
+            key = (
+                str(record.get("target_uuid") or "").lower()
+                or str(record.get("target_name") or "").lower()
+            )
+        else:
+            key = str(record.get("target_name") or "").strip()
+
+        if not key:
+            continue
+
+        old = deduped.get(key)
+
+        if old is None:
+            deduped[key] = record
+            continue
+
+        old_operator = str(old.get("operator") or "")
+        new_operator = str(record.get("operator") or "")
+
+        if old_operator != "OxOcraft" and new_operator == "OxOcraft":
+            deduped[key] = record
+
+    result = list(deduped.values())
+
     if target_type == "player":
-        for record in records:
+        for record in result:
             record["valid_for_current_mode"] = (
                 record.get("uuid_type") == current_uuid_type
             )
 
-    return records
+    return result
 
 
 def get_ban_history(limit: int = 100) -> list[dict]:
@@ -230,6 +259,8 @@ def ban_player(
     expires_at: str | None = None,
     permanent: bool = True,
     selected_from_candidate: bool = False,
+    candidate_uuid: str | None = None,
+    candidate_uuid_type: str | None = None,
 ) -> dict:
     player_name = str(player_name or "").strip()
     reason = str(reason or "").strip()
@@ -255,15 +286,19 @@ def ban_player(
             ),
         }
 
-    player_uuid = resolve_player_uuid(player_name)
+    if selected_from_candidate and candidate_uuid:
+        player_uuid = str(candidate_uuid).strip()
+        uuid_type = str(candidate_uuid_type or get_uuid_type()).strip()
+    else:
+        player_uuid = resolve_player_uuid(player_name)
 
-    if not player_uuid:
-        return {
-            "success": False,
-            "message": f"無法取得玩家 {player_name} 的 UUID",
-        }
+        if not player_uuid:
+            return {
+                "success": False,
+                "message": f"無法取得玩家 {player_name} 的 UUID",
+            }
 
-    uuid_type = get_uuid_type()
+        uuid_type = get_uuid_type()
 
     if is_server_running():
         command = f"ban {player_name} {reason}".strip()
@@ -872,7 +907,7 @@ def sync_banned_json_to_db() -> dict:
         for item in players:
             player_name = str(item.get("name", "")).strip()
             player_uuid = str(item.get("uuid", "")).strip()
-            uuid_type = get_uuid_type()
+            uuid_type = detect_uuid_type(player_uuid)
 
             if not player_name or not player_uuid:
                 continue
@@ -893,6 +928,14 @@ def sync_banned_json_to_db() -> dict:
             )).fetchone()
 
             if exists:
+                conn.execute("""
+                    UPDATE ban_records
+                    SET uuid_type = ?
+                    WHERE id = ?
+                """, (
+                    uuid_type,
+                    exists["id"],
+                ))
                 continue
 
             created_at = now_text()
@@ -1139,3 +1182,106 @@ def get_player_ban_candidate_list() -> list[dict]:
         })
 
     return result
+
+
+def sync_removed_bans_from_json() -> dict:
+    player_entries = read_json_list(BANNED_PLAYERS_FILE)
+    ip_entries = read_json_list(BANNED_IPS_FILE)
+
+    player_uuid_set = {
+        str(item.get("uuid", "")).lower()
+        for item in player_entries
+        if item.get("uuid")
+    }
+
+    player_name_set = {
+        str(item.get("name", "")).lower()
+        for item in player_entries
+        if item.get("name")
+    }
+
+    ip_set = {
+        str(item.get("ip", "")).strip()
+        for item in ip_entries
+        if item.get("ip")
+    }
+
+    removed_players = 0
+    removed_ips = 0
+    now = now_text()
+
+    with get_connection() as conn:
+        rows = conn.execute("""
+            SELECT *
+            FROM ban_records
+            WHERE active = 1
+        """).fetchall()
+
+        for row in rows:
+            record = dict(row)
+            target_type = record.get("target_type")
+            target_name = str(record.get("target_name", ""))
+            target_uuid = str(record.get("target_uuid", ""))
+
+            missing = False
+
+            if target_type == "player":
+                missing = (
+                    target_uuid.lower() not in player_uuid_set
+                    and target_name.lower() not in player_name_set
+                )
+
+            elif target_type == "ip":
+                missing = target_name not in ip_set
+
+            if not missing:
+                continue
+
+            conn.execute("""
+                UPDATE ban_records
+                SET active = 0
+                WHERE id = ?
+            """, (record["id"],))
+
+            action = (
+                "external_unban_player"
+                if target_type == "player"
+                else "external_unban_ip"
+            )
+
+            conn.execute("""
+                INSERT INTO ban_history (
+                    action,
+                    target_type,
+                    target_name,
+                    target_uuid,
+                    reason,
+                    operator,
+                    created_at,
+                    ban_record_id,
+                    detail
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                action,
+                target_type,
+                target_name,
+                target_uuid or None,
+                "偵測到 Minecraft 黑名單已移除",
+                "Minecraft",
+                now,
+                record["id"],
+                "sync_removed_bans_from_json",
+            ))
+
+            if target_type == "player":
+                removed_players += 1
+            else:
+                removed_ips += 1
+
+        conn.commit()
+
+    return {
+        "removed_players": removed_players,
+        "removed_ips": removed_ips,
+    }

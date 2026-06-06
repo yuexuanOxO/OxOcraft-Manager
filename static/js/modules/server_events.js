@@ -190,6 +190,20 @@ export function initServerEvents() {
         clearLogTextOnly();
     });
 
+    serverEvents.addEventListener(
+        "player_ban_should_refresh",
+        () => {
+            console.log("[PlayerBan] SSE refresh received");
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "player-ban-should-refresh"
+                )
+            );
+
+        }
+    );
+
     serverEvents.addEventListener("backup_started", (event) => {
         const data = JSON.parse(event.data);
 

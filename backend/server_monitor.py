@@ -2,6 +2,7 @@ import json
 import queue
 import threading
 import time
+import re
 from typing import Callable, Optional
 
 from backend.server_status import get_server_query_status
@@ -40,6 +41,8 @@ def append_log_line(line: str) -> None:
     publish_event("log_append", {
         "line": line
     })
+
+    maybe_refresh_player_ban_from_log(line)
 
 
 def get_cached_logs() -> list[str]:
@@ -188,3 +191,46 @@ def refresh_server_status_now() -> dict:
     publish_event("server_status_changed", event_data)
 
     return event_data
+
+
+def maybe_refresh_player_ban_from_log(line: str) -> None:
+    patterns = [
+        r"\bBanned\s+.+",
+        r"\bUnbanned\s+.+",
+        r"\bPardoned\s+.+",
+        r"\bBanned\s+IP\s+.+",
+        r"\bUnbanned\s+IP\s+.+",
+        r"\bPardoned\s+IP\s+.+",
+        r"Removed\s+.+\s+from\s+the\s+banlist",
+    ]
+
+    if not any(
+        re.search(pattern, line, re.IGNORECASE)
+        for pattern in patterns
+    ):
+        return
+
+    print("[PlayerBan] detected ban log:", line)
+
+    try:
+        from backend.player_ban.player_ban_service import (
+            sync_banned_json_to_db
+        )
+
+        from backend.player_ban.player_ban_service import (
+            sync_banned_json_to_db,
+            sync_removed_bans_from_json,
+        )
+
+        sync_banned_json_to_db()
+        sync_removed_bans_from_json()
+
+        publish_event("player_ban_should_refresh", {
+            "reason": "minecraft_ban_log",
+            "line": line,
+        })
+
+        print("[PlayerBan] refresh event published")
+
+    except Exception as error:
+        print("[PlayerBan] refresh from log failed:", error)

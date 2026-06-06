@@ -86,6 +86,27 @@ export function initPlayerBan() {
         .forEach((radio) => {
             radio.addEventListener("change", renderExpireFields);
         });
+
+    window.addEventListener(
+        "player-ban-should-refresh",
+        async () => {
+            console.log("[PlayerBan] frontend refresh event received");
+
+            const modal =
+                document.getElementById(
+                    "playerBanModal"
+                );
+
+            if (
+                !modal ||
+                modal.classList.contains("hidden")
+            ) {
+                return;
+            }
+
+            await loadCurrentBanTab();
+        }
+    );
 }
 
 function updateBanTabs() {
@@ -928,6 +949,14 @@ async function submitAddBan() {
         } else {
             url = "/api/player/ban/player";
             payload.name = target;
+
+            if (selectedBanCandidatePlayer) {
+                payload.uuid =
+                    selectedBanCandidatePlayer.player_uuid;
+
+                payload.uuid_type =
+                    selectedBanCandidatePlayer.uuid_type;
+            }
         }
 
         const response = await fetch(

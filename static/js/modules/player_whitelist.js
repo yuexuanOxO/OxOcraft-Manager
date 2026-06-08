@@ -711,7 +711,7 @@ function createPlayerWhitelistCard(player) {
                     player-whitelist-uuid-type
                     getAccountTypeClass(player)
                 ">
-                    ${getUuidTypeLabel(player)}
+                    ${getAccountTypeLabel(player)}
                 </div>
 
             </div>

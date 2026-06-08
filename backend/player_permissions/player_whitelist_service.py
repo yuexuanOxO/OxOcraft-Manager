@@ -3,11 +3,9 @@ import hashlib
 import uuid
 import urllib.request
 
-from backend.db import delete_player_by_uuid
 from backend.paths import MC_ROOT,SERVER_PROPERTIES_PATH
 from backend.rcon_service import send_rcon_command
 from backend.server_monitor import get_cached_server_status
-
 
 from backend.player_permissions.player_identity_service import (
     get_known_players,
@@ -18,6 +16,10 @@ from backend.player_permissions.player_permission_service import (
     get_effective_online_mode,
 )
 
+from backend.db import (
+    delete_player_by_uuid,
+    add_player_access_history,
+)
 
 WHITELIST_FILE = MC_ROOT / "whitelist.json"
 
@@ -148,6 +150,17 @@ def add_player_whitelist(
 
     result = reload_whitelist_if_ready()
 
+    add_player_access_history(
+        category="whitelist",
+        action="add",
+        target_uuid=player_uuid,
+        target_name=player_name,
+        account_type=get_account_type(player_uuid),
+        operator_name="OxOcraft",
+        source="oxocraft_ui",
+        detail=result,
+    )
+
     return {
         "success": True,
         "message": (
@@ -176,6 +189,17 @@ def remove_player_whitelist(
     save_whitelist_entries(entries)
 
     result = reload_whitelist_if_ready()
+
+    add_player_access_history(
+        category="whitelist",
+        action="remove",
+        target_uuid=player_uuid,
+        target_name=player_name,
+        account_type=get_account_type(player_uuid),
+        operator_name="OxOcraft",
+        source="oxocraft_ui",
+        detail=result,
+    )
 
     return {
         "success": True,

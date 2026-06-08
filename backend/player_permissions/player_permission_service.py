@@ -3,7 +3,6 @@ from datetime import datetime
 
 from backend.paths import MC_ROOT
 from backend.rcon_service import send_rcon_command
-from backend.db import update_player_op_since,delete_player_by_uuid
 from backend.server_monitor import get_cached_server_status
 from backend.player_permissions.player_identity_service import get_known_players
 from backend.server_effective_settings import load_effective_settings_snapshot
@@ -11,6 +10,12 @@ from backend.player_permissions.player_identity_service import (
     get_known_players,
     get_account_type,
     get_current_usercache_players,
+)
+
+from backend.db import (
+    update_player_op_since,
+    delete_player_by_uuid,
+    add_player_access_history,
 )
 
 
@@ -157,6 +162,17 @@ def set_player_op(player_uuid: str, player_name: str) -> dict:
             op_since=now,
         )
 
+        add_player_access_history(
+            category="op",
+            action="add",
+            target_uuid=player_uuid,
+            target_name=player_name,
+            account_type=None,
+            operator_name="OxOcraft",
+            source="oxocraft_ui",
+            detail=result,
+        )
+
         return {
             "success": True,
             "message": f"已將 {player_name} 設為管理員",
@@ -177,11 +193,23 @@ def set_player_op(player_uuid: str, player_name: str) -> dict:
         })
 
         save_ops_entries(entries)
+        
 
     update_player_op_since(
         player_uuid=player_uuid,
         player_name=player_name,
         op_since=now,
+    )
+
+    add_player_access_history(
+        category="op",
+        action="add",
+        target_uuid=player_uuid,
+        target_name=player_name,
+        account_type=None,
+        operator_name="OxOcraft",
+        source="oxocraft_ui",
+        detail="offline-edit"
     )
 
     return {
@@ -211,6 +239,17 @@ def remove_player_op(player_uuid: str, player_name: str) -> dict:
                 "result": result,
                 "op": True,
             }
+        
+        add_player_access_history(
+            category="op",
+            action="remove",
+            target_uuid=player_uuid,
+            target_name=effective_name,
+            account_type=None,
+            operator_name="OxOcraft",
+            source="oxocraft_ui",
+            detail=result,
+        )
 
         return {
             "success": True,
@@ -220,6 +259,17 @@ def remove_player_op(player_uuid: str, player_name: str) -> dict:
         }
 
     remove_ops_entry_by_uuid(player_uuid)
+
+    add_player_access_history(
+        category="op",
+        action="remove",
+        target_uuid=player_uuid,
+        target_name=effective_name,
+        account_type=None,
+        operator_name="OxOcraft",
+        source="oxocraft_ui",
+        detail="offline-edit",
+    )
 
     return {
         "success": True,

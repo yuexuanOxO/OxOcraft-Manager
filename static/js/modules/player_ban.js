@@ -951,8 +951,7 @@ async function submitAddBan() {
                 payload.uuid =
                     selectedBanCandidatePlayer.player_uuid;
 
-                payload.uuid_type =
-                    selectedBanCandidatePlayer.uuid_type;
+                payload.account_type = selectedBanCandidatePlayer.account_type
             }
         }
 

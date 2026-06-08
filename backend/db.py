@@ -184,6 +184,28 @@ def init_db() -> None:
             )
         """)
 
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS player_access_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                category TEXT NOT NULL,
+                action TEXT NOT NULL,
+
+                target_uuid TEXT,
+                target_name TEXT NOT NULL,
+                account_type TEXT,
+
+                operator_uuid TEXT,
+                operator_name TEXT,
+
+                source TEXT DEFAULT 'unknown',
+
+                detail TEXT DEFAULT '',
+
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
         conn.commit()
 
 
@@ -587,13 +609,15 @@ def update_player_op_since(
             INSERT INTO players (
                 player_uuid,
                 player_name,
-                uuid_type,
+                account_type,
+                op,
                 op_since,
                 updated_at
             )
-            VALUES (?, ?, 'unknown', ?, ?)
+            VALUES (?, ?, 'unknown', 1, ?, ?)
             ON CONFLICT(player_uuid) DO UPDATE SET
                 player_name = excluded.player_name,
+                op = 1,
                 op_since = excluded.op_since,
                 updated_at = excluded.updated_at
         """, (
@@ -680,6 +704,57 @@ def mark_player_offline_by_name(player_name: str) -> None:
         """, (
             now,
             player_name,
+        ))
+
+        conn.commit()
+
+
+def add_player_access_history(
+    category: str,
+    action: str,
+
+    target_uuid: str | None,
+    target_name: str,
+
+    account_type: str | None = None,
+
+    operator_uuid: str | None = None,
+    operator_name: str | None = None,
+
+    source: str = "unknown",
+    detail: str = "",
+) -> None:
+
+    with get_connection() as conn:
+        conn.execute("""
+            INSERT INTO player_access_history (
+                category,
+                action,
+
+                target_uuid,
+                target_name,
+                account_type,
+
+                operator_uuid,
+                operator_name,
+
+                source,
+                detail
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            category,
+            action,
+
+            target_uuid,
+            target_name,
+            account_type,
+
+            operator_uuid,
+            operator_name,
+
+            source,
+            detail,
         ))
 
         conn.commit()

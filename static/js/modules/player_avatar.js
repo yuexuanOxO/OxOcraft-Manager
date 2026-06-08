@@ -22,9 +22,7 @@ export function getPlayerAvatarUrl(player) {
         ).trim();
 
     if (accountType === "premium") {
-        return `https://mc-heads.net/avatar/${
-            encodeURIComponent(uuid || name)
-        }`;
+        return `https://mc-heads.net/avatar/${encodeURIComponent(name || uuid)}`;
     }
 
     if (accountType === "offline") {

@@ -600,6 +600,7 @@ def get_all_players() -> list[dict]:
 def update_player_op_since(
     player_uuid: str,
     player_name: str,
+    account_type: str,
     op_since: str,
 ) -> None:
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -614,7 +615,7 @@ def update_player_op_since(
                 op_since,
                 updated_at
             )
-            VALUES (?, ?, 'unknown', 1, ?, ?)
+            VALUES (?, ?, ?, 1, ?, ?)
             ON CONFLICT(player_uuid) DO UPDATE SET
                 player_name = excluded.player_name,
                 op = 1,
@@ -623,7 +624,41 @@ def update_player_op_since(
         """, (
             player_uuid,
             player_name,
+            account_type,
             op_since,
+            now,
+        ))
+
+        conn.commit()
+
+
+def update_player_op_status(
+    player_uuid: str,
+    player_name: str,
+    account_type: str,
+    op: bool,
+) -> None:
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with get_connection() as conn:
+        conn.execute("""
+            INSERT INTO players (
+                player_uuid,
+                player_name,
+                account_type,
+                op,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(player_uuid) DO UPDATE SET
+                player_name = excluded.player_name,
+                op = excluded.op,
+                updated_at = excluded.updated_at
+        """, (
+            player_uuid,
+            player_name,
+            account_type,
+            1 if op else 0,
             now,
         ))
 
@@ -704,6 +739,22 @@ def mark_player_offline_by_name(player_name: str) -> None:
         """, (
             now,
             player_name,
+        ))
+
+        conn.commit()
+
+
+def mark_all_players_offline() -> None:
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with get_connection() as conn:
+        conn.execute("""
+            UPDATE players
+            SET is_online = 0,
+                updated_at = ?
+            WHERE is_online != 0
+        """, (
+            now,
         ))
 
         conn.commit()

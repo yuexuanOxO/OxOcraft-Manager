@@ -142,6 +142,12 @@ def handle_server_output() -> None:
                 raw_log=death_data["message"],
             )
 
+    try:
+        from backend.db import mark_all_players_offline
+        mark_all_players_offline()
+    except Exception as error:
+        print("[PlayerIdentity] mark all offline failed:", error)
+
     set_server_runtime_state("offline")
 
 

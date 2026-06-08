@@ -16,6 +16,7 @@ from backend.db import (
     update_player_op_since,
     delete_player_by_uuid,
     add_player_access_history,
+    update_player_op_status,
 )
 
 
@@ -150,7 +151,13 @@ def can_add_op_by_name() -> bool:
     return get_effective_online_mode()
 
 
-def set_player_op(player_uuid: str, player_name: str) -> dict:
+def set_player_op(
+    player_uuid: str,
+    player_name: str,
+) -> dict:
+
+    account_type = get_account_type(player_uuid)
+
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     if is_server_ready():
@@ -159,6 +166,7 @@ def set_player_op(player_uuid: str, player_name: str) -> dict:
         update_player_op_since(
             player_uuid=player_uuid,
             player_name=player_name,
+            account_type=account_type,
             op_since=now,
         )
 
@@ -198,6 +206,7 @@ def set_player_op(player_uuid: str, player_name: str) -> dict:
     update_player_op_since(
         player_uuid=player_uuid,
         player_name=player_name,
+        account_type=account_type,
         op_since=now,
     )
 
@@ -240,6 +249,13 @@ def remove_player_op(player_uuid: str, player_name: str) -> dict:
                 "op": True,
             }
         
+        update_player_op_status(
+            player_uuid=player_uuid,
+            player_name=effective_name,
+            account_type=get_account_type(player_uuid),
+            op=False,
+        )
+        
         add_player_access_history(
             category="op",
             action="remove",
@@ -269,6 +285,13 @@ def remove_player_op(player_uuid: str, player_name: str) -> dict:
         operator_name="OxOcraft",
         source="oxocraft_ui",
         detail="offline-edit",
+    )
+
+    update_player_op_status(
+        player_uuid=player_uuid,
+        player_name=effective_name,
+        account_type=get_account_type(player_uuid),
+        op=False,
     )
 
     return {

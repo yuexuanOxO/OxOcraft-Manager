@@ -4,6 +4,9 @@ import uuid
 from backend.paths import MC_ROOT
 from backend.db import (
     upsert_player_from_usercache,
+    upsert_player_login,
+    upsert_player_ip_history,
+    mark_player_offline_by_name,
     get_all_players,
     delete_player_by_uuid,
 )
@@ -34,17 +37,17 @@ def load_usercache_data() -> list[dict]:
         return []
 
 
-def get_uuid_type(player_uuid: str) -> str:
+def get_account_type(player_uuid: str) -> str:
     try:
         version = uuid.UUID(player_uuid).version
 
         if version == 4:
-            return "online"
+            return "premium"
 
         if version == 3:
             return "offline"
 
-        return f"v{version}"
+        return "unknown"
 
     except Exception:
         return "unknown"
@@ -67,7 +70,7 @@ def sync_usercache_to_db() -> None:
         upsert_player_from_usercache(
             player_uuid=player_uuid,
             player_name=player_name,
-            uuid_type=get_uuid_type(player_uuid),
+            account_type=get_account_type(player_uuid),
             usercache_expires_on=expires_on,
         )
 
@@ -88,19 +91,19 @@ def get_current_usercache_players() -> list[dict]:
         if not player_uuid or not player_name:
             continue
 
-        uuid_type = get_uuid_type(player_uuid)
+        account_type = get_account_type(player_uuid)
 
         upsert_player_from_usercache(
             player_uuid=player_uuid,
             player_name=player_name,
-            uuid_type=uuid_type,
+            account_type=account_type,
             usercache_expires_on=expires_on,
         )
 
         result.append({
             "player_uuid": player_uuid,
             "player_name": player_name,
-            "uuid_type": uuid_type,
+            "account_type": account_type,
             "usercache_expires_on": expires_on,
         })
 
@@ -171,6 +174,51 @@ def upsert_player_to_usercache(
     upsert_player_from_usercache(
         player_uuid=player_uuid,
         player_name=player_name,
-        uuid_type=get_uuid_type(player_uuid),
+        account_type=get_account_type(player_uuid),
         usercache_expires_on=expires_on,
     )
+
+
+def record_player_login_from_log(
+    player_name: str,
+    player_uuid: str,
+    ip: str | None = None,
+    port: str | None = None,
+) -> dict | None:
+    player_name = str(player_name or "").strip()
+    player_uuid = str(player_uuid or "").strip()
+
+    if not player_name or not player_uuid:
+        return None
+
+    account_type = get_account_type(player_uuid)
+
+    upsert_player_login(
+        player_uuid=player_uuid,
+        player_name=player_name,
+        account_type=account_type,
+        usercache_expires_on=None,
+    )
+
+    if ip:
+        upsert_player_ip_history(
+            player_uuid=player_uuid,
+            player_name=player_name,
+            account_type=account_type,
+            ip=ip,
+            port=port,
+        )
+
+    return {
+        "player_name": player_name,
+        "player_uuid": player_uuid,
+        "account_type": account_type,
+        "ip": ip,
+        "port": port,
+    }
+
+
+def record_player_logout_from_log(
+    player_name: str,
+) -> None:
+    mark_player_offline_by_name(player_name)

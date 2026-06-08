@@ -102,11 +102,21 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS players (
                 player_uuid TEXT PRIMARY KEY,
                 player_name TEXT NOT NULL,
-                uuid_type TEXT NOT NULL DEFAULT 'unknown',
-                first_seen_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+                account_type TEXT NOT NULL DEFAULT 'unknown',
+                is_online INTEGER NOT NULL DEFAULT 0,
+
+                first_seen_at DATETIME,
                 last_seen_at DATETIME,
+
                 usercache_expires_on TEXT,
+
+                op INTEGER NOT NULL DEFAULT 0,
                 op_since DATETIME,
+
+                whitelisted INTEGER NOT NULL DEFAULT 0,
+                whitelisted_since DATETIME,
+
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         """)
@@ -118,7 +128,7 @@ def init_db() -> None:
                 target_type TEXT NOT NULL,
                 target_name TEXT NOT NULL,
                 target_uuid TEXT,
-                uuid_type TEXT,
+                account_type TEXT,
 
                 reason TEXT DEFAULT '',
                 operator TEXT DEFAULT 'OxOcraft',
@@ -160,7 +170,7 @@ def init_db() -> None:
 
                 player_name TEXT NOT NULL,
                 player_uuid TEXT,
-                uuid_type TEXT,
+                account_type TEXT,
 
                 ip TEXT NOT NULL,
                 port TEXT,
@@ -170,7 +180,7 @@ def init_db() -> None:
 
                 seen_count INTEGER NOT NULL DEFAULT 1,
 
-                UNIQUE(player_name, ip)
+                UNIQUE(player_uuid, ip)
             )
         """)
 
@@ -473,7 +483,7 @@ def mark_interrupted_local_backups_failed() -> None:
 def upsert_player_from_usercache(
     player_uuid: str,
     player_name: str,
-    uuid_type: str,
+    account_type: str,
     usercache_expires_on: str | None,
 ) -> None:
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -483,26 +493,71 @@ def upsert_player_from_usercache(
             INSERT INTO players (
                 player_uuid,
                 player_name,
-                uuid_type,
-                first_seen_at,
-                last_seen_at,
+                account_type,
                 usercache_expires_on,
                 updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?)
             ON CONFLICT(player_uuid) DO UPDATE SET
                 player_name = excluded.player_name,
-                uuid_type = excluded.uuid_type,
-                last_seen_at = excluded.last_seen_at,
+                account_type = excluded.account_type,
                 usercache_expires_on = excluded.usercache_expires_on,
                 updated_at = excluded.updated_at
         """, (
             player_uuid,
             player_name,
-            uuid_type,
-            now,
-            now,
+            account_type,
             usercache_expires_on,
+            now,
+        ))
+
+        conn.commit()
+
+
+def upsert_player_ip_history(
+    player_uuid: str,
+    player_name: str,
+    account_type: str,
+    ip: str,
+    port: str | None = None,
+) -> None:
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    player_uuid = str(player_uuid or "").strip()
+    player_name = str(player_name or "").strip()
+    account_type = str(account_type or "unknown").strip()
+    ip = str(ip or "").strip()
+    port = str(port or "").strip() if port else None
+
+    if not player_uuid or not player_name or not ip:
+        return
+
+    with get_connection() as conn:
+        conn.execute("""
+            INSERT INTO player_ip_history (
+                player_uuid,
+                player_name,
+                account_type,
+                ip,
+                port,
+                first_seen,
+                last_seen,
+                seen_count
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+            ON CONFLICT(player_uuid, ip) DO UPDATE SET
+                player_name = excluded.player_name,
+                account_type = excluded.account_type,
+                port = excluded.port,
+                last_seen = excluded.last_seen,
+                seen_count = seen_count + 1
+        """, (
+            player_uuid,
+            player_name,
+            account_type,
+            ip,
+            port,
+            now,
             now,
         ))
 
@@ -564,3 +619,67 @@ def delete_player_by_uuid(player_uuid: str) -> None:
 
     conn.commit()
     conn.close()
+
+
+def upsert_player_login(
+    player_uuid: str,
+    player_name: str,
+    account_type: str,
+    usercache_expires_on: str | None = None,
+) -> None:
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with get_connection() as conn:
+        conn.execute("""
+            INSERT INTO players (
+                player_uuid,
+                player_name,
+                account_type,
+                is_online,
+                first_seen_at,
+                last_seen_at,
+                usercache_expires_on,
+                updated_at
+            )
+            VALUES (?, ?, ?, 1, ?, ?, ?, ?)
+            ON CONFLICT(player_uuid) DO UPDATE SET
+                player_name = excluded.player_name,
+                account_type = excluded.account_type,
+                is_online = 1,
+                first_seen_at = COALESCE(players.first_seen_at, excluded.first_seen_at),
+                last_seen_at = excluded.last_seen_at,
+                usercache_expires_on = COALESCE(excluded.usercache_expires_on, players.usercache_expires_on),
+                updated_at = excluded.updated_at
+        """, (
+            player_uuid,
+            player_name,
+            account_type,
+            now,
+            now,
+            usercache_expires_on,
+            now,
+        ))
+
+        conn.commit()
+
+
+def mark_player_offline_by_name(player_name: str) -> None:
+    player_name = str(player_name or "").strip()
+
+    if not player_name:
+        return
+
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with get_connection() as conn:
+        conn.execute("""
+            UPDATE players
+            SET is_online = 0,
+                updated_at = ?
+            WHERE lower(player_name) = lower(?)
+        """, (
+            now,
+            player_name,
+        ))
+
+        conn.commit()

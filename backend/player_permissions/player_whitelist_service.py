@@ -11,7 +11,7 @@ from backend.server_monitor import get_cached_server_status
 
 from backend.player_permissions.player_identity_service import (
     get_known_players,
-    get_uuid_type,
+    get_account_type,
 )
 
 from backend.player_permissions.player_permission_service import (
@@ -108,12 +108,12 @@ def get_player_whitelist_list() -> list[dict]:
         if not player_uuid or not player_name:
             continue
 
-        uuid_type = get_uuid_type(player_uuid)
+        account_type = get_account_type(player_uuid)
 
         is_valid_for_current_mode = (
-            uuid_type == "online"
+            account_type == "premium"
             if online_mode
-            else uuid_type == "offline"
+            else account_type == "offline"
         )
 
         known_player = known_by_uuid.get(player_uuid.lower(), {})
@@ -122,7 +122,7 @@ def get_player_whitelist_list() -> list[dict]:
             **known_player,
             "player_uuid": player_uuid,
             "player_name": player_name,
-            "uuid_type": uuid_type,
+            "account_type": account_type,
             "whitelisted": True,
             "valid_for_current_mode": is_valid_for_current_mode,
         })
@@ -243,12 +243,12 @@ def get_player_whitelist_candidate_list() -> list[dict]:
     result = []
 
     for player in players:
-        uuid_type = player.get("uuid_type")
+        account_type = player.get("account_type")
 
-        if online_mode and uuid_type != "online":
+        if online_mode and account_type != "premium":
             continue
 
-        if not online_mode and uuid_type != "offline":
+        if not online_mode and account_type != "offline":
             continue
 
         player_uuid = str(player.get("player_uuid", "")).lower()

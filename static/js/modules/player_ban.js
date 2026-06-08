@@ -7,8 +7,10 @@ import {
 } from "./server_ui_state.js";
 
 import {
-    getOfflineDefaultSkinAvatar
-} from "./offline_default_skins.js";
+    getPlayerAvatarUrl,
+    getAccountTypeLabel,
+    getAccountTypeClass,
+} from "./player_avatar.js";
 
 let currentBanTab = "players";
 let banPlayers = [];
@@ -274,7 +276,11 @@ function createBanPlayerCard(item) {
     card.innerHTML = `
         <img
             class="player-ban-avatar"
-            src="${getBanPlayerAvatarUrl(item)}"
+            src="${getPlayerAvatarUrl({
+                player_uuid: item.target_uuid,
+                player_name: item.target_name,
+                account_type: item.account_type
+            })}"
             alt="${escapeHtml(item.target_name)}"
         >
 
@@ -763,8 +769,7 @@ function createBanCandidateCard(player) {
     card.className =
         "player-ban-candidate-card";
 
-    const avatarUrl =
-        getBanCandidateAvatarUrl(player);
+    const avatarUrl = getPlayerAvatarUrl(player);
 
     card.innerHTML = `
         <img
@@ -781,6 +786,11 @@ function createBanCandidateCard(player) {
             <div class="player-ban-candidate-uuid">
                 UUID：${escapeHtml(player.player_uuid)}
             </div>
+
+            <div class="player-ban-candidate-type">
+                ${getAccountTypeLabel(player)}
+            </div>
+
         </div>
 
         <button
@@ -806,19 +816,6 @@ function createBanCandidateCard(player) {
     });
 
     return card;
-}
-
-
-function getBanCandidateAvatarUrl(player) {
-    if (player.uuid_type === "online") {
-        return `https://mc-heads.net/avatar/${encodeURIComponent(player.player_name)}`;
-    }
-
-    if (player.uuid_type === "offline") {
-        return getOfflineDefaultSkinAvatar(player.player_uuid);
-    }
-
-    return "/static/img/player/default_skins/steve.png";
 }
 
 
@@ -1009,15 +1006,3 @@ async function submitAddBan() {
     }
 }
 
-
-function getBanPlayerAvatarUrl(item) {
-    if (item.uuid_type === "online") {
-        return `https://mc-heads.net/avatar/${encodeURIComponent(item.target_name)}`;
-    }
-
-    if (item.uuid_type === "offline") {
-        return getOfflineDefaultSkinAvatar(item.target_uuid);
-    }
-
-    return "/static/img/player/default_skins/steve.png";
-}

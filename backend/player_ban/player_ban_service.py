@@ -15,7 +15,7 @@ from backend.routes.player_routes import (
 from backend.player_permissions.player_identity_service import (
     get_known_players,
     get_current_usercache_players,
-    get_uuid_type as detect_uuid_type,
+    get_account_type as detect_account_type,
 )
 
 BANNED_PLAYERS_FILE = MC_ROOT / "banned-players.json"
@@ -54,8 +54,8 @@ def write_json_list(path: Path, data: list[dict]) -> None:
     )
 
 
-def get_uuid_type() -> str:
-    return "online" if is_online_mode() else "offline"
+def get_current_account_type() -> str:
+    return "premium" if is_online_mode() else "offline"
 
 
 def add_ban_history(
@@ -98,11 +98,7 @@ def add_ban_history(
 
 
 def get_active_bans(target_type: str) -> list[dict]:
-    current_uuid_type = (
-        "online"
-        if is_online_mode()
-        else "offline"
-    )
+    current_account_type = get_current_account_type()
 
     with get_connection() as conn:
         rows = conn.execute("""
@@ -146,7 +142,7 @@ def get_active_bans(target_type: str) -> list[dict]:
     if target_type == "player":
         for record in result:
             record["valid_for_current_mode"] = (
-                record.get("uuid_type") == current_uuid_type
+                record.get("account_type") == current_account_type
             )
 
     return result
@@ -210,7 +206,7 @@ def insert_ban_record(
     target_type: str,
     target_name: str,
     target_uuid: str | None,
-    uuid_type: str | None,
+    account_type: str | None,
     reason: str,
     operator: str,
     expires_at: str | None,
@@ -225,7 +221,7 @@ def insert_ban_record(
                 target_type,
                 target_name,
                 target_uuid,
-                uuid_type,
+                account_type,
                 reason,
                 operator,
                 created_at,
@@ -239,7 +235,7 @@ def insert_ban_record(
             target_type,
             target_name,
             target_uuid,
-            uuid_type,
+            account_type,
             reason,
             operator,
             created_at,
@@ -260,7 +256,7 @@ def ban_player(
     permanent: bool = True,
     selected_from_candidate: bool = False,
     candidate_uuid: str | None = None,
-    candidate_uuid_type: str | None = None,
+    candidate_account_type: str | None = None,
 ) -> dict:
     player_name = str(player_name or "").strip()
     reason = str(reason or "").strip()
@@ -288,7 +284,7 @@ def ban_player(
 
     if selected_from_candidate and candidate_uuid:
         player_uuid = str(candidate_uuid).strip()
-        uuid_type = str(candidate_uuid_type or get_uuid_type()).strip()
+        account_type = str(candidate_account_type or detect_account_type(player_uuid)).strip()
     else:
         player_uuid = resolve_player_uuid(player_name)
 
@@ -298,7 +294,7 @@ def ban_player(
                 "message": f"無法取得玩家 {player_name} 的 UUID",
             }
 
-        uuid_type = get_uuid_type()
+        account_type = detect_account_type(player_uuid)
 
     if is_server_running():
         command = f"ban {player_name} {reason}".strip()
@@ -327,14 +323,14 @@ def ban_player(
             operator=operator,
             expires_at=expires_at,
             permanent=permanent,
-            uuid_type=uuid_type,
+            account_type=account_type,
         )
     else:
         ban_record_id = insert_ban_record(
             target_type="player",
             target_name=player_name,
             target_uuid=player_uuid,
-            uuid_type=uuid_type,
+            account_type=account_type,
             reason=reason,
             operator=operator,
             expires_at=expires_at,
@@ -403,7 +399,7 @@ def update_ban_record_as_oxocraft(
     operator: str,
     expires_at: str | None,
     permanent: bool,
-    uuid_type: str | None = None,
+    account_type: str | None = None,
 ) -> None:
     with get_connection() as conn:
         conn.execute("""
@@ -413,14 +409,14 @@ def update_ban_record_as_oxocraft(
                 expires_at = ?,
                 permanent = ?,
                 source = 'OxOcraft',
-                uuid_type = COALESCE(?, uuid_type)
+                account_type = COALESCE(?, account_type)
             WHERE id = ?
         """, (
             reason,
             operator,
             expires_at,
             1 if permanent else 0,
-            uuid_type,
+            account_type,
             record_id,
         ))
 
@@ -629,14 +625,14 @@ def ban_ip(
             operator=operator,
             expires_at=expires_at,
             permanent=permanent,
-            uuid_type=None,
+            account_type=None,
         )
     else:
         ban_record_id = insert_ban_record(
             target_type="ip",
             target_name=ip,
             target_uuid=None,
-            uuid_type=None,
+            account_type=None,
             reason=reason,
             operator=operator,
             expires_at=expires_at,
@@ -1010,7 +1006,7 @@ def sync_banned_json_to_db() -> dict:
         for item in players:
             player_name = str(item.get("name", "")).strip()
             player_uuid = str(item.get("uuid", "")).strip()
-            uuid_type = detect_uuid_type(player_uuid)
+            account_type = detect_account_type(player_uuid)
 
             if not player_name or not player_uuid:
                 continue
@@ -1033,10 +1029,10 @@ def sync_banned_json_to_db() -> dict:
             if exists:
                 conn.execute("""
                     UPDATE ban_records
-                    SET uuid_type = ?
+                    SET account_type = ?
                     WHERE id = ?
                 """, (
-                    uuid_type,
+                    account_type,
                     exists["id"],
                 ))
                 continue
@@ -1048,7 +1044,7 @@ def sync_banned_json_to_db() -> dict:
                     target_type,
                     target_name,
                     target_uuid,
-                    uuid_type,
+                    account_type,
                     reason,
                     operator,
                     created_at,
@@ -1067,7 +1063,7 @@ def sync_banned_json_to_db() -> dict:
             """, (
                     player_name,
                     player_uuid,
-                    uuid_type,
+                    account_type,
                     item.get("reason", ""),
                     item.get("source", "Minecraft"),
                     created_at,
@@ -1127,7 +1123,7 @@ def sync_banned_json_to_db() -> dict:
                     target_type,
                     target_name,
                     target_uuid,
-                    uuid_type,
+                    account_type,
                     reason,
                     operator,
                     created_at,
@@ -1265,15 +1261,15 @@ def get_player_ban_candidate_list() -> list[dict]:
     else:
         players = get_known_players()
 
-    current_uuid_type = get_uuid_type()
+    current_account_type = get_current_account_type()
 
     result = []
 
     for player in players:
         player_uuid = str(player.get("player_uuid", "")).lower()
-        uuid_type = player.get("uuid_type")
+        account_type = player.get("account_type")
 
-        if uuid_type != current_uuid_type:
+        if account_type != current_account_type:
             continue
 
         if player_uuid in banned_uuid_set:

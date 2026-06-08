@@ -4,8 +4,10 @@ import {
 } from "./system_dialog.js";
 
 import {
-    getOfflineDefaultSkinAvatar
-} from "./offline_default_skins.js";
+    getPlayerAvatarUrl,
+    getAccountTypeLabel,
+    getAccountTypeClass,
+} from "./player_avatar.js";
 
 import {
     getUiServerState,
@@ -458,9 +460,9 @@ function createPlayerPermissionCard(player) {
 
                 <div class="
                     player-permission-uuid-type
-                    ${player.uuid_type === "online" ? "online" : "offline"}
+                    ${getAccountTypeClass(player)}
                 ">
-                    ${getUuidTypeLabel(player)}
+                    ${getAccountTypeLabel(player)}
                 </div>
 
             </div>
@@ -877,9 +879,9 @@ function createOpCandidateCard(player) {
 
                 <div class="
                     player-permission-uuid-type
-                    ${player.uuid_type === "online" ? "online" : "offline"}
+                    ${getAccountTypeClass(player)}
                 ">
-                    ${getUuidTypeLabel(player)}
+                    ${getAccountTypeLabel(player)}
                 </div>
             </div>
 
@@ -1033,30 +1035,4 @@ async function deleteOpCandidate(player) {
             variant: "error"
         });
     }
-}
-
-
-function getPlayerAvatarUrl(player) {
-    if (player.uuid_type === "online") {
-        return `https://mc-heads.net/avatar/${encodeURIComponent(player.player_name)}`;
-    }
-
-    if (player.uuid_type === "offline") {
-        return getOfflineDefaultSkinAvatar(player.player_uuid);
-    }
-
-    return "/static/img/player/default_skins/steve.png";
-}
-
-
-function getUuidTypeLabel(player) {
-    if (player.uuid_type === "online") {
-        return "正版驗證";
-    }
-
-    if (player.uuid_type === "offline") {
-        return "離線遊玩";
-    }
-
-    return "未知類型";
 }

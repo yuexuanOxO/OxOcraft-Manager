@@ -27,6 +27,8 @@ _lock = threading.Lock()
 _log_cache: list[str] = []
 LOG_CACHE_MAX_LINES = 500
 
+_pending_login_uuids: dict[str, str] = {}
+
 
 def append_log_line(line: str) -> None:
     if not line:
@@ -41,6 +43,9 @@ def append_log_line(line: str) -> None:
     publish_event("log_append", {
         "line": line
     })
+
+    maybe_record_player_login_from_log(line)
+    maybe_record_player_logout_from_log(line)
 
     maybe_refresh_player_ban_from_log(line)
 
@@ -191,6 +196,132 @@ def refresh_server_status_now() -> dict:
     publish_event("server_status_changed", event_data)
 
     return event_data
+
+
+def maybe_record_player_login_from_log(line: str) -> None:
+    uuid_match = re.search(
+        r"UUID of player\s+(.+?)\s+is\s+([0-9a-fA-F-]{36})",
+        line,
+    )
+
+    if uuid_match:
+        player_name = uuid_match.group(1).strip()
+        player_uuid = uuid_match.group(2).strip()
+
+        _pending_login_uuids[
+            player_name.lower()
+        ] = player_uuid
+
+        print(
+            "[PlayerIdentity] UUID cached:",
+            player_name,
+            player_uuid,
+        )
+
+        return
+
+    login_match = re.search(
+        r"\]:\s*(.+?)\[/([0-9a-fA-F:.]+):(\d+)\]\s+logged in with entity id",
+        line,
+    )
+
+    if not login_match:
+        return
+
+    player_name = login_match.group(1).strip()
+    ip = login_match.group(2).strip()
+    port = login_match.group(3).strip()
+
+    player_uuid = _pending_login_uuids.pop(
+        player_name.lower(),
+        "",
+    )
+
+    if not player_uuid:
+        try:
+            from backend.routes.player_routes import (
+                is_online_mode,
+                get_mojang_uuid,
+                get_offline_player_uuid,
+            )
+
+            if is_online_mode():
+                player_uuid = get_mojang_uuid(player_name)
+            else:
+                player_uuid = get_offline_player_uuid(player_name)
+
+            print(
+                "[PlayerIdentity] UUID resolved by current mode:",
+                player_name,
+                player_uuid,
+            )
+
+        except Exception as error:
+            print(
+                "[PlayerIdentity] UUID fallback failed:",
+                player_name,
+                error,
+            )
+            return
+
+    if not player_uuid:
+        return
+
+    try:
+        from backend.player_permissions.player_identity_service import (
+            record_player_login_from_log,
+        )
+
+        identity = record_player_login_from_log(
+            player_name=player_name,
+            player_uuid=player_uuid,
+            ip=ip,
+            port=port,
+        )
+
+        print(
+            "[PlayerIdentity] login recorded:",
+            identity,
+        )
+
+    except Exception as error:
+        print(
+            "[PlayerIdentity] record failed:",
+            error,
+        )
+
+
+def maybe_record_player_logout_from_log(line: str) -> None:
+    left_match = re.search(
+        r"\]:\s*(.+?)\s+left the game$",
+        line,
+    )
+
+    if not left_match:
+        return
+
+    player_name = left_match.group(1).strip()
+
+    if not player_name:
+        return
+
+    try:
+        from backend.player_permissions.player_identity_service import (
+            record_player_logout_from_log,
+        )
+
+        record_player_logout_from_log(player_name)
+
+        print(
+            "[PlayerIdentity] logout recorded:",
+            player_name,
+        )
+
+    except Exception as error:
+        print(
+            "[PlayerIdentity] logout record failed:",
+            error,
+        )
 
 
 def maybe_refresh_player_ban_from_log(line: str) -> None:

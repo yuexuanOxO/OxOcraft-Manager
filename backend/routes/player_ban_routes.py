@@ -62,7 +62,7 @@ def api_player_ban_player():
             data.get("selected_from_candidate", False)
         ),
         candidate_uuid=data.get("uuid"),
-        candidate_uuid_type=data.get("uuid_type"),
+        candidate_account_type=data.get("account_type"),
     )
 
     status = 200 if result.get("success") else 400

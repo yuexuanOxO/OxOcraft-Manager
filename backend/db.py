@@ -597,74 +597,6 @@ def get_all_players() -> list[dict]:
     return [dict(row) for row in rows]
 
 
-def update_player_op_since(
-    player_uuid: str,
-    player_name: str,
-    account_type: str,
-    op_since: str,
-) -> None:
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    with get_connection() as conn:
-        conn.execute("""
-            INSERT INTO players (
-                player_uuid,
-                player_name,
-                account_type,
-                op,
-                op_since,
-                updated_at
-            )
-            VALUES (?, ?, ?, 1, ?, ?)
-            ON CONFLICT(player_uuid) DO UPDATE SET
-                player_name = excluded.player_name,
-                op = 1,
-                op_since = excluded.op_since,
-                updated_at = excluded.updated_at
-        """, (
-            player_uuid,
-            player_name,
-            account_type,
-            op_since,
-            now,
-        ))
-
-        conn.commit()
-
-
-def update_player_op_status(
-    player_uuid: str,
-    player_name: str,
-    account_type: str,
-    op: bool,
-) -> None:
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    with get_connection() as conn:
-        conn.execute("""
-            INSERT INTO players (
-                player_uuid,
-                player_name,
-                account_type,
-                op,
-                updated_at
-            )
-            VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT(player_uuid) DO UPDATE SET
-                player_name = excluded.player_name,
-                op = excluded.op,
-                updated_at = excluded.updated_at
-        """, (
-            player_uuid,
-            player_name,
-            account_type,
-            1 if op else 0,
-            now,
-        ))
-
-        conn.commit()
-
-
 def delete_player_by_uuid(player_uuid: str) -> None:
     conn = get_connection()
 
@@ -807,5 +739,135 @@ def add_player_access_history(
             source,
             detail,
         ))
+
+        conn.commit()
+
+
+def update_player_whitelist_since(
+    player_uuid: str,
+    player_name: str,
+    account_type: str,
+    whitelisted_since: str,
+) -> None:
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with get_connection() as conn:
+        conn.execute("""
+            INSERT INTO players (
+                player_uuid,
+                player_name,
+                account_type,
+                whitelisted,
+                whitelisted_since,
+                updated_at
+            )
+            VALUES (?, ?, ?, 1, ?, ?)
+            ON CONFLICT(player_uuid) DO UPDATE SET
+                player_name = excluded.player_name,
+                account_type = excluded.account_type,
+                whitelisted = 1,
+                whitelisted_since = COALESCE(players.whitelisted_since, excluded.whitelisted_since),
+                updated_at = excluded.updated_at
+        """, (
+            player_uuid,
+            player_name,
+            account_type,
+            whitelisted_since,
+            now,
+        ))
+
+        conn.commit()
+
+
+def update_player_whitelist_status(
+    player_uuid: str,
+    player_name: str,
+    account_type: str,
+    whitelisted: bool,
+) -> None:
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with get_connection() as conn:
+        conn.execute("""
+            INSERT INTO players (
+                player_uuid,
+                player_name,
+                account_type,
+                whitelisted,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(player_uuid) DO UPDATE SET
+                player_name = excluded.player_name,
+                account_type = excluded.account_type,
+                whitelisted = excluded.whitelisted,
+                updated_at = excluded.updated_at
+        """, (
+            player_uuid,
+            player_name,
+            account_type,
+            1 if whitelisted else 0,
+            now,
+        ))
+
+        conn.commit()
+
+
+def get_op_players_from_db() -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute("""
+            SELECT *
+            FROM players
+            WHERE op = 1
+            ORDER BY player_name COLLATE NOCASE ASC, updated_at DESC
+        """).fetchall()
+
+    return [dict(row) for row in rows]
+
+
+def sync_player_op_flags_from_uuid_set(
+    op_uuid_set: set[str],
+) -> None:
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    normalized = {
+        str(player_uuid).lower()
+        for player_uuid in op_uuid_set
+        if player_uuid
+    }
+
+    with get_connection() as conn:
+        if normalized:
+            placeholders = ",".join("?" for _ in normalized)
+
+            conn.execute(f"""
+                UPDATE players
+                SET op = 1,
+                    updated_at = ?
+                WHERE lower(player_uuid) IN ({placeholders})
+            """, (
+                now,
+                *normalized,
+            ))
+
+            conn.execute(f"""
+                UPDATE players
+                SET op = 0,
+                    updated_at = ?
+                WHERE lower(player_uuid) NOT IN ({placeholders})
+                  AND op != 0
+            """, (
+                now,
+                *normalized,
+            ))
+        else:
+            conn.execute("""
+                UPDATE players
+                SET op = 0,
+                    updated_at = ?
+                WHERE op != 0
+            """, (
+                now,
+            ))
 
         conn.commit()

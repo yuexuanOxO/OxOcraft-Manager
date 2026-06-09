@@ -79,6 +79,23 @@ def handle_server_output() -> None:
             set_server_runtime_state("ready")
 
             try:
+                from backend.player_permissions.player_permission_service import (
+                    sync_ops_json_to_players,
+                )
+
+                sync_ops_json_to_players(source="server_ready")
+
+                from backend.server_monitor import publish_event
+                publish_event("player_permission_should_refresh", {
+                    "reason": "server_ready_sync_ops_json",
+                })
+
+                print("[PlayerPermission] server ready OP sync completed")
+
+            except Exception as error:
+                print("[PlayerPermission] server ready OP sync failed:", error)
+
+            try:
                 from backend.player_ban.player_ban_service import (
                     sync_banned_json_to_db,
                     sync_removed_bans_from_json,

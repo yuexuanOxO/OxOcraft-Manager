@@ -2,6 +2,7 @@ import json
 import hashlib
 import uuid
 import urllib.request
+from datetime import datetime
 
 from backend.paths import MC_ROOT,SERVER_PROPERTIES_PATH
 from backend.rcon_service import send_rcon_command
@@ -19,6 +20,8 @@ from backend.player_permissions.player_permission_service import (
 from backend.db import (
     delete_player_by_uuid,
     add_player_access_history,
+    update_player_whitelist_since,
+    update_player_whitelist_status,
 )
 
 WHITELIST_FILE = MC_ROOT / "whitelist.json"
@@ -150,12 +153,22 @@ def add_player_whitelist(
 
     result = reload_whitelist_if_ready()
 
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    account_type = get_account_type(player_uuid)
+
+    update_player_whitelist_since(
+        player_uuid=player_uuid,
+        player_name=player_name,
+        account_type=account_type,
+        whitelisted_since=now,
+    )
+
     add_player_access_history(
         category="whitelist",
         action="add",
         target_uuid=player_uuid,
         target_name=player_name,
-        account_type=get_account_type(player_uuid),
+        account_type=account_type,
         operator_name="OxOcraft",
         source="oxocraft_ui",
         detail=result,
@@ -190,12 +203,21 @@ def remove_player_whitelist(
 
     result = reload_whitelist_if_ready()
 
+    account_type = get_account_type(player_uuid)
+
+    update_player_whitelist_status(
+        player_uuid=player_uuid,
+        player_name=player_name,
+        account_type=account_type,
+        whitelisted=False,
+    )
+
     add_player_access_history(
         category="whitelist",
         action="remove",
         target_uuid=player_uuid,
         target_name=player_name,
-        account_type=get_account_type(player_uuid),
+        account_type=account_type,
         operator_name="OxOcraft",
         source="oxocraft_ui",
         detail=result,

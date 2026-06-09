@@ -4,7 +4,6 @@ from datetime import datetime
 from backend.paths import MC_ROOT
 from backend.rcon_service import send_rcon_command
 from backend.server_monitor import get_cached_server_status
-from backend.player_permissions.player_identity_service import get_known_players
 from backend.server_effective_settings import load_effective_settings_snapshot
 from backend.player_permissions.player_identity_service import (
     get_known_players,
@@ -13,10 +12,10 @@ from backend.player_permissions.player_identity_service import (
 )
 
 from backend.db import (
-    update_player_op_since,
     delete_player_by_uuid,
     add_player_access_history,
-    update_player_op_status,
+    sync_player_op_flags_from_uuid_set,
+    get_op_players_from_db,
 )
 
 
@@ -80,12 +79,32 @@ def get_ops_entry_by_uuid(player_uuid: str) -> dict | None:
 
 
 def get_player_permission_list() -> list[dict]:
-    entries = load_ops_entries()
     online_mode = get_effective_online_mode()
 
-    if is_server_ready() and not online_mode:
-        get_current_usercache_players()
+    if is_server_ready():
+        players = get_op_players_from_db()
 
+        result = []
+
+        for player in players:
+            player_uuid = str(player.get("player_uuid", "")).strip()
+            account_type = player.get("account_type") or get_account_type(player_uuid)
+
+            is_valid_for_current_mode = (
+                account_type == "premium"
+                if online_mode
+                else account_type == "offline"
+            )
+
+            result.append({
+                **player,
+                "op": True,
+                "valid_for_current_mode": is_valid_for_current_mode,
+            })
+
+        return result
+
+    entries = load_ops_entries()
     known_players = get_known_players()
 
     known_by_uuid = {
@@ -151,6 +170,32 @@ def can_add_op_by_name() -> bool:
     return get_effective_online_mode()
 
 
+def sync_ops_json_to_players(source: str = "unknown") -> None:
+    sync_player_op_flags_from_uuid_set(
+        load_ops_uuid_set()
+    )
+
+    add_player_access_history(
+        category="op",
+        action="sync",
+        target_uuid=None,
+        target_name="*",
+        account_type=None,
+        operator_name="OxOcraft",
+        source=source,
+        detail="sync ops.json to players.op",
+    )
+
+
+def sync_ops_json_to_players_if_server_offline(
+    source: str = "offline_json"
+) -> None:
+    if is_server_ready():
+        return
+
+    sync_ops_json_to_players(source=source)
+
+
 def set_player_op(
     player_uuid: str,
     player_name: str,
@@ -163,21 +208,16 @@ def set_player_op(
     if is_server_ready():
         result = send_rcon_command(f"op {player_name}")
 
-        update_player_op_since(
-            player_uuid=player_uuid,
-            player_name=player_name,
-            account_type=account_type,
-            op_since=now,
-        )
+        sync_ops_json_to_players(source="rcon_ui")
 
         add_player_access_history(
             category="op",
             action="add",
             target_uuid=player_uuid,
             target_name=player_name,
-            account_type=None,
+            account_type=account_type,
             operator_name="OxOcraft",
-            source="oxocraft_ui",
+            source="rcon_ui",
             detail=result,
         )
 
@@ -201,32 +241,24 @@ def set_player_op(
         })
 
         save_ops_entries(entries)
-        
-
-    update_player_op_since(
-        player_uuid=player_uuid,
-        player_name=player_name,
-        account_type=account_type,
-        op_since=now,
-    )
 
     add_player_access_history(
         category="op",
         action="add",
         target_uuid=player_uuid,
         target_name=player_name,
-        account_type=None,
+        account_type=account_type,
         operator_name="OxOcraft",
-        source="oxocraft_ui",
+        source="offline_ui_edit",
         detail="offline-edit"
     )
 
     return {
         "success": True,
-        "message": f"已將 {player_name} 設為管理員",
+        "message": f"已將 {player_name} 加入待生效管理員清單",
         "result": "offline-edit",
         "op": True,
-        "op_since": now,
+        "op_since": None,
     }
 
 
@@ -239,6 +271,8 @@ def remove_player_op(player_uuid: str, player_name: str) -> dict:
     if is_server_ready():
         result = send_rcon_command(f"deop {effective_name}")
 
+        sync_ops_json_to_players(source="rcon_ui")
+
         still_op = player_uuid.lower() in load_ops_uuid_set()
 
         if still_op:
@@ -248,22 +282,15 @@ def remove_player_op(player_uuid: str, player_name: str) -> dict:
                 "result": result,
                 "op": True,
             }
-        
-        update_player_op_status(
-            player_uuid=player_uuid,
-            player_name=effective_name,
-            account_type=get_account_type(player_uuid),
-            op=False,
-        )
-        
+
         add_player_access_history(
             category="op",
             action="remove",
             target_uuid=player_uuid,
             target_name=effective_name,
-            account_type=None,
+            account_type=get_account_type(player_uuid),
             operator_name="OxOcraft",
-            source="oxocraft_ui",
+            source="rcon_ui",
             detail=result,
         )
 
@@ -281,22 +308,15 @@ def remove_player_op(player_uuid: str, player_name: str) -> dict:
         action="remove",
         target_uuid=player_uuid,
         target_name=effective_name,
-        account_type=None,
-        operator_name="OxOcraft",
-        source="oxocraft_ui",
-        detail="offline-edit",
-    )
-
-    update_player_op_status(
-        player_uuid=player_uuid,
-        player_name=effective_name,
         account_type=get_account_type(player_uuid),
-        op=False,
+        operator_name="OxOcraft",
+        source="offline_ui_edit",
+        detail="offline-edit",
     )
 
     return {
         "success": True,
-        "message": f"已收回 {effective_name} 的管理員權限",
+        "message": f"已將 {effective_name} 從待生效管理員清單移除",
         "result": "offline-edit",
         "op": False,
     }

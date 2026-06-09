@@ -749,7 +749,12 @@ def add_player_access_history(
 
     source: str = "unknown",
     detail: str = "",
+
+    created_at: str | None = None
 ) -> None:
+    
+    if created_at is None:
+        created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     with get_connection() as conn:
         conn.execute("""
@@ -765,9 +770,11 @@ def add_player_access_history(
                 operator_name,
 
                 source,
-                detail
+                detail,
+
+                created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             category,
             action,
@@ -781,6 +788,8 @@ def add_player_access_history(
 
             source,
             detail,
+
+            created_at,
         ))
 
         conn.commit()

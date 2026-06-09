@@ -597,6 +597,49 @@ def get_all_players() -> list[dict]:
     return [dict(row) for row in rows]
 
 
+def get_player_by_name(player_name: str) -> dict | None:
+    with get_connection() as conn:
+        row = conn.execute("""
+            SELECT *
+            FROM players
+            WHERE lower(player_name) = lower(?)
+            ORDER BY updated_at DESC
+            LIMIT 1
+        """, (player_name,)).fetchone()
+
+    return dict(row) if row else None
+
+
+def upsert_player_identity(
+    player_uuid: str,
+    player_name: str,
+    account_type: str,
+) -> None:
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with get_connection() as conn:
+        conn.execute("""
+            INSERT INTO players (
+                player_uuid,
+                player_name,
+                account_type,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(player_uuid) DO UPDATE SET
+                player_name = excluded.player_name,
+                account_type = excluded.account_type,
+                updated_at = excluded.updated_at
+        """, (
+            player_uuid,
+            player_name,
+            account_type,
+            now,
+        ))
+
+        conn.commit()
+
+
 def delete_player_by_uuid(player_uuid: str) -> None:
     conn = get_connection()
 

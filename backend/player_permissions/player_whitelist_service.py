@@ -19,9 +19,12 @@ from backend.player_permissions.player_permission_service import (
 
 from backend.db import (
     delete_player_by_uuid,
-    add_player_access_history,
     update_player_whitelist_since,
     update_player_whitelist_status,
+)
+
+from backend.player_permissions.player_access_history_service import (
+    record_player_access,
 )
 
 WHITELIST_FILE = MC_ROOT / "whitelist.json"
@@ -77,6 +80,10 @@ def reload_whitelist_if_ready() -> str:
         return "offline-edit"
 
     return send_rcon_command("whitelist reload")
+
+
+def get_whitelist_ui_source() -> str:
+    return "ui_reload" if is_server_ready() else "offline_ui_edit"
 
 
 def get_offline_player_uuid(player_name: str) -> str:
@@ -163,14 +170,14 @@ def add_player_whitelist(
         whitelisted_since=now,
     )
 
-    add_player_access_history(
+    record_player_access(
         category="whitelist",
         action="add",
         target_uuid=player_uuid,
         target_name=player_name,
         account_type=account_type,
         operator_name="OxOcraft",
-        source="oxocraft_ui",
+        source=get_whitelist_ui_source(),
         detail=result,
     )
 
@@ -212,14 +219,14 @@ def remove_player_whitelist(
         whitelisted=False,
     )
 
-    add_player_access_history(
+    record_player_access(
         category="whitelist",
         action="remove",
         target_uuid=player_uuid,
         target_name=player_name,
         account_type=account_type,
         operator_name="OxOcraft",
-        source="oxocraft_ui",
+        source=get_whitelist_ui_source(),
         detail=result,
     )
 

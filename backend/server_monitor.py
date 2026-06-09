@@ -48,6 +48,7 @@ def append_log_line(line: str) -> None:
 
     maybe_refresh_player_ban_from_log(line)
     maybe_refresh_player_permission_from_log(line)
+    maybe_refresh_player_whitelist_from_log(line)
 
 
 def get_cached_logs() -> list[str]:
@@ -447,3 +448,77 @@ def maybe_refresh_player_permission_from_log(line: str) -> None:
 
     except Exception as error:
         print("[PlayerPermission] refresh from log failed:", error)
+
+
+def maybe_refresh_player_whitelist_from_log(line: str) -> None:
+    remove_match = re.search(
+        r"\[(?P<operator>[^:\]]+):\s*Removed\s+(?P<target>.+?)\s+from\s+the\s+whitelist\]",
+        line,
+        re.IGNORECASE,
+    )
+
+    add_match = None
+
+    if not remove_match:
+        add_match = re.search(
+            r"\[(?P<operator>[^:\]]+):\s*Added\s+(?P<target>.+?)\s+to\s+the\s+whitelist\]",
+            line,
+            re.IGNORECASE,
+        )
+
+    reload_match = re.search(
+        r"\[(?P<operator>[^:\]]+):\s*Reloaded\s+the\s+whitelist\]",
+        line,
+        re.IGNORECASE,
+    )
+
+    if reload_match:
+        publish_event("player_whitelist_should_refresh", {
+            "reason": "minecraft_whitelist_reload_log",
+            "line": line,
+        })
+
+        return
+
+    if not add_match and not remove_match:
+        return
+
+    matched = remove_match or add_match
+
+    action = "remove" if remove_match else "add"
+    target_name = matched.group("target").strip()
+    log_operator = matched.group("operator").strip()
+
+    is_rcon = log_operator.lower() == "rcon"
+
+    if is_rcon:
+        source = "console_rcon"
+        operator_name = "Rcon"
+    else:
+        source = "player_command"
+        operator_name = log_operator
+
+    try:
+        from backend.player_permissions.player_access_history_service import (
+            record_player_access,
+        )
+
+        record_player_access(
+            category="whitelist",
+            action=action,
+            target_name=target_name,
+            operator_name=operator_name,
+            source=source,
+            detail=line,
+        )
+
+        publish_event("player_whitelist_should_refresh", {
+            "reason": "minecraft_whitelist_log",
+            "line": line,
+            "source": source,
+        })
+
+        print("[PlayerWhitelist] refresh event published")
+
+    except Exception as error:
+        print("[PlayerWhitelist] refresh from log failed:", error)

@@ -6,11 +6,6 @@ import re
 from typing import Callable, Optional
 
 from backend.server_status import get_server_query_status
-from backend.db import (
-    add_player_access_history,
-    get_player_by_name,
-    upsert_player_identity,
-)
 
 _status_cache = {
     "revision": 0,
@@ -372,53 +367,6 @@ def maybe_refresh_player_ban_from_log(line: str) -> None:
         print("[PlayerBan] refresh from log failed:", error)
 
 
-def resolve_player_identity_for_history(player_name: str) -> dict:
-    player = get_player_by_name(player_name)
-
-    if player:
-        return {
-            "player_uuid": player.get("player_uuid"),
-            "player_name": player.get("player_name") or player_name,
-            "account_type": player.get("account_type"),
-        }
-
-    try:
-        from backend.routes.player_routes import (
-            is_online_mode,
-            get_mojang_uuid,
-            get_offline_player_uuid,
-        )
-
-        if is_online_mode():
-            player_uuid = get_mojang_uuid(player_name)
-            account_type = "premium"
-        else:
-            player_uuid = get_offline_player_uuid(player_name)
-            account_type = "offline"
-
-        if player_uuid:
-            upsert_player_identity(
-                player_uuid=player_uuid,
-                player_name=player_name,
-                account_type=account_type,
-            )
-
-            return {
-                "player_uuid": player_uuid,
-                "player_name": player_name,
-                "account_type": account_type,
-            }
-
-    except Exception as error:
-        print("[PlayerPermission] resolve identity failed:", error)
-
-    return {
-        "player_uuid": None,
-        "player_name": player_name,
-        "account_type": None,
-    }
-
-
 def maybe_refresh_player_permission_from_log(line: str) -> None:
     remove_match = re.search(
         r"\[(?P<operator>[^:\]]+):\s*Made\s+(?P<target>.+?)\s+no\s+longer\s+a\s+server\s+operator\]",
@@ -444,7 +392,7 @@ def maybe_refresh_player_permission_from_log(line: str) -> None:
     target_name = matched.group("target").strip()
     log_operator = matched.group("operator").strip()
 
-    target_identity = resolve_player_identity_for_history(target_name)
+    
 
     is_rcon = log_operator.lower() == "rcon"
 
@@ -453,6 +401,15 @@ def maybe_refresh_player_permission_from_log(line: str) -> None:
             sync_ops_json_to_players,
             pop_recent_ui_op_command_if_match,
         )
+
+        from backend.player_permissions.player_identity_service import (
+            resolve_player_identity,
+        )
+
+        from backend.player_permissions.player_access_history_service import (
+            record_player_access,
+        )
+
 
         if is_rcon and pop_recent_ui_op_command_if_match(
             action=action,
@@ -468,24 +425,13 @@ def maybe_refresh_player_permission_from_log(line: str) -> None:
             operator_name = log_operator
 
 
-        operator_identity = None
-
-        if source == "player_command":
-            operator_identity = resolve_player_identity_for_history(operator_name)
 
         sync_ops_json_to_players(source=source)
 
-        add_player_access_history(
+        record_player_access(
             category="op",
             action=action,
-            target_uuid=target_identity.get("player_uuid"),
-            target_name=target_identity.get("player_name") or target_name,
-            account_type=target_identity.get("account_type"),
-            operator_uuid=(
-                operator_identity.get("player_uuid")
-                if operator_identity
-                else None
-            ),
+            target_name=target_name,
             operator_name=operator_name,
             source=source,
             detail=line,

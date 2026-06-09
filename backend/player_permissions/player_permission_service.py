@@ -13,12 +13,14 @@ from backend.player_permissions.player_identity_service import (
 
 from backend.db import (
     delete_player_by_uuid,
-    add_player_access_history,
     sync_player_op_flags_from_uuid_set,
     get_op_players_from_db,
     upsert_player_identity,
 )
 
+from backend.player_permissions.player_access_history_service import (
+    record_player_access,
+)
 
 OPS_FILE = MC_ROOT / "ops.json"
 
@@ -283,7 +285,7 @@ def set_player_op(
 
         save_ops_entries(entries)
 
-    add_player_access_history(
+    record_player_access(
         category="op",
         action="add",
         target_uuid=player_uuid,
@@ -291,7 +293,7 @@ def set_player_op(
         account_type=account_type,
         operator_name="OxOcraft",
         source="offline_ui_edit",
-        detail="offline-edit"
+        detail="offline-edit",
     )
 
     return {
@@ -345,7 +347,7 @@ def remove_player_op(player_uuid: str, player_name: str) -> dict:
 
     remove_ops_entry_by_uuid(player_uuid)
 
-    add_player_access_history(
+    record_player_access(
         category="op",
         action="remove",
         target_uuid=player_uuid,

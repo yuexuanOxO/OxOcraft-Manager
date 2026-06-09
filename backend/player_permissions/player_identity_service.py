@@ -9,6 +9,8 @@ from backend.db import (
     mark_player_offline_by_name,
     get_all_players,
     delete_player_by_uuid,
+    get_player_by_name,
+    upsert_player_identity,
 )
 
 
@@ -222,3 +224,61 @@ def record_player_logout_from_log(
     player_name: str,
 ) -> None:
     mark_player_offline_by_name(player_name)
+
+
+def resolve_player_identity(
+    player_name: str,
+) -> dict:
+    player_name = str(player_name or "").strip()
+
+    if not player_name:
+        return {
+            "player_uuid": None,
+            "player_name": "",
+            "account_type": None,
+        }
+
+    player = get_player_by_name(player_name)
+
+    if player:
+        return {
+            "player_uuid": player.get("player_uuid"),
+            "player_name": player.get("player_name") or player_name,
+            "account_type": player.get("account_type"),
+        }
+
+    try:
+        from backend.routes.player_routes import (
+            is_online_mode,
+            get_mojang_uuid,
+            get_offline_player_uuid,
+        )
+
+        if is_online_mode():
+            player_uuid = get_mojang_uuid(player_name)
+            account_type = "premium"
+        else:
+            player_uuid = get_offline_player_uuid(player_name)
+            account_type = "offline"
+
+        if player_uuid:
+            upsert_player_identity(
+                player_uuid=player_uuid,
+                player_name=player_name,
+                account_type=account_type,
+            )
+
+            return {
+                "player_uuid": player_uuid,
+                "player_name": player_name,
+                "account_type": account_type,
+            }
+
+    except Exception as error:
+        print("[PlayerIdentity] resolve identity failed:", error)
+
+    return {
+        "player_uuid": None,
+        "player_name": player_name,
+        "account_type": None,
+    }

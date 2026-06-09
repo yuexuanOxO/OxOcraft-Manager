@@ -16,6 +16,7 @@ from backend.db import (
     add_player_access_history,
     sync_player_op_flags_from_uuid_set,
     get_op_players_from_db,
+    upsert_player_identity,
 )
 
 
@@ -244,6 +245,12 @@ def set_player_op(
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+    upsert_player_identity(
+        player_uuid=player_uuid,
+        player_name=player_name,
+        account_type=account_type,
+    )
+
     if is_server_ready():
         mark_recent_ui_op_command(
             action="add",
@@ -301,6 +308,12 @@ def remove_player_op(player_uuid: str, player_name: str) -> dict:
     effective_name = str(
         ops_entry.get("name", player_name)
     ).strip() if ops_entry else player_name
+
+    upsert_player_identity(
+        player_uuid=player_uuid,
+        player_name=effective_name,
+        account_type=get_account_type(player_uuid),
+    )
 
     if is_server_ready():
         mark_recent_ui_op_command(

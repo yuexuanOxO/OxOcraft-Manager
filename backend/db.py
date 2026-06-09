@@ -116,6 +116,11 @@ def init_db() -> None:
 
                 whitelisted INTEGER NOT NULL DEFAULT 0,
                 whitelisted_since DATETIME,
+                     
+                banned INTEGER NOT NULL DEFAULT 0,
+                banned_since DATETIME,
+                ban_reason TEXT DEFAULT '',
+                ban_expires_at DATETIME,
 
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
@@ -181,6 +186,39 @@ def init_db() -> None:
                 seen_count INTEGER NOT NULL DEFAULT 1,
 
                 UNIQUE(player_uuid, ip)
+            )
+        """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS banned_ips (
+                ip TEXT PRIMARY KEY,
+
+                reason TEXT DEFAULT '',
+                operator_name TEXT DEFAULT 'OxOcraft',
+
+                banned INTEGER NOT NULL DEFAULT 0,
+                banned_since DATETIME,
+                ban_expires_at DATETIME,
+
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS ip_ban_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                action TEXT NOT NULL,
+
+                ip TEXT NOT NULL,
+                reason TEXT DEFAULT '',
+
+                operator_name TEXT DEFAULT 'OxOcraft',
+                source TEXT DEFAULT 'unknown',
+
+                detail TEXT DEFAULT '',
+
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         """)
 
@@ -863,6 +901,67 @@ def update_player_whitelist_status(
         ))
 
         conn.commit()
+
+
+def update_player_ban_status(
+    player_uuid: str,
+    player_name: str,
+    account_type: str,
+    banned: bool,
+    reason: str = "",
+    expires_at: str | None = None,
+) -> None:
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with get_connection() as conn:
+        conn.execute("""
+            INSERT INTO players (
+                player_uuid,
+                player_name,
+                account_type,
+                banned,
+                banned_since,
+                ban_reason,
+                ban_expires_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(player_uuid) DO UPDATE SET
+                player_name = excluded.player_name,
+                account_type = excluded.account_type,
+                banned = excluded.banned,
+                banned_since = CASE
+                    WHEN excluded.banned = 1
+                    THEN COALESCE(players.banned_since, excluded.banned_since)
+                    ELSE NULL
+                END,
+                ban_reason = excluded.ban_reason,
+                ban_expires_at = excluded.ban_expires_at,
+                updated_at = excluded.updated_at
+        """, (
+            player_uuid,
+            player_name,
+            account_type,
+            1 if banned else 0,
+            now if banned else None,
+            reason if banned else "",
+            expires_at if banned else None,
+            now,
+        ))
+
+        conn.commit()
+
+
+def get_banned_players_from_db() -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute("""
+            SELECT *
+            FROM players
+            WHERE banned = 1
+            ORDER BY player_name COLLATE NOCASE ASC, updated_at DESC
+        """).fetchall()
+
+    return [dict(row) for row in rows]
 
 
 def get_op_players_from_db() -> list[dict]:

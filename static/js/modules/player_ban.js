@@ -405,7 +405,7 @@ async function unbanPlayer(item) {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    id: item.id,
+                    uuid: item.target_uuid || item.player_uuid,
                     operator: "OxOcraft"
                 })
             }

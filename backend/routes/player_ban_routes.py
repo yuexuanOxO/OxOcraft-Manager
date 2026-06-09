@@ -4,7 +4,7 @@ from backend.player_ban.player_ban_service import (
     get_active_bans,
     get_ban_history,
     ban_player,
-    unban_player,
+    unban_player_by_uuid,
     ban_ip,
     unban_ip,
     parse_expire_payload,
@@ -73,10 +73,16 @@ def api_player_ban_player():
 def api_player_unban_player():
     data = request.get_json(silent=True) or {}
 
-    record_id = int(data.get("id", 0) or 0)
+    player_uuid = str(data.get("uuid", "")).strip()
 
-    result = unban_player(
-        record_id=record_id,
+    if not player_uuid:
+        return jsonify({
+            "success": False,
+            "message": "缺少玩家 UUID",
+        }), 400
+
+    result = unban_player_by_uuid(
+        player_uuid=player_uuid,
         operator=data.get("operator", "OxOcraft"),
     )
 

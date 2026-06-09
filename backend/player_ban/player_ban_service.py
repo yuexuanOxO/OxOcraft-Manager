@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from backend.paths import MC_ROOT
-from backend.db import get_connection
 from backend.rcon_service import send_rcon_command
 from backend.server_runtime import is_server_running
 from backend.routes.player_routes import (
@@ -17,6 +16,17 @@ from backend.player_permissions.player_identity_service import (
     get_current_usercache_players,
     get_account_type as detect_account_type,
 )
+
+from backend.db import (
+    get_connection,
+    update_player_ban_status,
+    get_banned_players_from_db,
+)
+
+from backend.player_permissions.player_access_history_service import (
+    record_player_access,
+)
+
 
 BANNED_PLAYERS_FILE = MC_ROOT / "banned-players.json"
 BANNED_IPS_FILE = MC_ROOT / "banned-ips.json"
@@ -97,7 +107,58 @@ def add_ban_history(
         conn.commit()
 
 
+def get_active_banned_players() -> list[dict]:
+    current_account_type = get_current_account_type()
+    players = get_banned_players_from_db()
+
+    result = []
+
+    for player in players:
+        result.append({
+            "player_uuid": player.get("player_uuid"),
+            "player_name": player.get("player_name"),
+            "account_type": player.get("account_type"),
+
+            "target_uuid": player.get("player_uuid"),
+            "target_name": player.get("player_name"),
+
+            "reason": player.get("ban_reason") or "",
+            "created_at": player.get("banned_since"),
+            "expires_at": player.get("ban_expires_at"),
+            "permanent": 0 if player.get("ban_expires_at") else 1,
+            "operator": "OxOcraft",
+
+            "valid_for_current_mode": (
+                player.get("account_type") == current_account_type
+            ),
+        })
+
+    return result
+
+
+def get_banned_player_by_uuid(player_uuid: str) -> dict | None:
+    player_uuid = str(player_uuid or "").strip()
+
+    if not player_uuid:
+        return None
+
+    with get_connection() as conn:
+        row = conn.execute("""
+            SELECT *
+            FROM players
+            WHERE lower(player_uuid) = lower(?)
+              AND banned = 1
+            LIMIT 1
+        """, (player_uuid,)).fetchone()
+
+    return dict(row) if row else None
+
+
 def get_active_bans(target_type: str) -> list[dict]:
+
+    if target_type == "player":
+        return get_active_banned_players()
+
     current_account_type = get_current_account_type()
 
     with get_connection() as conn:
@@ -308,43 +369,27 @@ def ban_player(
         )
         result = "已寫入 banned-players.json"
 
-    existing_record = find_active_ban_record(
-        target_type="player",
-        target_name=player_name,
-        target_uuid=player_uuid,
+    update_player_ban_status(
+        player_uuid=player_uuid,
+        player_name=player_name,
+        account_type=account_type,
+        banned=True,
+        reason=reason,
+        expires_at=expires_at,
     )
 
-    if existing_record:
-        ban_record_id = int(existing_record["id"])
-
-        update_ban_record_as_oxocraft(
-            record_id=ban_record_id,
-            reason=reason,
-            operator=operator,
-            expires_at=expires_at,
-            permanent=permanent,
-            account_type=account_type,
-        )
-    else:
-        ban_record_id = insert_ban_record(
-            target_type="player",
-            target_name=player_name,
-            target_uuid=player_uuid,
-            account_type=account_type,
-            reason=reason,
-            operator=operator,
-            expires_at=expires_at,
-            permanent=permanent,
-        )
-
-    add_ban_history(
-        action="ban_player",
-        target_type="player",
-        target_name=player_name,
+    record_player_access(
+        category="ban",
+        action="add",
         target_uuid=player_uuid,
-        reason=reason,
-        operator=operator,
-        ban_record_id=ban_record_id,
+        target_name=player_name,
+        account_type=account_type,
+        operator_name=operator,
+        source=(
+            "ui"
+            if is_server_running()
+            else "offline_ui_edit"
+        ),
         detail=result,
     )
 
@@ -473,6 +518,66 @@ def get_ban_record(record_id: int) -> dict | None:
         """, (record_id,)).fetchone()
 
     return dict(row) if row else None
+
+
+def unban_player_by_uuid(
+    player_uuid: str,
+    operator: str = "OxOcraft",
+) -> dict:
+    player = get_banned_player_by_uuid(player_uuid)
+
+    if not player:
+        return {
+            "success": False,
+            "message": "找不到此玩家封鎖狀態",
+        }
+
+    player_name = player.get("player_name") or ""
+    account_type = player.get("account_type") or detect_account_type(player_uuid)
+
+    if is_server_running():
+        result = send_rcon_command(f"pardon {player_name}")
+    else:
+        removed = remove_player_from_banned_json(
+            player_uuid=player_uuid,
+            player_name=player_name,
+        )
+
+        result = (
+            "已從 banned-players.json 移除"
+            if removed
+            else "banned-players.json 中已不存在此玩家"
+        )
+
+    update_player_ban_status(
+        player_uuid=player_uuid,
+        player_name=player_name,
+        account_type=account_type,
+        banned=False,
+        reason="",
+        expires_at=None,
+    )
+
+    record_player_access(
+        category="ban",
+        action="remove",
+        target_uuid=player_uuid,
+        target_name=player_name,
+        account_type=account_type,
+        operator_name=operator,
+        source=(
+            "ui"
+            if is_server_running()
+            else "offline_ui_edit"
+        ),
+        detail=result,
+    )
+
+    return {
+        "success": True,
+        "message": f"已解除玩家 {player_name} 的封鎖",
+        "result": result,
+    }
 
 
 def unban_player(

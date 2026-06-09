@@ -22,6 +22,55 @@ from backend.db import (
 OPS_FILE = MC_ROOT / "ops.json"
 
 
+_recent_ui_op_command: dict | None = None
+
+
+def mark_recent_ui_op_command(
+    action: str,
+    player_uuid: str,
+    player_name: str,
+) -> None:
+    global _recent_ui_op_command
+
+    _recent_ui_op_command = {
+        "category": "op",
+        "action": action,  # add / remove
+        "target_uuid": str(player_uuid or "").lower(),
+        "target_name": str(player_name or "").lower(),
+    }
+
+
+def pop_recent_ui_op_command_if_match(
+    action: str,
+    player_uuid: str | None = None,
+    player_name: str | None = None,
+) -> bool:
+    global _recent_ui_op_command
+
+    if not _recent_ui_op_command:
+        return False
+
+    expected_action = _recent_ui_op_command.get("action")
+    expected_uuid = _recent_ui_op_command.get("target_uuid")
+    expected_name = _recent_ui_op_command.get("target_name")
+
+    actual_uuid = str(player_uuid or "").lower()
+    actual_name = str(player_name or "").lower()
+
+    matched = (
+        expected_action == action
+        and (
+            (actual_uuid and expected_uuid == actual_uuid)
+            or (actual_name and expected_name == actual_name)
+        )
+    )
+
+    if matched:
+        _recent_ui_op_command = None
+
+    return matched
+
+
 def load_ops_entries() -> list[dict]:
     if not OPS_FILE.exists():
         return []
@@ -175,16 +224,6 @@ def sync_ops_json_to_players(source: str = "unknown") -> None:
         load_ops_uuid_set()
     )
 
-    add_player_access_history(
-        category="op",
-        action="sync",
-        target_uuid=None,
-        target_name="*",
-        account_type=None,
-        operator_name="OxOcraft",
-        source=source,
-        detail="sync ops.json to players.op",
-    )
 
 
 def sync_ops_json_to_players_if_server_offline(
@@ -206,20 +245,15 @@ def set_player_op(
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     if is_server_ready():
+        mark_recent_ui_op_command(
+            action="add",
+            player_uuid=player_uuid,
+            player_name=player_name,
+        )
+
         result = send_rcon_command(f"op {player_name}")
 
         sync_ops_json_to_players(source="rcon_ui")
-
-        add_player_access_history(
-            category="op",
-            action="add",
-            target_uuid=player_uuid,
-            target_name=player_name,
-            account_type=account_type,
-            operator_name="OxOcraft",
-            source="rcon_ui",
-            detail=result,
-        )
 
         return {
             "success": True,
@@ -269,6 +303,12 @@ def remove_player_op(player_uuid: str, player_name: str) -> dict:
     ).strip() if ops_entry else player_name
 
     if is_server_ready():
+        mark_recent_ui_op_command(
+            action="remove",
+            player_uuid=player_uuid,
+            player_name=effective_name,
+        )
+
         result = send_rcon_command(f"deop {effective_name}")
 
         sync_ops_json_to_players(source="rcon_ui")
@@ -282,17 +322,6 @@ def remove_player_op(player_uuid: str, player_name: str) -> dict:
                 "result": result,
                 "op": True,
             }
-
-        add_player_access_history(
-            category="op",
-            action="remove",
-            target_uuid=player_uuid,
-            target_name=effective_name,
-            account_type=get_account_type(player_uuid),
-            operator_name="OxOcraft",
-            source="rcon_ui",
-            detail=result,
-        )
 
         return {
             "success": True,

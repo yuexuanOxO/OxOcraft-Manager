@@ -6,7 +6,7 @@ import re
 from typing import Callable, Optional
 
 from backend.server_status import get_server_query_status
-
+from backend.db import add_player_access_history
 
 _status_cache = {
     "revision": 0,
@@ -48,6 +48,7 @@ def append_log_line(line: str) -> None:
     maybe_record_player_logout_from_log(line)
 
     maybe_refresh_player_ban_from_log(line)
+    maybe_refresh_player_permission_from_log(line)
 
 
 def get_cached_logs() -> list[str]:
@@ -365,3 +366,74 @@ def maybe_refresh_player_ban_from_log(line: str) -> None:
 
     except Exception as error:
         print("[PlayerBan] refresh from log failed:", error)
+
+
+def maybe_refresh_player_permission_from_log(line: str) -> None:
+    remove_match = re.search(
+        r"\[(?P<operator>[^:\]]+):\s*Made\s+(?P<target>.+?)\s+no\s+longer\s+a\s+server\s+operator\]",
+        line,
+        re.IGNORECASE,
+    )
+
+    add_match = None
+
+    if not remove_match:
+        add_match = re.search(
+            r"\[(?P<operator>[^:\]]+):\s*Made\s+(?P<target>.+?)\s+a\s+server\s+operator\]",
+            line,
+            re.IGNORECASE,
+        )
+
+    if not add_match and not remove_match:
+        return
+
+    matched = remove_match or add_match
+
+    action = "remove" if remove_match else "add"
+    target_name = matched.group("target").strip()
+    log_operator = matched.group("operator").strip()
+
+    is_rcon = log_operator.lower() == "rcon"
+
+    try:
+        from backend.player_permissions.player_permission_service import (
+            sync_ops_json_to_players,
+            pop_recent_ui_op_command_if_match,
+        )
+
+        if is_rcon and pop_recent_ui_op_command_if_match(
+            action=action,
+            player_name=target_name,
+        ):
+            source = "ui"
+            operator_name = "OxOcraft"
+        elif is_rcon:
+            source = "console_rcon"
+            operator_name = "Rcon"
+        else:
+            source = "player_command"
+            operator_name = log_operator
+
+        sync_ops_json_to_players(source=source)
+
+        add_player_access_history(
+            category="op",
+            action=action,
+            target_uuid=None,
+            target_name=target_name,
+            account_type=None,
+            operator_name=operator_name,
+            source=source,
+            detail=line,
+        )
+
+        publish_event("player_permission_should_refresh", {
+            "reason": "minecraft_op_log",
+            "line": line,
+            "source": source,
+        })
+
+        print("[PlayerPermission] refresh event published")
+
+    except Exception as error:
+        print("[PlayerPermission] refresh from log failed:", error)

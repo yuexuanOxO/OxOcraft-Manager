@@ -952,6 +952,18 @@ def update_player_ban_status(
         conn.commit()
 
 
+def get_whitelisted_players_from_db() -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute("""
+            SELECT *
+            FROM players
+            WHERE whitelisted = 1
+            ORDER BY player_name COLLATE NOCASE ASC, updated_at DESC
+        """).fetchall()
+
+    return [dict(row) for row in rows]
+
+
 def get_banned_players_from_db() -> list[dict]:
     with get_connection() as conn:
         rows = conn.execute("""
@@ -1017,6 +1029,54 @@ def sync_player_op_flags_from_uuid_set(
                 SET op = 0,
                     updated_at = ?
                 WHERE op != 0
+            """, (
+                now,
+            ))
+
+        conn.commit()
+
+
+def sync_player_whitelist_flags_from_uuid_set(
+    whitelist_uuid_set: set[str],
+) -> None:
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    normalized = {
+        str(player_uuid).lower()
+        for player_uuid in whitelist_uuid_set
+        if player_uuid
+    }
+
+    with get_connection() as conn:
+        if normalized:
+            placeholders = ",".join("?" for _ in normalized)
+
+            conn.execute(f"""
+                UPDATE players
+                SET whitelisted = 1,
+                    updated_at = ?
+                WHERE lower(player_uuid) IN ({placeholders})
+            """, (
+                now,
+                *normalized,
+            ))
+
+            conn.execute(f"""
+                UPDATE players
+                SET whitelisted = 0,
+                    updated_at = ?
+                WHERE lower(player_uuid) NOT IN ({placeholders})
+                  AND whitelisted != 0
+            """, (
+                now,
+                *normalized,
+            ))
+        else:
+            conn.execute("""
+                UPDATE players
+                SET whitelisted = 0,
+                    updated_at = ?
+                WHERE whitelisted != 0
             """, (
                 now,
             ))

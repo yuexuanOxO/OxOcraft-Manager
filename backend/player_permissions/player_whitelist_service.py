@@ -17,15 +17,18 @@ from backend.player_permissions.player_permission_service import (
     get_effective_online_mode,
 )
 
+from backend.player_permissions.player_access_history_service import (
+    record_player_access,
+)
+
 from backend.db import (
     delete_player_by_uuid,
     update_player_whitelist_since,
     update_player_whitelist_status,
+    get_whitelisted_players_from_db,
+    sync_player_whitelist_flags_from_uuid_set,
 )
 
-from backend.player_permissions.player_access_history_service import (
-    record_player_access,
-)
 
 WHITELIST_FILE = MC_ROOT / "whitelist.json"
 
@@ -65,6 +68,37 @@ def load_whitelist_uuid_set() -> set[str]:
     }
 
 
+def sync_whitelist_json_to_players(
+    source: str = "unknown",
+) -> None:
+    sync_player_whitelist_flags_from_uuid_set(
+        load_whitelist_uuid_set()
+    )
+
+
+def rebuild_whitelist_json_from_db() -> None:
+    if not is_server_ready():
+        return
+
+    players = get_whitelisted_players_from_db()
+
+    entries = []
+
+    for player in players:
+        player_uuid = str(player.get("player_uuid", "")).strip()
+        player_name = str(player.get("player_name", "")).strip()
+
+        if not player_uuid or not player_name:
+            continue
+
+        entries.append({
+            "uuid": player_uuid,
+            "name": player_name,
+        })
+
+    save_whitelist_entries(entries)
+
+
 def is_server_ready() -> bool:
     status = get_cached_server_status()
     data = status.get("data", {})
@@ -101,26 +135,50 @@ def get_offline_player_uuid(player_name: str) -> str:
 
 
 def get_player_whitelist_list() -> list[dict]:
-    entries = load_whitelist_entries()
-    known_players = get_known_players()
     online_mode = get_effective_online_mode()
 
-    known_by_uuid = {
-        str(player.get("player_uuid", "")).lower(): player
-        for player in known_players
-        if player.get("player_uuid")
-    }
+    if is_server_ready():
+        players = get_whitelisted_players_from_db()
 
+        result = []
+
+        for player in players:
+            player_uuid = str(player.get("player_uuid", "")).strip()
+            account_type = (
+                player.get("account_type")
+                or get_account_type(player_uuid)
+            )
+
+            is_valid_for_current_mode = (
+                account_type == "premium"
+                if online_mode
+                else account_type == "offline"
+            )
+
+            result.append({
+                **player,
+                "player_uuid": player_uuid,
+                "player_name": player.get("player_name"),
+                "account_type": account_type,
+                "whitelisted": True,
+                "valid_for_current_mode": is_valid_for_current_mode,
+            })
+
+        return result
+
+    sync_whitelist_json_to_players(
+        source="offline_refresh"
+    )
+
+    players = get_whitelisted_players_from_db()
     result = []
 
-    for entry in entries:
-        player_uuid = str(entry.get("uuid", "")).strip()
-        player_name = str(entry.get("name", "")).strip()
-
-        if not player_uuid or not player_name:
-            continue
-
-        account_type = get_account_type(player_uuid)
+    for player in players:
+        player_uuid = str(player.get("player_uuid", "")).strip()
+        account_type = (
+            player.get("account_type")
+            or get_account_type(player_uuid)
+        )
 
         is_valid_for_current_mode = (
             account_type == "premium"
@@ -128,12 +186,10 @@ def get_player_whitelist_list() -> list[dict]:
             else account_type == "offline"
         )
 
-        known_player = known_by_uuid.get(player_uuid.lower(), {})
-
         result.append({
-            **known_player,
+            **player,
             "player_uuid": player_uuid,
-            "player_name": player_name,
+            "player_name": player.get("player_name"),
             "account_type": account_type,
             "whitelisted": True,
             "valid_for_current_mode": is_valid_for_current_mode,
@@ -146,6 +202,8 @@ def add_player_whitelist(
     player_uuid: str,
     player_name: str,
 ) -> dict:
+    
+    rebuild_whitelist_json_from_db()
 
     entries = load_whitelist_entries()
     whitelist_uuid_set = load_whitelist_uuid_set()
@@ -159,6 +217,9 @@ def add_player_whitelist(
         save_whitelist_entries(entries)
 
     result = reload_whitelist_if_ready()
+
+    if is_server_ready():
+        sync_whitelist_json_to_players(source="ui_reload")
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     account_type = get_account_type(player_uuid)
@@ -195,6 +256,8 @@ def remove_player_whitelist(
     player_uuid: str,
     player_name: str,
 ) -> dict:
+    
+    rebuild_whitelist_json_from_db()
 
     entries = load_whitelist_entries()
 
@@ -209,6 +272,9 @@ def remove_player_whitelist(
     save_whitelist_entries(entries)
 
     result = reload_whitelist_if_ready()
+
+    if is_server_ready():
+        sync_whitelist_json_to_players(source="ui_reload")
 
     account_type = get_account_type(player_uuid)
 

@@ -457,7 +457,7 @@ async function unbanIp(item) {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    id: item.id,
+                    ip: item.ip || item.target_name,
                     operator: "OxOcraft"
                 })
             }

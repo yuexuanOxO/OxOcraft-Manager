@@ -5,7 +5,7 @@ from backend.paths import MC_ROOT
 from backend.db import (
     upsert_player_from_usercache,
     upsert_player_login,
-    upsert_player_ip_history,
+    upsert_ip_player_login,
     mark_player_offline_by_name,
     get_all_players,
     delete_player_by_uuid,
@@ -203,11 +203,11 @@ def record_player_login_from_log(
     )
 
     if ip:
-        upsert_player_ip_history(
+        upsert_ip_player_login(
+            ip=ip,
             player_uuid=player_uuid,
             player_name=player_name,
             account_type=account_type,
-            ip=ip,
             port=port,
         )
 

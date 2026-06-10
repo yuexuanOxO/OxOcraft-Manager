@@ -118,10 +118,16 @@ def api_player_ban_ip():
 def api_player_unban_ip():
     data = request.get_json(silent=True) or {}
 
-    record_id = int(data.get("id", 0) or 0)
+    ip = str(data.get("ip", "")).strip()
+
+    if not ip:
+        return jsonify({
+            "success": False,
+            "message": "缺少 IP",
+        }), 400
 
     result = unban_ip(
-        record_id=record_id,
+        ip=ip,
         operator=data.get("operator", "OxOcraft"),
     )
 

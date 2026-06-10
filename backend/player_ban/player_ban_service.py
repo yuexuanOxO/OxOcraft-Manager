@@ -21,6 +21,11 @@ from backend.db import (
     get_connection,
     update_player_ban_status,
     get_banned_players_from_db,
+
+    update_ip_ban_status,
+    get_banned_ips_from_db,
+    get_banned_ip_from_db,
+    record_ip_ban_history,
 )
 
 from backend.player_permissions.player_access_history_service import (
@@ -107,45 +112,6 @@ def get_current_account_type() -> str:
     return "premium" if is_online_mode() else "offline"
 
 
-def add_ban_history(
-    action: str,
-    target_type: str,
-    target_name: str,
-    target_uuid: str | None = None,
-    reason: str = "",
-    operator: str = "OxOcraft",
-    ban_record_id: int | None = None,
-    detail: str = "",
-) -> None:
-    with get_connection() as conn:
-        conn.execute("""
-            INSERT INTO ban_history (
-                action,
-                target_type,
-                target_name,
-                target_uuid,
-                reason,
-                operator,
-                created_at,
-                ban_record_id,
-                detail
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            action,
-            target_type,
-            target_name,
-            target_uuid,
-            reason,
-            operator,
-            now_text(),
-            ban_record_id,
-            detail,
-        ))
-
-        conn.commit()
-
-
 def get_active_banned_players() -> list[dict]:
     current_account_type = get_current_account_type()
     players = get_banned_players_from_db()
@@ -175,6 +141,52 @@ def get_active_banned_players() -> list[dict]:
     return result
 
 
+def get_active_banned_ips() -> list[dict]:
+    rows = get_banned_ips_from_db()
+
+    result = []
+
+    for row in rows:
+        ip = row.get("ip")
+
+        result.append({
+            "ip": ip,
+            "target_name": ip,
+
+            "reason": row.get("ban_reason") or "",
+            "created_at": row.get("banned_since"),
+            "expires_at": row.get("ban_expires_at"),
+            "permanent": 0 if row.get("ban_expires_at") else 1,
+            "operator": row.get("operator_name") or "OxOcraft",
+        })
+
+    return result
+
+
+def get_active_banned_ips_from_json() -> list[dict]:
+    items = read_json_list(BANNED_IPS_FILE)
+
+    result = []
+
+    for item in items:
+        ip = str(item.get("ip", "")).strip()
+
+        if not ip:
+            continue
+
+        result.append({
+            "ip": ip,
+            "target_name": ip,
+            "reason": item.get("reason", "") or "",
+            "created_at": item.get("created"),
+            "expires_at": None,
+            "permanent": 1,
+            "operator": item.get("source", "Minecraft") or "Minecraft",
+        })
+
+    return result
+
+
 def get_banned_player_by_uuid(player_uuid: str) -> dict | None:
     player_uuid = str(player_uuid or "").strip()
 
@@ -194,59 +206,16 @@ def get_banned_player_by_uuid(player_uuid: str) -> dict | None:
 
 
 def get_active_bans(target_type: str) -> list[dict]:
-
     if target_type == "player":
         return get_active_banned_players()
 
-    current_account_type = get_current_account_type()
+    if target_type == "ip":
+        if is_server_running():
+            return get_active_banned_ips()
 
-    with get_connection() as conn:
-        rows = conn.execute("""
-            SELECT *
-            FROM ban_records
-            WHERE active = 1
-              AND target_type = ?
-            ORDER BY created_at DESC, id DESC
-        """, (target_type,)).fetchall()
+        return get_active_banned_ips_from_json()
 
-    records = [dict(row) for row in rows]
-
-    deduped = {}
-
-    for record in records:
-        if target_type == "player":
-            key = (
-                str(record.get("target_uuid") or "").lower()
-                or str(record.get("target_name") or "").lower()
-            )
-        else:
-            key = str(record.get("target_name") or "").strip()
-
-        if not key:
-            continue
-
-        old = deduped.get(key)
-
-        if old is None:
-            deduped[key] = record
-            continue
-
-        old_operator = str(old.get("operator") or "")
-        new_operator = str(record.get("operator") or "")
-
-        if old_operator != "OxOcraft" and new_operator == "OxOcraft":
-            deduped[key] = record
-
-    result = list(deduped.values())
-
-    if target_type == "player":
-        for record in result:
-            record["valid_for_current_mode"] = (
-                record.get("account_type") == current_account_type
-            )
-
-    return result
-
+    return []
 
 def get_ban_history(limit: int = 100) -> list[dict]:
     with get_connection() as conn:
@@ -258,22 +227,6 @@ def get_ban_history(limit: int = 100) -> list[dict]:
         """, (limit,)).fetchall()
 
     return [dict(row) for row in rows]
-
-
-def player_exists_in_banned_json(
-    player_uuid: str,
-    player_name: str,
-) -> bool:
-    data = read_json_list(BANNED_PLAYERS_FILE)
-
-    for item in data:
-        if str(item.get("uuid", "")).lower() == player_uuid.lower():
-            return True
-
-        if str(item.get("name", "")).lower() == player_name.lower():
-            return True
-
-    return False
 
 
 def write_player_to_banned_json(
@@ -300,52 +253,6 @@ def write_player_to_banned_json(
     })
 
     write_json_list(BANNED_PLAYERS_FILE, data)
-
-
-def insert_ban_record(
-    target_type: str,
-    target_name: str,
-    target_uuid: str | None,
-    account_type: str | None,
-    reason: str,
-    operator: str,
-    expires_at: str | None,
-    permanent: bool,
-    source: str = "OxOcraft",
-) -> int:
-    created_at = now_text()
-
-    with get_connection() as conn:
-        cursor = conn.execute("""
-            INSERT INTO ban_records (
-                target_type,
-                target_name,
-                target_uuid,
-                account_type,
-                reason,
-                operator,
-                created_at,
-                expires_at,
-                permanent,
-                active,
-                source
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
-        """, (
-            target_type,
-            target_name,
-            target_uuid,
-            account_type,
-            reason,
-            operator,
-            created_at,
-            expires_at,
-            1 if permanent else 0,
-            source,
-        ))
-
-        conn.commit()
-        return int(cursor.lastrowid)
 
 
 def ban_player(
@@ -449,67 +356,23 @@ def find_active_ban_record(
     target_name: str,
     target_uuid: str | None = None,
 ) -> dict | None:
+    if target_type != "ip":
+        return None
+
     with get_connection() as conn:
-        if target_type == "player":
-            row = conn.execute("""
-                SELECT *
-                FROM ban_records
-                WHERE active = 1
-                  AND target_type = 'player'
-                  AND (
-                      lower(target_uuid) = lower(?)
-                      OR lower(target_name) = lower(?)
-                  )
-                ORDER BY id DESC
-                LIMIT 1
-            """, (
-                target_uuid or "",
-                target_name or "",
-            )).fetchone()
-        else:
-            row = conn.execute("""
-                SELECT *
-                FROM ban_records
-                WHERE active = 1
-                  AND target_type = 'ip'
-                  AND target_name = ?
-                ORDER BY id DESC
-                LIMIT 1
-            """, (
-                target_name or "",
-            )).fetchone()
+        row = conn.execute("""
+            SELECT *
+            FROM ban_records
+            WHERE active = 1
+              AND target_type = 'ip'
+              AND target_name = ?
+            ORDER BY id DESC
+            LIMIT 1
+        """, (
+            target_name or "",
+        )).fetchone()
 
     return dict(row) if row else None
-
-
-def update_ban_record_as_oxocraft(
-    record_id: int,
-    reason: str,
-    operator: str,
-    expires_at: str | None,
-    permanent: bool,
-    account_type: str | None = None,
-) -> None:
-    with get_connection() as conn:
-        conn.execute("""
-            UPDATE ban_records
-            SET reason = ?,
-                operator = ?,
-                expires_at = ?,
-                permanent = ?,
-                source = 'OxOcraft',
-                account_type = COALESCE(?, account_type)
-            WHERE id = ?
-        """, (
-            reason,
-            operator,
-            expires_at,
-            1 if permanent else 0,
-            account_type,
-            record_id,
-        ))
-
-        conn.commit()
 
 
 def remove_player_from_banned_json(
@@ -724,67 +587,6 @@ def sync_unban_player_from_log(
         )
 
 
-def unban_player(
-    record_id: int,
-    operator: str = "OxOcraft",
-) -> dict:
-    record = get_ban_record(record_id)
-
-    if not record:
-        return {
-            "success": False,
-            "message": "找不到封鎖紀錄",
-        }
-
-    if record.get("target_type") != "player":
-        return {
-            "success": False,
-            "message": "此紀錄不是玩家封鎖",
-        }
-
-    if not record.get("active"):
-        return {
-            "success": False,
-            "message": "此封鎖紀錄已解除",
-        }
-
-    player_name = record.get("target_name") or ""
-    player_uuid = record.get("target_uuid")
-
-    if is_server_running():
-        result = send_rcon_command(f"pardon {player_name}")
-    else:
-        removed = remove_player_from_banned_json(
-            player_uuid=player_uuid,
-            player_name=player_name,
-        )
-
-        result = (
-            "已從 banned-players.json 移除"
-            if removed
-            else "banned-players.json 中已不存在此玩家"
-        )
-
-    deactivate_ban_record(record_id)
-
-    add_ban_history(
-        action="manual_unban_player",
-        target_type="player",
-        target_name=player_name,
-        target_uuid=player_uuid,
-        reason="手動解除封鎖",
-        operator=operator,
-        ban_record_id=record_id,
-        detail=result,
-    )
-
-    return {
-        "success": True,
-        "message": f"已解除玩家 {player_name} 的封鎖",
-        "result": result,
-    }
-
-
 def validate_ip(ip: str) -> tuple[bool, str]:
     ip = str(ip or "").strip()
 
@@ -860,42 +662,24 @@ def ban_ip(
         )
         result = "已寫入 banned-ips.json"
 
-    existing_record = find_active_ban_record(
-        target_type="ip",
-        target_name=ip,
+    update_ip_ban_status(
+        ip=ip,
+        banned=True,
+        reason=reason,
+        operator_name=operator,
+        expires_at=expires_at,
     )
 
-    if existing_record:
-        ban_record_id = int(existing_record["id"])
-
-        update_ban_record_as_oxocraft(
-            record_id=ban_record_id,
-            reason=reason,
-            operator=operator,
-            expires_at=expires_at,
-            permanent=permanent,
-            account_type=None,
-        )
-    else:
-        ban_record_id = insert_ban_record(
-            target_type="ip",
-            target_name=ip,
-            target_uuid=None,
-            account_type=None,
-            reason=reason,
-            operator=operator,
-            expires_at=expires_at,
-            permanent=permanent,
-        )
-
-    add_ban_history(
-        action="ban_ip",
-        target_type="ip",
-        target_name=ip,
-        target_uuid=None,
+    record_ip_ban_history(
+        action="add",
+        ip=ip,
         reason=reason,
-        operator=operator,
-        ban_record_id=ban_record_id,
+        operator_name=operator,
+        source=(
+            "ui"
+            if is_server_running()
+            else "offline_ui_edit"
+        ),
         detail=result,
     )
 
@@ -924,30 +708,25 @@ def remove_ip_from_banned_json(ip: str) -> bool:
 
 
 def unban_ip(
-    record_id: int,
+    ip: str,
     operator: str = "OxOcraft",
 ) -> dict:
-    record = get_ban_record(record_id)
+    ip = str(ip or "").strip()
+    operator = str(operator or "OxOcraft").strip()
+
+    if not ip:
+        return {
+            "success": False,
+            "message": "缺少 IP",
+        }
+
+    record = get_banned_ip_from_db(ip)
 
     if not record:
         return {
             "success": False,
-            "message": "找不到封鎖紀錄",
+            "message": "找不到此 IP 封鎖狀態",
         }
-
-    if record.get("target_type") != "ip":
-        return {
-            "success": False,
-            "message": "此紀錄不是 IP 封鎖",
-        }
-
-    if not record.get("active"):
-        return {
-            "success": False,
-            "message": "此封鎖紀錄已解除",
-        }
-
-    ip = record.get("target_name") or ""
 
     if is_server_running():
         result = send_rcon_command(f"pardon-ip {ip}")
@@ -960,16 +739,26 @@ def unban_ip(
             else "banned-ips.json 中已不存在此 IP"
         )
 
-    deactivate_ban_record(record_id)
+    update_ip_ban_status(
+        ip=ip,
+        banned=False,
+        reason="",
+        operator_name=operator,
+        operator_uuid=None,
+        expires_at=None,
+    )
 
-    add_ban_history(
-        action="manual_unban_ip",
-        target_type="ip",
-        target_name=ip,
-        target_uuid=None,
+    record_ip_ban_history(
+        action="remove",
+        ip=ip,
         reason="手動解除 IP 封鎖",
-        operator=operator,
-        ban_record_id=record_id,
+        operator_name=operator,
+        operator_uuid=None,
+        source=(
+            "ui"
+            if is_server_running()
+            else "offline_ui_edit"
+        ),
         detail=result,
     )
 
@@ -1065,16 +854,6 @@ def parse_expire_payload(data: dict) -> tuple[bool, str | None, bool, str]:
     return False, None, False, "未知的封鎖期限類型"
 
 
-def player_ban_exists_in_json(record: dict) -> bool:
-    if record.get("target_type") != "player":
-        return False
-
-    return player_exists_in_banned_json(
-        player_uuid=record.get("target_uuid") or "",
-        player_name=record.get("target_name") or "",
-    )
-
-
 def ip_ban_exists_in_json(record: dict) -> bool:
     if record.get("target_type") != "ip":
         return False
@@ -1087,49 +866,51 @@ def ip_ban_exists_in_json(record: dict) -> bool:
 def get_expired_active_bans() -> list[dict]:
     now = now_text()
 
+    expired = []
+
     with get_connection() as conn:
-        rows = conn.execute("""
-            SELECT *
-            FROM ban_records
-            WHERE active = 1
-              AND permanent = 0
-              AND expires_at IS NOT NULL
-              AND expires_at <= ?
-            ORDER BY expires_at ASC, id ASC
+        player_rows = conn.execute("""
+            SELECT
+                'player' AS target_type,
+                player_uuid AS target_uuid,
+                player_name AS target_name,
+                account_type,
+                ban_reason AS reason,
+                ban_expires_at AS expires_at
+            FROM players
+            WHERE banned = 1
+              AND ban_expires_at IS NOT NULL
+              AND ban_expires_at <= ?
         """, (now,)).fetchall()
 
-    return [dict(row) for row in rows]
+        ip_rows = conn.execute("""
+            SELECT
+                'ip' AS target_type,
+                NULL AS target_uuid,
+                ip AS target_name,
+                NULL AS account_type,
+                ban_reason AS reason,
+                ban_expires_at AS expires_at
+            FROM ip_records
+            WHERE banned = 1
+              AND ban_expires_at IS NOT NULL
+              AND ban_expires_at <= ?
+        """, (now,)).fetchall()
+
+    expired.extend(dict(row) for row in player_rows)
+    expired.extend(dict(row) for row in ip_rows)
+
+    return expired
 
 
 def process_expired_ban(record: dict) -> dict:
-    record_id = int(record["id"])
     target_type = record.get("target_type")
     target_name = record.get("target_name") or ""
     target_uuid = record.get("target_uuid")
+    account_type = record.get("account_type")
+    reason = record.get("reason") or "封鎖期限到期"
 
     if target_type == "player":
-        exists = player_ban_exists_in_json(record)
-
-        if not exists:
-            deactivate_ban_record(record_id)
-
-            add_ban_history(
-                action="already_removed_player",
-                target_type="player",
-                target_name=target_name,
-                target_uuid=target_uuid,
-                reason="封鎖期限到期，但玩家已不在黑名單中",
-                operator="OxOcraft",
-                ban_record_id=record_id,
-                detail="略過 /pardon",
-            )
-
-            return {
-                "success": True,
-                "action": "already_removed_player",
-                "target": target_name,
-            }
-
         if is_server_running():
             result = send_rcon_command(f"pardon {target_name}")
         else:
@@ -1144,16 +925,23 @@ def process_expired_ban(record: dict) -> dict:
                 else "banned-players.json 中已不存在此玩家"
             )
 
-        deactivate_ban_record(record_id)
+        update_player_ban_status(
+            player_uuid=target_uuid,
+            player_name=target_name,
+            account_type=account_type or detect_account_type(target_uuid),
+            banned=False,
+            reason="",
+            expires_at=None,
+        )
 
-        add_ban_history(
-            action="expired_unban_player",
-            target_type="player",
-            target_name=target_name,
+        record_player_access(
+            category="ban",
+            action="expired_remove",
             target_uuid=target_uuid,
-            reason="封鎖期限到期",
-            operator="OxOcraft",
-            ban_record_id=record_id,
+            target_name=target_name,
+            account_type=account_type,
+            operator_name="OxOcraft",
+            source="scheduler",
             detail=result,
         )
 
@@ -1165,28 +953,6 @@ def process_expired_ban(record: dict) -> dict:
         }
 
     if target_type == "ip":
-        exists = ip_ban_exists_in_json(record)
-
-        if not exists:
-            deactivate_ban_record(record_id)
-
-            add_ban_history(
-                action="already_removed_ip",
-                target_type="ip",
-                target_name=target_name,
-                target_uuid=None,
-                reason="封鎖期限到期，但 IP 已不在黑名單中",
-                operator="OxOcraft",
-                ban_record_id=record_id,
-                detail="略過 /pardon-ip",
-            )
-
-            return {
-                "success": True,
-                "action": "already_removed_ip",
-                "target": target_name,
-            }
-
         if is_server_running():
             result = send_rcon_command(f"pardon-ip {target_name}")
         else:
@@ -1198,16 +964,22 @@ def process_expired_ban(record: dict) -> dict:
                 else "banned-ips.json 中已不存在此 IP"
             )
 
-        deactivate_ban_record(record_id)
+        update_ip_ban_status(
+            ip=target_name,
+            banned=False,
+            reason="",
+            operator_name="OxOcraft",
+            operator_uuid=None,
+            expires_at=None,
+        )
 
-        add_ban_history(
-            action="expired_unban_ip",
-            target_type="ip",
-            target_name=target_name,
-            target_uuid=None,
-            reason="封鎖期限到期",
-            operator="OxOcraft",
-            ban_record_id=record_id,
+        record_ip_ban_history(
+            action="expired_remove",
+            ip=target_name,
+            reason=reason,
+            operator_name="OxOcraft",
+            operator_uuid=None,
+            source="scheduler",
             detail=result,
         )
 
@@ -1221,7 +993,7 @@ def process_expired_ban(record: dict) -> dict:
     return {
         "success": False,
         "message": "未知的封鎖類型",
-        "record_id": record_id,
+        "target": target_name,
     }
 
 
@@ -1244,19 +1016,19 @@ def process_expired_bans() -> list[dict]:
     return results
 
 
-def sync_banned_json_to_db() -> dict:
+def sync_banned_players_json_to_db() -> dict:
     synced_players = 0
-    synced_ips = 0
 
     players = read_json_list(BANNED_PLAYERS_FILE)
-    ips = read_json_list(BANNED_IPS_FILE)
 
     with get_connection() as conn:
         for item in players:
             player_name = str(item.get("name", "")).strip()
             player_uuid = str(item.get("uuid", "")).strip()
             reason = str(item.get("reason", "") or "").strip()
-            operator = str(item.get("source", "Minecraft") or "Minecraft").strip()
+            operator = str(
+                item.get("source", "Minecraft") or "Minecraft"
+            ).strip()
             account_type = detect_account_type(player_uuid)
 
             if not player_name or not player_uuid:
@@ -1298,87 +1070,106 @@ def sync_banned_json_to_db() -> dict:
 
                 synced_players += 1
 
-        for item in ips:
-            ip = str(item.get("ip", "")).strip()
-
-            if not ip:
-                continue
-
-            exists = conn.execute("""
-                SELECT id
-                FROM ban_records
-                WHERE active = 1
-                  AND target_type = 'ip'
-                  AND target_name = ?
-                LIMIT 1
-            """, (ip,)).fetchone()
-
-            if exists:
-                continue
-
-            created_at = now_text()
-
-            cursor = conn.execute("""
-                INSERT INTO ban_records (
-                    target_type,
-                    target_name,
-                    target_uuid,
-                    account_type,
-                    reason,
-                    operator,
-                    created_at,
-                    expires_at,
-                    permanent,
-                    active,
-                    source,
-                    note
-                )
-                VALUES (
-                    'ip',
-                    ?, NULL, NULL,
-                    ?, ?, ?, NULL, 1, 1, 'Minecraft',
-                    '從 banned-ips.json 同步'
-                )
-            """, (
-                ip,
-                item.get("reason", ""),
-                item.get("source", "Minecraft"),
-                created_at,
-            ))
-
-            conn.execute("""
-                INSERT INTO ban_history (
-                    action,
-                    target_type,
-                    target_name,
-                    target_uuid,
-                    reason,
-                    operator,
-                    created_at,
-                    ban_record_id,
-                    detail
-                )
-                VALUES (
-                    'sync_ban_ip',
-                    'ip',
-                    ?, NULL, ?, ?, ?, ?,
-                    '從 banned-ips.json 同步'
-                )
-            """, (
-                ip,
-                item.get("reason", ""),
-                item.get("source", "Minecraft"),
-                created_at,
-                cursor.lastrowid,
-            ))
-
-            synced_ips += 1
-
         conn.commit()
 
     return {
         "synced_players": synced_players,
+    }
+
+
+def sync_banned_ips_json_to_db() -> dict:
+    synced_ips = 0
+    removed_ips = 0
+
+    ips = read_json_list(BANNED_IPS_FILE)
+
+    active_ip_set = {
+        str(item.get("ip", "")).strip()
+        for item in ips
+        if item.get("ip")
+    }
+
+    for item in ips:
+        ip = str(item.get("ip", "")).strip()
+
+        if not ip:
+            continue
+
+        existing = get_banned_ip_from_db(ip)
+
+        update_ip_ban_status(
+            ip=ip,
+            banned=True,
+            reason=str(item.get("reason", "") or "").strip(),
+            operator_name=str(
+                item.get("source", "Minecraft") or "Minecraft"
+            ).strip(),
+            operator_uuid=None,
+            expires_at=None,
+        )
+
+        if not existing:
+            record_ip_ban_history(
+                action="sync_add",
+                ip=ip,
+                reason=str(item.get("reason", "") or "").strip(),
+                operator_name=str(
+                    item.get("source", "Minecraft") or "Minecraft"
+                ).strip(),
+                operator_uuid=None,
+                source="minecraft_json",
+                detail="從 banned-ips.json 同步",
+            )
+
+            synced_ips += 1
+
+    with get_connection() as conn:
+        rows = conn.execute("""
+            SELECT ip
+            FROM ip_records
+            WHERE banned = 1
+        """).fetchall()
+
+    for row in rows:
+        ip = str(row["ip"]).strip()
+
+        if ip in active_ip_set:
+            continue
+
+        update_ip_ban_status(
+            ip=ip,
+            banned=False,
+            reason="",
+            operator_name="Minecraft",
+            operator_uuid=None,
+            expires_at=None,
+        )
+
+        record_ip_ban_history(
+            action="sync_remove",
+            ip=ip,
+            reason="從 banned-ips.json 同步解除",
+            operator_name="Minecraft",
+            operator_uuid=None,
+            source="minecraft_json",
+            detail="server ready sync removed from banned-ips.json",
+        )
+
+        removed_ips += 1
+
+    return {
         "synced_ips": synced_ips,
+        "removed_ips": removed_ips,
+    }
+
+
+def sync_banned_json_to_db() -> dict:
+    player_result = sync_banned_players_json_to_db()
+    ip_result = sync_banned_ips_json_to_db()
+
+    return {
+        **player_result,
+        **ip_result,
     }
 
 
@@ -1390,18 +1181,12 @@ def deactivate_all_active_bans_by_mode_change() -> dict:
             SELECT *
             FROM ban_records
             WHERE active = 1
+              AND target_type = 'ip'
         """).fetchall()
 
         records = [dict(row) for row in rows]
 
         for record in records:
-            target_type = record.get("target_type")
-            action = (
-                "mode_changed_clear_player_ban"
-                if target_type == "player"
-                else "mode_changed_clear_ip_ban"
-            )
-
             conn.execute("""
                 INSERT INTO ban_history (
                     action,
@@ -1416,11 +1201,11 @@ def deactivate_all_active_bans_by_mode_change() -> dict:
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
-                action,
-                target_type,
+                "mode_changed_clear_ip_ban",
+                "ip",
                 record.get("target_name", ""),
-                record.get("target_uuid"),
-                "切換正版驗證 / 離線模式，清除舊黑名單資料",
+                None,
+                "切換正版驗證 / 離線模式，清除舊 IP 黑名單資料",
                 "OxOcraft",
                 now,
                 record.get("id"),
@@ -1431,6 +1216,7 @@ def deactivate_all_active_bans_by_mode_change() -> dict:
             UPDATE ban_records
             SET active = 0
             WHERE active = 1
+              AND target_type = 'ip'
         """)
 
         conn.commit()
@@ -1484,14 +1270,7 @@ def get_player_ban_candidate_list() -> list[dict]:
 
 
 def sync_removed_bans_from_json() -> dict:
-    player_entries = read_json_list(BANNED_PLAYERS_FILE)
     ip_entries = read_json_list(BANNED_IPS_FILE)
-
-    player_uuid_set = {
-        str(item.get("uuid", "")).lower()
-        for item in player_entries
-        if item.get("uuid")
-    }
 
     ip_set = {
         str(item.get("ip", "")).strip()
@@ -1499,45 +1278,8 @@ def sync_removed_bans_from_json() -> dict:
         if item.get("ip")
     }
 
-    removed_players = 0
     removed_ips = 0
     now = now_text()
-
-    # 玩家 ban：新版，從 players.banned 同步
-    banned_players = get_banned_players_from_db()
-
-    for player in banned_players:
-        player_uuid = str(player.get("player_uuid", "")).strip()
-        player_name = str(player.get("player_name", "")).strip()
-        account_type = str(player.get("account_type", "")).strip()
-
-        if not player_uuid or not player_name:
-            continue
-
-        if player_uuid.lower() in player_uuid_set:
-            continue
-
-        update_player_ban_status(
-            player_uuid=player_uuid,
-            player_name=player_name,
-            account_type=account_type,
-            banned=False,
-            reason="",
-            expires_at=None,
-        )
-
-        record_player_access(
-            category="ban",
-            action="sync_remove",
-            target_uuid=player_uuid,
-            target_name=player_name,
-            account_type=account_type,
-            operator_name="Minecraft",
-            source="minecraft_json",
-            detail="從 banned-players.json 同步解除",
-        )
-
-        removed_players += 1
 
     # IP ban：舊版，暫時保留 ban_records / ban_history
     with get_connection() as conn:
@@ -1591,6 +1333,6 @@ def sync_removed_bans_from_json() -> dict:
         conn.commit()
 
     return {
-        "removed_players": removed_players,
+        "removed_players": 0,
         "removed_ips": removed_ips,
     }

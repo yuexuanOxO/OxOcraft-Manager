@@ -127,80 +127,45 @@ def init_db() -> None:
         """)
 
         conn.execute("""
-            CREATE TABLE IF NOT EXISTS ban_records (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-                target_type TEXT NOT NULL,
-                target_name TEXT NOT NULL,
-                target_uuid TEXT,
-                account_type TEXT,
-
-                reason TEXT DEFAULT '',
-                operator TEXT DEFAULT 'OxOcraft',
-
-                created_at TEXT NOT NULL,
-                expires_at TEXT,
-
-                permanent INTEGER NOT NULL DEFAULT 1,
-                active INTEGER NOT NULL DEFAULT 1,
-
-                source TEXT DEFAULT 'OxOcraft',
-                note TEXT DEFAULT ''
-            )
-        """)
-
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS ban_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-                action TEXT NOT NULL,
-
-                target_type TEXT NOT NULL,
-                target_name TEXT NOT NULL,
-                target_uuid TEXT,
-
-                reason TEXT DEFAULT '',
-                operator TEXT DEFAULT 'OxOcraft',
-
-                created_at TEXT NOT NULL,
-
-                ban_record_id INTEGER,
-                detail TEXT DEFAULT ''
-            )
-        """)
-
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS player_ip_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-                player_name TEXT NOT NULL,
-                player_uuid TEXT,
-                account_type TEXT,
-
-                ip TEXT NOT NULL,
-                port TEXT,
-
-                first_seen TEXT NOT NULL,
-                last_seen TEXT NOT NULL,
-
-                seen_count INTEGER NOT NULL DEFAULT 1,
-
-                UNIQUE(player_uuid, ip)
-            )
-        """)
-
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS banned_ips (
+            CREATE TABLE IF NOT EXISTS ip_records (
                 ip TEXT PRIMARY KEY,
 
-                reason TEXT DEFAULT '',
-                operator_name TEXT DEFAULT 'OxOcraft',
+                last_player_uuid TEXT,
+                last_player_name TEXT,
+                last_account_type TEXT,
+                last_port TEXT,
+
+                first_seen DATETIME,
+                last_seen DATETIME,
+                seen_count INTEGER NOT NULL DEFAULT 0,
 
                 banned INTEGER NOT NULL DEFAULT 0,
                 banned_since DATETIME,
+                ban_reason TEXT DEFAULT '',
                 ban_expires_at DATETIME,
 
+                operator_uuid TEXT,
+                operator_name TEXT DEFAULT 'OxOcraft',
+
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS ip_player_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                ip TEXT NOT NULL,
+
+                player_uuid TEXT NOT NULL,
+                player_name TEXT NOT NULL,
+                account_type TEXT,
+
+                first_seen DATETIME NOT NULL,
+                last_seen DATETIME NOT NULL,
+                seen_count INTEGER NOT NULL DEFAULT 1,
+
+                UNIQUE(ip, player_uuid)
             )
         """)
 
@@ -213,6 +178,7 @@ def init_db() -> None:
                 ip TEXT NOT NULL,
                 reason TEXT DEFAULT '',
 
+                operator_uuid TEXT,
                 operator_name TEXT DEFAULT 'OxOcraft',
                 source TEXT DEFAULT 'unknown',
 
@@ -574,49 +540,79 @@ def upsert_player_from_usercache(
         conn.commit()
 
 
-def upsert_player_ip_history(
+def upsert_ip_player_login(
+    ip: str,
     player_uuid: str,
     player_name: str,
     account_type: str,
-    ip: str,
     port: str | None = None,
 ) -> None:
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+    ip = str(ip or "").strip()
     player_uuid = str(player_uuid or "").strip()
     player_name = str(player_name or "").strip()
     account_type = str(account_type or "unknown").strip()
-    ip = str(ip or "").strip()
     port = str(port or "").strip() if port else None
 
-    if not player_uuid or not player_name or not ip:
+    if not ip or not player_uuid or not player_name:
         return
 
     with get_connection() as conn:
         conn.execute("""
-            INSERT INTO player_ip_history (
+            INSERT INTO ip_records (
+                ip,
+                last_player_uuid,
+                last_player_name,
+                last_account_type,
+                last_port,
+                first_seen,
+                last_seen,
+                seen_count,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
+            ON CONFLICT(ip) DO UPDATE SET
+                last_player_uuid = excluded.last_player_uuid,
+                last_player_name = excluded.last_player_name,
+                last_account_type = excluded.last_account_type,
+                last_port = excluded.last_port,
+                first_seen = COALESCE(ip_records.first_seen, excluded.first_seen),
+                last_seen = excluded.last_seen,
+                seen_count = ip_records.seen_count + 1,
+                updated_at = excluded.updated_at
+        """, (
+            ip,
+            player_uuid,
+            player_name,
+            account_type,
+            port,
+            now,
+            now,
+            now,
+        ))
+
+        conn.execute("""
+            INSERT INTO ip_player_history (
+                ip,
                 player_uuid,
                 player_name,
                 account_type,
-                ip,
-                port,
                 first_seen,
                 last_seen,
                 seen_count
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, 1)
-            ON CONFLICT(player_uuid, ip) DO UPDATE SET
+            VALUES (?, ?, ?, ?, ?, ?, 1)
+            ON CONFLICT(ip, player_uuid) DO UPDATE SET
                 player_name = excluded.player_name,
                 account_type = excluded.account_type,
-                port = excluded.port,
                 last_seen = excluded.last_seen,
-                seen_count = seen_count + 1
+                seen_count = ip_player_history.seen_count + 1
         """, (
+            ip,
             player_uuid,
             player_name,
             account_type,
-            ip,
-            port,
             now,
             now,
         ))
@@ -833,6 +829,56 @@ def add_player_access_history(
         conn.commit()
 
 
+def record_ip_ban_history(
+    action: str,
+    ip: str,
+    reason: str = "",
+    operator_name: str = "OxOcraft",
+    operator_uuid: str | None = None,
+    source: str = "unknown",
+    detail: str = "",
+    created_at: str | None = None,
+) -> None:
+    action = str(action or "").strip()
+    ip = str(ip or "").strip()
+    reason = str(reason or "").strip()
+    operator_name = str(operator_name or "OxOcraft").strip()
+    source = str(source or "unknown").strip()
+    detail = str(detail or "").strip()
+
+    if not action or not ip:
+        return
+
+    if created_at is None:
+        created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with get_connection() as conn:
+        conn.execute("""
+            INSERT INTO ip_ban_history (
+                action,
+                ip,
+                reason,
+                operator_uuid,
+                operator_name,
+                source,
+                detail,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            action,
+            ip,
+            reason,
+            operator_uuid,
+            operator_name,
+            source,
+            detail,
+            created_at,
+        ))
+
+        conn.commit()
+
+
 def update_player_whitelist_since(
     player_uuid: str,
     player_name: str,
@@ -952,6 +998,63 @@ def update_player_ban_status(
         conn.commit()
 
 
+def update_ip_ban_status(
+    ip: str,
+    banned: bool,
+    reason: str = "",
+    operator_name: str = "OxOcraft",
+    operator_uuid: str | None = None,
+    expires_at: str | None = None,
+) -> None:
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    ip = str(ip or "").strip()
+    reason = str(reason or "").strip()
+    operator_name = str(operator_name or "OxOcraft").strip()
+    operator_uuid = str(operator_uuid or "").strip() or None
+
+    if not ip:
+        return
+
+    with get_connection() as conn:
+        conn.execute("""
+            INSERT INTO ip_records (
+                ip,
+                banned,
+                banned_since,
+                ban_reason,
+                ban_expires_at,
+                operator_uuid,
+                operator_name,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(ip) DO UPDATE SET
+                banned = excluded.banned,
+                banned_since = CASE
+                    WHEN excluded.banned = 1
+                    THEN COALESCE(ip_records.banned_since, excluded.banned_since)
+                    ELSE NULL
+                END,
+                ban_reason = excluded.ban_reason,
+                ban_expires_at = excluded.ban_expires_at,
+                operator_uuid = excluded.operator_uuid,
+                operator_name = excluded.operator_name,
+                updated_at = excluded.updated_at
+        """, (
+            ip,
+            1 if banned else 0,
+            now if banned else None,
+            reason if banned else "",
+            expires_at if banned else None,
+            operator_uuid,
+            operator_name,
+            now,
+        ))
+
+        conn.commit()
+
+
 def get_whitelisted_players_from_db() -> list[dict]:
     with get_connection() as conn:
         rows = conn.execute("""
@@ -974,6 +1077,36 @@ def get_banned_players_from_db() -> list[dict]:
         """).fetchall()
 
     return [dict(row) for row in rows]
+
+
+def get_banned_ips_from_db() -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute("""
+            SELECT *
+            FROM banned_ips
+            WHERE banned = 1
+            ORDER BY ip COLLATE NOCASE ASC, updated_at DESC
+        """).fetchall()
+
+    return [dict(row) for row in rows]
+
+
+def get_banned_ip_from_db(ip: str) -> dict | None:
+    ip = str(ip or "").strip()
+
+    if not ip:
+        return None
+
+    with get_connection() as conn:
+        row = conn.execute("""
+            SELECT *
+            FROM banned_ips
+            WHERE ip = ?
+              AND banned = 1
+            LIMIT 1
+        """, (ip,)).fetchone()
+
+    return dict(row) if row else None
 
 
 def get_op_players_from_db() -> list[dict]:
@@ -1080,5 +1213,86 @@ def sync_player_whitelist_flags_from_uuid_set(
             """, (
                 now,
             ))
+
+        conn.commit()
+
+
+def get_banned_ips_from_db() -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute("""
+            SELECT *
+            FROM ip_records
+            WHERE banned = 1
+            ORDER BY ip COLLATE NOCASE ASC, updated_at DESC
+        """).fetchall()
+
+    return [dict(row) for row in rows]
+
+
+def get_banned_ip_from_db(ip: str) -> dict | None:
+    ip = str(ip or "").strip()
+
+    if not ip:
+        return None
+
+    with get_connection() as conn:
+        row = conn.execute("""
+            SELECT *
+            FROM ip_records
+            WHERE ip = ?
+              AND banned = 1
+            LIMIT 1
+        """, (ip,)).fetchone()
+
+    return dict(row) if row else None
+
+
+def record_ip_ban_history(
+    action: str,
+    ip: str,
+    reason: str = "",
+    operator_name: str = "OxOcraft",
+    operator_uuid: str | None = None,
+    source: str = "unknown",
+    detail: str = "",
+    created_at: str | None = None,
+) -> None:
+    action = str(action or "").strip()
+    ip = str(ip or "").strip()
+    reason = str(reason or "").strip()
+    operator_name = str(operator_name or "OxOcraft").strip()
+    operator_uuid = str(operator_uuid or "").strip() or None
+    source = str(source or "unknown").strip()
+    detail = str(detail or "").strip()
+
+    if not action or not ip:
+        return
+
+    if created_at is None:
+        created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with get_connection() as conn:
+        conn.execute("""
+            INSERT INTO ip_ban_history (
+                action,
+                ip,
+                reason,
+                operator_uuid,
+                operator_name,
+                source,
+                detail,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            action,
+            ip,
+            reason,
+            operator_uuid,
+            operator_name,
+            source,
+            detail,
+            created_at,
+        ))
 
         conn.commit()

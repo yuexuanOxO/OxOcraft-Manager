@@ -130,40 +130,79 @@ def maybe_record_player_logout_from_log(line: str) -> None:
 
 
 def maybe_refresh_player_ban_from_log(line: str) -> None:
-    patterns = [
-        r"\bBanned\s+.+",
-        r"\bUnbanned\s+.+",
-        r"\bPardoned\s+.+",
-        r"\bBanned\s+IP\s+.+",
-        r"\bUnbanned\s+IP\s+.+",
-        r"\bPardoned\s+IP\s+.+",
-        r"Removed\s+.+\s+from\s+the\s+banlist",
-    ]
+    ban_player_match = re.search(
+        r"\[(?P<operator>[^:\]]+):\s*Banned\s+(?P<target>[^:\]\s]+)(?::|\s|\])",
+        line,
+        re.IGNORECASE,
+    )
 
-    if not any(
-        re.search(pattern, line, re.IGNORECASE)
-        for pattern in patterns
-    ):
+    pardon_player_match = re.search(
+        r"\[(?P<operator>[^:\]]+):\s*(?:Pardoned|Unbanned)\s+(?P<target>[^:\]\s]+)(?:\]|\s)",
+        line,
+        re.IGNORECASE,
+    )
+
+    if not ban_player_match and not pardon_player_match:
         return
 
-    print("[PlayerBan] detected ban log:", line)
+    matched = ban_player_match or pardon_player_match
+    log_operator = matched.group("operator").strip()
+    target_name = matched.group("target").strip()
+
+    # 避免 ban-ip / pardon-ip 被玩家 ban 流程吃到
+    if target_name.lower().startswith("ip "):
+        return
+
+    is_rcon = log_operator.lower() == "rcon"
 
     try:
         from backend.player_ban.player_ban_service import (
-            sync_banned_json_to_db
+            sync_ban_player_from_log,
+            sync_unban_player_from_log,
+            pop_recent_ui_ban_command_if_match,
         )
 
-        from backend.player_ban.player_ban_service import (
-            sync_banned_json_to_db,
-            sync_removed_bans_from_json,
+        action = "add" if ban_player_match else "remove"
+
+        is_ui_command = (
+            is_rcon
+            and pop_recent_ui_ban_command_if_match(
+                action=action,
+                player_name=target_name,
+            )
         )
 
-        sync_banned_json_to_db()
-        sync_removed_bans_from_json()
+        if is_ui_command:
+            source = "ui"
+            operator_name = "OxOcraft"
+        elif is_rcon:
+            source = "console_rcon"
+            operator_name = "Rcon"
+        else:
+            source = "player_command"
+            operator_name = log_operator
+
+        if ban_player_match:
+            sync_ban_player_from_log(
+                player_name=target_name,
+                operator_name=operator_name,
+                source=source,
+                detail=line,
+                write_history=not is_ui_command,
+            )
+        else:
+            sync_unban_player_from_log(
+                player_name=target_name,
+                operator_name=operator_name,
+                source=source,
+                detail=line,
+                write_history=not is_ui_command,
+            )
 
         publish_event("player_ban_should_refresh", {
             "reason": "minecraft_ban_log",
             "line": line,
+            "source": source,
         })
 
         print("[PlayerBan] refresh event published")

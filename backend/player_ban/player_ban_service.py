@@ -36,6 +36,45 @@ def now_text() -> str:
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
+_RECENT_UI_BAN_COMMANDS: list[dict] = []
+
+
+def push_recent_ui_ban_command(
+    action: str,
+    player_name: str,
+) -> None:
+    _RECENT_UI_BAN_COMMANDS.append({
+        "action": action,
+        "player_name": str(player_name or "").strip().lower(),
+        "created_at": datetime.now(),
+    })
+
+
+def pop_recent_ui_ban_command_if_match(
+    action: str,
+    player_name: str,
+    max_age_seconds: int = 5,
+) -> bool:
+    now = datetime.now()
+    normalized_name = str(player_name or "").strip().lower()
+
+    for index, item in enumerate(list(_RECENT_UI_BAN_COMMANDS)):
+        age = (now - item["created_at"]).total_seconds()
+
+        if age > max_age_seconds:
+            _RECENT_UI_BAN_COMMANDS.remove(item)
+            continue
+
+        if (
+            item.get("action") == action
+            and item.get("player_name") == normalized_name
+        ):
+            _RECENT_UI_BAN_COMMANDS.pop(index)
+            return True
+
+    return False
+
+
 def read_json_list(path: Path) -> list[dict]:
     if not path.exists():
         return []
@@ -358,6 +397,11 @@ def ban_player(
         account_type = detect_account_type(player_uuid)
 
     if is_server_running():
+        push_recent_ui_ban_command(
+            action="add",
+            player_name=player_name,
+        )
+
         command = f"ban {player_name} {reason}".strip()
         result = send_rcon_command(command)
     else:
@@ -536,6 +580,11 @@ def unban_player_by_uuid(
     account_type = player.get("account_type") or detect_account_type(player_uuid)
 
     if is_server_running():
+        push_recent_ui_ban_command(
+            action="remove",
+            player_name=player_name,
+        )
+
         result = send_rcon_command(f"pardon {player_name}")
     else:
         removed = remove_player_from_banned_json(
@@ -578,6 +627,101 @@ def unban_player_by_uuid(
         "message": f"已解除玩家 {player_name} 的封鎖",
         "result": result,
     }
+
+
+def sync_ban_player_from_log(
+    player_name: str,
+    operator_name: str = "Minecraft",
+    source: str = "player_command",
+    detail: str = "",
+    write_history: bool = True,
+) -> None:
+    player_name = str(player_name or "").strip()
+
+    if not player_name:
+        return
+
+    player_uuid = resolve_player_uuid(player_name)
+
+    if not player_uuid:
+        print("[PlayerBan] cannot resolve banned player uuid:", player_name)
+        return
+
+    account_type = detect_account_type(player_uuid)
+
+    # 從 Minecraft 寫好的 banned-players.json 補 reason
+    reason = ""
+
+    for item in read_json_list(BANNED_PLAYERS_FILE):
+        if (
+            str(item.get("uuid", "")).lower() == player_uuid.lower()
+            or str(item.get("name", "")).lower() == player_name.lower()
+        ):
+            reason = str(item.get("reason", "") or "").strip()
+            break
+
+    update_player_ban_status(
+        player_uuid=player_uuid,
+        player_name=player_name,
+        account_type=account_type,
+        banned=True,
+        reason=reason,
+        expires_at=None,
+    )
+
+    if write_history:
+        record_player_access(
+            category="ban",
+            action="add",
+            target_uuid=player_uuid,
+            target_name=player_name,
+            account_type=account_type,
+            operator_name=operator_name,
+            source=source,
+            detail=detail,
+        )
+
+
+def sync_unban_player_from_log(
+    player_name: str,
+    operator_name: str = "Minecraft",
+    source: str = "player_command",
+    detail: str = "",
+    write_history: bool = True,
+) -> None:
+    player_name = str(player_name or "").strip()
+
+    if not player_name:
+        return
+
+    player_uuid = resolve_player_uuid(player_name)
+
+    if not player_uuid:
+        print("[PlayerBan] cannot resolve unbanned player uuid:", player_name)
+        return
+
+    account_type = detect_account_type(player_uuid)
+
+    update_player_ban_status(
+        player_uuid=player_uuid,
+        player_name=player_name,
+        account_type=account_type,
+        banned=False,
+        reason="",
+        expires_at=None,
+    )
+
+    if write_history:
+        record_player_access(
+            category="ban",
+            action="remove",
+            target_uuid=player_uuid,
+            target_name=player_name,
+            account_type=account_type,
+            operator_name=operator_name,
+            source=source,
+            detail=detail,
+        )
 
 
 def unban_player(
@@ -1111,97 +1255,48 @@ def sync_banned_json_to_db() -> dict:
         for item in players:
             player_name = str(item.get("name", "")).strip()
             player_uuid = str(item.get("uuid", "")).strip()
+            reason = str(item.get("reason", "") or "").strip()
+            operator = str(item.get("source", "Minecraft") or "Minecraft").strip()
             account_type = detect_account_type(player_uuid)
 
             if not player_name or not player_uuid:
                 continue
 
-            exists = conn.execute("""
-                SELECT id
-                FROM ban_records
-                WHERE active = 1
-                  AND target_type = 'player'
-                  AND (
-                      lower(target_uuid) = lower(?)
-                      OR lower(target_name) = lower(?)
-                  )
+            existing = conn.execute("""
+                SELECT banned
+                FROM players
+                WHERE lower(player_uuid) = lower(?)
                 LIMIT 1
             """, (
                 player_uuid,
-                player_name,
             )).fetchone()
 
-            if exists:
-                conn.execute("""
-                    UPDATE ban_records
-                    SET account_type = ?
-                    WHERE id = ?
-                """, (
-                    account_type,
-                    exists["id"],
-                ))
-                continue
+            was_banned = bool(
+                existing and int(existing["banned"] or 0) == 1
+            )
 
-            created_at = now_text()
+            update_player_ban_status(
+                player_uuid=player_uuid,
+                player_name=player_name,
+                account_type=account_type,
+                banned=True,
+                reason=reason,
+                expires_at=None,
+            )
 
-            cursor = conn.execute("""
-                INSERT INTO ban_records (
-                    target_type,
-                    target_name,
-                    target_uuid,
-                    account_type,
-                    reason,
-                    operator,
-                    created_at,
-                    expires_at,
-                    permanent,
-                    active,
-                    source,
-                    note
+            if not was_banned:
+                record_player_access(
+                    category="ban",
+                    action="sync_add",
+                    target_uuid=player_uuid,
+                    target_name=player_name,
+                    account_type=account_type,
+                    operator_name=operator,
+                    source="minecraft_json",
+                    detail="從 banned-players.json 同步",
                 )
-                VALUES (
-                    'player',
-                    ?, ?, ?,
-                    ?, ?, ?, NULL, 1, 1, 'Minecraft',
-                    '從 banned-players.json 同步'
-                )
-            """, (
-                    player_name,
-                    player_uuid,
-                    account_type,
-                    item.get("reason", ""),
-                    item.get("source", "Minecraft"),
-                    created_at,
-                ))
 
-            conn.execute("""
-                INSERT INTO ban_history (
-                    action,
-                    target_type,
-                    target_name,
-                    target_uuid,
-                    reason,
-                    operator,
-                    created_at,
-                    ban_record_id,
-                    detail
-                )
-                VALUES (
-                    'sync_ban_player',
-                    'player',
-                    ?, ?, ?, ?, ?, ?,
-                    '從 banned-players.json 同步'
-                )
-            """, (
-                player_name,
-                player_uuid,
-                item.get("reason", ""),
-                item.get("source", "Minecraft"),
-                created_at,
-                cursor.lastrowid,
-            ))
-
-            synced_players += 1
+                synced_players += 1
 
         for item in ips:
             ip = str(item.get("ip", "")).strip()
@@ -1398,12 +1493,6 @@ def sync_removed_bans_from_json() -> dict:
         if item.get("uuid")
     }
 
-    player_name_set = {
-        str(item.get("name", "")).lower()
-        for item in player_entries
-        if item.get("name")
-    }
-
     ip_set = {
         str(item.get("ip", "")).strip()
         for item in ip_entries
@@ -1414,31 +1503,56 @@ def sync_removed_bans_from_json() -> dict:
     removed_ips = 0
     now = now_text()
 
+    # 玩家 ban：新版，從 players.banned 同步
+    banned_players = get_banned_players_from_db()
+
+    for player in banned_players:
+        player_uuid = str(player.get("player_uuid", "")).strip()
+        player_name = str(player.get("player_name", "")).strip()
+        account_type = str(player.get("account_type", "")).strip()
+
+        if not player_uuid or not player_name:
+            continue
+
+        if player_uuid.lower() in player_uuid_set:
+            continue
+
+        update_player_ban_status(
+            player_uuid=player_uuid,
+            player_name=player_name,
+            account_type=account_type,
+            banned=False,
+            reason="",
+            expires_at=None,
+        )
+
+        record_player_access(
+            category="ban",
+            action="sync_remove",
+            target_uuid=player_uuid,
+            target_name=player_name,
+            account_type=account_type,
+            operator_name="Minecraft",
+            source="minecraft_json",
+            detail="從 banned-players.json 同步解除",
+        )
+
+        removed_players += 1
+
+    # IP ban：舊版，暫時保留 ban_records / ban_history
     with get_connection() as conn:
         rows = conn.execute("""
             SELECT *
             FROM ban_records
             WHERE active = 1
+              AND target_type = 'ip'
         """).fetchall()
 
         for row in rows:
             record = dict(row)
-            target_type = record.get("target_type")
             target_name = str(record.get("target_name", ""))
-            target_uuid = str(record.get("target_uuid", ""))
 
-            missing = False
-
-            if target_type == "player":
-                missing = (
-                    target_uuid.lower() not in player_uuid_set
-                    and target_name.lower() not in player_name_set
-                )
-
-            elif target_type == "ip":
-                missing = target_name not in ip_set
-
-            if not missing:
+            if target_name in ip_set:
                 continue
 
             conn.execute("""
@@ -1446,12 +1560,6 @@ def sync_removed_bans_from_json() -> dict:
                 SET active = 0
                 WHERE id = ?
             """, (record["id"],))
-
-            action = (
-                "external_unban_player"
-                if target_type == "player"
-                else "external_unban_ip"
-            )
 
             conn.execute("""
                 INSERT INTO ban_history (
@@ -1467,21 +1575,18 @@ def sync_removed_bans_from_json() -> dict:
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
-                action,
-                target_type,
+                "external_unban_ip",
+                "ip",
                 target_name,
-                target_uuid or None,
-                "偵測到 Minecraft 黑名單已移除",
+                None,
+                "偵測到 Minecraft IP 黑名單已移除",
                 "Minecraft",
                 now,
                 record["id"],
                 "sync_removed_bans_from_json",
             ))
 
-            if target_type == "player":
-                removed_players += 1
-            else:
-                removed_ips += 1
+            removed_ips += 1
 
         conn.commit()
 

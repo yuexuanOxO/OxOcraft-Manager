@@ -183,21 +183,23 @@ def maybe_refresh_player_ban_from_log(line: str) -> None:
             operator_name = log_operator
 
         if ban_player_match:
-            sync_ban_player_from_log(
-                player_name=target_name,
-                operator_name=operator_name,
-                source=source,
-                detail=line,
-                write_history=not is_ui_command,
-            )
+            if not is_ui_command:
+                sync_ban_player_from_log(
+                    player_name=target_name,
+                    operator_name=operator_name,
+                    source=source,
+                    detail=line,
+                    write_history=True,
+                )
         else:
-            sync_unban_player_from_log(
-                player_name=target_name,
-                operator_name=operator_name,
-                source=source,
-                detail=line,
-                write_history=not is_ui_command,
-            )
+            if not is_ui_command:
+                sync_unban_player_from_log(
+                    player_name=target_name,
+                    operator_name=operator_name,
+                    source=source,
+                    detail=line,
+                    write_history=True,
+                )
 
         publish_event("player_ban_should_refresh", {
             "reason": "minecraft_ban_log",
@@ -209,6 +211,85 @@ def maybe_refresh_player_ban_from_log(line: str) -> None:
 
     except Exception as error:
         print("[PlayerBan] refresh from log failed:", error)
+
+
+def maybe_refresh_ip_ban_from_log(line: str) -> None:
+    ban_ip_match = re.search(
+        r"\[(?P<operator>[^:\]]+):\s*Banned\s+IP\s+(?P<ip>(?:\d{1,3}\.){3}\d{1,3}|[0-9a-fA-F:]+)(?::|\s|\])",
+        line,
+        re.IGNORECASE,
+    )
+
+    unban_ip_match = re.search(
+        r"\[(?P<operator>[^:\]]+):\s*(?:Unbanned|Pardoned)\s+IP\s+(?P<ip>(?:\d{1,3}\.){3}\d{1,3}|[0-9a-fA-F:]+)(?:\]|\s)",
+        line,
+        re.IGNORECASE,
+    )
+
+    if not ban_ip_match and not unban_ip_match:
+        return
+
+    matched = ban_ip_match or unban_ip_match
+    log_operator = matched.group("operator").strip()
+    ip = matched.group("ip").strip()
+
+    is_rcon = log_operator.lower() == "rcon"
+
+    if is_rcon:
+        source = "console_rcon"
+        operator_name = "Rcon"
+        operator_uuid = None
+    else:
+        source = "player_command"
+        operator_name = log_operator
+        operator_uuid = None
+
+        try:
+            from backend.player_permissions.player_identity_service import (
+                resolve_player_identity,
+            )
+
+            identity = resolve_player_identity(log_operator)
+
+            if identity:
+                operator_uuid = identity.get("player_uuid")
+
+        except Exception as error:
+            print("[PlayerBan] resolve ip-ban operator failed:", error)
+
+    try:
+        from backend.player_ban.player_ban_service import (
+            sync_ban_ip_from_log,
+            sync_unban_ip_from_log,
+        )
+
+        if ban_ip_match:
+            sync_ban_ip_from_log(
+                ip=ip,
+                operator_name=operator_name,
+                operator_uuid=operator_uuid,
+                source=source,
+                detail=line,
+            )
+        else:
+            sync_unban_ip_from_log(
+                ip=ip,
+                operator_name=operator_name,
+                operator_uuid=operator_uuid,
+                source=source,
+                detail=line,
+            )
+
+        publish_event("player_ban_should_refresh", {
+            "reason": "minecraft_ip_ban_log",
+            "line": line,
+            "source": source,
+        })
+
+        print("[PlayerBan] IP refresh event published")
+
+    except Exception as error:
+        print("[PlayerBan] IP refresh from log failed:", error)
 
 
 def maybe_refresh_player_permission_from_log(line: str) -> None:
@@ -374,6 +455,7 @@ def handle_player_log(line: str, publish_event_func) -> None:
     maybe_record_player_login_from_log(line)
     maybe_record_player_logout_from_log(line)
 
+    maybe_refresh_ip_ban_from_log(line)
     maybe_refresh_player_ban_from_log(line)
     maybe_refresh_player_permission_from_log(line)
     maybe_refresh_player_whitelist_from_log(line)

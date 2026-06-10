@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-06-10T18:26:19",
-    "properties_modified_comment": "Wed Jun 10 18:25:44 CST 2026",
+    "captured_at": "2026-06-10T21:09:25",
+    "properties_modified_comment": "Wed Jun 10 21:08:27 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -58,7 +58,23 @@
         "enforce-whitelist": "true",
         "spawn-protection": "16",
         "resource-pack-sha1": "",
-        "max-world-size": "29999984"
+        "max-world-size": "29999984",
+        "accepts-transfers": "false",
+        "bug-report-link": "",
+        "enable-code-of-conduct": "false",
+        "management-server-allowed-origins": "",
+        "management-server-enabled": "false",
+        "management-server-host": "localhost",
+        "management-server-port": "0",
+        "management-server-secret": "6coBhi527fHnEwBC81szC3SG1Z4NAzqVoJOlQYMg",
+        "management-server-tls-enabled": "true",
+        "management-server-tls-keystore": "",
+        "management-server-tls-keystore-password": "",
+        "pause-when-empty-seconds": "60",
+        "region-file-compression": "deflate",
+        "resource-pack-id": "",
+        "status-heartbeat-interval": "0",
+        "text-filtering-version": "0"
     },
     "runtime_config": {
         "java_xms": "2G",

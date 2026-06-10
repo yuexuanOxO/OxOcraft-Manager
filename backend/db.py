@@ -1083,7 +1083,7 @@ def get_banned_ips_from_db() -> list[dict]:
     with get_connection() as conn:
         rows = conn.execute("""
             SELECT *
-            FROM banned_ips
+            FROM ip_records
             WHERE banned = 1
             ORDER BY ip COLLATE NOCASE ASC, updated_at DESC
         """).fetchall()
@@ -1100,7 +1100,7 @@ def get_banned_ip_from_db(ip: str) -> dict | None:
     with get_connection() as conn:
         row = conn.execute("""
             SELECT *
-            FROM banned_ips
+            FROM ip_records
             WHERE ip = ?
               AND banned = 1
             LIMIT 1

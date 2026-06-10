@@ -31,7 +31,7 @@ def _ban_expire_worker() -> None:
                 error
             )
 
-        time.sleep(60)
+        time.sleep(10)
 
 
 def start_player_ban_scheduler() -> None:

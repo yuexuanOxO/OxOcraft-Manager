@@ -141,6 +141,70 @@ def get_active_banned_players() -> list[dict]:
     return result
 
 
+def get_active_banned_players_from_json() -> list[dict]:
+    current_account_type = get_current_account_type()
+    items = read_json_list(BANNED_PLAYERS_FILE)
+
+    result = []
+
+    for item in items:
+        player_uuid = str(item.get("uuid", "")).strip()
+        player_name = str(item.get("name", "")).strip()
+
+        if not player_uuid or not player_name:
+            continue
+
+        db_record = None
+
+        with get_connection() as conn:
+            row = conn.execute("""
+                SELECT *
+                FROM players
+                WHERE lower(player_uuid) = lower(?)
+                LIMIT 1
+            """, (player_uuid,)).fetchone()
+
+            db_record = dict(row) if row else None
+
+        account_type = (
+            db_record.get("account_type")
+            if db_record
+            else detect_account_type(player_uuid)
+        )
+
+        if db_record:
+            expires_at = db_record.get("ban_expires_at")
+            reason = (
+                db_record.get("ban_reason")
+                or item.get("reason", "")
+                or ""
+            )
+        else:
+            expires_at = None
+            reason = item.get("reason", "") or ""
+
+        result.append({
+            "player_uuid": player_uuid,
+            "player_name": player_name,
+            "account_type": account_type,
+
+            "target_uuid": player_uuid,
+            "target_name": player_name,
+
+            "reason": reason,
+            "created_at": str(item.get("created", "")).replace(" +0800", ""),
+            "expires_at": expires_at,
+            "permanent": 0 if expires_at else 1,
+            "operator": "OxOcraft",
+
+            "valid_for_current_mode": (
+                account_type == current_account_type
+            ),
+        })
+
+    return result
+
+
 def get_active_banned_ips() -> list[dict]:
     rows = get_banned_ips_from_db()
 
@@ -157,7 +221,7 @@ def get_active_banned_ips() -> list[dict]:
             "created_at": row.get("banned_since"),
             "expires_at": row.get("ban_expires_at"),
             "permanent": 0 if row.get("ban_expires_at") else 1,
-            "operator": row.get("operator_name") or "OxOcraft",
+            "operator": "OxOcraft",
         })
 
     return result
@@ -189,15 +253,11 @@ def get_active_banned_ips_from_json() -> list[dict]:
         if db_record:
             expires_at = db_record.get("ban_expires_at")
             reason = db_record.get("ban_reason") or item.get("reason", "") or ""
-            operator = (
-                db_record.get("operator_name")
-                or item.get("source", "Minecraft")
-                or "Minecraft"
-            )
         else:
             expires_at = None
             reason = item.get("reason", "") or ""
-            operator = item.get("source", "Minecraft") or "Minecraft"
+
+        operator = "OxOcraft"
 
         result.append({
             "ip": ip,
@@ -232,7 +292,10 @@ def get_banned_player_by_uuid(player_uuid: str) -> dict | None:
 
 def get_active_bans(target_type: str) -> list[dict]:
     if target_type == "player":
-        return get_active_banned_players()
+        if is_server_running():
+            return get_active_banned_players()
+
+        return get_active_banned_players_from_json()
 
     if target_type == "ip":
         if is_server_running():
@@ -301,7 +364,11 @@ def ban_player(
     candidate_account_type: str | None = None,
 ) -> dict:
     player_name = str(player_name or "").strip()
+
     reason = str(reason or "").strip()
+    if not reason:
+        reason = "已被管理員封鎖。"
+
     operator = str(operator or "OxOcraft").strip()
 
     if not player_name:
@@ -487,7 +554,7 @@ def unban_player_by_uuid(
 
 def sync_ban_player_from_log(
     player_name: str,
-    operator_name: str = "Minecraft",
+    operator_name: str = "未知",
     source: str = "player_command",
     detail: str = "",
     write_history: bool = True,
@@ -541,7 +608,7 @@ def sync_ban_player_from_log(
 
 def sync_unban_player_from_log(
     player_name: str,
-    operator_name: str = "Minecraft",
+    operator_name: str = "未知",
     source: str = "player_command",
     detail: str = "",
     write_history: bool = True,
@@ -583,7 +650,7 @@ def sync_unban_player_from_log(
 
 def sync_ban_ip_from_log(
     ip: str,
-    operator_name: str = "Minecraft",
+    operator_name: str = "未知",
     operator_uuid: str | None = None,
     source: str = "player_command",
     detail: str = "",
@@ -622,7 +689,7 @@ def sync_ban_ip_from_log(
 
 def sync_unban_ip_from_log(
     ip: str,
-    operator_name: str = "Minecraft",
+    operator_name: str = "未知",
     operator_uuid: str | None = None,
     source: str = "player_command",
     detail: str = "",
@@ -705,7 +772,11 @@ def ban_ip(
     permanent: bool = True,
 ) -> dict:
     ip = str(ip or "").strip()
+
     reason = str(reason or "").strip()
+    if not reason:
+        reason = "已被管理員封鎖。"
+
     operator = str(operator or "OxOcraft").strip()
 
     valid, message = validate_ip(ip)
@@ -792,7 +863,7 @@ def unban_ip(
         if not record:
             return {
                 "success": False,
-                "message": "找不到此 IP 封鎖狀態",
+                "message": "找不到此IP封鎖狀態",
             }
 
         result = send_rcon_command(f"pardon-ip {ip}")
@@ -809,7 +880,7 @@ def unban_ip(
         record_ip_ban_history(
             action="remove",
             ip=ip,
-            reason="手動解除 IP 封鎖",
+            reason="手動解除IP封鎖",
             operator_name=operator,
             operator_uuid=None,
             source="ui",
@@ -1096,9 +1167,7 @@ def sync_banned_players_json_to_db() -> dict:
             player_name = str(item.get("name", "")).strip()
             player_uuid = str(item.get("uuid", "")).strip()
             reason = str(item.get("reason", "") or "").strip()
-            operator = str(
-                item.get("source", "Minecraft") or "Minecraft"
-            ).strip()
+            operator = "banned-players.json 同步"
             account_type = detect_account_type(player_uuid)
 
             if not player_name or not player_uuid:
@@ -1141,7 +1210,7 @@ def sync_banned_players_json_to_db() -> dict:
                     account_type=account_type,
                     operator_name=operator,
                     source="minecraft_json",
-                    detail="從 banned-players.json 同步",
+                    detail="從banned-players.json同步",
                 )
 
                 synced_players += 1
@@ -1180,9 +1249,9 @@ def sync_banned_players_json_to_db() -> dict:
             target_uuid=player_uuid,
             target_name=player_name,
             account_type=account_type,
-            operator_name="Minecraft",
+            operator_name="banned-players.json 同步",
             source="minecraft_json",
-            detail="server ready sync removed from banned-players.json",
+            detail="從 banned-players.json 同步解除",
         )
 
         removed_players += 1
@@ -1223,9 +1292,7 @@ def sync_banned_ips_json_to_db() -> dict:
             ip=ip,
             banned=True,
             reason=str(item.get("reason", "") or "").strip(),
-            operator_name=str(
-                item.get("source", "Minecraft") or "Minecraft"
-            ).strip(),
+            operator_name="banned-ips.json 同步",
             operator_uuid=None,
             expires_at=expires_at,
         )
@@ -1235,9 +1302,7 @@ def sync_banned_ips_json_to_db() -> dict:
                 action="sync_add",
                 ip=ip,
                 reason=str(item.get("reason", "") or "").strip(),
-                operator_name=str(
-                    item.get("source", "Minecraft") or "Minecraft"
-                ).strip(),
+                operator_name="banned-ips.json 同步",
                 operator_uuid=None,
                 source="minecraft_json",
                 detail="從 banned-ips.json 同步",
@@ -1262,7 +1327,7 @@ def sync_banned_ips_json_to_db() -> dict:
             ip=ip,
             banned=False,
             reason="",
-            operator_name="Minecraft",
+            operator_name="banned-ips.json 同步",
             operator_uuid=None,
             expires_at=None,
         )
@@ -1271,10 +1336,10 @@ def sync_banned_ips_json_to_db() -> dict:
             action="sync_remove",
             ip=ip,
             reason="從 banned-ips.json 同步解除",
-            operator_name="Minecraft",
+            operator_name="banned-ips.json 同步",
             operator_uuid=None,
             source="minecraft_json",
-            detail="server ready sync removed from banned-ips.json",
+            detail="從 banned-ips.json 同步解除",
         )
 
         removed_ips += 1
@@ -1325,7 +1390,7 @@ def deactivate_all_active_bans_by_mode_change() -> dict:
         record_ip_ban_history(
             action="mode_changed_clear_ip_ban",
             ip=ip,
-            reason="切換正版驗證 / 離線模式，清除舊 IP 黑名單資料",
+            reason="切換正版驗證 / 離線模式，清除舊IP黑名單資料",
             operator_name="OxOcraft",
             operator_uuid=None,
             source="system",
@@ -1409,7 +1474,7 @@ def sync_removed_bans_from_json() -> dict:
             ip=ip,
             banned=False,
             reason="",
-            operator_name="Minecraft",
+            operator_name="banned-ips.json 同步",
             operator_uuid=None,
             expires_at=None,
         )
@@ -1418,10 +1483,10 @@ def sync_removed_bans_from_json() -> dict:
             action="sync_remove",
             ip=ip,
             reason="從 banned-ips.json 同步解除",
-            operator_name="Minecraft",
+            operator_name="banned-ips.json 同步",
             operator_uuid=None,
             source="minecraft_json",
-            detail="sync_removed_bans_from_json",
+            detail="從 banned-ips.json 同步解除",
         )
 
         removed_ips += 1

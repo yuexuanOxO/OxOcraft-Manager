@@ -330,6 +330,7 @@ def get_ban_history(limit: int = 100) -> list[dict]:
                 NULL AS target_uuid,
                 reason,
                 operator_name AS operator,
+                expires_at,
                 created_at,
                 NULL AS ban_record_id,
                 detail
@@ -462,6 +463,7 @@ def ban_player(
             else "offline_ui_edit"
         ),
         detail=result,
+        expires_at=expires_at,
     )
 
     return {
@@ -837,6 +839,7 @@ def ban_ip(
         operator_uuid=None,
         source=source,
         detail=result,
+        expires_at=expires_at,
     )
 
     return {

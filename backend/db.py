@@ -183,6 +183,8 @@ def init_db() -> None:
                 source TEXT DEFAULT 'unknown',
 
                 detail TEXT DEFAULT '',
+                     
+                expires_at DATETIME,
 
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
@@ -205,6 +207,8 @@ def init_db() -> None:
                 source TEXT DEFAULT 'unknown',
 
                 detail TEXT DEFAULT '',
+                     
+                expires_at DATETIME,
 
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
@@ -784,6 +788,8 @@ def add_player_access_history(
     source: str = "unknown",
     detail: str = "",
 
+    expires_at: str | None = None,
+
     created_at: str | None = None
 ) -> None:
     
@@ -805,10 +811,12 @@ def add_player_access_history(
 
                 source,
                 detail,
+                     
+                expires_at,
 
                 created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             category,
             action,
@@ -823,56 +831,8 @@ def add_player_access_history(
             source,
             detail,
 
-            created_at,
-        ))
+            expires_at,
 
-        conn.commit()
-
-
-def record_ip_ban_history(
-    action: str,
-    ip: str,
-    reason: str = "",
-    operator_name: str = "OxOcraft",
-    operator_uuid: str | None = None,
-    source: str = "unknown",
-    detail: str = "",
-    created_at: str | None = None,
-) -> None:
-    action = str(action or "").strip()
-    ip = str(ip or "").strip()
-    reason = str(reason or "").strip()
-    operator_name = str(operator_name or "OxOcraft").strip()
-    source = str(source or "unknown").strip()
-    detail = str(detail or "").strip()
-
-    if not action or not ip:
-        return
-
-    if created_at is None:
-        created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    with get_connection() as conn:
-        conn.execute("""
-            INSERT INTO ip_ban_history (
-                action,
-                ip,
-                reason,
-                operator_uuid,
-                operator_name,
-                source,
-                detail,
-                created_at
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            action,
-            ip,
-            reason,
-            operator_uuid,
-            operator_name,
-            source,
-            detail,
             created_at,
         ))
 
@@ -1262,6 +1222,7 @@ def record_ip_ban_history(
     operator_uuid: str | None = None,
     source: str = "unknown",
     detail: str = "",
+    expires_at: str | None = None,
     created_at: str | None = None,
 ) -> None:
     action = str(action or "").strip()
@@ -1288,9 +1249,10 @@ def record_ip_ban_history(
                 operator_name,
                 source,
                 detail,
+                expires_at,
                 created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             action,
             ip,
@@ -1299,6 +1261,7 @@ def record_ip_ban_history(
             operator_name,
             source,
             detail,
+            expires_at,
             created_at,
         ))
 

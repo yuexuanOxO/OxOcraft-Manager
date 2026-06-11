@@ -22,6 +22,7 @@ def record_player_access(
 
     source: str = "unknown",
     detail: str = "",
+    expires_at: str | None = None,
 
     target_uuid: str | None = None,
     account_type: str | None = None,
@@ -65,4 +66,5 @@ def record_player_access(
 
         source=source,
         detail=detail,
+        expires_at=expires_at,
     )

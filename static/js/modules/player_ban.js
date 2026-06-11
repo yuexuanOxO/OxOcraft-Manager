@@ -520,6 +520,7 @@ function renderBanHistory() {
             <div class="player-ban-meta">目標：${escapeHtml(item.target_name || "")}</div>
             <div class="player-ban-meta">操作人：${escapeHtml(item.operator || "OxOcraft")}</div>
             <div class="player-ban-meta">原因：${escapeHtml(item.reason || "未填寫")}</div>
+            <div class="player-ban-meta">預計解除：${escapeHtml(item.expires_at || "永久封鎖")}</div>
         `;
 
         content.appendChild(card);

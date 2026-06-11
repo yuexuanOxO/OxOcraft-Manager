@@ -25,6 +25,22 @@ def _ban_expire_worker() -> None:
                     f"{len(changed)} 筆"
                 )
 
+                try:
+                    from backend.server_monitor import publish_event
+
+                    publish_event("player_ban_should_refresh", {
+                        "reason": "expired_ban_removed",
+                        "source": "scheduler",
+                        "count": len(changed),
+                        "results": changed,
+                    })
+
+                except Exception as error:
+                    print(
+                        "[PlayerBanScheduler] 發送黑名單刷新事件失敗：",
+                        error
+                    )
+
         except Exception as error:
             print(
                 "[PlayerBanScheduler] 到期黑名單檢查失敗：",

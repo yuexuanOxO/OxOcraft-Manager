@@ -302,8 +302,13 @@ function createBanPlayerCard(item) {
                     : ""
             }
             <div class="player-ban-meta">封鎖原因：${escapeHtml(item.reason || "未填寫")}</div>
-            <div class="player-ban-meta">封鎖時間：${escapeHtml(item.created_at || "未知")}</div>
-            <div class="player-ban-meta">解除時間：${formatExpireText(item)}</div>
+            <div class="player-ban-meta">
+                封鎖時間：${escapeHtml(formatDateTime(item.created_at))}
+            </div>
+
+            <div class="player-ban-meta">
+                解除時間：${formatExpireText(item)}
+            </div>
             <div class="player-ban-meta">封鎖人：${escapeHtml(item.operator || "OxOcraft")}</div>
         </div>
 
@@ -368,8 +373,13 @@ function createBanIpCard(item) {
             </div>
 
             <div class="player-ban-meta">封鎖原因：${escapeHtml(item.reason || "未填寫")}</div>
-            <div class="player-ban-meta">封鎖時間：${escapeHtml(item.created_at || "未知")}</div>
-            <div class="player-ban-meta">解除時間：${formatExpireText(item)}</div>
+            <div class="player-ban-meta">
+                封鎖時間：${escapeHtml(formatDateTime(item.created_at))}
+            </div>
+
+            <div class="player-ban-meta">
+                解除時間：${formatExpireText(item)}
+            </div>
             <div class="player-ban-meta">封鎖人：${escapeHtml(item.operator || "OxOcraft")}</div>
         </div>
 
@@ -572,12 +582,29 @@ function getSearchKeyword() {
     return (input?.value || "").trim().toLowerCase();
 }
 
+function formatDateTime(text) {
+    if (!text) {
+        return "未知";
+    }
+
+    const value = String(text).trim();
+
+    // YYYY-MM-DD HH:mm:ss -> YYYY-MM-DD HH:mm
+    if (value.length >= 16) {
+        return value.slice(0, 16);
+    }
+
+    return value;
+}
+
 function formatExpireText(item) {
     if (Number(item.permanent) === 1 || !item.expires_at) {
         return "永久封鎖";
     }
 
-    return escapeHtml(item.expires_at);
+    return escapeHtml(
+        formatDateTime(item.expires_at)
+    );
 }
 
 function escapeHtml(text) {

@@ -597,14 +597,60 @@ function formatDateTime(text) {
     return value;
 }
 
+function formatRemainingTime(text) {
+    if (!text) {
+        return "";
+    }
+
+    const normalized = String(text).trim().replace(" ", "T");
+    const expiresAt = new Date(normalized);
+    const now = new Date();
+
+    if (Number.isNaN(expiresAt.getTime())) {
+        return "";
+    }
+
+    const diffMs = expiresAt.getTime() - now.getTime();
+
+    if (diffMs <= 0) {
+        return "已到期，等待解除";
+    }
+
+    const totalMinutes = Math.ceil(diffMs / 60000);
+    const days = Math.floor(totalMinutes / 1440);
+    const hours = Math.floor((totalMinutes % 1440) / 60);
+    const minutes = totalMinutes % 60;
+
+    const parts = [];
+
+    if (days > 0) {
+        parts.push(`${days} 天`);
+    }
+
+    if (hours > 0) {
+        parts.push(`${hours} 小時`);
+    }
+
+    if (minutes > 0 || parts.length === 0) {
+        parts.push(`${minutes} 分鐘`);
+    }
+
+    return `距離解除剩餘 ${parts.join(" ")}`;
+}
+
 function formatExpireText(item) {
     if (Number(item.permanent) === 1 || !item.expires_at) {
         return "永久封鎖";
     }
 
-    return escapeHtml(
-        formatDateTime(item.expires_at)
-    );
+    const expireText = formatDateTime(item.expires_at);
+    const remainingText = formatRemainingTime(item.expires_at);
+
+    if (!remainingText) {
+        return escapeHtml(expireText);
+    }
+
+    return `${escapeHtml(expireText)}（${escapeHtml(remainingText)}）`;
 }
 
 function escapeHtml(text) {

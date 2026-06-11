@@ -15,56 +15,93 @@
 .player-ban-panel {
     position: relative;
     display: flex;
-    width: 820px;
-    height: 600px;
+
+    width: min(1180px, 90vw);
+    height: min(760px, 88vh);
+
     margin: 0;
 
     background: #202020;
     border: 2px solid #707070;
     box-shadow: 0 0 0 2px #101010;
     color: #e8e8e8;
+
+    overflow: visible;
 }
 
 .player-ban-side-tabs {
     position: absolute;
-    left: -118px;
-    top: 24px;
-    width: 120px;
+    left: -150px;
+    top: 36px;
+    width: 150px;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    z-index: 6;
 }
 
 .player-ban-tab {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 8px;
-    width: 118px;
-    height: 42px;
-    padding: 4px 8px;
+    justify-content: flex-start;
+    gap: 10px;
+
+    width: 150px;
+    height: 48px;
+    padding: 0 12px;
+
     background: #2a2a2a;
     border: 2px solid #707070;
+
     color: #ddd;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 15px;
+
+    z-index: 6;
+}
+
+.player-ban-tab span{
+    flex:1;
+    text-align:left;
 }
 
 .player-ban-tab.active {
-    background: #3a3a3a;
-    border-color: #b0b0b0;
+    background: #202020;
+    border-color: #707070;
+    border-right: 0;
+
     color: #fff;
+
+    z-index: 8;
+    box-shadow: none;
+}
+
+.player-ban-tab span {
+    flex: 1;
+    text-align: left;
 }
 
 .player-ban-tab img {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     image-rendering: pixelated;
+    position: relative;
+    z-index: 2;
 }
 
 .player-ban-main {
+    position: relative;
+    z-index: 2;
+
     flex: 1;
-    padding: 20px 24px;
+
+    padding: 28px;
+
     overflow: hidden;
+
+    display: flex;
+    flex-direction: column;
 }
 
 .player-ban-header {
@@ -72,6 +109,7 @@
     justify-content: center;
     align-items: center;
     position: relative;
+    margin-bottom: 6px;
 }
 
 .player-ban-title {
@@ -93,9 +131,12 @@
 
 .player-ban-toolbar {
     display: flex;
-    gap: 10px;
-    margin-top: 14px;
-    padding-top: 10px;
+    gap: 12px;
+
+    margin-top: 18px;
+
+    padding-top: 14px;
+
     border-top: 1px solid #555;
 }
 
@@ -103,29 +144,39 @@
     display: none;
 }
 
-.player-ban-add-btn {
-    min-width: 140px;
+.player-ban-add-btn{
+    min-width:160px;
+    height:34px;
 }
 
 .player-ban-search {
     flex: 1;
+    height:34px;
 }
 
 .player-ban-content {
-    margin-top: 12px;
-    height: 440px;
+
+    margin-top: 16px;
+
+    flex: 1;
+
     overflow-y: auto;
-    padding-right: 4px;
+
+    padding-right: 6px;
+
+    min-height: 0;
 }
 
 .player-ban-card,
 .player-ban-history-card {
-    display: flex;
-    gap: 12px;
-    padding: 12px;
-    margin-bottom: 10px;
-    background: #282828;
-    border: 1px solid #555;
+
+    padding: 16px;
+
+    margin-bottom: 14px;
+
+    background:#282828;
+
+    border:1px solid #555;
 }
 
 .player-ban-card.disabled {

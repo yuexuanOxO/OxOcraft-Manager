@@ -46,22 +46,26 @@ _RECENT_UI_BAN_COMMANDS: list[dict] = []
 
 def push_recent_ui_ban_command(
     action: str,
-    player_name: str,
+    player_name: str = "",
+    ip: str = "",
 ) -> None:
     _RECENT_UI_BAN_COMMANDS.append({
         "action": action,
         "player_name": str(player_name or "").strip().lower(),
+        "ip": str(ip or "").strip(),
         "created_at": datetime.now(),
     })
 
 
 def pop_recent_ui_ban_command_if_match(
     action: str,
-    player_name: str,
+    player_name: str = "",
+    ip: str = "",
     max_age_seconds: int = 5,
 ) -> bool:
     now = datetime.now()
     normalized_name = str(player_name or "").strip().lower()
+    normalized_ip = str(ip or "").strip()
 
     for index, item in enumerate(list(_RECENT_UI_BAN_COMMANDS)):
         age = (now - item["created_at"]).total_seconds()
@@ -70,8 +74,18 @@ def pop_recent_ui_ban_command_if_match(
             _RECENT_UI_BAN_COMMANDS.remove(item)
             continue
 
+        if item.get("action") != action:
+            continue
+
+        if normalized_ip:
+            if item.get("ip") == normalized_ip:
+                _RECENT_UI_BAN_COMMANDS.pop(index)
+                return True
+
+            continue
+
         if (
-            item.get("action") == action
+            normalized_name
             and item.get("player_name") == normalized_name
         ):
             _RECENT_UI_BAN_COMMANDS.pop(index)
@@ -788,6 +802,11 @@ def ban_ip(
         }
 
     if is_server_running():
+        push_recent_ui_ban_command(
+            action="add",
+            ip=ip,
+        )
+
         command = f"ban-ip {ip} {reason}".strip()
         result = send_rcon_command(command)
         source = "ui"
@@ -866,6 +885,11 @@ def unban_ip(
                 "message": "找不到此IP封鎖狀態",
             }
 
+        push_recent_ui_ban_command(
+            action="remove",
+            ip=ip,
+        )
+
         result = send_rcon_command(f"pardon-ip {ip}")
 
         update_ip_ban_status(
@@ -894,6 +918,25 @@ def unban_ip(
             "已從 banned-ips.json 移除"
             if removed
             else "banned-ips.json 中已不存在此 IP"
+        )
+
+        update_ip_ban_status(
+            ip=ip,
+            banned=False,
+            reason="",
+            operator_name=operator,
+            operator_uuid=None,
+            expires_at=None,
+        )
+
+        record_ip_ban_history(
+            action="remove",
+            ip=ip,
+            reason="手動解除IP封鎖",
+            operator_name=operator,
+            operator_uuid=None,
+            source="offline_ui_edit",
+            detail=result,
         )
 
     return {

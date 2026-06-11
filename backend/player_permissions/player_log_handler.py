@@ -234,8 +234,28 @@ def maybe_refresh_ip_ban_from_log(line: str) -> None:
     ip = matched.group("ip").strip()
 
     is_rcon = log_operator.lower() == "rcon"
+    action = "add" if ban_ip_match else "remove"
 
-    if is_rcon:
+    try:
+        from backend.player_ban.player_ban_service import (
+            pop_recent_ui_ban_command_if_match,
+        )
+
+        is_ui_command = (
+            is_rcon
+            and pop_recent_ui_ban_command_if_match(
+                action=action,
+                ip=ip,
+            )
+        )
+    except Exception:
+        is_ui_command = False
+
+    if is_ui_command:
+        source = "ui"
+        operator_name = "OxOcraft"
+        operator_uuid = None
+    elif is_rcon:
         source = "console_rcon"
         operator_name = "Rcon"
         operator_uuid = None
@@ -263,22 +283,23 @@ def maybe_refresh_ip_ban_from_log(line: str) -> None:
             sync_unban_ip_from_log,
         )
 
-        if ban_ip_match:
-            sync_ban_ip_from_log(
-                ip=ip,
-                operator_name=operator_name,
-                operator_uuid=operator_uuid,
-                source=source,
-                detail=line,
-            )
-        else:
-            sync_unban_ip_from_log(
-                ip=ip,
-                operator_name=operator_name,
-                operator_uuid=operator_uuid,
-                source=source,
-                detail=line,
-            )
+        if not is_ui_command:
+            if ban_ip_match:
+                sync_ban_ip_from_log(
+                    ip=ip,
+                    operator_name=operator_name,
+                    operator_uuid=operator_uuid,
+                    source=source,
+                    detail=line,
+                )
+            else:
+                sync_unban_ip_from_log(
+                    ip=ip,
+                    operator_name=operator_name,
+                    operator_uuid=operator_uuid,
+                    source=source,
+                    detail=line,
+                )
 
         publish_event("player_ban_should_refresh", {
             "reason": "minecraft_ip_ban_log",

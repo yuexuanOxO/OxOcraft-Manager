@@ -44,6 +44,139 @@ def now_text() -> str:
 _RECENT_UI_BAN_COMMANDS: list[dict] = []
 
 
+OXOCRAFT_OPERATOR_NAME = "OxOcraft"
+
+OXOCRAFT_DISPLAY_SOURCES = {
+    "ui",
+    "offline_ui_edit",
+    "minecraft_json",
+    "scheduler",
+    "system",
+}
+
+SYSTEM_OPERATOR_NAMES = {
+    "",
+    "OxOcraft",
+    "Rcon",
+    "Minecraft",
+}
+
+
+def should_display_as_oxocraft(source: str, operator_name: str) -> bool:
+    source = str(source or "").strip()
+    operator_name = str(operator_name or "").strip()
+
+    if source in OXOCRAFT_DISPLAY_SOURCES:
+        return True
+
+    if operator_name in SYSTEM_OPERATOR_NAMES:
+        return True
+
+    return False
+
+
+def get_latest_player_ban_operator(
+    player_uuid: str | None,
+    player_name: str,
+) -> dict:
+    player_uuid = str(player_uuid or "").strip()
+    player_name = str(player_name or "").strip()
+
+    with get_connection() as conn:
+        if player_uuid:
+            row = conn.execute("""
+                SELECT operator_name, operator_uuid, source
+                FROM player_access_history
+                WHERE category = 'ban'
+                  AND action IN ('add', 'sync_add')
+                  AND lower(target_uuid) = lower(?)
+                ORDER BY created_at DESC, id DESC
+                LIMIT 1
+            """, (player_uuid,)).fetchone()
+        else:
+            row = conn.execute("""
+                SELECT operator_name, operator_uuid, source
+                FROM player_access_history
+                WHERE category = 'ban'
+                  AND action IN ('add', 'sync_add')
+                  AND lower(target_name) = lower(?)
+                ORDER BY created_at DESC, id DESC
+                LIMIT 1
+            """, (player_name,)).fetchone()
+
+    if not row:
+        return {
+            "operator": OXOCRAFT_OPERATOR_NAME,
+            "operator_uuid": None,
+            "operator_account_type": None,
+        }
+
+    data = dict(row)
+    operator_name = data.get("operator_name") or OXOCRAFT_OPERATOR_NAME
+    operator_uuid = data.get("operator_uuid")
+    source = data.get("source") or ""
+
+    if should_display_as_oxocraft(source, operator_name):
+        return {
+            "operator": OXOCRAFT_OPERATOR_NAME,
+            "operator_uuid": None,
+            "operator_account_type": None,
+        }
+
+    return {
+        "operator": operator_name,
+        "operator_uuid": operator_uuid,
+        "operator_account_type": (
+            detect_account_type(operator_uuid)
+            if operator_uuid
+            else None
+        ),
+    }
+
+
+def get_latest_ip_ban_operator(ip: str) -> dict:
+    ip = str(ip or "").strip()
+
+    with get_connection() as conn:
+        row = conn.execute("""
+            SELECT operator_name, operator_uuid, source
+            FROM ip_ban_history
+            WHERE action IN ('add', 'sync_add')
+              AND ip = ?
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+        """, (ip,)).fetchone()
+
+    if not row:
+        return {
+            "operator": OXOCRAFT_OPERATOR_NAME,
+            "operator_uuid": None,
+            "operator_account_type": None,
+        }
+
+    data = dict(row)
+    operator_name = data.get("operator_name") or OXOCRAFT_OPERATOR_NAME
+    operator_uuid = data.get("operator_uuid")
+    source = data.get("source") or ""
+
+    if should_display_as_oxocraft(source, operator_name):
+        return {
+            "operator": OXOCRAFT_OPERATOR_NAME,
+            "operator_uuid": None,
+            "operator_account_type": None,
+        }
+
+    return {
+        "operator": operator_name,
+        "operator_uuid": operator_uuid,
+        "operator_account_type": (
+            detect_account_type(operator_uuid)
+            if operator_uuid
+            else None
+        ),
+    }
+
+
 def push_recent_ui_ban_command(
     action: str,
     player_name: str = "",
@@ -133,6 +266,11 @@ def get_active_banned_players() -> list[dict]:
     result = []
 
     for player in players:
+        operator_info = get_latest_player_ban_operator(
+            player_uuid=player.get("player_uuid"),
+            player_name=player.get("player_name"),
+        )
+
         result.append({
             "player_uuid": player.get("player_uuid"),
             "player_name": player.get("player_name"),
@@ -145,7 +283,10 @@ def get_active_banned_players() -> list[dict]:
             "created_at": player.get("banned_since"),
             "expires_at": player.get("ban_expires_at"),
             "permanent": 0 if player.get("ban_expires_at") else 1,
-            "operator": "OxOcraft",
+
+            "operator": operator_info["operator"],
+            "operator_uuid": operator_info["operator_uuid"],
+            "operator_account_type": operator_info["operator_account_type"],
 
             "valid_for_current_mode": (
                 player.get("account_type") == current_account_type
@@ -197,6 +338,13 @@ def get_active_banned_players_from_json() -> list[dict]:
             expires_at = None
             reason = item.get("reason", "") or ""
 
+
+        operator_info = get_latest_player_ban_operator(
+            player_uuid=player_uuid,
+            player_name=player_name,
+        )
+
+
         result.append({
             "player_uuid": player_uuid,
             "player_name": player_name,
@@ -209,7 +357,9 @@ def get_active_banned_players_from_json() -> list[dict]:
             "created_at": str(item.get("created", "")).replace(" +0800", ""),
             "expires_at": expires_at,
             "permanent": 0 if expires_at else 1,
-            "operator": "OxOcraft",
+            "operator": operator_info["operator"],
+            "operator_uuid": operator_info["operator_uuid"],
+            "operator_account_type": operator_info["operator_account_type"],
 
             "valid_for_current_mode": (
                 account_type == current_account_type
@@ -227,6 +377,8 @@ def get_active_banned_ips() -> list[dict]:
     for row in rows:
         ip = row.get("ip")
 
+        operator_info = get_latest_ip_ban_operator(ip)
+
         result.append({
             "ip": ip,
             "target_name": ip,
@@ -235,7 +387,9 @@ def get_active_banned_ips() -> list[dict]:
             "created_at": row.get("banned_since"),
             "expires_at": row.get("ban_expires_at"),
             "permanent": 0 if row.get("ban_expires_at") else 1,
-            "operator": "OxOcraft",
+            "operator": operator_info["operator"],
+            "operator_uuid": operator_info["operator_uuid"],
+            "operator_account_type": operator_info["operator_account_type"],
         })
 
     return result
@@ -271,7 +425,7 @@ def get_active_banned_ips_from_json() -> list[dict]:
             expires_at = None
             reason = item.get("reason", "") or ""
 
-        operator = "OxOcraft"
+        operator_info = get_latest_ip_ban_operator(ip)
 
         result.append({
             "ip": ip,
@@ -280,7 +434,9 @@ def get_active_banned_ips_from_json() -> list[dict]:
             "created_at": str(item.get("created", "")).replace(" +0800", ""),
             "expires_at": expires_at,
             "permanent": 0 if expires_at else 1,
-            "operator": operator,
+            "operator": operator_info["operator"],
+            "operator_uuid": operator_info["operator_uuid"],
+            "operator_account_type": operator_info["operator_account_type"],
         })
 
     return result

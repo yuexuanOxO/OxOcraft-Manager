@@ -20,6 +20,9 @@ let banCandidatePlayers = [];
 let canAddBanPlayerByName = true;
 let selectedBanCandidatePlayer = null;
 
+const OXOCRAFT_OPERATOR_ICON =
+    "/static/icons/OxOcraft-Manager_icon/OxOcraft-Manager_icon_64b.png";
+
 export function initPlayerBan() {
     const openBtn = document.getElementById("playerBanBtn");
     const modal = document.getElementById("playerBanModal");
@@ -259,6 +262,20 @@ function renderBanPlayers() {
     renderBanActionButtons();
 }
 
+function getBanOperatorAvatarUrl(item) {
+    const operator = String(item.operator || "OxOcraft").trim();
+
+    if (operator === "OxOcraft") {
+        return OXOCRAFT_OPERATOR_ICON;
+    }
+
+    return getPlayerAvatarUrl({
+        player_uuid: item.operator_uuid || "",
+        player_name: operator,
+        account_type: item.operator_account_type || item.account_type || "unknown"
+    });
+}
+
 function createBanPlayerCard(item) {
     const card = document.createElement("div");
 
@@ -309,7 +326,21 @@ function createBanPlayerCard(item) {
             <div class="player-ban-meta">
                 解除時間：${formatExpireText(item)}
             </div>
-            <div class="player-ban-meta">封鎖人：${escapeHtml(item.operator || "OxOcraft")}</div>
+            <div class="player-ban-operator">
+                <div class="player-ban-operator-label">封鎖人：</div>
+
+                <div class="player-ban-operator-info">
+                    <img
+                        class="player-ban-operator-avatar"
+                        src="${getBanOperatorAvatarUrl(item)}"
+                        alt="${escapeHtml(item.operator || "OxOcraft")}"
+                    >
+
+                    <span class="player-ban-operator-name">
+                        ${escapeHtml(item.operator || "OxOcraft")}
+                    </span>
+                </div>
+            </div>
         </div>
 
         <button class="player-ban-unban-btn" type="button">

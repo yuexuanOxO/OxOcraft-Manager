@@ -938,10 +938,8 @@ def update_player_ban_status(
                 banned = excluded.banned,
                 banned_since = CASE
                     WHEN excluded.banned = 1
-                    AND players.banned = 1
-                    AND players.ban_expires_at = excluded.ban_expires_at
-                    AND players.ban_reason = excluded.ban_reason
-                    THEN players.banned_since
+                     AND players.banned = 1
+                    THEN COALESCE(players.banned_since, excluded.banned_since)
 
                     WHEN excluded.banned = 1
                     THEN excluded.banned_since

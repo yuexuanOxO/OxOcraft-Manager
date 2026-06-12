@@ -16,7 +16,7 @@
     position: relative;
     display: flex;
 
-    width: min(1180px, 90vw);
+    width: min(980px, 90vw);
     height: min(760px, 88vh);
 
     margin: 0;
@@ -175,7 +175,21 @@
     min-height: 0;
 }
 
-.player-ban-card,
+.player-ban-card {
+    display: grid;
+    grid-template-columns: 64px 1fr auto;
+    grid-template-areas:
+        "avatar info action"
+        "operator operator action";
+    gap: 12px 16px;
+
+    padding: 16px;
+    margin-bottom: 14px;
+
+    background: #282828;
+    border: 1px solid #555;
+}
+
 .player-ban-history-card {
 
     padding: 16px;
@@ -192,11 +206,12 @@
 }
 
 .player-ban-avatar {
+    grid-area: avatar;
+
     width: 48px;
     height: 48px;
+
     image-rendering: pixelated;
-    border: 2px solid #555;
-    background: #111;
 }
 
 .player-ban-avatar-placeholder {
@@ -207,7 +222,8 @@
 }
 
 .player-ban-card-info {
-    flex: 1;
+    grid-area: info;
+    flex: unset;
 }
 
 .player-ban-name-row {
@@ -217,7 +233,7 @@
 }
 
 .player-ban-name {
-    font-size: 16px;
+    font-size: 28px;
     font-weight: bold;
 }
 
@@ -229,14 +245,16 @@
 }
 
 .player-ban-meta {
-    margin-top: 4px;
+    margin-top: 2px;
     color: #cfcfcf;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .player-ban-unban-btn {
+    grid-area: action;
+
     align-self: center;
-    min-width: 92px;
+    min-width: 100px;
 }
 
 .player-ban-empty {
@@ -437,4 +455,42 @@
 
 .player-ban-candidate-select-btn {
     min-width: 54px;
+}
+
+.player-ban-operator {
+    grid-area: operator;
+
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    margin-top: 2px;
+
+    color: #cfcfcf;
+    font-size: 15px;
+}
+
+.player-ban-operator-label {
+    flex: 0 0 auto;
+    font-size: 22px;
+}
+
+.player-ban-operator-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.player-ban-operator-avatar {
+    width: 64px;
+    height: 64px;
+
+    image-rendering: pixelated;
+}
+
+.player-ban-operator-name {
+    font-size: 24px;
+    font-weight: 600;
+
+    color: #e8e8e8;
 }

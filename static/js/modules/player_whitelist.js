@@ -720,6 +720,13 @@ function createPlayerWhitelistCard(player) {
                 UUID: ${escapeHtml(player.player_uuid)}
             </div>
 
+            <div class="player-whitelist-meta">
+                加入白名單時間：
+                ${player.whitelisted_since
+                    ? escapeHtml(player.whitelisted_since.slice(0, 16))
+                    : "未知"}
+            </div>
+
             ${
                 player.valid_for_current_mode === false
                     ? `

@@ -486,7 +486,9 @@ function createPlayerPermissionCard(player) {
                     ? `
                         <div class="player-permission-meta">
                             成為管理員時間：
-                            ${player.op_since ? escapeHtml(player.op_since) : "未知"}
+                            ${player.op_since
+                                ? escapeHtml(player.op_since.slice(0, 16))
+                                : "未知"}
                         </div>
                     `
                     : (

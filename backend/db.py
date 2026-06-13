@@ -925,7 +925,7 @@ def update_player_whitelist_since(
                 player_name = excluded.player_name,
                 account_type = excluded.account_type,
                 whitelisted = 1,
-                whitelisted_since = COALESCE(players.whitelisted_since, excluded.whitelisted_since),
+                whitelisted_since = excluded.whitelisted_since,
                 updated_at = excluded.updated_at
         """, (
             player_uuid,
@@ -953,19 +953,26 @@ def update_player_whitelist_status(
                 player_name,
                 account_type,
                 whitelisted,
+                whitelisted_since,
                 updated_at
             )
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(player_uuid) DO UPDATE SET
                 player_name = excluded.player_name,
                 account_type = excluded.account_type,
                 whitelisted = excluded.whitelisted,
+                whitelisted_since = CASE
+                    WHEN excluded.whitelisted = 1
+                    THEN players.whitelisted_since
+                    ELSE NULL
+                END,
                 updated_at = excluded.updated_at
         """, (
             player_uuid,
             player_name,
             account_type,
             1 if whitelisted else 0,
+            None if whitelisted else None,
             now,
         ))
 

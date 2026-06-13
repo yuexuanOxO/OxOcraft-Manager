@@ -178,7 +178,7 @@ async function showPermissionHelp(showDontRemind = false) {
     const helpPromise = showHelp({
         title: "權限管理說明",
 
-        icon: "/static/icons/player_whitelist/knowledge_book.png",
+        icon: "/static/icons/general_icon/knowledge_book.png",
 
         sections: [
             {

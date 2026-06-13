@@ -138,13 +138,13 @@
 }
 
 .player-ban-toolbar {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto 1fr;
     gap: 12px;
+    align-items: center;
 
     margin-top: 18px;
-
     padding-top: 14px;
-
     border-top: 1px solid #555;
 }
 
@@ -152,14 +152,39 @@
     display: none;
 }
 
-.player-ban-add-btn{
-    min-width:160px;
-    height:34px;
+.player-ban-add-btn {
+    min-width: 160px;
+    padding: 10px 14px;
+
+    border: 1px solid #c08b42;
+    border-radius: 6px;
+
+    background: #2b2b2b;
+    color: #f0c36a;
+
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.player-ban-add-btn:hover {
+    background: #3a3324;
 }
 
 .player-ban-search {
-    flex: 1;
-    height:34px;
+    margin-left: auto;
+
+    width: 100%;
+    max-width: 600px;
+
+    padding: 10px 12px;
+
+    border: 1px solid #555;
+    border-radius: 6px;
+
+    background: #141414;
+    color: #f5f5f5;
+
+    box-sizing: border-box;
 }
 
 .player-ban-content {
@@ -177,7 +202,7 @@
 
 .player-ban-card {
     display: grid;
-    grid-template-columns: 48px minmax(240px, 1fr) minmax(220px, auto) auto;
+    grid-template-columns: 42px minmax(260px, 1fr) 210px auto;
     grid-template-areas:
         "avatar info time action";
     align-items: center;
@@ -186,13 +211,23 @@
     padding: 12px;
     margin-bottom: 12px;
 
-    background: #282828;
-    border: 1px solid #555;
+    background: #262626;
+    border: 1px solid #444;
+    border-radius: 8px;
+
+    transition:
+        background .15s,
+        border-color .15s;
+}
+
+.player-ban-card:hover{
+    border-color:#5b5b5b;
+    background:#2a2a2a;
 }
 
 .player-ban-time-info {
     grid-area: time;
-    min-width: 220px;
+    width: 210px;
 }
 
 .player-ban-history-card {
@@ -210,19 +245,18 @@
     opacity: 0.55;
 }
 
-.player-ban-avatar {
-    grid-area: avatar;
+.player-ban-avatar{
 
-    width: 48px;
-    height: 48px;
+    width:42px;
+    height:42px;
 
-    align-self: center;
-    justify-self: center;
+    border:2px solid #444;
+    border-radius:4px;
 
-    image-rendering: pixelated;
+    image-rendering:pixelated;
 
-    border: 1px solid #7a7a7a;
-    background: #1a1a1a;
+    align-self:center;
+    justify-self:center;
 }
 
 .player-ban-avatar-placeholder {
@@ -234,7 +268,7 @@
 
 .player-ban-card-info {
     grid-area: info;
-    flex: unset;
+    min-width: 0;
 }
 
 .player-ban-name-row {
@@ -244,28 +278,50 @@
 }
 
 .player-ban-name {
-    font-size: 28px;
+    font-size: 20px;
     font-weight: bold;
 }
 
-.player-ban-badge {
-    padding: 2px 6px;
-    border: 1px solid #9a5555;
-    color: #ff8c8c;
-    font-size: 12px;
+.player-ban-badge{
+
+    padding:3px 7px;
+
+    border-radius:999px;
+
+    font-size:12px;
+
+    border:1px solid #b85c5c;
+
+    color:#ff9c9c;
+
+    background:rgba(184,92,92,.08);
 }
 
-.player-ban-meta {
-    margin-top: 2px;
-    color: #cfcfcf;
-    font-size: 14px;
+.player-ban-meta{
+    margin-top:4px;
+    font-size:12px;
+    color:#aaa;
+    line-height:1.35;
 }
 
-.player-ban-unban-btn {
-    grid-area: action;
+.player-ban-unban-btn{
 
-    align-self: center;
-    min-width: 100px;
+    padding:9px 12px;
+
+    border:1px solid #b85c5c;
+
+    border-radius:6px;
+
+    background:#303030;
+
+    color:#ff9c9c;
+
+    cursor:pointer;
+}
+
+.player-ban-unban-btn:hover{
+
+    background:#422e2e;
 }
 
 .player-ban-empty {
@@ -394,6 +450,17 @@
     filter: grayscale(0.75);
 }
 
+.player-ban-unban-btn {
+    grid-area: action;
+
+    padding: 9px 12px;
+    border: 1px solid #b85c5c;
+    border-radius: 6px;
+    background: #303030;
+    color: #ff9c9c;
+    cursor: pointer;
+}
+
 .player-ban-invalid-mode .player-ban-unban-btn {
     opacity: 0.85;
     filter: none;
@@ -468,3 +535,24 @@
     min-width: 54px;
 }
 
+.player-ban-add-open-btn{
+
+    padding:10px 14px;
+
+    border:1px solid #c08b42;
+
+    border-radius:6px;
+
+    background:#2b2b2b;
+
+    color:#f0c36a;
+
+    font-weight:bold;
+
+    cursor:pointer;
+}
+
+.player-ban-add-open-btn:hover{
+
+    background:#3a3324;
+}

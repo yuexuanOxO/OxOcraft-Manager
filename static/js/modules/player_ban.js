@@ -308,38 +308,16 @@ function createBanPlayerCard(item) {
             </div>
 
             <div class="player-ban-meta">UUID：${escapeHtml(item.target_uuid || "未知")}</div>
-
-            ${
-                isInvalidMode
-                    ? `
-                        <div class="player-ban-mode-warning">
-                            ⚠ 此封鎖資料不符合目前伺服器登入模式，可能無效
-                        </div>
-                    `
-                    : ""
-            }
             <div class="player-ban-meta">封鎖原因：${escapeHtml(item.reason || "未填寫")}</div>
+        </div>
+
+        <div class="player-ban-time-info">
             <div class="player-ban-meta">
                 封鎖時間：${escapeHtml(formatDateTime(item.created_at))}
             </div>
 
             <div class="player-ban-meta">
                 解除時間：${formatExpireText(item)}
-            </div>
-            <div class="player-ban-operator">
-                <div class="player-ban-operator-label">封鎖人：</div>
-
-                <div class="player-ban-operator-info">
-                    <img
-                        class="player-ban-operator-avatar"
-                        src="${getBanOperatorAvatarUrl(item)}"
-                        alt="${escapeHtml(item.operator || "OxOcraft")}"
-                    >
-
-                    <span class="player-ban-operator-name">
-                        ${escapeHtml(item.operator || "OxOcraft")}
-                    </span>
-                </div>
             </div>
         </div>
 

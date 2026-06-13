@@ -375,13 +375,28 @@ function createBanIpCard(item) {
     card.dataset.id = item.id;
 
     card.innerHTML = `
+        <div class="player-ban-ip-icon">
+            <img
+                class="player-ban-avatar"
+                src="/static/icons/player_ban/barrier.png"
+                alt="IP"
+            >
+        </div>
+
         <div class="player-ban-card-info">
             <div class="player-ban-name-row">
-                <div class="player-ban-name">封鎖IP：${escapeHtml(item.target_name)}</div>
+                <div class="player-ban-name">
+                    封鎖IP：${escapeHtml(item.target_name)}
+                </div>
                 <div class="player-ban-badge">已封鎖</div>
             </div>
 
-            <div class="player-ban-meta">封鎖原因：${escapeHtml(item.reason || "未填寫")}</div>
+            <div class="player-ban-meta">
+                封鎖原因：${escapeHtml(item.reason || "未填寫")}
+            </div>
+        </div>
+
+        <div class="player-ban-time-info">
             <div class="player-ban-meta">
                 封鎖時間：${escapeHtml(formatDateTime(item.created_at))}
             </div>
@@ -389,7 +404,6 @@ function createBanIpCard(item) {
             <div class="player-ban-meta">
                 解除時間：${formatExpireText(item)}
             </div>
-            <div class="player-ban-meta">封鎖人：${escapeHtml(item.operator || "OxOcraft")}</div>
         </div>
 
         <button class="player-ban-unban-btn" type="button">

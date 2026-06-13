@@ -245,6 +245,13 @@ def set_player_op(
 
     account_type = get_account_type(player_uuid)
 
+    if player_uuid.lower() in load_ops_uuid_set():
+        return {
+            "success": False,
+            "message": f"{player_name} 已經是管理員，不能重複加入。",
+            "op": True,
+        }
+
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     upsert_player_identity(

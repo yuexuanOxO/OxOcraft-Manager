@@ -664,43 +664,31 @@ async function handleAddOpPlayer() {
 
 
 async function addPlayerOpByName(playerName) {
-    try {
-        const response = await fetch(
-            "/api/player/permission/add-op",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    name: playerName
-                })
-            }
-        );
-
-        const data = await response.json();
-
-        if (!data.success) {
-            throw new Error(
-                data.message || "新增管理員失敗"
-            );
+    const response = await fetch(
+        "/api/player/permission/add-op",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                name: playerName
+            })
         }
+    );
 
-        await loadPlayerPermissions();
-        await loadOpCandidates();
+    const data = await response.json();
 
-        return data;
-
-    } catch (error) {
-        console.error("新增管理員失敗:", error);
-
-        await showInfo({
-            title: "錯誤",
-            message: error.message || "新增管理員失敗",
-            confirmText: "關閉",
-            variant: "error"
-        });
+    if (!data.success) {
+        throw new Error(
+            data.message || "新增管理員失敗"
+        );
     }
+
+    await loadPlayerPermissions();
+    await loadOpCandidates();
+
+    return data;
 }
 
 async function loadOpCandidates() {

@@ -579,6 +579,15 @@ def ban_player(
 
         account_type = detect_account_type(player_uuid)
 
+
+    existing_ban = get_banned_player_by_uuid(player_uuid)
+
+    if existing_ban:
+        return {
+            "success": False,
+            "message": f"{player_name} 已經在玩家黑名單中，不能重複加入。",
+        }
+
     if is_server_running():
         push_recent_ui_ban_command(
             action="add",
@@ -958,6 +967,16 @@ def ban_ip(
             "success": False,
             "message": message,
         }
+    
+
+    existing_ip_ban = get_banned_ip_from_db(ip)
+
+    if existing_ip_ban:
+        return {
+            "success": False,
+            "message": f"IP {ip} 已經在黑名單中，不能重複加入。",
+        }
+
 
     if is_server_running():
         push_recent_ui_ban_command(

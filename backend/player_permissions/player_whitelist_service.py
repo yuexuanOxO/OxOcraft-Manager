@@ -202,19 +202,27 @@ def add_player_whitelist(
     player_uuid: str,
     player_name: str,
 ) -> dict:
-    
+
+    whitelist_uuid_set = load_whitelist_uuid_set()
+
+    if player_uuid.lower() in whitelist_uuid_set:
+        return {
+            "success": False,
+            "message": f"{player_name} 已經在白名單中，不能重複加入。",
+            "whitelisted": True,
+        }
+
     rebuild_whitelist_json_from_db()
 
     entries = load_whitelist_entries()
     whitelist_uuid_set = load_whitelist_uuid_set()
 
-    if player_uuid.lower() not in whitelist_uuid_set:
-        entries.append({
-            "uuid": player_uuid,
-            "name": player_name,
-        })
+    entries.append({
+        "uuid": player_uuid,
+        "name": player_name,
+    })
 
-        save_whitelist_entries(entries)
+    save_whitelist_entries(entries)
 
     result = reload_whitelist_if_ready()
 

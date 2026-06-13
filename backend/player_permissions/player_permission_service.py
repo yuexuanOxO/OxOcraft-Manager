@@ -16,6 +16,7 @@ from backend.db import (
     sync_player_op_flags_from_uuid_set,
     get_op_players_from_db,
     upsert_player_identity,
+    update_player_op_since,
 )
 
 from backend.player_permissions.player_access_history_service import (
@@ -291,6 +292,13 @@ def set_player_op(
         })
 
         save_ops_entries(entries)
+
+    update_player_op_since(
+        player_uuid=player_uuid,
+        player_name=player_name,
+        account_type=account_type,
+        op_since=now,
+    )
 
     record_player_access(
         category="op",

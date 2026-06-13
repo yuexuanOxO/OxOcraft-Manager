@@ -866,6 +866,42 @@ def add_player_access_history(
         conn.commit()
 
 
+def update_player_op_since(
+    player_uuid: str,
+    player_name: str,
+    account_type: str,
+    op_since: str,
+) -> None:
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with get_connection() as conn:
+        conn.execute("""
+            INSERT INTO players (
+                player_uuid,
+                player_name,
+                account_type,
+                op,
+                op_since,
+                updated_at
+            )
+            VALUES (?, ?, ?, 1, ?, ?)
+            ON CONFLICT(player_uuid) DO UPDATE SET
+                player_name = excluded.player_name,
+                account_type = excluded.account_type,
+                op = 1,
+                op_since = excluded.op_since,
+                updated_at = excluded.updated_at
+        """, (
+            player_uuid,
+            player_name,
+            account_type,
+            op_since,
+            now,
+        ))
+
+        conn.commit()
+
+
 def update_player_whitelist_since(
     player_uuid: str,
     player_name: str,
@@ -1131,9 +1167,11 @@ def sync_player_op_flags_from_uuid_set(
             conn.execute(f"""
                 UPDATE players
                 SET op = 1,
+                    op_since = COALESCE(op_since, ?),
                     updated_at = ?
                 WHERE lower(player_uuid) IN ({placeholders})
             """, (
+                now,
                 now,
                 *normalized,
             ))
@@ -1141,9 +1179,10 @@ def sync_player_op_flags_from_uuid_set(
             conn.execute(f"""
                 UPDATE players
                 SET op = 0,
+                    op_since = NULL,
                     updated_at = ?
                 WHERE lower(player_uuid) NOT IN ({placeholders})
-                  AND op != 0
+                AND op != 0
             """, (
                 now,
                 *normalized,
@@ -1152,6 +1191,7 @@ def sync_player_op_flags_from_uuid_set(
             conn.execute("""
                 UPDATE players
                 SET op = 0,
+                    op_since = NULL,
                     updated_at = ?
                 WHERE op != 0
             """, (

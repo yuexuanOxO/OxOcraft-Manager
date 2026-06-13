@@ -478,19 +478,45 @@ def get_active_bans(target_type: str) -> list[dict]:
 def get_ban_history(limit: int = 100) -> list[dict]:
     with get_connection() as conn:
         rows = conn.execute("""
-            SELECT
-                id,
-                action,
-                'ip' AS target_type,
-                ip AS target_name,
-                NULL AS target_uuid,
-                reason,
-                operator_name AS operator,
-                expires_at,
-                created_at,
-                NULL AS ban_record_id,
-                detail
-            FROM ip_ban_history
+            SELECT *
+            FROM (
+                SELECT
+                    h.id,
+                    h.action,
+                    'player' AS target_type,
+                    h.target_name,
+                    h.target_uuid,
+                    h.account_type,
+                    COALESCE(p.ban_reason, '') AS reason,
+                    h.operator_name AS operator,
+                    h.operator_uuid,
+                    h.source,
+                    h.expires_at,
+                    h.created_at,
+                    h.detail
+                FROM player_access_history h
+                LEFT JOIN players p
+                    ON lower(p.player_uuid) = lower(h.target_uuid)
+                WHERE h.category = 'ban'
+
+                UNION ALL
+
+                SELECT
+                    h.id,
+                    h.action,
+                    'ip' AS target_type,
+                    h.ip AS target_name,
+                    NULL AS target_uuid,
+                    NULL AS account_type,
+                    h.reason,
+                    h.operator_name AS operator,
+                    h.operator_uuid,
+                    h.source,
+                    h.expires_at,
+                    h.created_at,
+                    h.detail
+                FROM ip_ban_history h
+            )
             ORDER BY created_at DESC, id DESC
             LIMIT ?
         """, (limit,)).fetchall()

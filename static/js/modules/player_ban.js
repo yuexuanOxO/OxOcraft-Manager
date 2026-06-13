@@ -21,7 +21,7 @@ let canAddBanPlayerByName = true;
 let selectedBanCandidatePlayer = null;
 
 const OXOCRAFT_OPERATOR_ICON =
-    "/static/icons/OxOcraft-Manager_icon/OxOcraft-Manager_icon_64b.png";
+    "/static/icons/player_ban/OxOcraft_origin.png";
 
 export function initPlayerBan() {
     const openBtn = document.getElementById("playerBanBtn");
@@ -308,7 +308,7 @@ function createBanPlayerCard(item) {
             </div>
 
             <div class="player-ban-meta">UUID：${escapeHtml(item.target_uuid || "未知")}</div>
-            <div class="player-ban-meta">封鎖原因：${escapeHtml(item.reason || "未填寫")}</div>
+            <div class="player-ban-meta">封鎖原因：${escapeHtml(item.reason || "已被管理員封鎖。")}</div>
         </div>
 
         <div class="player-ban-time-info">
@@ -392,7 +392,7 @@ function createBanIpCard(item) {
             </div>
 
             <div class="player-ban-meta">
-                封鎖原因：${escapeHtml(item.reason || "未填寫")}
+                封鎖原因：${escapeHtml(item.reason || "已被管理員封鎖。")}
             </div>
         </div>
 
@@ -544,19 +544,7 @@ function renderBanHistory() {
     }
 
     banHistory.forEach(item => {
-        const card = document.createElement("div");
-        card.className = "player-ban-history-card";
-
-        card.innerHTML = `
-            <div class="player-ban-history-action">${escapeHtml(item.action)}</div>
-            <div class="player-ban-meta">時間：${escapeHtml(item.created_at || "未知")}</div>
-            <div class="player-ban-meta">目標：${escapeHtml(item.target_name || "")}</div>
-            <div class="player-ban-meta">操作人：${escapeHtml(item.operator || "OxOcraft")}</div>
-            <div class="player-ban-meta">原因：${escapeHtml(item.reason || "未填寫")}</div>
-            <div class="player-ban-meta">預計解除：${escapeHtml(item.expires_at || "永久封鎖")}</div>
-        `;
-
-        content.appendChild(card);
+        content.appendChild(createBanHistoryCard(item));
     });
 }
 
@@ -1102,3 +1090,168 @@ async function submitAddBan() {
     }
 }
 
+
+function createBanHistoryCard(item) {
+    const card = document.createElement("div");
+    card.className = "player-ban-history-card";
+
+    const isPlayer = item.target_type === "player";
+    const actionText = getBanActionText(item);
+    const sourceText = getBanSourceText(item.source);
+    const operator = item.operator || "OxOcraft";
+
+    const targetAvatarHtml = isPlayer
+        ? `
+            <img
+                class="player-ban-history-target-avatar"
+                src="${getPlayerAvatarUrl({
+                    player_uuid: item.target_uuid,
+                    player_name: item.target_name,
+                    account_type: item.account_type
+                })}"
+                alt="${escapeHtml(item.target_name)}"
+            >
+        `
+        : "";
+
+        
+    const titleHtml = isPlayer
+    ? `
+        <span class="player-ban-history-title">
+            ${actionText}
+        </span>
+
+        <span class="player-ban-history-separator">|</span>
+
+        ${targetAvatarHtml}
+
+        <span class="player-ban-history-target">
+            ${escapeHtml(item.target_name || "未知")}
+        </span>
+    `
+    : `
+        <span class="player-ban-history-title">
+            ${actionText}:
+        </span>
+
+        <span class="player-ban-history-target">
+            ${escapeHtml(item.target_name || "未知")}
+        </span>
+    `;
+
+
+    card.innerHTML = `
+        <div class="player-ban-history-left">
+            <div class="player-ban-history-title-row">
+                ${titleHtml}
+            </div>
+
+            <div class="player-ban-meta">
+                封鎖原因：${escapeHtml(item.reason || "已被管理員封鎖。")}
+            </div>
+
+            <div class="player-ban-meta">
+                封鎖時間：${escapeHtml(formatDateTime(item.created_at))}
+            </div>
+
+            <div class="player-ban-meta">
+                預計解除：${escapeHtml(formatHistoryExpireText(item))}
+            </div>
+        </div>
+
+        <div class="player-ban-history-right">
+
+            <div class="player-ban-history-source">
+
+                <span class="player-ban-history-source-label">
+                    操作來源：
+                </span>
+
+                <span class="player-ban-history-source-value">
+                    ${escapeHtml(sourceText)}
+                </span>
+
+            </div>
+
+            <div class="player-ban-history-operator">
+
+                <span class="player-ban-history-operator-label">
+                    操作人：
+                </span>
+
+                <img
+                    class="player-ban-history-operator-avatar
+                        ${operator === "OxOcraft" ? "oxocraft" : "player"}"
+                    src="${getBanHistoryOperatorAvatarUrl(item)}"
+                    alt="${escapeHtml(operator)}"
+                >
+
+                <span class="player-ban-history-operator-name">
+                    ${escapeHtml(operator)}
+                </span>
+
+            </div>
+
+        </div>
+    `;
+
+    return card;
+}
+
+function getBanActionText(item) {
+    const typeText =
+        item.target_type === "ip"
+            ? "封鎖IP"
+            : "封鎖玩家";
+
+    const action = String(item.action || "");
+
+    if (
+        action.includes("remove") ||
+        action.includes("pardon")
+    ) {
+        return item.target_type === "ip"
+            ? "解除封鎖IP"
+            : "解除封鎖玩家";
+    }
+
+    return typeText;
+}
+
+function getBanSourceText(source) {
+    const sourceMap = {
+        ui: "OxOcraft-Manager介面操作",
+        offline_ui_edit: "OxOcraft-Manager",
+        minecraft_json: "Minecraft JSON同步",
+        player_command: "遊戲內指令",
+        scheduler: "OxOcraft封鎖到期解除",
+        system: "系統操作",
+    };
+
+    return sourceMap[source] || source || "未知";
+}
+
+function getBanHistoryOperatorAvatarUrl(item) {
+    const operator = String(item.operator || "OxOcraft").trim();
+
+    if (operator === "OxOcraft") {
+        return OXOCRAFT_OPERATOR_ICON;
+    }
+
+    return getPlayerAvatarUrl({
+        player_uuid: item.operator_uuid || "",
+        player_name: operator,
+        account_type:
+            item.operator_account_type ||
+            item.account_type ||
+            "unknown"
+    });
+}
+
+function formatHistoryExpireText(item) {
+    if (!item.expires_at) {
+        return "永久封鎖";
+    }
+
+    return formatDateTime(item.expires_at);
+}

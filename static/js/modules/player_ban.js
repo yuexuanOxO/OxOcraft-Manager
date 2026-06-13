@@ -648,10 +648,7 @@ function renderBanHistory() {
         rows = rows.filter(item => {
             return (
                 String(item.target_name || "").toLowerCase().includes(keyword) ||
-                String(item.target_uuid || "").toLowerCase().includes(keyword) ||
-                String(item.operator || "").toLowerCase().includes(keyword) ||
-                String(item.reason || "").toLowerCase().includes(keyword) ||
-                String(getBanSourceText(item.source)).toLowerCase().includes(keyword)
+                String(item.target_uuid || "").toLowerCase().includes(keyword)
             );
         });
     }
@@ -1222,7 +1219,7 @@ function createBanHistoryCard(item) {
     const isPlayer = item.target_type === "player";
     const actionText = getBanActionText(item);
     const sourceText = getBanSourceText(item.source);
-    const operator = item.operator || "OxOcraft";
+    const operator = getDisplayBanHistoryOperator(item);
 
     const targetAvatarHtml = isPlayer
         ? `
@@ -1346,7 +1343,7 @@ function getBanSourceText(source) {
     const sourceMap = {
         ui: "OxOcraft-Manager介面操作",
         offline_ui_edit: "OxOcraft-Manager",
-        minecraft_json: "Minecraft JSON同步",
+        minecraft_json: "banned-players.json同步",
         player_command: "遊戲內指令",
         scheduler: "OxOcraft封鎖到期解除",
         system: "系統操作",
@@ -1355,8 +1352,23 @@ function getBanSourceText(source) {
     return sourceMap[source] || source || "未知";
 }
 
-function getBanHistoryOperatorAvatarUrl(item) {
+function getDisplayBanHistoryOperator(item) {
     const operator = String(item.operator || "OxOcraft").trim();
+    const source = String(item.source || "").trim();
+
+    if (
+        source === "minecraft_json" ||
+        operator === "banned-players.json 同步" ||
+        operator === "banned-ips.json 同步"
+    ) {
+        return "OxOcraft";
+    }
+
+    return operator || "OxOcraft";
+}
+
+function getBanHistoryOperatorAvatarUrl(item) {
+    const operator = getDisplayBanHistoryOperator(item);
 
     if (operator === "OxOcraft") {
         return OXOCRAFT_OPERATOR_ICON;

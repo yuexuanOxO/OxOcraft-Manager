@@ -19,6 +19,7 @@ let banHistory = [];
 let banCandidatePlayers = [];
 let canAddBanPlayerByName = true;
 let selectedBanCandidatePlayer = null;
+const banHistoryFilters = new Set();
 
 const OXOCRAFT_OPERATOR_ICON =
     "/static/icons/player_ban/OxOcraft_origin.png";
@@ -62,6 +63,65 @@ export function initPlayerBan() {
 
     searchInput?.addEventListener("input", () => {
         renderCurrentBanTab();
+    });
+
+    const historySearchInput =
+        document.getElementById("playerBanHistorySearchInput");
+
+    const historyFilterBtn =
+        document.getElementById("playerBanHistoryFilterBtn");
+
+    const historyFilterMenu =
+        document.getElementById("playerBanHistoryFilterMenu");
+
+    historySearchInput?.addEventListener("input", () => {
+        renderBanHistory();
+    });
+
+    historyFilterBtn?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        historyFilterMenu?.classList.toggle("hidden");
+    });
+
+    historyFilterMenu
+        ?.querySelectorAll("button[data-filter]")
+        .forEach((button) => {
+            button.addEventListener("click", () => {
+                const filter = button.dataset.filter || "";
+
+                if (!filter) return;
+
+                if (filter === "clear") {
+                    banHistoryFilters.clear();
+
+                    historyFilterMenu
+                        .querySelectorAll("button[data-filter]")
+                        .forEach(btn => {
+                            btn.classList.remove("active");
+                        });
+
+                    renderBanHistory();
+                    return;
+                }
+
+                if (banHistoryFilters.has(filter)) {
+                    banHistoryFilters.delete(filter);
+                    button.classList.remove("active");
+                } else {
+                    banHistoryFilters.add(filter);
+                    button.classList.add("active");
+                }
+
+                renderBanHistory();
+            });
+        });
+
+    historyFilterMenu?.addEventListener("click", (event) => {
+        event.stopPropagation();
+    });
+
+    document.addEventListener("click", () => {
+        historyFilterMenu?.classList.add("hidden");
     });
 
     window.addEventListener("server-ui-state-changed", () => {
@@ -126,8 +186,10 @@ function updateBanTabs() {
 
     const title = document.getElementById("playerBanTitle");
     const toolbar = document.getElementById("playerBanToolbar");
+    const historyToolbar = document.getElementById("playerBanHistoryToolbar");
     const searchInput = document.getElementById("playerBanSearchInput");
     const addBtn = document.getElementById("openAddBanBtn");
+    const historySearchInput = document.getElementById("playerBanHistorySearchInput");
 
     const titleMap = {
         players: "黑名單管理：封鎖玩家",
@@ -135,6 +197,10 @@ function updateBanTabs() {
         history: "黑名單管理：封鎖紀錄",
         help: "黑名單管理：說明",
     };
+
+    if (historySearchInput) {
+        historySearchInput.value = "";
+    }
 
     if (title) {
         title.textContent = titleMap[currentBanTab] || titleMap.players;
@@ -144,6 +210,13 @@ function updateBanTabs() {
         toolbar.classList.toggle(
             "hidden",
             currentBanTab === "history" || currentBanTab === "help"
+        );
+    }
+
+    if (historyToolbar) {
+        historyToolbar.classList.toggle(
+            "hidden",
+            currentBanTab !== "history"
         );
     }
 
@@ -530,20 +603,71 @@ function renderBanHistory() {
     const content = document.getElementById("playerBanContent");
     const summary = document.getElementById("playerBanSummary");
 
+    const historySearchInput =
+        document.getElementById("playerBanHistorySearchInput");
+
+    const keyword =
+        (historySearchInput?.value || "")
+            .trim()
+            .toLowerCase();
+
     if (!content) return;
 
+    let rows = [...banHistory];
+
+    const typeFilters = [...banHistoryFilters]
+        .filter(filter => filter === "player" || filter === "ip");
+
+    const actionFilters = [...banHistoryFilters]
+        .filter(filter => filter === "add" || filter === "remove");
+
+    if (typeFilters.length > 0) {
+        rows = rows.filter(item => {
+            return typeFilters.includes(item.target_type);
+        });
+    }
+
+    if (actionFilters.length > 0) {
+        rows = rows.filter(item => {
+            const action = String(item.action || "");
+
+            const isRemove =
+                action.includes("remove") ||
+                action.includes("pardon");
+
+            const isAdd = !isRemove;
+
+            return (
+                (actionFilters.includes("add") && isAdd) ||
+                (actionFilters.includes("remove") && isRemove)
+            );
+        });
+    }
+
+    if (keyword) {
+        rows = rows.filter(item => {
+            return (
+                String(item.target_name || "").toLowerCase().includes(keyword) ||
+                String(item.target_uuid || "").toLowerCase().includes(keyword) ||
+                String(item.operator || "").toLowerCase().includes(keyword) ||
+                String(item.reason || "").toLowerCase().includes(keyword) ||
+                String(getBanSourceText(item.source)).toLowerCase().includes(keyword)
+            );
+        });
+    }
+
     if (summary) {
-        summary.textContent = `共 ${banHistory.length} 筆封鎖紀錄`;
+        summary.textContent = `共 ${rows.length} 筆封鎖紀錄`;
     }
 
     content.innerHTML = "";
 
-    if (banHistory.length === 0) {
-        content.innerHTML = `<div class="player-ban-empty">目前沒有封鎖紀錄</div>`;
+    if (rows.length === 0) {
+        content.innerHTML = `<div class="player-ban-empty">目前沒有符合條件的封鎖紀錄</div>`;
         return;
     }
 
-    banHistory.forEach(item => {
+    rows.forEach(item => {
         content.appendChild(createBanHistoryCard(item));
     });
 }

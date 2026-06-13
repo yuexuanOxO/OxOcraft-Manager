@@ -3,6 +3,7 @@ import uuid
 
 from backend.paths import MC_ROOT
 from backend.db import (
+    get_connection,
     upsert_player_from_usercache,
     upsert_player_login,
     upsert_ip_player_login,
@@ -102,12 +103,26 @@ def get_current_usercache_players() -> list[dict]:
             usercache_expires_on=expires_on,
         )
 
-        result.append({
-            "player_uuid": player_uuid,
-            "player_name": player_name,
-            "account_type": account_type,
-            "usercache_expires_on": expires_on,
-        })
+        with get_connection() as conn:
+            row = conn.execute("""
+                SELECT *
+                FROM players
+                WHERE lower(player_uuid) = lower(?)
+                LIMIT 1
+            """, (
+                player_uuid,
+            )).fetchone()
+
+        if row:
+            result.append(dict(row))
+        else:
+            result.append({
+                "player_uuid": player_uuid,
+                "player_name": player_name,
+                "account_type": account_type,
+                "usercache_expires_on": expires_on,
+                "show_in_player_candidates": 1,
+            })
 
     return result
 

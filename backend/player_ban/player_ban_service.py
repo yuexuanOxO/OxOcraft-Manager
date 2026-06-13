@@ -1631,6 +1631,9 @@ def get_player_ban_candidate_list() -> list[dict]:
     result = []
 
     for player in players:
+        if int(player.get("show_in_player_candidates", 1) or 0) != 1:
+            continue
+
         player_uuid = str(player.get("player_uuid", "")).lower()
         account_type = player.get("account_type")
 

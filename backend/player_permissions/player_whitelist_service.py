@@ -22,7 +22,7 @@ from backend.player_permissions.player_access_history_service import (
 )
 
 from backend.db import (
-    delete_player_by_uuid,
+    hide_player_candidate,
     update_player_whitelist_since,
     update_player_whitelist_status,
     get_whitelisted_players_from_db,
@@ -362,6 +362,9 @@ def get_player_whitelist_candidate_list() -> list[dict]:
     result = []
 
     for player in players:
+        if int(player.get("show_in_player_candidates", 1) or 0) != 1:
+            continue
+
         account_type = player.get("account_type")
 
         if online_mode and account_type != "premium":
@@ -416,12 +419,12 @@ def delete_whitelist_candidate(
     player_name: str,
 ) -> dict:
 
-    delete_player_by_uuid(player_uuid)
+    hide_player_candidate(player_uuid)
 
     return {
         "success": True,
         "message": (
-            f"已刪除 {player_name} 的玩家紀錄"
+            f"已從之前加入過的玩家清單移除 {player_name}"
         ),
     }
 

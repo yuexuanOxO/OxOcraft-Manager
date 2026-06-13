@@ -110,6 +110,8 @@ def init_db() -> None:
                 last_seen_at DATETIME,
 
                 usercache_expires_on TEXT,
+                     
+                show_in_player_candidates INTEGER NOT NULL DEFAULT 1,
 
                 op INTEGER NOT NULL DEFAULT 0,
                 op_since DATETIME,
@@ -525,9 +527,10 @@ def upsert_player_from_usercache(
                 player_name,
                 account_type,
                 usercache_expires_on,
+                show_in_player_candidates,
                 updated_at
             )
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, 1, ?)
             ON CONFLICT(player_uuid) DO UPDATE SET
                 player_name = excluded.player_name,
                 account_type = excluded.account_type,
@@ -693,6 +696,28 @@ def delete_player_by_uuid(player_uuid: str) -> None:
     conn.close()
 
 
+def hide_player_candidate(player_uuid: str) -> None:
+    player_uuid = str(player_uuid or "").strip()
+
+    if not player_uuid:
+        return
+
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with get_connection() as conn:
+        conn.execute("""
+            UPDATE players
+            SET show_in_player_candidates = 0,
+                updated_at = ?
+            WHERE lower(player_uuid) = lower(?)
+        """, (
+            now,
+            player_uuid,
+        ))
+
+        conn.commit()
+
+
 def upsert_player_login(
     player_uuid: str,
     player_name: str,
@@ -711,9 +736,10 @@ def upsert_player_login(
                 first_seen_at,
                 last_seen_at,
                 usercache_expires_on,
+                show_in_player_candidates,
                 updated_at
             )
-            VALUES (?, ?, ?, 1, ?, ?, ?, ?)
+            VALUES (?, ?, ?, 1, ?, ?, ?, 1, ?)
             ON CONFLICT(player_uuid) DO UPDATE SET
                 player_name = excluded.player_name,
                 account_type = excluded.account_type,
@@ -721,6 +747,7 @@ def upsert_player_login(
                 first_seen_at = COALESCE(players.first_seen_at, excluded.first_seen_at),
                 last_seen_at = excluded.last_seen_at,
                 usercache_expires_on = COALESCE(excluded.usercache_expires_on, players.usercache_expires_on),
+                show_in_player_candidates = 1,
                 updated_at = excluded.updated_at
         """, (
             player_uuid,

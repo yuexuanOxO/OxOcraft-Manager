@@ -12,7 +12,7 @@ from backend.player_permissions.player_identity_service import (
 )
 
 from backend.db import (
-    delete_player_by_uuid,
+    hide_player_candidate,
     sync_player_op_flags_from_uuid_set,
     get_op_players_from_db,
     upsert_player_identity,
@@ -412,6 +412,9 @@ def get_player_permission_candidate_list() -> list[dict]:
     result = []
 
     for player in players:
+        if int(player.get("show_in_player_candidates", 1) or 0) != 1:
+            continue
+
         account_type = player.get("account_type")
 
         if online_mode and account_type != "premium":
@@ -438,10 +441,10 @@ def delete_permission_candidate(
     player_name: str,
 ) -> dict:
 
-    delete_player_by_uuid(player_uuid)
+    hide_player_candidate(player_uuid)
 
     return {
         "success": True,
-        "message": f"已刪除 {player_name} 的玩家紀錄",
+        "message": f"已從之前加入過的玩家清單移除 {player_name}",
     }
 

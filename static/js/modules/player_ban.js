@@ -12,6 +12,8 @@ import {
     getAccountTypeClass,
 } from "./player_avatar.js";
 
+import { PLAYER_BAN_HELP } from "./help/player_ban_help.js";
+
 let currentBanTab = "players";
 let banPlayers = [];
 let banIps = [];
@@ -187,6 +189,7 @@ function updateBanTabs() {
     const title = document.getElementById("playerBanTitle");
     const toolbar = document.getElementById("playerBanToolbar");
     const historyToolbar = document.getElementById("playerBanHistoryToolbar");
+    const summary = document.getElementById("playerBanSummary");
     const searchInput = document.getElementById("playerBanSearchInput");
     const addBtn = document.getElementById("openAddBanBtn");
     const historySearchInput = document.getElementById("playerBanHistorySearchInput");
@@ -204,6 +207,10 @@ function updateBanTabs() {
 
     if (title) {
         title.textContent = titleMap[currentBanTab] || titleMap.players;
+    }
+
+    if (summary) {
+        summary.classList.toggle("hidden", currentBanTab === "help");
     }
 
     if (toolbar) {
@@ -674,22 +681,34 @@ function renderBanHelp() {
     const summary = document.getElementById("playerBanSummary");
 
     if (summary) {
-        summary.textContent = "黑名單功能說明";
+        summary.textContent = "";
+        summary.classList.add("hidden");
     }
 
     if (!content) return;
 
     content.innerHTML = `
         <div class="player-ban-help">
-            <h3>封鎖玩家</h3>
-            <p>禁止指定玩家加入伺服器。</p>
-
-            <h3>封鎖IP</h3>
-            <p>禁止指定 IP 連線伺服器。同網路環境下其他玩家可能受到影響。</p>
-
-            <h3>限時封鎖</h3>
-            <p>封鎖期限由 OxOcraft-Manager 管理，Minecraft 原生黑名單 JSON 仍會以永久封鎖保存。</p>
+            ${PLAYER_BAN_HELP.map(createBanHelpCard).join("")}
         </div>
+    `;
+}
+
+function createBanHelpCard(item) {
+    return `
+        <section class="player-ban-help-card">
+            <h3 class="player-ban-help-card-title">
+                ${escapeHtml(item.title)}
+            </h3>
+
+            ${item.content
+                .map(text => `
+                    <p class="player-ban-help-card-text">
+                        ${escapeHtml(text)}
+                    </p>
+                `)
+                .join("")}
+        </section>
     `;
 }
 

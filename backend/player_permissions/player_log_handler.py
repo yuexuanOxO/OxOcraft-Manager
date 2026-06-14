@@ -1,4 +1,6 @@
 import re
+from backend.notification_service import create_notification
+
 
 _pending_login_uuids: dict[str, str] = {}
 
@@ -150,7 +152,7 @@ def maybe_refresh_player_ban_from_log(line: str) -> None:
     target_name = matched.group("target").strip()
 
     # 避免 ban-ip / pardon-ip 被玩家 ban 流程吃到
-    if target_name.lower().startswith("ip "):
+    if target_name.lower() == "ip" or target_name.lower().startswith("ip "):
         return
 
     is_rcon = log_operator.lower() == "rcon"
@@ -191,6 +193,16 @@ def maybe_refresh_player_ban_from_log(line: str) -> None:
                     detail=line,
                     write_history=True,
                 )
+
+                create_notification(
+                    title="玩家黑名單已更新",
+                    message=(
+                        f"{operator_name} 已封鎖玩家 {target_name}"
+                    ),
+                    type="warning",
+                    source="player_ban",
+                )
+
         else:
             if not is_ui_command:
                 sync_unban_player_from_log(
@@ -200,6 +212,14 @@ def maybe_refresh_player_ban_from_log(line: str) -> None:
                     detail=line,
                     write_history=True,
                 )
+
+                create_notification(
+                    title="玩家黑名單已更新",
+                    message=f"{operator_name} 解除了玩家 {target_name} 的封鎖",
+                    type="success",
+                    source="player_ban",
+                )
+
 
         publish_event("player_ban_should_refresh", {
             "reason": "minecraft_ban_log",
@@ -292,6 +312,14 @@ def maybe_refresh_ip_ban_from_log(line: str) -> None:
                     source=source,
                     detail=line,
                 )
+
+                create_notification(
+                    title="IP 黑名單已更新",
+                    message=f"{operator_name} 封鎖了 IP {ip}",
+                    type="warning",
+                    source="player_ban",
+                )
+
             else:
                 sync_unban_ip_from_log(
                     ip=ip,
@@ -300,6 +328,14 @@ def maybe_refresh_ip_ban_from_log(line: str) -> None:
                     source=source,
                     detail=line,
                 )
+
+                create_notification(
+                    title="IP 黑名單已更新",
+                    message=f"{operator_name} 解除了 IP {ip} 的封鎖",
+                    type="success",
+                    source="player_ban",
+                )
+
 
         publish_event("player_ban_should_refresh", {
             "reason": "minecraft_ip_ban_log",
@@ -383,6 +419,22 @@ def maybe_refresh_player_permission_from_log(line: str) -> None:
             detail=line,
         )
 
+        if source != "ui":
+            if action == "add":
+                message = f"{operator_name} 將 {target_name} 設為管理員"
+                notification_type = "info"
+            else:
+                message = f"{operator_name} 收回了 {target_name} 的管理員權限"
+                notification_type = "warning"
+
+            create_notification(
+                title="管理員已更新",
+                message=message,
+                type=notification_type,
+                source="player_permission",
+            )
+
+
         publish_event("player_permission_should_refresh", {
             "reason": "minecraft_op_log",
             "line": line,
@@ -448,6 +500,12 @@ def maybe_refresh_player_whitelist_from_log(line: str) -> None:
             record_player_access,
         )
 
+        from backend.player_permissions.player_whitelist_service import (
+            sync_whitelist_json_to_players,
+        )
+
+        sync_whitelist_json_to_players(source=source)
+
         record_player_access(
             category="whitelist",
             action=action,
@@ -456,6 +514,21 @@ def maybe_refresh_player_whitelist_from_log(line: str) -> None:
             source=source,
             detail=line,
         )
+
+        if source != "ui":
+            if action == "add":
+                message = f"{operator_name} 將 {target_name} 加入白名單"
+                notification_type = "success"
+            else:
+                message = f"{operator_name} 將 {target_name} 移出白名單"
+                notification_type = "warning"
+
+            create_notification(
+                title="白名單已更新",
+                message=message,
+                type=notification_type,
+                source="player_whitelist",
+            )
 
         publish_event("player_whitelist_should_refresh", {
             "reason": "minecraft_whitelist_log",

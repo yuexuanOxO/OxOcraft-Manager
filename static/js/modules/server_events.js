@@ -102,79 +102,6 @@ export function initServerEvents() {
         const joinMatch = line.match(/\]:\s*(.+?) joined the game$/);
         const leftMatch = line.match(/\]:\s*(.+?) left the game$/);
 
-        const opMatch = line.match(/Made\s+(.+?)\s+a server operator/i);
-        const deopMatch = line.match(/Made\s+(.+?)\s+no longer a server operator/i);
-
-        const whitelistAddMatch =
-            line.match(/Added\s+(.+?)\s+to the whitelist/i);
-
-        const whitelistRemoveMatch =
-            line.match(/Removed\s+(.+?)\s+from the whitelist/i);
-
-        if (whitelistAddMatch) {
-            window.dispatchEvent(new CustomEvent(
-                "player-whitelist-status-changed",
-                {
-                    detail: {
-                        player: whitelistAddMatch[1],
-                        whitelisted: true
-                    }
-                }
-            ));
-
-            window.dispatchEvent(new CustomEvent(
-                "player-whitelist-should-refresh"
-            ));
-        }
-
-        if (whitelistRemoveMatch) {
-            window.dispatchEvent(new CustomEvent(
-                "player-whitelist-status-changed",
-                {
-                    detail: {
-                        player: whitelistRemoveMatch[1],
-                        whitelisted: false
-                    }
-                }
-            ));
-
-            window.dispatchEvent(new CustomEvent(
-                "player-whitelist-should-refresh"
-            ));
-        }
-
-
-        if (opMatch) {
-            window.dispatchEvent(new CustomEvent(
-                "player-op-status-changed",
-                {
-                    detail: {
-                        player: opMatch[1],
-                        op: true
-                    }
-                }
-            ));
-
-            window.dispatchEvent(new CustomEvent(
-                "player-permissions-should-refresh"
-            ));
-        }
-
-        if (deopMatch) {
-            window.dispatchEvent(new CustomEvent(
-                "player-op-status-changed",
-                {
-                    detail: {
-                        player: deopMatch[1],
-                        op: false
-                    }
-                }
-            ));
-
-            window.dispatchEvent(new CustomEvent(
-                "player-permissions-should-refresh"
-            ));
-        }
 
         if (joinMatch) {
             addPlayerFromLog(joinMatch[1]);
@@ -201,6 +128,32 @@ export function initServerEvents() {
                 )
             );
 
+        }
+    );
+
+    serverEvents.addEventListener(
+        "player_whitelist_should_refresh",
+        () => {
+            console.log("[PlayerWhitelist] SSE refresh received");
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "player-whitelist-should-refresh"
+                )
+            );
+        }
+    );
+
+    serverEvents.addEventListener(
+        "player_permission_should_refresh",
+        () => {
+            console.log("[PlayerPermission] SSE refresh received");
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "player-permissions-should-refresh"
+                )
+            );
         }
     );
 

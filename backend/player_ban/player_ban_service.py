@@ -784,24 +784,28 @@ def sync_ban_player_from_log(
     if not player_name:
         return
 
-    player_uuid = resolve_player_uuid(player_name)
-
-    if not player_uuid:
-        print("[PlayerBan] cannot resolve banned player uuid:", player_name)
-        return
-
-    account_type = detect_account_type(player_uuid)
-
-    # 從 Minecraft 寫好的 banned-players.json 補 reason
+    player_uuid = ""
     reason = ""
 
     for item in read_json_list(BANNED_PLAYERS_FILE):
-        if (
-            str(item.get("uuid", "")).lower() == player_uuid.lower()
-            or str(item.get("name", "")).lower() == player_name.lower()
-        ):
-            reason = str(item.get("reason", "") or "").strip()
-            break
+        json_name = str(item.get("name", "")).strip()
+
+        if json_name.lower() != player_name.lower():
+            continue
+
+        player_uuid = str(item.get("uuid", "")).strip()
+        player_name = json_name or player_name
+        reason = str(item.get("reason", "") or "").strip()
+        break
+
+    if not player_uuid:
+        player_uuid = resolve_player_uuid(player_name)
+
+        if not player_uuid:
+            print("[PlayerBan] cannot resolve banned player uuid:", player_name)
+            return
+
+    account_type = detect_account_type(player_uuid)
 
     update_player_ban_status(
         player_uuid=player_uuid,

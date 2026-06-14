@@ -389,6 +389,15 @@ function createBanPlayerCard(item) {
 
             <div class="player-ban-meta">UUID：${escapeHtml(item.target_uuid || "未知")}</div>
             <div class="player-ban-meta">封鎖原因：${escapeHtml(item.reason || "已被管理員封鎖。")}</div>
+            ${
+                isInvalidMode
+                    ? `
+                        <div class="player-ban-meta player-ban-invalid-mode-text">
+                            此資料不符合目前伺服器的登入模式，可能無效
+                        </div>
+                    `
+                    : ""
+            }
         </div>
 
         <div class="player-ban-time-info">

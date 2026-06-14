@@ -851,3 +851,7 @@
     color: #f0c36a;
     background: #3a3324;
 }
+
+.player-ban-invalid-mode-text {
+    color: #d6a84f;
+}

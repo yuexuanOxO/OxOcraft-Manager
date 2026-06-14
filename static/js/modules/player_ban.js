@@ -1362,8 +1362,12 @@ function getBanSourceText(source) {
     const sourceMap = {
         ui: "OxOcraft-Manager介面操作",
         offline_ui_edit: "OxOcraft-Manager",
-        minecraft_json: "banned-players.json同步",
+        minecraft_json: "OxOcraft同步",
         player_command: "遊戲內指令",
+
+        console_rcon: "UI輸入指令",
+        rcon: "UI輸入指令",
+
         scheduler: "OxOcraft封鎖到期解除",
         system: "系統操作",
     };
@@ -1377,6 +1381,12 @@ function getDisplayBanHistoryOperator(item) {
 
     if (
         source === "minecraft_json" ||
+        source === "console_rcon" ||
+        source === "rcon" ||
+
+        operator === "Rcon" ||
+        operator === "rcon" ||
+
         operator === "banned-players.json 同步" ||
         operator === "banned-ips.json 同步"
     ) {

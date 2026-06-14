@@ -522,7 +522,18 @@ def get_ban_history(limit: int = 100) -> list[dict]:
             LIMIT ?
         """, (limit,)).fetchall()
 
-    return [dict(row) for row in rows]
+    records = [dict(row) for row in rows]
+
+    for record in records:
+        operator_uuid = str(record.get("operator_uuid") or "").strip()
+
+        record["operator_account_type"] = (
+            detect_account_type(operator_uuid)
+            if operator_uuid
+            else None
+        )
+
+    return records
 
 
 def write_player_to_banned_json(
@@ -1453,6 +1464,13 @@ def sync_banned_players_json_to_db() -> dict:
                 if existing
                 else None
             )
+
+            print("[BanSync] sync player:", {
+                "player_uuid": player_uuid,
+                "player_name": player_name,
+                "operator": operator,
+                "reason": reason,
+            })
 
             update_player_ban_status(
                 player_uuid=player_uuid,

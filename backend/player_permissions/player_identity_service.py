@@ -1,5 +1,6 @@
 import json
 import uuid
+import re
 
 from backend.paths import MC_ROOT
 from backend.db import (
@@ -16,6 +17,10 @@ from backend.db import (
 
 
 USERCACHE_FILE = MC_ROOT / "usercache.json"
+
+MINECRAFT_PLAYER_NAME_PATTERN = re.compile(
+    r"^[A-Za-z0-9_]{3,16}$"
+)
 
 
 def load_usercache_data() -> list[dict]:
@@ -38,6 +43,18 @@ def load_usercache_data() -> list[dict]:
 
     except json.JSONDecodeError:
         return []
+
+
+def is_valid_minecraft_player_name(
+    player_name: str,
+) -> bool:
+    player_name = str(player_name or "").strip()
+
+    return bool(
+        MINECRAFT_PLAYER_NAME_PATTERN.fullmatch(
+            player_name
+        )
+    )
 
 
 def get_account_type(player_uuid: str) -> str:

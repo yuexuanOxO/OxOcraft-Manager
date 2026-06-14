@@ -1,3 +1,5 @@
+import re
+
 from backend.db import add_player_access_history
 from backend.player_permissions.player_identity_service import (
     resolve_player_identity,
@@ -11,6 +13,22 @@ SYSTEM_OPERATORS = {
     "Minecraft",
     "Console",
 }
+
+MINECRAFT_PLAYER_NAME_PATTERN = re.compile(
+    r"^[A-Za-z0-9_]{3,16}$"
+)
+
+
+def is_valid_minecraft_player_name(name: str) -> bool:
+    name = str(name or "").strip()
+
+    return bool(
+        MINECRAFT_PLAYER_NAME_PATTERN.fullmatch(name)
+    )
+
+
+def should_resolve_operator_identity(source: str) -> bool:
+    return str(source or "").strip() == "player_command"
 
 
 def record_player_access(
@@ -44,8 +62,10 @@ def record_player_access(
         account_type = account_type or target_identity.get("account_type")
 
     if (
-        operator_name
+        should_resolve_operator_identity(source)
+        and operator_name
         and operator_name not in SYSTEM_OPERATORS
+        and is_valid_minecraft_player_name(operator_name)
         and not operator_uuid
     ):
         operator_identity = resolve_player_identity(operator_name)

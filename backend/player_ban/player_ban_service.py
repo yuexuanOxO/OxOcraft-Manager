@@ -6,6 +6,7 @@ from pathlib import Path
 from backend.paths import MC_ROOT
 from backend.rcon_service import send_rcon_command
 from backend.server_runtime import is_server_running
+from backend.notification_service import create_notification
 from backend.routes.player_routes import (
     resolve_player_uuid,
     is_online_mode,
@@ -1326,6 +1327,13 @@ def process_expired_ban(record: dict) -> dict:
             detail=result,
         )
 
+        create_notification(
+            title="黑名單已自動解除",
+            message=f"玩家 {target_name} 的封鎖期限已到，系統已自動解除封鎖。",
+            type="success",
+            source="player_ban_scheduler",
+        )
+
         return {
             "success": True,
             "action": "expired_unban_player",
@@ -1362,6 +1370,13 @@ def process_expired_ban(record: dict) -> dict:
             operator_uuid=None,
             source="scheduler",
             detail=result,
+        )
+
+        create_notification(
+            title="IP 黑名單已自動解除",
+            message=f"IP {target_name} 的封鎖期限已到，系統已自動解除封鎖。",
+            type="success",
+            source="player_ban_scheduler",
         )
 
         return {

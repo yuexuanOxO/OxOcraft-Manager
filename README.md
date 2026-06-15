@@ -4,15 +4,13 @@
 
 <!-- ========================================================= -->
 
-<p align="center">
-  <img src="docs/assets/readme/logo/logo.png" alt="OxOcraft-Manager Logo" width="180">
-</p>
-
-<h1 align="center">OxOcraft-Manager</h1>
+---
 
 <p align="center">
-  <strong>讓架設 Minecraft 伺服器，變得和遊玩 Minecraft 一樣自然。</strong>
+  <img src="docs/assets/readme/banner/banner.png" alt="OxOcraft-Manager Banner">
 </p>
+
+---
 
 <p align="center">
   一款由 Minecraft 玩家打造，專為 Minecraft 玩家設計的 Minecraft Java Edition 伺服器管理工具。
@@ -40,13 +38,7 @@
 
 </p>
 
----
 
-<p align="center">
-  <img src="docs/assets/readme/banner/banner.png" alt="OxOcraft-Manager Banner">
-</p>
-
----
 
 ## Minecraft Server，應該更容易管理。
 

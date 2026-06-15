@@ -17,6 +17,15 @@ import { initPlayerWhitelist } from "./modules/player_whitelist.js";
 import { initPlayerBan } from "./modules/player_ban.js";
 
 
+function setupGlobalImageDragBlocker() {
+    document.addEventListener("dragstart", (event) => {
+        if (event.target instanceof HTMLImageElement) {
+            event.preventDefault();
+        }
+    });
+}
+
+
 document.addEventListener("DOMContentLoaded", () => {
     initServerStatus();
     initServerEvents();
@@ -36,5 +45,6 @@ document.addEventListener("DOMContentLoaded", () => {
     initPlayerPermissions();
     initPlayerWhitelist();
     initPlayerBan();
+    setupGlobalImageDragBlocker();
     
 });

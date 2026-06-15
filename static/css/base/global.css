@@ -30,3 +30,12 @@ button:disabled,
 button.disabled {
     cursor: not-allowed;
 }
+
+
+/* 禁止圖片拖曳與選取*/
+img {
+    -webkit-user-drag: none;
+    user-drag: none;
+    user-select: none;
+    -webkit-user-select: none;
+}

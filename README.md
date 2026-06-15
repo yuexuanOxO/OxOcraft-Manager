@@ -1,168 +1,57 @@
-# OxOcraft-Manager
+<!-- ========================================================= -->
 
-一款以 Minecraft 像素風格打造的 Minecraft Server 管理工具。  
-使用 Flask 與 Python 開發，提供本機備份、Google Drive 雲端備份、伺服器管理與 Minecraft 風格 UI。
+<!-- Hero -->
 
----
+<!-- ========================================================= -->
 
-# 專案介紹
+<p align="center">
+  <img src="docs/assets/readme/logo/logo.png" alt="OxOcraft-Manager Logo" width="180">
+</p>
 
-OxOcraft-Manager 是一款偏向桌面工具體驗的 Minecraft Server 管理平台。
+<h1 align="center">OxOcraft-Manager</h1>
 
-相較於傳統以功能為主的 Server Panel，本專案更重視：
+<p align="center">
+  <strong>讓架設 Minecraft 伺服器，變得和遊玩 Minecraft 一樣自然。</strong>
+</p>
 
-- Minecraft 風格 UI
-- 視覺化操作體驗
-- 備份管理
-- 本機化部署
-- 輕量化管理
+<p align="center">
+  一款由 Minecraft 玩家打造，專為 Minecraft 玩家設計的 Minecraft Java Edition 伺服器管理工具。
+</p>
 
-整體介面以 Minecraft Achievement、像素風格與遊戲 UI 作為設計靈感。
+<p align="center">
 
----
+<!-- TODO：GitHub Badges -->
 
-# 主要功能
+![Version](https://img.shields.io/badge/version-v0.9.0-blue)
 
-## Minecraft Server 管理
+![Status](https://img.shields.io/badge/status-Development-orange)
 
-- 啟動 / 關閉 Minecraft Server
-- 即時 Server 狀態監控
-- Minecraft Query 狀態偵測
-- RCON 指令執行
-- 玩家列表顯示
+![Minecraft](https://img.shields.io/badge/Minecraft-Java%20Edition-green)
 
----
+</p>
 
-## 備份系統
+<p align="center">
 
-- Minecraft 世界本機備份
-- 自動備份排程
-- ZIP 壓縮
-- 備份紀錄管理
-- 自動刪除舊備份
-- 多世界備份支援
+[📖 Wiki](../../wiki)
+  •  
+[📝 Changelog](CHANGELOG.md)
+  •  
+[🚀 Releases](../../releases)
+
+</p>
 
 ---
 
-## Google Drive 雲端備份
-
-- Google OAuth 登入
-- Google Drive 雲端備份
-- 雲端備份紀錄
-- 自動清理舊雲端備份
-- 備份保留數量設定
+<p align="center">
+  <img src="docs/assets/readme/banner/banner.png" alt="OxOcraft-Manager Banner">
+</p>
 
 ---
 
-## Minecraft 風格 UI
+## Minecraft Server，應該更容易管理。
 
-- 像素風介面
-- Minecraft Achievement 風格功能卡片
-- Minecraft 風格按鈕與動畫
-- Death Record 死亡紀錄系統
-- 自訂像素 Icon
+OxOcraft-Manager 希望降低 Minecraft Server 的學習門檻，而不是改變 Minecraft 原本的運作方式。
 
----
+它將繁瑣的設定、玩家管理與伺服器操作整合到同一個介面，讓第一次架設伺服器的玩家能更容易開始，同時保留進階玩家所需要的操作彈性。
 
-# 技術架構
-
-| 類型 | 技術 |
-|---|---|
-| Backend | Python / Flask |
-| Frontend | HTML / CSS / JavaScript |
-| Database | SQLite |
-| Packaging | PyInstaller |
-| Cloud Backup | Google Drive API |
-| Version Control | Git / GitHub |
-
----
-
-# 專案結構
-
-```txt
-OxOcraft-Manager/
-├── backend/
-├── static/
-│   ├── css/
-│   ├── js/
-│   ├── icons/
-│   └── data/
-├── templates/
-├── docs/
-├── app.py
-└── README.md
-```
-
----
-
-# Google Drive OAuth
-
-OxOcraft-Manager 使用 Google Drive API 提供 Minecraft 世界雲端備份功能。
-
-本工具僅會存取：
-
-- 由 OxOcraft-Manager 建立或管理的備份檔案
-- Google 帳號基本資訊
-
-不會讀取或存取使用者其他 Google Drive 檔案。
-
----
-
-# OAuth 相關頁面
-
-## 首頁
-
-https://yuexuanoxo.github.io/OxOcraft-Manager/
-
-## 隱私權政策
-
-https://yuexuanoxo.github.io/OxOcraft-Manager/privacy.html
-
-## 使用條款
-
-https://yuexuanoxo.github.io/OxOcraft-Manager/terms.html
-
----
-
-# 開發狀態
-
-目前專案仍持續開發中。
-
-目前正在進行：
-
-- UI 模組化整理
-- CSS 架構拆分
-- 備份系統優化
-- Google Drive OAuth 整合
-- 打包流程優化
-- 效能與載入優化
-
----
-
-# 未來規劃
-
-- 更完整的資源預載系統
-- 更流暢的 UI 動畫
-- 插件管理功能
-- 多伺服器管理
-- 遠端管理功能
-- Discord 整合
-- 更完整的備份管理 UI
-
----
-
-# 免責聲明
-
-OxOcraft-Manager 為非官方 Minecraft 工具。
-
-Minecraft 為 Mojang Studios 的商標。
-
-本專案與 Mojang 或 Microsoft 無任何關聯。
-
----
-
-# 作者
-
-GitHub：
-
-https://github.com/yuexuanOxO
+不論你是第一次與朋友一起建立 Minecraft 世界，還是已經熟悉 Minecraft Server 的管理流程，OxOcraft-Manager 都希望成為一個容易理解、值得信任且持續陪伴玩家成長的工具。

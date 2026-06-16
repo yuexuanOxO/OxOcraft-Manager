@@ -3,6 +3,10 @@ from datetime import datetime
 from backend.paths import DB_PATH
 
 
+DEFAULT_HISTORY_LIMIT = 300 #保留多少筆資料
+DEFAULT_HISTORY_TRIM_TO = 200 #清理後保留多少筆資料
+
+
 def get_connection() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -863,6 +867,11 @@ def add_player_access_history(
             created_at,
         ))
 
+        trim_history_table(
+            conn,
+            "player_access_history",
+        )
+
         conn.commit()
 
 
@@ -1337,4 +1346,39 @@ def record_ip_ban_history(
             created_at,
         ))
 
+        trim_history_table(
+            conn,
+            "ip_ban_history",
+        )
+
         conn.commit()
+
+
+def trim_history_table(
+    conn,
+    table_name: str,
+    limit: int = DEFAULT_HISTORY_LIMIT,
+    trim_to: int = DEFAULT_HISTORY_TRIM_TO,
+) -> None:
+    count = conn.execute(
+        f"""
+        SELECT COUNT(*)
+        FROM {table_name}
+        """
+    ).fetchone()[0]
+
+    if count <= limit:
+        return
+
+    conn.execute(
+        f"""
+        DELETE FROM {table_name}
+        WHERE id IN (
+            SELECT id
+            FROM {table_name}
+            ORDER BY created_at ASC, id ASC
+            LIMIT ?
+        )
+        """,
+        (count - trim_to,),
+    )

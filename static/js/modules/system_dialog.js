@@ -84,6 +84,7 @@ function closeDialog(result) {
 export function showConfirm({
     title = "確認",
     message = "",
+    icon = "",
     confirmText = "確定",
     cancelText = "取消",
     showCancel = true,
@@ -95,28 +96,22 @@ export function showConfirm({
         cleanupDialogExtras();
 
         currentResolver = resolve;
-
-        const dialog =
-            document.getElementById("systemDialog");
-
-        const titleBox =
-            document.getElementById("systemDialogTitle");
-
-        const titleIcon =
-            document.getElementById("systemDialogTitleIcon");
-
-        const messageBox =
-            document.getElementById("systemDialogMessage");
-
-        const cancelBtn =
-            document.getElementById("systemDialogCancelBtn");
-
-        const confirmBtn =
-            document.getElementById("systemDialogConfirmBtn");
+        const dialog = document.getElementById("systemDialog");
+        const titleBox = document.getElementById("systemDialogTitle");
+        const titleIcon = document.getElementById("systemDialogTitleIcon");
+        const messageBox = document.getElementById("systemDialogMessage");
+        const cancelBtn = document.getElementById("systemDialogCancelBtn");
+        const confirmBtn = document.getElementById("systemDialogConfirmBtn");
 
         titleBox.textContent = title;
-        titleIcon.src = "";
-        titleIcon.classList.add("hidden");
+
+        if (icon) {
+            titleIcon.src = icon;
+            titleIcon.classList.remove("hidden");
+        } else {
+            titleIcon.src = "";
+            titleIcon.classList.add("hidden");
+        }
 
         titleBox.classList.remove(
             "success",
@@ -165,29 +160,14 @@ export async function showHelp({
 
         currentResolver = resolve;
 
-        const dialog =
-            document.getElementById("systemDialog");
-
-        const panel =
-            dialog.querySelector(".system-dialog-panel");
-
-        const titleBox =
-            document.getElementById("systemDialogTitle");
-
-        const titleIcon =
-            document.getElementById("systemDialogTitleIcon");
-
-        const messageBox =
-            document.getElementById("systemDialogMessage");
-
-        const helpSections =
-            document.getElementById("systemDialogHelpSections");
-
-        const cancelBtn =
-            document.getElementById("systemDialogCancelBtn");
-
-        const confirmBtn =
-            document.getElementById("systemDialogConfirmBtn");
+        const dialog = document.getElementById("systemDialog");
+        const panel = dialog.querySelector(".system-dialog-panel");
+        const titleBox = document.getElementById("systemDialogTitle");
+        const titleIcon = document.getElementById("systemDialogTitleIcon");
+        const messageBox = document.getElementById("systemDialogMessage");
+        const helpSections = document.getElementById("systemDialogHelpSections");
+        const cancelBtn = document.getElementById("systemDialogCancelBtn");
+        const confirmBtn = document.getElementById("systemDialogConfirmBtn");
 
         panel.classList.add("help-mode");
 

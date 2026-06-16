@@ -1,5 +1,6 @@
 import {
-    showInfo
+    showInfo,
+    showConfirm,
 } from "./system_dialog.js";
 
 import {
@@ -547,9 +548,18 @@ function createBanIpCard(item) {
 
 
 async function unbanPlayer(item) {
-    const confirmed = window.confirm(
-        `確定要解除「${item.target_name}」的封鎖嗎？`
-    );
+    const confirmed = await showConfirm({
+        title: "解除玩家封鎖",
+        message: `確定要解除「${item.target_name}」的封鎖嗎？`,
+        icon: getPlayerAvatarUrl({
+            player_uuid: item.target_uuid,
+            player_name: item.target_name,
+            account_type: item.account_type
+        }),
+        confirmText: "解除封鎖",
+        cancelText: "取消",
+        variant: "warning",
+    });
 
     if (!confirmed) return;
 
@@ -599,9 +609,14 @@ async function unbanPlayer(item) {
 
 
 async function unbanIp(item) {
-    const confirmed = window.confirm(
-        `確定要解除 IP「${item.target_name}」的封鎖嗎？`
-    );
+    const confirmed = await showConfirm({
+        title: "解除IP封鎖",
+        message: `確定要解除 IP「${item.target_name}」的封鎖嗎？`,
+        icon: "/static/icons/player_ban/barrier.png",
+        confirmText: "解除封鎖",
+        cancelText: "取消",
+        variant: "warning",
+    });
 
     if (!confirmed) return;
 

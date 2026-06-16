@@ -366,9 +366,11 @@
     position: fixed;
     inset: 0;
     z-index: 9100;
+
     display: flex;
     align-items: center;
     justify-content: center;
+
     background: rgba(0, 0, 0, 0.55);
 }
 
@@ -377,123 +379,101 @@
 }
 
 .player-ban-add-panel {
-    width: 520px;
-    margin: 0;
+    width: min(680px, calc(100vw - 64px));
+    height: min(760px, calc(100vh - 80px));
+    max-height: calc(100vh - 120px);
+
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
     padding: 20px;
-    background: #202020;
-    border: 2px solid #707070;
-    box-shadow: 0 0 0 2px #101010;
+
+    background: #1f1f1f;
+    border: 2px solid #555;
+    border-radius: 10px;
+
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+
     color: #e8e8e8;
+    box-sizing: border-box;
 }
 
 .player-ban-add-header {
     display: flex;
-    justify-content: center;
     align-items: center;
-    position: relative;
+    justify-content: center;
+
+    padding-bottom: 12px;
+    border-bottom: 1px solid #444;
 }
 
 .player-ban-add-title {
+    color: #f5f5f5;
     font-size: 20px;
     font-weight: bold;
 }
 
 .player-ban-add-body {
-    margin-top: 18px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
+
+    min-height: 0;
 }
 
 .player-ban-form-row {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
+
+    color: #ddd;
+    font-size: 15px;
+    font-weight: bold;
 }
 
-.player-ban-form-row input,
-.player-ban-form-row textarea,
+.player-ban-add-input,
+.player-ban-add-textarea,
 .player-ban-duration-fields input,
 .player-ban-datetime-fields input {
-    background: #111;
-    border: 1px solid #666;
-    color: #eee;
-    padding: 6px;
-}
+    width: 100%;
 
-.player-ban-expire-box {
-    padding: 12px;
+    padding: 10px 12px;
+
     border: 1px solid #555;
-    background: #262626;
-}
-
-.player-ban-expire-title {
-    margin-bottom: 8px;
-    color: #ffcc66;
-}
-
-.player-ban-radio-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 6px 0;
-}
-
-.player-ban-duration-fields,
-.player-ban-datetime-fields {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 8px 0 8px 24px;
-}
-
-.player-ban-duration-fields.hidden,
-.player-ban-datetime-fields.hidden {
-    display: none;
-}
-
-.player-ban-duration-fields input {
-    width: 64px;
-}
-
-.player-ban-add-actions {
-    margin-top: 18px;
-    text-align: right;
-}
-
-.player-ban-invalid-mode {
-    opacity: 0.45;
-    border-color: #7a6330;
-    filter: grayscale(0.75);
-}
-
-.player-ban-unban-btn {
-    grid-area: action;
-
-    padding: 9px 12px;
-    border: 1px solid #b85c5c;
     border-radius: 6px;
-    background: #303030;
-    color: #ff9c9c;
-    cursor: pointer;
+
+    background: #141414;
+    color: #f5f5f5;
+
+    box-sizing: border-box;
 }
 
-.player-ban-invalid-mode .player-ban-unban-btn {
-    opacity: 0.85;
-    filter: none;
+.player-ban-add-textarea {
+    resize: vertical;
+    min-height: 82px;
+    line-height: 1.5;
 }
 
-.player-ban-mode-warning {
-    margin-top: 4px;
-    color: #ffcc66;
-    font-size: 12px;
+.player-ban-add-input:disabled {
+    background: rgba(120, 120, 120, 0.18);
+    border-color: rgba(160, 160, 160, 0.28);
+    color: rgba(210, 210, 210, 0.6);
+    cursor: not-allowed;
+}
+
+.player-ban-add-input:disabled::placeholder {
+    color: rgba(210, 210, 210, 0.45);
 }
 
 .player-ban-candidate-section {
-    margin-top: 4px;
-    padding: 10px;
-    border: 1px solid #555;
-    background: #262626;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    padding: 0;
+    border: 0;
+    background: transparent;
 }
 
 .player-ban-candidate-section.hidden {
@@ -501,55 +481,241 @@
 }
 
 .player-ban-candidate-title {
-    margin-bottom: 8px;
-    color: #ffcc66;
-    font-size: 13px;
+    margin-top: 0;
+
+    color: #ddd;
+    font-size: 15px;
+    font-weight: bold;
 }
 
 .player-ban-candidate-list {
-    max-height: 160px;
-    overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 8px;
+
+    overflow-y: auto;
+    max-height: 220px;
+
+    padding-right: 4px;
 }
 
 .player-ban-candidate-card {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px;
-    background: #1f1f1f;
-    border: 1px solid #555;
+    gap: 12px;
+
+    padding: 10px;
+
+    border: 1px solid #444;
+    border-radius: 8px;
+
+    background: #262626;
 }
 
 .player-ban-candidate-avatar {
-    width: 32px;
-    height: 32px;
-    image-rendering: pixelated;
-    border: 1px solid #555;
+    width: 42px;
+    height: 42px;
+
+    flex-shrink: 0;
+
+    border: 2px solid #444;
+    border-radius: 4px;
+
     background: #111;
+    image-rendering: pixelated;
 }
 
 .player-ban-candidate-info {
     flex: 1;
     min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.player-ban-candidate-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 .player-ban-candidate-name {
+    color: #f5f5f5;
+    font-size: 16px;
     font-weight: bold;
-    font-size: 13px;
 }
 
 .player-ban-candidate-uuid {
-    margin-top: 2px;
+    margin-top: 4px;
+
     color: #aaa;
-    font-size: 11px;
+    font-size: 12px;
+    line-height: 1.35;
+
     overflow-wrap: anywhere;
 }
 
+.player-ban-candidate-type {
+    padding: 2px 6px;
+
+    border: 1px solid #555;
+    border-radius: 4px;
+
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.player-ban-candidate-type.online {
+    color: #8fd3ff;
+    border-color: rgba(143, 211, 255, 0.45);
+    background: rgba(143, 211, 255, 0.12);
+}
+
+.player-ban-candidate-type.offline {
+    color: #ffd37a;
+    border-color: rgba(255, 211, 122, 0.45);
+    background: rgba(255, 211, 122, 0.12);
+}
+
 .player-ban-candidate-select-btn {
-    min-width: 54px;
+    width: 42px;
+    height: 42px;
+
+    flex-shrink: 0;
+
+    border: 1px solid #6c8f52;
+    border-radius: 6px;
+
+    background: #303030;
+    color: #a9e28a;
+
+    font-size: 26px;
+    font-weight: bold;
+    line-height: 1;
+
+    cursor: pointer;
+}
+
+.player-ban-candidate-select-btn:hover {
+    background: #35422e;
+}
+
+.player-ban-expire-box {
+    padding: 12px;
+
+    border: 1px solid #444;
+    border-radius: 8px;
+
+    background: #262626;
+}
+
+.player-ban-expire-title {
+    margin-bottom: 10px;
+
+    color: #f0c36a;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.player-ban-radio-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    margin: 0;
+
+    color: #ddd;
+    font-size: 14px;
+}
+
+.player-ban-radio-row input {
+    margin: 0;
+}
+
+.player-ban-duration-fields,
+.player-ban-datetime-fields {
+    position: absolute;
+    inset: 0;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    height: 62px;
+    box-sizing: border-box;
+
+    padding: 12px;
+
+    border: 1px solid #3f3f3f;
+    border-radius: 6px;
+
+    background: #1b1b1b;
+    color: #ddd;
+}
+
+.player-ban-duration-fields.hidden,
+.player-ban-datetime-fields.hidden {
+    display: flex !important;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.player-ban-duration-fields.disabled {
+    opacity: 0.45;
+    filter: grayscale(100%);
+}
+
+.player-ban-duration-fields.disabled input {
+    cursor: not-allowed;
+}
+
+.player-ban-duration-fields input {
+    width: 72px;
+}
+
+.player-ban-datetime-fields input {
+    width: auto;
+}
+
+.player-ban-add-actions {
+    display: flex;
+    justify-content: center;
+    /* margin-top: 10px; */
+}
+
+.player-ban-confirm-add-btn {
+    min-width: 180px;
+
+    padding: 12px 18px;
+
+    border: 1px solid #c08b42;
+    border-radius: 6px;
+
+    background: #2b2b2b;
+    color: #f0c36a;
+
+    font-size: 16px;
+    font-weight: bold;
+
+    cursor: pointer;
+}
+
+.player-ban-confirm-add-btn:hover {
+    background: #3a3324;
+}
+
+.player-ban-confirm-add-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+
+    filter: grayscale(100%);
+
+    border-color: #555;
+    color: #888;
+
+    box-shadow: none;
 }
 
 .player-ban-add-open-btn{
@@ -854,4 +1020,29 @@
 
 .player-ban-invalid-mode-text {
     color: #d6a84f;
+}
+
+.player-ban-expire-options {
+    display: flex;
+    align-items: center;
+    gap: 36px;
+    flex-wrap: wrap;
+}
+
+.player-ban-input-row{
+    display:flex;
+    align-items:center;
+}
+
+.player-ban-expire-fields-slot {
+    height: 62px;
+    margin-top: 14px;
+
+    position: relative;
+}
+
+#addPlayerBanModal.ip-mode .player-ban-add-panel {
+    height: auto;
+    min-height: 0;
+    max-height: calc(100vh - 120px);
 }

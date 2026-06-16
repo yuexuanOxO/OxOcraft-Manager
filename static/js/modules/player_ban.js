@@ -872,6 +872,11 @@ async function openAddBanModal() {
     renderExpireFields();
     renderBanCandidateSection();
 
+    modal.classList.toggle(
+        "ip-mode",
+        currentBanTab === "ips"
+    );
+
     modal.classList.remove("hidden");
 
     if (currentBanTab === "players") {
@@ -1013,25 +1018,27 @@ function createBanCandidateCard(player) {
         >
 
         <div class="player-ban-candidate-info">
-            <div class="player-ban-candidate-name">
-                ${escapeHtml(player.player_name)}
+            <div class="player-ban-candidate-name-row">
+                <div class="player-ban-candidate-name">
+                    ${escapeHtml(player.player_name)}
+                </div>
+
+                <div class="player-ban-candidate-type ${getAccountTypeClass(player)}">
+                    ${getAccountTypeLabel(player)}
+                </div>
             </div>
 
             <div class="player-ban-candidate-uuid">
                 UUID：${escapeHtml(player.player_uuid)}
             </div>
-
-            <div class="player-ban-candidate-type">
-                ${getAccountTypeLabel(player)}
-            </div>
-
         </div>
 
         <button
             class="player-ban-candidate-select-btn"
             type="button"
+            title="選擇玩家"
         >
-            選擇
+            +
         </button>
     `;
 
@@ -1067,15 +1074,34 @@ function renderExpireFields() {
     const datetimeFields =
         document.getElementById("playerBanDateTimeFields");
 
+    const durationInputs =
+        durationFields?.querySelectorAll("input") || [];
+
+    const datetimeInputs =
+        datetimeFields?.querySelectorAll("input") || [];
+
     durationFields?.classList.toggle(
         "hidden",
-        type !== "duration"
+        type === "datetime"
     );
 
     datetimeFields?.classList.toggle(
         "hidden",
         type !== "datetime"
     );
+
+    durationFields?.classList.toggle(
+        "disabled",
+        type !== "duration"
+    );
+
+    durationInputs.forEach(input => {
+        input.disabled = type !== "duration";
+    });
+
+    datetimeInputs.forEach(input => {
+        input.disabled = type !== "datetime";
+    });
 }
 
 

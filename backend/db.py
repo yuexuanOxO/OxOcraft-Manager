@@ -3,8 +3,8 @@ from datetime import datetime
 from backend.paths import DB_PATH
 
 
-DEFAULT_HISTORY_LIMIT = 300 #保留多少筆資料
-DEFAULT_HISTORY_TRIM_TO = 200 #清理後保留多少筆資料
+DEFAULT_HISTORY_LIMIT = 10 #保留多少筆資料
+DEFAULT_HISTORY_TRIM_TO = 5 #清理後保留多少筆資料
 
 
 def get_connection() -> sqlite3.Connection:
@@ -1370,6 +1370,14 @@ def trim_history_table(
     if count <= limit:
         return
 
+    delete_count = count - trim_to
+
+    print(
+        f"[HistoryTrim] "
+        f"'{table_name}' exceeded the maximum record limit "
+        f"({count}/{limit}). "
+        f"Trimming history to {trim_to} records..."
+    )
     conn.execute(
         f"""
         DELETE FROM {table_name}
@@ -1380,5 +1388,13 @@ def trim_history_table(
             LIMIT ?
         )
         """,
-        (count - trim_to,),
+        (delete_count,),
     )
+
+    print(
+        f"[HistoryTrim] "
+        f"'{table_name}' trimmed successfully. "
+        f"Deleted {delete_count} old record(s). "
+        f"{trim_to} record(s) remaining."
+    )
+    

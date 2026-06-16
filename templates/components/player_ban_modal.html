@@ -25,14 +25,17 @@
 
         <div class="player-ban-main">
             <div class="player-ban-header">
+                <div class="player-ban-header-left">
+                    <div id="playerBanSummary" class="player-ban-summary"></div>
+
+                    <div id="playerBanPlayerCount" class="player-ban-player-count">
+                        載入中...
+                    </div>
+                </div>
+
                 <div id="playerBanTitle" class="player-ban-title">
                     黑名單管理：封鎖玩家
                 </div>
-
-            </div>
-
-            <div id="playerBanSummary" class="player-ban-summary">
-                載入中...
             </div>
 
             <div id="playerBanToolbar" class="player-ban-toolbar">
@@ -113,7 +116,7 @@
         </div>
 
         <div class="player-ban-add-body">
-            <span>玩家名稱</span>
+            <div class="player-ban-candidate-title">玩家名稱</div>
             <div class="player-ban-input-row">
                 <input
                     id="addPlayerBanTargetInput"

@@ -114,8 +114,8 @@
 
 .player-ban-header {
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
     position: relative;
     margin-bottom: 6px;
 }
@@ -129,12 +129,6 @@
     position: absolute;
     right: 0;
     top: -4px;
-}
-
-.player-ban-summary {
-    margin-top: 12px;
-    color: #72d672;
-    font-size: 13px;
 }
 
 .player-ban-toolbar {
@@ -1046,3 +1040,49 @@
     min-height: 0;
     max-height: calc(100vh - 120px);
 }
+
+.player-ban-summary {
+    margin: 0;
+    font-size: 14px;
+    color: #d0d0d0;
+}
+
+.player-ban-player-count {
+    margin-top: 4px;
+    font-size: 13px;
+    color: #bbb;
+}
+
+.player-ban-mode {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid #555;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.player-ban-mode.online {
+    border-color: #4f9d69;
+    color: #8ee891;
+    background: rgba(79, 157, 105, 0.12);
+}
+
+.player-ban-mode.offline {
+    border-color: #c08b42;
+    color: #f0c36a;
+    background: rgba(192, 139, 66, 0.12);
+}
+
+.player-ban-header-left {
+    position: absolute;
+    left: 0;
+    top: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+

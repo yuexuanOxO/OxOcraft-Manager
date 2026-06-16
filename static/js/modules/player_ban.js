@@ -190,6 +190,7 @@ function updateBanTabs() {
     const toolbar = document.getElementById("playerBanToolbar");
     const historyToolbar = document.getElementById("playerBanHistoryToolbar");
     const summary = document.getElementById("playerBanSummary");
+    const playerCount = document.getElementById("playerBanPlayerCount");
     const searchInput = document.getElementById("playerBanSearchInput");
     const addBtn = document.getElementById("openAddBanBtn");
     const historySearchInput = document.getElementById("playerBanHistorySearchInput");
@@ -211,6 +212,10 @@ function updateBanTabs() {
 
     if (summary) {
         summary.classList.toggle("hidden", currentBanTab === "help");
+    }
+
+    if (playerCount) {
+        playerCount.classList.toggle("hidden", currentBanTab === "help");
     }
 
     if (toolbar) {
@@ -287,6 +292,31 @@ async function loadCurrentBanTab() {
     }
 }
 
+
+function renderBanModeBadge() {
+    const summary = document.getElementById("playerBanSummary");
+
+    if (!summary) return;
+
+    const sourceRows =
+        currentBanTab === "ips"
+            ? banIps
+            : banPlayers;
+
+    const hasOfflineModeData =
+        sourceRows.some(item => item.account_type === "offline");
+
+    const isOnlineMode =
+        !hasOfflineModeData;
+
+    summary.innerHTML = `
+        <div class="player-ban-mode ${isOnlineMode ? "online" : "offline"}">
+            ${isOnlineMode ? "✓ 已開啟正版驗證" : "⚠ 離線模式"}
+        </div>
+    `;
+}
+
+
 function renderCurrentBanTab() {
     if (currentBanTab === "players") {
         renderBanPlayers();
@@ -308,7 +338,7 @@ function renderCurrentBanTab() {
 
 function renderBanPlayers() {
     const content = document.getElementById("playerBanContent");
-    const summary = document.getElementById("playerBanSummary");
+    const playerCount = document.getElementById("playerBanPlayerCount");
     const keyword = getSearchKeyword();
 
     if (!content) return;
@@ -323,9 +353,12 @@ function renderBanPlayers() {
             );
         });
     }
+    
 
-    if (summary) {
-        summary.textContent = `共 ${rows.length} 位封鎖玩家`;
+    renderBanModeBadge();
+
+    if (playerCount) {
+        playerCount.textContent = `共 ${rows.length} 位封鎖玩家`;
     }
 
     content.innerHTML = "";
@@ -427,7 +460,7 @@ function createBanPlayerCard(item) {
 
 function renderBanIps() {
     const content = document.getElementById("playerBanContent");
-    const summary = document.getElementById("playerBanSummary");
+    const playerCount = document.getElementById("playerBanPlayerCount");
     const keyword = getSearchKeyword();
 
     if (!content) return;
@@ -440,8 +473,10 @@ function renderBanIps() {
         });
     }
 
-    if (summary) {
-        summary.textContent = `共 ${rows.length} 個封鎖IP`;
+    renderBanModeBadge();
+
+    if (playerCount) {
+        playerCount.textContent = `共 ${rows.length} 個封鎖IP`;
     }
 
     content.innerHTML = "";
@@ -618,6 +653,7 @@ async function unbanIp(item) {
 function renderBanHistory() {
     const content = document.getElementById("playerBanContent");
     const summary = document.getElementById("playerBanSummary");
+    const playerCount = document.getElementById("playerBanPlayerCount");
 
     const historySearchInput =
         document.getElementById("playerBanHistorySearchInput");
@@ -669,8 +705,11 @@ function renderBanHistory() {
         });
     }
 
-    if (summary) {
-        summary.textContent = `共 ${rows.length} 筆封鎖紀錄`;
+    renderBanModeBadge();
+
+    if (playerCount) {
+        playerCount.classList.remove("hidden");
+        playerCount.textContent = `共 ${rows.length} 筆封鎖紀錄`;
     }
 
     content.innerHTML = "";

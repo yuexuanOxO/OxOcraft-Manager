@@ -1,6 +1,7 @@
 import {
     showInfo,
-    showHelp
+    showHelp,
+    showConfirm,
 } from "./system_dialog.js";
 
 import {
@@ -975,17 +976,24 @@ async function togglePlayerOpFromCandidate(player) {
 
 
 async function deleteOpCandidate(player) {
-    const confirmed = window.confirm(
-        `確定要刪除「${player.player_name}」的玩家紀錄嗎？\n\n這會從之前加入過的玩家清單中移除。`
-    );
+
+    const confirmed = await showConfirm({
+        title: "刪除玩家紀錄",
+        message: `確定要刪除「${player.player_name}」嗎？\n\n將從「之前加入過的玩家」清單移除。`,
+        icon: getPlayerAvatarUrl(player),
+        confirmText: "刪除",
+        cancelText: "取消",
+        variant: "warning",
+    });
 
     if (!confirmed) {
         return;
     }
 
     try {
+
         const response = await fetch(
-            "/api/player/permission/candidate/delete",
+            "/api/player/candidate/delete",
             {
                 method: "POST",
                 headers: {
@@ -1016,6 +1024,7 @@ async function deleteOpCandidate(player) {
         });
 
     } catch (error) {
+
         console.error("刪除玩家紀錄失敗:", error);
 
         await showInfo({

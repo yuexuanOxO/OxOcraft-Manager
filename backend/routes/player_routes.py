@@ -7,11 +7,15 @@ from flask import Blueprint, jsonify, request
 
 from backend.paths import MC_ROOT, SERVER_PROPERTIES_PATH
 from backend.rcon_service import send_rcon_command
+
+from backend.player_permissions.player_identity_service import (
+    delete_player_candidate,
+)
+
 from backend.player_permissions.player_permission_service import (
     get_player_permission_list,
     toggle_player_op,
     get_player_permission_candidate_list,
-    delete_permission_candidate,
     can_add_op_by_name,
     is_server_ready
 )
@@ -21,7 +25,6 @@ from backend.player_permissions.player_whitelist_service import (
     get_player_whitelist_candidate_list,
     toggle_player_whitelist,
     add_player_whitelist_by_name,
-    delete_whitelist_candidate,
     get_whitelist_settings,
     toggle_whitelist_setting,
     add_player_whitelist_direct
@@ -376,43 +379,6 @@ def api_player_whitelist_add():
         }), 500
     
 
-@player_bp.route(
-    "/api/player/whitelist/candidate/delete",
-    methods=["POST"]
-)
-def api_player_whitelist_candidate_delete():
-
-    data = request.get_json(silent=True) or {}
-
-    player_uuid = str(
-        data.get("uuid", "")
-    ).strip()
-
-    player_name = str(
-        data.get("name", "")
-    ).strip()
-
-    if not player_uuid or not player_name:
-        return jsonify({
-            "success": False,
-            "message": "缺少玩家 UUID 或名稱"
-        }), 400
-
-    try:
-        result = delete_whitelist_candidate(
-            player_uuid=player_uuid,
-            player_name=player_name,
-        )
-
-        return jsonify(result)
-
-    except Exception as error:
-        return jsonify({
-            "success": False,
-            "message": str(error)
-        }), 500
-    
-
 @player_bp.route("/api/player/whitelist/settings")
 def api_player_whitelist_settings():
     return jsonify({
@@ -447,10 +413,10 @@ def api_player_permission_candidates():
 
 
 @player_bp.route(
-    "/api/player/permission/candidate/delete",
+    "/api/player/candidate/delete",
     methods=["POST"]
 )
-def api_player_permission_candidate_delete():
+def api_player_candidate_delete():
     data = request.get_json(silent=True) or {}
 
     player_uuid = str(data.get("uuid", "")).strip()
@@ -463,19 +429,20 @@ def api_player_permission_candidate_delete():
         }), 400
 
     try:
-        result = delete_permission_candidate(
+        result = delete_player_candidate(
             player_uuid=player_uuid,
             player_name=player_name,
         )
 
-        return jsonify(result)
+        status = 200 if result.get("success") else 400
+        return jsonify(result), status
 
     except Exception as error:
         return jsonify({
             "success": False,
             "message": str(error)
         }), 500
-    
+
 
 @player_bp.route(
     "/api/player/whitelist/add-candidate",

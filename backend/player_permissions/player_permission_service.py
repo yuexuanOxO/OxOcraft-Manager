@@ -452,15 +452,3 @@ def get_player_permission_candidate_list() -> list[dict]:
     return result
 
 
-def delete_permission_candidate(
-    player_uuid: str,
-    player_name: str,
-) -> dict:
-
-    hide_player_candidate(player_uuid)
-
-    return {
-        "success": True,
-        "message": f"已從之前加入過的玩家清單移除 {player_name}",
-    }
-

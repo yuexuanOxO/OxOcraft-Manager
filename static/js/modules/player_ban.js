@@ -1087,30 +1087,120 @@ function createBanCandidateCard(player) {
             </div>
         </div>
 
-        <button
-            class="player-ban-candidate-select-btn"
-            type="button"
-            title="選擇玩家"
-        >
-            +
-        </button>
+        <div class="player-ban-candidate-actions">
+            <button
+                class="player-ban-candidate-select-btn"
+                type="button"
+            >
+                ＋
+            </button>
+
+            <button
+                class="player-ban-candidate-delete-btn"
+                type="button"
+                title="刪除玩家紀錄"
+            >
+                ✕
+            </button>
+
+        </div>
     `;
 
-    const selectBtn =
-        card.querySelector(".player-ban-candidate-select-btn");
+    const selectBtn = card.querySelector(".player-ban-candidate-select-btn");
+    const deleteBtn = card.querySelector(".player-ban-candidate-delete-btn");
 
     selectBtn?.addEventListener("click", () => {
         selectedBanCandidatePlayer = player;
 
-        const input =
-            document.getElementById("addPlayerBanTargetInput");
+        const input = document.getElementById("addPlayerBanTargetInput");
 
         if (input) {
             input.value = player.player_name;
         }
     });
 
+    deleteBtn?.addEventListener("click", async () => {
+        await deleteBanCandidate(player);
+    });
+
     return card;
+}
+
+
+async function deleteBanCandidate(player) {
+    const confirmed = await showConfirm({
+        title: "刪除玩家紀錄",
+        message: `確定要刪除「${player.player_name}」嗎？\n將從「之前加入過的玩家」清單移除。`,
+        icon: getPlayerAvatarUrl(player),
+        confirmText: "刪除",
+        cancelText: "取消",
+        variant: "warning",
+    });
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            "/api/player/candidate/delete",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    uuid: player.player_uuid,
+                    name: player.player_name,
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(
+                data.message || "刪除玩家紀錄失敗"
+            );
+        }
+
+        if (
+            selectedBanCandidatePlayer &&
+            selectedBanCandidatePlayer.player_uuid === player.player_uuid
+        ) {
+            selectedBanCandidatePlayer = null;
+
+            const input =
+                document.getElementById("addPlayerBanTargetInput");
+
+            if (
+                input &&
+                input.value.trim().toLowerCase() ===
+                    String(player.player_name || "").trim().toLowerCase()
+            ) {
+                input.value = "";
+            }
+        }
+
+        await loadBanCandidates();
+
+        await showInfo({
+            title: "黑名單管理",
+            message: data.message,
+            confirmText: "關閉",
+            variant: "success"
+        });
+
+    } catch (error) {
+        console.error("刪除玩家紀錄失敗:", error);
+
+        await showInfo({
+            title: "錯誤",
+            message: error.message || "刪除玩家紀錄失敗",
+            confirmText: "關閉",
+            variant: "error"
+        });
+    }
 }
 
 

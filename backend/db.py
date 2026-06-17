@@ -700,16 +700,16 @@ def delete_player_by_uuid(player_uuid: str) -> None:
     conn.close()
 
 
-def hide_player_candidate(player_uuid: str) -> None:
+def hide_player_candidate(player_uuid: str) -> bool:
     player_uuid = str(player_uuid or "").strip()
 
     if not player_uuid:
-        return
+        return False
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     with get_connection() as conn:
-        conn.execute("""
+        cursor = conn.execute("""
             UPDATE players
             SET show_in_player_candidates = 0,
                 updated_at = ?
@@ -720,6 +720,8 @@ def hide_player_candidate(player_uuid: str) -> None:
         ))
 
         conn.commit()
+
+    return cursor.rowcount > 0
 
 
 def upsert_player_login(

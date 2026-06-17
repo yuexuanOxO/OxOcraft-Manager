@@ -1,6 +1,7 @@
 import {
     showInfo,
-    showHelp
+    showHelp,
+    showConfirm,
 } from "./system_dialog.js";
 
 import {
@@ -1091,9 +1092,14 @@ function createWhitelistCandidateCard(player) {
 
 async function deleteWhitelistCandidate(player) {
 
-    const confirmed = window.confirm(
-        `確定要刪除「${player.player_name}」的玩家紀錄嗎？\n\n這會從之前加入過的玩家清單中移除。`
-    );
+    const confirmed = await showConfirm({
+        title: "刪除玩家紀錄",
+        message: `確定要刪除「${player.player_name}」嗎？\n將從「之前加入過的玩家」清單移除。`,
+        icon: getPlayerAvatarUrl(player),
+        confirmText: "刪除",
+        cancelText: "取消",
+        variant: "warning",
+    });
 
     if (!confirmed) {
         return;
@@ -1102,7 +1108,7 @@ async function deleteWhitelistCandidate(player) {
     try {
 
         const response = await fetch(
-            "/api/player/whitelist/candidate/delete",
+            "/api/player/candidate/delete",
             {
                 method: "POST",
                 headers: {

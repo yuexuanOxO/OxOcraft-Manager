@@ -422,21 +422,6 @@ def add_player_whitelist_by_name(player_name: str) -> dict:
     )
 
 
-def delete_whitelist_candidate(
-    player_uuid: str,
-    player_name: str,
-) -> dict:
-
-    hide_player_candidate(player_uuid)
-
-    return {
-        "success": True,
-        "message": (
-            f"已從之前加入過的玩家清單移除 {player_name}"
-        ),
-    }
-
-
 def read_server_property(key: str, default: str = "false") -> str:
     if not SERVER_PROPERTIES_PATH.exists():
         return default

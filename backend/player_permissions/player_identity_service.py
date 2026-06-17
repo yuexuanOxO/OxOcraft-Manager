@@ -13,6 +13,7 @@ from backend.db import (
     delete_player_by_uuid,
     get_player_by_name,
     upsert_player_identity,
+    hide_player_candidate,
 )
 
 
@@ -313,4 +314,31 @@ def resolve_player_identity(
         "player_uuid": None,
         "player_name": player_name,
         "account_type": None,
+    }
+
+
+def delete_player_candidate(
+    player_uuid: str,
+    player_name: str,
+) -> dict:
+    player_uuid = str(player_uuid or "").strip()
+    player_name = str(player_name or "").strip()
+
+    if not player_uuid or not player_name:
+        return {
+            "success": False,
+            "message": "缺少玩家 UUID 或名稱",
+        }
+
+    hidden = hide_player_candidate(player_uuid)
+
+    if not hidden:
+        return {
+            "success": False,
+            "message": f"找不到玩家 {player_name} 的紀錄",
+        }
+
+    return {
+        "success": True,
+        "message": f"已從之前加入過的玩家清單移除 {player_name}",
     }

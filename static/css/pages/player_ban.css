@@ -1086,3 +1086,30 @@
     align-items: flex-start;
 }
 
+.player-ban-candidate-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.player-ban-candidate-delete-btn {
+    width: 42px;
+    height: 42px;
+
+    border: 1px solid #b85c5c;
+    border-radius: 6px;
+
+    background: #303030;
+    color: #ff9c9c;
+
+    font-size: 22px;
+    font-weight: bold;
+
+    cursor: pointer;
+    line-height: 1;
+}
+
+.player-ban-candidate-delete-btn:hover {
+    background: #422e2e;
+}

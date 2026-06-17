@@ -10,6 +10,7 @@ from backend.rcon_service import send_rcon_command
 
 from backend.player_permissions.player_identity_service import (
     hide_player_candidate,
+    resolve_player_identity_by_name,
 )
 
 from backend.player_permissions.player_permission_service import (
@@ -281,13 +282,16 @@ def api_player_permission_add_op():
             "message": "離線模式且伺服器在線時，不能手動輸入玩家名稱新增 OP。請先讓玩家進入伺服器一次，再從「之前加入過的玩家」清單加入。"
         }), 400
 
-    player_uuid = resolve_player_uuid(player_name)
+    identity = resolve_player_identity_by_name(player_name)
 
-    if not player_uuid:
+    if not identity["success"]:
         return jsonify({
             "success": False,
-            "message": f"無法取得玩家 {player_name} 的 UUID，請確認玩家名稱或網路連線"
+            "message": identity["message"],
         }), 400
+
+    player_uuid = identity["player_uuid"]
+    player_name = identity["player_name"]
 
     try:
         from backend.player_permissions.player_permission_service import set_player_op

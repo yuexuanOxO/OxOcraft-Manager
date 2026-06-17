@@ -317,6 +317,44 @@ def resolve_player_identity(
     }
 
 
+def resolve_player_identity_by_name(
+    player_name: str,
+) -> dict:
+    player_name = str(player_name or "").strip()
+
+    if not player_name:
+        return {
+            "success": False,
+            "message": "請輸入玩家名稱",
+            "player_uuid": None,
+            "player_name": "",
+            "account_type": None,
+        }
+
+    identity = resolve_player_identity(player_name)
+
+    player_uuid = identity.get("player_uuid")
+    resolved_name = identity.get("player_name") or player_name
+    account_type = identity.get("account_type")
+
+    if not player_uuid:
+        return {
+            "success": False,
+            "message": f"無法取得玩家 {player_name} 的 UUID，請確認玩家名稱或網路連線",
+            "player_uuid": None,
+            "player_name": resolved_name,
+            "account_type": account_type,
+        }
+
+    return {
+        "success": True,
+        "message": "",
+        "player_uuid": player_uuid,
+        "player_name": resolved_name,
+        "account_type": account_type,
+    }
+
+
 def hide_player_candidate(
     player_uuid: str,
     player_name: str,

@@ -11,6 +11,7 @@ from backend.server_monitor import get_cached_server_status
 from backend.player_permissions.player_identity_service import (
     get_known_players,
     get_account_type,
+    resolve_player_identity_by_name,
 )
 
 from backend.player_permissions.player_permission_service import (
@@ -22,7 +23,6 @@ from backend.player_permissions.player_access_history_service import (
 )
 
 from backend.db import (
-    hide_player_candidate_db,
     update_player_whitelist_since,
     update_player_whitelist_status,
     get_whitelisted_players_from_db,
@@ -403,22 +403,17 @@ def add_player_whitelist_by_name(player_name: str) -> dict:
             "message": "請輸入玩家名稱",
         }
 
-    online_mode = get_effective_online_mode()
+    identity = resolve_player_identity_by_name(player_name)
 
-    if online_mode:
-        player_uuid = get_mojang_uuid(player_name)
-
-        if not player_uuid:
-            return {
-                "success": False,
-                "message": f"無法取得 {player_name} 的正版 UUID，請確認玩家名稱或網路連線",
-            }
-    else:
-        player_uuid = get_offline_player_uuid(player_name)
+    if not identity["success"]:
+        return {
+            "success": False,
+            "message": identity["message"],
+        }
 
     return add_player_whitelist(
-        player_uuid=player_uuid,
-        player_name=player_name,
+        player_uuid=identity["player_uuid"],
+        player_name=identity["player_name"],
     )
 
 

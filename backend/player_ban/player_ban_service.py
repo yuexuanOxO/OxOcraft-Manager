@@ -16,6 +16,7 @@ from backend.player_permissions.player_identity_service import (
     get_known_players,
     get_current_usercache_players,
     get_account_type as detect_account_type,
+    resolve_player_identity_by_name,
 )
 
 from backend.db import (
@@ -607,15 +608,17 @@ def ban_player(
             or detect_account_type(player_uuid)
         ).strip()
     else:
-        player_uuid = resolve_player_uuid(player_name)
+        identity = resolve_player_identity_by_name(player_name)
 
-        if not player_uuid:
+        if not identity["success"]:
             return {
                 "success": False,
-                "message": f"無法取得玩家 {player_name} 的 UUID",
+                "message": identity["message"],
             }
 
-        account_type = detect_account_type(player_uuid)
+        player_uuid = identity["player_uuid"]
+        player_name = identity["player_name"]
+        account_type = identity["account_type"] or detect_account_type(player_uuid)
 
 
     existing_ban = get_banned_player_by_uuid(player_uuid)

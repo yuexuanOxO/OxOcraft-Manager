@@ -13,18 +13,18 @@
 ---
 
 <p align="center">
-  一款由 Minecraft 玩家打造，專為 Minecraft 玩家設計的 Minecraft Java Edition 伺服器管理工具。
+  一款由 Minecraft 玩家打造，專為 Minecraft 玩家設計的 Supports Minecraft Java Edition 伺服器管理工具。
 </p>
 
 <p align="center">
 
 <!-- TODO：GitHub Badges -->
 
-![Version](https://img.shields.io/badge/version-v0.9.6-blue)
+![Version](https://img.shields.io/badge/version-v0.9.7-blue)
 
 ![Status](https://img.shields.io/badge/status-Development-orange)
 
-![Minecraft](https://img.shields.io/badge/Minecraft-Java%20Edition-green)
+![Supports](https://img.shields.io/badge/Supports-Minecraft%20Java%20Edition-green)
 
 </p>
 

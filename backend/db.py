@@ -3,8 +3,18 @@ from datetime import datetime
 from backend.paths import DB_PATH
 
 
-DEFAULT_HISTORY_LIMIT = 10 #保留多少筆資料
-DEFAULT_HISTORY_TRIM_TO = 5 #清理後保留多少筆資料
+# 測試用：先用 10 / 5，確認 OK 後再改成 300 / 200
+OP_HISTORY_LIMIT = 300
+OP_HISTORY_TRIM_TO = 200
+
+WHITELIST_HISTORY_LIMIT = 300
+WHITELIST_HISTORY_TRIM_TO = 200
+
+BAN_HISTORY_LIMIT = 300
+BAN_HISTORY_TRIM_TO = 200
+
+IP_BAN_HISTORY_LIMIT = 300
+IP_BAN_HISTORY_TRIM_TO = 200
 
 
 def get_connection() -> sqlite3.Connection:
@@ -806,6 +816,78 @@ def mark_all_players_offline() -> None:
         conn.commit()
 
 
+def get_player_access_history_trim_config(
+    category: str,
+) -> tuple[int, int]:
+    category = str(category or "").strip()
+
+    if category == "op":
+        return OP_HISTORY_LIMIT, OP_HISTORY_TRIM_TO
+
+    if category == "whitelist":
+        return WHITELIST_HISTORY_LIMIT, WHITELIST_HISTORY_TRIM_TO
+
+    if category == "ban":
+        return BAN_HISTORY_LIMIT, BAN_HISTORY_TRIM_TO
+
+    return BAN_HISTORY_LIMIT, BAN_HISTORY_TRIM_TO
+
+
+def trim_player_access_history_by_category(
+    conn,
+    category: str,
+) -> None:
+    category = str(category or "").strip()
+
+    if not category:
+        return
+
+    limit, trim_to = get_player_access_history_trim_config(
+        category
+    )
+
+    count = conn.execute("""
+        SELECT COUNT(*)
+        FROM player_access_history
+        WHERE category = ?
+    """, (
+        category,
+    )).fetchone()[0]
+
+    if count <= limit:
+        return
+
+    delete_count = count - trim_to
+
+    print(
+        f"[HistoryTrim] "
+        f"'player_access_history' category '{category}' exceeded "
+        f"the maximum record limit ({count}/{limit}). "
+        f"Trimming history to {trim_to} records..."
+    )
+
+    conn.execute("""
+        DELETE FROM player_access_history
+        WHERE id IN (
+            SELECT id
+            FROM player_access_history
+            WHERE category = ?
+            ORDER BY created_at ASC, id ASC
+            LIMIT ?
+        )
+    """, (
+        category,
+        delete_count,
+    ))
+
+    print(
+        f"[HistoryTrim] "
+        f"'player_access_history' category '{category}' trimmed successfully. "
+        f"Deleted {delete_count} old record(s). "
+        f"{trim_to} record(s) remaining."
+    )
+
+
 def add_player_access_history(
     category: str,
     action: str,
@@ -869,9 +951,9 @@ def add_player_access_history(
             created_at,
         ))
 
-        trim_history_table(
+        trim_player_access_history_by_category(
             conn,
-            "player_access_history",
+            category,
         )
 
         conn.commit()
@@ -1351,6 +1433,8 @@ def record_ip_ban_history(
         trim_history_table(
             conn,
             "ip_ban_history",
+            limit=IP_BAN_HISTORY_LIMIT,
+            trim_to=IP_BAN_HISTORY_TRIM_TO,
         )
 
         conn.commit()
@@ -1359,8 +1443,8 @@ def record_ip_ban_history(
 def trim_history_table(
     conn,
     table_name: str,
-    limit: int = DEFAULT_HISTORY_LIMIT,
-    trim_to: int = DEFAULT_HISTORY_TRIM_TO,
+    limit: int,
+    trim_to: int,
 ) -> None:
     count = conn.execute(
         f"""

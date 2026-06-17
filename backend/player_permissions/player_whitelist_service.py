@@ -22,7 +22,7 @@ from backend.player_permissions.player_access_history_service import (
 )
 
 from backend.db import (
-    hide_player_candidate,
+    hide_player_candidate_db,
     update_player_whitelist_since,
     update_player_whitelist_status,
     get_whitelisted_players_from_db,

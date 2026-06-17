@@ -9,7 +9,7 @@ from backend.paths import MC_ROOT, SERVER_PROPERTIES_PATH
 from backend.rcon_service import send_rcon_command
 
 from backend.player_permissions.player_identity_service import (
-    delete_player_candidate,
+    hide_player_candidate,
 )
 
 from backend.player_permissions.player_permission_service import (
@@ -413,10 +413,10 @@ def api_player_permission_candidates():
 
 
 @player_bp.route(
-    "/api/player/candidate/delete",
+    "/api/player/candidate/hide",
     methods=["POST"]
 )
-def api_player_candidate_delete():
+def api_hide_player_candidate():
     data = request.get_json(silent=True) or {}
 
     player_uuid = str(data.get("uuid", "")).strip()
@@ -429,7 +429,7 @@ def api_player_candidate_delete():
         }), 400
 
     try:
-        result = delete_player_candidate(
+        result = hide_player_candidate(
             player_uuid=player_uuid,
             player_name=player_name,
         )

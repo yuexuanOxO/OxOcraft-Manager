@@ -13,7 +13,7 @@ from backend.db import (
     delete_player_by_uuid,
     get_player_by_name,
     upsert_player_identity,
-    hide_player_candidate,
+    hide_player_candidate_db as db_hide_player_candidate,
 )
 
 
@@ -317,7 +317,7 @@ def resolve_player_identity(
     }
 
 
-def delete_player_candidate(
+def hide_player_candidate(
     player_uuid: str,
     player_name: str,
 ) -> dict:
@@ -330,7 +330,7 @@ def delete_player_candidate(
             "message": "缺少玩家 UUID 或名稱",
         }
 
-    hidden = hide_player_candidate(player_uuid)
+    hidden = db_hide_player_candidate(player_uuid)
 
     if not hidden:
         return {

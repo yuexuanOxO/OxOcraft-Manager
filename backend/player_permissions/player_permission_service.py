@@ -12,7 +12,6 @@ from backend.player_permissions.player_identity_service import (
 )
 
 from backend.db import (
-    hide_player_candidate,
     sync_player_op_flags_from_uuid_set,
     get_op_players_from_db,
     upsert_player_identity,

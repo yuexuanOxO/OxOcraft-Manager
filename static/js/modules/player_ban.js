@@ -1143,7 +1143,7 @@ async function deleteBanCandidate(player) {
 
     try {
         const response = await fetch(
-            "/api/player/candidate/delete",
+            "/api/player/candidate/hide",
             {
                 method: "POST",
                 headers: {

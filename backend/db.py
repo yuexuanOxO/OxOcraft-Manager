@@ -700,7 +700,7 @@ def delete_player_by_uuid(player_uuid: str) -> None:
     conn.close()
 
 
-def hide_player_candidate(player_uuid: str) -> bool:
+def hide_player_candidate_db(player_uuid: str) -> bool:
     player_uuid = str(player_uuid or "").strip()
 
     if not player_uuid:

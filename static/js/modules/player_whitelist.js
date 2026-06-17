@@ -1108,7 +1108,7 @@ async function deleteWhitelistCandidate(player) {
     try {
 
         const response = await fetch(
-            "/api/player/candidate/delete",
+            "/api/player/candidate/hide",
             {
                 method: "POST",
                 headers: {

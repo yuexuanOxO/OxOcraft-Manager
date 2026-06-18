@@ -57,14 +57,20 @@ export function initPlayerWhitelist() {
     }
 
     document.querySelectorAll(".player-whitelist-tab").forEach((button) => {
-            button.addEventListener("click", async () => {
-                currentWhitelistTab =
-                    button.dataset.tab || "whitelist";
+        button.addEventListener("click", async () => {
+            const nextTab =
+                button.dataset.tab || "whitelist";
 
-                updateWhitelistTabs();
-                await loadCurrentWhitelistTab();
-            });
+            if (currentWhitelistTab === nextTab) {
+                return;
+            }
+
+            currentWhitelistTab = nextTab;
+
+            updateWhitelistTabs();
+            await loadCurrentWhitelistTab();
         });
+    });
 
     historySearchInput?.addEventListener("input", () => {
         renderWhitelistHistory();

@@ -54,11 +54,18 @@ export function initPlayerBan() {
         }
     });
 
-    document
-        .querySelectorAll(".player-ban-tab")
-        .forEach((button) => {
+    document.querySelectorAll(".player-ban-tab").forEach((button) => {
             button.addEventListener("click", async () => {
-                currentBanTab = button.dataset.tab || "players";
+
+                const nextTab =
+                    button.dataset.tab || "players";
+
+                if (currentBanTab === nextTab) {
+                    return;
+                }
+
+                currentBanTab = nextTab;
+
                 updateBanTabs();
                 await loadCurrentBanTab();
             });

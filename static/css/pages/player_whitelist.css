@@ -72,14 +72,14 @@
 
 .player-whitelist-toolbar {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
     gap: 10px;
 }
 
 .player-whitelist-search {
-    flex: 1;
-    min-width: 220px;
+    width: 100%;
+    min-width: 0;
     padding: 10px 12px;
     border: 1px solid #555;
     border-radius: 6px;
@@ -93,8 +93,7 @@
     gap: 6px;
 }
 
-.player-whitelist-filter,
-.player-whitelist-refresh-btn {
+.player-whitelist-filter{
     padding: 9px 12px;
     border: 1px solid #555;
     border-radius: 6px;
@@ -103,8 +102,7 @@
     cursor: pointer;
 }
 
-.player-whitelist-filter:hover,
-.player-whitelist-refresh-btn:hover {
+.player-whitelist-filter:hover {
     background: #3a3a3a;
 }
 
@@ -118,7 +116,9 @@
     flex-direction: column;
     gap: 10px;
     overflow-y: auto;
-    padding-right: 4px;
+    padding-right: 0;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .player-whitelist-card {
@@ -129,6 +129,8 @@
     border: 1px solid #444;
     border-radius: 8px;
     background: #262626;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .player-whitelist-avatar {
@@ -455,7 +457,6 @@
 
 
 .player-whitelist-add-open-btn:disabled,
-.player-whitelist-refresh-btn:disabled,
 .player-whitelist-action:disabled {
 
     opacity: 0.45;

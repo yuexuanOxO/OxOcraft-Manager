@@ -18,6 +18,8 @@ import {
 
 let allPlayers = [];
 let candidatePlayers = [];
+let currentWhitelistTab = "whitelist";
+let whitelistHistory = [];
 let whitelistSettingsTimer = null;
 let whitelistSettings = {
     white_list: false,
@@ -27,50 +29,43 @@ let whitelistSettings = {
 };
 
 const OFFLINE_WHITELIST_HELP_DISABLED_KEY = "oxo_offline_whitelist_help_disabled";
+const OXOCRAFT_OPERATOR_ICON = "/static/icons/player_ban/OxOcraft_origin.png";
 
 
 
 export function initPlayerWhitelist() {
-    const openBtn =
-        document.getElementById("playerWhitelistBtn");
-
-    const modal =
-        document.getElementById("playerWhitelistModal");
-
-    const closeBtn =
-        document.getElementById("closePlayerWhitelistBtn");
-
-    const refreshBtn =
-        document.getElementById("refreshPlayerWhitelistBtn");
-
-    const searchInput =
-        document.getElementById("playerWhitelistSearchInput");
-
-    const openAddBtn =
-        document.getElementById("openAddWhitelistPlayerBtn");
-
-    const addModal =
-        document.getElementById("addWhitelistPlayerModal");
-
-    const closeAddBtn =
-        document.getElementById("closeAddWhitelistPlayerBtn");
-
-    const confirmAddBtn =
-        document.getElementById("confirmAddWhitelistPlayerBtn");
-
-    const addInput =
-        document.getElementById("addWhitelistPlayerInput");
-
-    const whiteListToggleBtn =
-        document.getElementById("whiteListToggleBtn");
-
-    const enforceWhitelistToggleBtn =
-        document.getElementById("enforceWhitelistToggleBtn");
+    const openBtn = document.getElementById("playerWhitelistBtn");
+    const modal = document.getElementById("playerWhitelistModal");
+    const closeBtn = document.getElementById("closePlayerWhitelistBtn");
+    const refreshBtn = document.getElementById("refreshPlayerWhitelistBtn");
+    const searchInput = document.getElementById("playerWhitelistSearchInput");
+    const openAddBtn = document.getElementById("openAddWhitelistPlayerBtn");
+    const addModal = document.getElementById("addWhitelistPlayerModal");
+    const closeAddBtn = document.getElementById("closeAddWhitelistPlayerBtn");
+    const confirmAddBtn = document.getElementById("confirmAddWhitelistPlayerBtn");
+    const addInput = document.getElementById("addWhitelistPlayerInput");
+    const whiteListToggleBtn = document.getElementById("whiteListToggleBtn");
+    const enforceWhitelistToggleBtn = document.getElementById("enforceWhitelistToggleBtn");
+    const historySearchInput = document.getElementById("playerWhitelistHistorySearchInput");
 
 
     if (!openBtn || !modal) {
         return;
     }
+
+    document.querySelectorAll(".player-whitelist-tab").forEach((button) => {
+            button.addEventListener("click", async () => {
+                currentWhitelistTab =
+                    button.dataset.tab || "whitelist";
+
+                updateWhitelistTabs();
+                await loadCurrentWhitelistTab();
+            });
+        });
+
+    historySearchInput?.addEventListener("input", () => {
+        renderWhitelistHistory();
+    });
 
     openBtn.addEventListener("click", async () => {
         modal.classList.remove("hidden");
@@ -79,10 +74,11 @@ export function initPlayerWhitelist() {
         whitelistSettings.server_ready = getUiServerState() === "ready";
         renderWhitelistSettings();
 
-        // startWhitelistSettingsWatcher();
+        currentWhitelistTab = "whitelist";
+        updateWhitelistTabs();
 
         await loadWhitelistSettings();
-        await loadPlayerWhitelist();
+        await loadCurrentWhitelistTab();
     });
 
     closeBtn?.addEventListener("click", () => {
@@ -140,9 +136,7 @@ export function initPlayerWhitelist() {
         await toggleWhitelistSetting("enforce-whitelist");
     });
 
-    window.addEventListener(
-        "player-whitelist-should-refresh",
-        async () => {
+    window.addEventListener("player_whitelist_should_refresh", async () => {
             const modal =
                 document.getElementById("playerWhitelistModal");
 
@@ -172,6 +166,61 @@ export function initPlayerWhitelist() {
         }
     );
 
+}
+
+
+function updateWhitelistTabs() {
+    document
+        .querySelectorAll(".player-whitelist-tab")
+        .forEach((button) => {
+            button.classList.toggle(
+                "active",
+                button.dataset.tab === currentWhitelistTab
+            );
+        });
+
+    document
+        .getElementById("playerWhitelistPage")
+        ?.classList.toggle(
+            "hidden",
+            currentWhitelistTab !== "whitelist"
+        );
+
+    document
+        .getElementById("playerWhitelistHistoryPage")
+        ?.classList.toggle(
+            "hidden",
+            currentWhitelistTab !== "history"
+        );
+
+    document
+        .getElementById("playerWhitelistHelpPage")
+        ?.classList.toggle(
+            "hidden",
+            currentWhitelistTab !== "help"
+        );
+
+    const historySearchInput =
+        document.getElementById("playerWhitelistHistorySearchInput");
+
+    if (historySearchInput) {
+        historySearchInput.value = "";
+    }
+}
+
+
+async function loadCurrentWhitelistTab() {
+    if (currentWhitelistTab === "whitelist") {
+        await loadPlayerWhitelist();
+        return;
+    }
+
+    if (currentWhitelistTab === "history") {
+        await loadWhitelistHistory();
+        return;
+    }
+
+    renderWhitelistHelpPage();
 }
 
 
@@ -648,6 +697,325 @@ function renderPlayerWhitelistList() {
 
     renderWhitelistActionButtons();
 
+}
+
+
+async function loadWhitelistHistory() {
+    const list =
+        document.getElementById("playerWhitelistHistoryList");
+
+    if (list) {
+        list.innerHTML = `
+            <div class="player-whitelist-empty">
+                載入白名單紀錄中...
+            </div>
+        `;
+    }
+
+    try {
+        const response = await fetch(
+            "/api/player/access-history/whitelist",
+            { cache: "no-store" }
+        );
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(
+                data.message || "白名單紀錄載入失敗"
+            );
+        }
+
+        whitelistHistory = data.records || [];
+
+        renderWhitelistHistory();
+
+    } catch (error) {
+        console.error("白名單紀錄載入失敗:", error);
+
+        if (list) {
+            list.innerHTML = `
+                <div class="player-whitelist-empty">
+                    白名單紀錄載入失敗
+                </div>
+            `;
+        }
+    }
+}
+
+
+function renderWhitelistHistory() {
+    const list =
+        document.getElementById("playerWhitelistHistoryList");
+
+    const searchInput =
+        document.getElementById("playerWhitelistHistorySearchInput");
+
+    if (!list) return;
+
+    const keyword =
+        (searchInput?.value || "")
+            .trim()
+            .toLowerCase();
+
+    let rows = [...whitelistHistory];
+
+    if (keyword) {
+        rows = rows.filter(item => {
+            return (
+                String(item.target_name || "")
+                    .toLowerCase()
+                    .includes(keyword)
+                ||
+                String(item.target_uuid || "")
+                    .toLowerCase()
+                    .includes(keyword)
+            );
+        });
+    }
+
+    list.innerHTML = "";
+
+    if (rows.length === 0) {
+        list.innerHTML = `
+            <div class="player-whitelist-empty">
+                目前沒有符合條件的白名單紀錄
+            </div>
+        `;
+        return;
+    }
+
+    rows.forEach(item => {
+        list.appendChild(
+            createWhitelistHistoryCard(item)
+        );
+    });
+}
+
+
+function createWhitelistHistoryCard(item) {
+    const card = document.createElement("div");
+
+    card.className = "player-whitelist-history-card";
+
+    const actionText =
+        getWhitelistHistoryActionText(item.action);
+
+    const operator =
+        getDisplayWhitelistOperator(item);
+
+    card.innerHTML = `
+        <img
+            class="player-whitelist-history-avatar"
+            src="${getPlayerAvatarUrl({
+                player_uuid: item.target_uuid,
+                player_name: item.target_name,
+                account_type: item.account_type
+            })}"
+            alt="${escapeHtml(item.target_name || "玩家")}"
+        >
+
+        <div class="player-whitelist-history-main">
+
+            <div class="player-whitelist-history-title-row">
+                <span class="player-whitelist-history-action">
+                    ${escapeHtml(actionText)}
+                </span>
+
+                <span class="player-whitelist-history-target">
+                    ${escapeHtml(item.target_name || "未知玩家")}
+                </span>
+            </div>
+
+            <div class="player-whitelist-history-meta">
+                UUID：${escapeHtml(item.target_uuid || "未知")}
+            </div>
+
+            <div class="player-whitelist-history-meta">
+                日期：${escapeHtml(formatDateTime(item.created_at))}
+            </div>
+
+        </div>
+
+        <div class="player-whitelist-history-right">
+
+            <div class="player-whitelist-history-source">
+                <span class="player-whitelist-history-label">
+                    操作來源：
+                </span>
+
+                <span class="player-whitelist-history-value">
+                    ${escapeHtml(getWhitelistSourceText(item.source))}
+                </span>
+            </div>
+
+            <div class="player-whitelist-history-operator">
+                <span class="player-whitelist-history-label">
+                    操作人：
+                </span>
+
+                <img
+                    class="player-whitelist-history-operator-avatar
+                        ${operator === "OxOcraft" ? "oxocraft" : "player"}"
+                    src="${getWhitelistOperatorAvatarUrl(item)}"
+                    alt="${escapeHtml(operator)}"
+                >
+
+                <span class="player-whitelist-history-operator-name">
+                    ${escapeHtml(operator)}
+                </span>
+            </div>
+
+        </div>
+    `;
+
+    return card;
+}
+
+
+function getWhitelistHistoryActionText(action) {
+    action = String(action || "");
+
+    if (
+        action.includes("remove") ||
+        action.includes("pardon")
+    ) {
+        return "移出白名單";
+    }
+
+    return "加入白名單";
+}
+
+
+function getDisplayWhitelistOperator(item) {
+    const operator =
+        String(item.operator_name || "OxOcraft").trim();
+
+    const source =
+        String(item.source || "").trim();
+
+    if (
+        source === "ui" ||
+        source === "offline_ui_edit" ||
+        source === "minecraft_json" ||
+        source === "rcon" ||
+        source === "console_rcon" ||
+        operator === "Rcon" ||
+        operator === "whitelist.json 同步"
+    ) {
+        return "OxOcraft";
+    }
+
+    return operator || "OxOcraft";
+}
+
+
+function getWhitelistOperatorAvatarUrl(item) {
+    const operator =
+        getDisplayWhitelistOperator(item);
+
+    if (operator === "OxOcraft") {
+        return OXOCRAFT_OPERATOR_ICON;
+    }
+
+    return getPlayerAvatarUrl({
+        player_uuid: item.operator_uuid || "",
+        player_name: operator,
+        account_type:
+            item.operator_account_type ||
+            item.account_type ||
+            "unknown"
+    });
+}
+
+
+function getWhitelistSourceText(source) {
+    const sourceMap = {
+        ui: "OxOcraft-Manager",
+        offline_ui_edit: "OxOcraft-Manager",
+        minecraft_json: "OxOcraft同步",
+        player_command: "遊戲內指令",
+        console_rcon: "UI輸入指令",
+        rcon: "UI輸入指令",
+        system: "系統操作",
+        ui_reload: "OxOcraft-Manager",
+        console_rcon_reload: "UI輸入指令(reload)",
+        player_command_reload: "遊戲內指令(reload)",
+    };
+
+    return sourceMap[source] || source || "未知";
+}
+
+
+function formatDateTime(text) {
+    if (!text) {
+        return "未知";
+    }
+
+    const value = String(text).trim();
+
+    if (value.length >= 16) {
+        return value.slice(0, 16);
+    }
+
+    return value;
+}
+
+
+function renderWhitelistHelpPage() {
+    const content =
+        document.getElementById("playerWhitelistHelpContent");
+
+    if (!content) return;
+
+    const sections = [
+        {
+            title: "白名單是什麼?",
+            content: [
+                "白名單開啟後，只有在白名單內的玩家才能加入伺服器。",
+                "管理員(OP)不受白名單限制，即使不在白名單內也能加入伺服器。"
+            ]
+        },
+        {
+            title: "離線模式注意事項",
+            content: [
+                "離線模式下，Minecraft /whitelist add 可能受玩家名稱大小寫與快取影響，可能加入錯誤 UUID。",
+                "若存在 creeper1 / Creeper1 這類只差大小寫的玩家名稱，Minecraft 可能會套用到其他玩家。"
+            ]
+        },
+        {
+            title: "建議操作方式",
+            content: [
+                "請優先使用 OxOcraft 的白名單頁新增玩家。",
+                "OxOcraft 會依目前登入模式決定 UUID，並直接寫入 whitelist.json。"
+            ]
+        },
+        {
+            title: "灰色玩家資料代表什麼?",
+            content: [
+                "代表該 UUID 不符合目前伺服器登入模式。",
+                "通常是 online-mode 切換後殘留，或曾使用 Minecraft 指令加入錯誤 UUID。"
+            ]
+        }
+    ];
+
+    content.innerHTML = sections
+        .map(section => `
+            <section class="player-whitelist-help-card">
+                <h3 class="player-whitelist-help-card-title">
+                    ${escapeHtml(section.title)}
+                </h3>
+
+                ${section.content
+                    .map(text => `
+                        <p class="player-whitelist-help-card-text">
+                            ${escapeHtml(text)}
+                        </p>
+                    `)
+                    .join("")}
+            </section>
+        `)
+        .join("");
 }
 
 

@@ -470,10 +470,58 @@ def maybe_refresh_player_whitelist_from_log(line: str) -> None:
     )
 
     if reload_match:
-        publish_event("player_whitelist_should_refresh", {
-            "reason": "minecraft_whitelist_reload_log",
-            "line": line,
-        })
+        log_operator = reload_match.group("operator").strip()
+        is_rcon = log_operator.lower() == "rcon"
+
+        try:
+            from backend.player_permissions.player_whitelist_service import (
+                pop_recent_ui_whitelist_reload_if_match,
+                sync_whitelist_reload_from_log,
+            )
+
+            is_ui_reload = (
+                is_rcon
+                and pop_recent_ui_whitelist_reload_if_match()
+            )
+
+            if is_ui_reload:
+                source = "ui_reload"
+                operator_name = "OxOcraft"
+            elif is_rcon:
+                source = "console_rcon_reload"
+                operator_name = "Rcon"
+            else:
+                source = "player_command_reload"
+                operator_name = log_operator
+
+            if not is_ui_reload:
+                result = sync_whitelist_reload_from_log(
+                    operator_name=operator_name,
+                    source=source,
+                    detail=line,
+                )
+
+                create_notification(
+                    title="白名單已重新載入",
+                    message=(
+                        f"{operator_name} 重新載入白名單，"
+                        f"新增 {result['added_count']} 位，"
+                        f"移除 {result['removed_count']} 位"
+                    ),
+                    type="info",
+                    source="player_whitelist",
+                )
+
+            publish_event("player_whitelist_should_refresh", {
+                "reason": "minecraft_whitelist_reload_log",
+                "line": line,
+                "source": source,
+            })
+
+            print("[PlayerWhitelist] reload refresh event published")
+
+        except Exception as error:
+            print("[PlayerWhitelist] reload from log failed:", error)
 
         return
 

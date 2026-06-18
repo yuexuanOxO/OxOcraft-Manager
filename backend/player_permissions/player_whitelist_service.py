@@ -2,7 +2,7 @@ import json
 import hashlib
 import uuid
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from backend.paths import MC_ROOT,SERVER_PROPERTIES_PATH
 from backend.rcon_service import send_rcon_command
@@ -31,6 +31,36 @@ from backend.db import (
 
 
 WHITELIST_FILE = MC_ROOT / "whitelist.json"
+
+_RECENT_UI_WHITELIST_RELOADS: list[datetime] = []
+
+
+def push_recent_ui_whitelist_reload() -> None:
+    _RECENT_UI_WHITELIST_RELOADS.append(
+        datetime.now()
+    )
+
+
+def pop_recent_ui_whitelist_reload_if_match(
+    max_age_seconds: int = 5,
+) -> bool:
+    now = datetime.now()
+
+    for index, created_at in enumerate(
+        list(_RECENT_UI_WHITELIST_RELOADS)
+    ):
+        age = (now - created_at).total_seconds()
+
+        if age > max_age_seconds:
+            _RECENT_UI_WHITELIST_RELOADS.remove(
+                created_at
+            )
+            continue
+
+        _RECENT_UI_WHITELIST_RELOADS.pop(index)
+        return True
+
+    return False
 
 
 def load_whitelist_entries() -> list[dict]:
@@ -76,6 +106,118 @@ def sync_whitelist_json_to_players(
     )
 
 
+def sync_whitelist_reload_from_log(
+    operator_name: str,
+    source: str,
+    detail: str = "",
+) -> dict:
+    before_uuid_set = load_whitelist_uuid_set()
+
+    # 目前 DB 狀態
+    db_players = get_whitelisted_players_from_db()
+    db_uuid_set = {
+        str(player.get("player_uuid", "")).lower()
+        for player in db_players
+        if player.get("player_uuid")
+    }
+
+    # whitelist.json 狀態
+    json_entries = load_whitelist_entries()
+    json_uuid_set = {
+        str(entry.get("uuid", "")).lower()
+        for entry in json_entries
+        if entry.get("uuid")
+    }
+
+    added_uuid_set = json_uuid_set - db_uuid_set
+    removed_uuid_set = db_uuid_set - json_uuid_set
+
+    sync_player_whitelist_flags_from_uuid_set(
+        json_uuid_set
+    )
+
+    entry_by_uuid = {
+        str(entry.get("uuid", "")).lower(): entry
+        for entry in json_entries
+        if entry.get("uuid")
+    }
+
+    db_player_by_uuid = {
+        str(player.get("player_uuid", "")).lower(): player
+        for player in db_players
+        if player.get("player_uuid")
+    }
+
+    added_count = 0
+    removed_count = 0
+
+    for player_uuid in added_uuid_set:
+        entry = entry_by_uuid.get(player_uuid, {})
+        player_name = str(
+            entry.get("name") or "未知玩家"
+        ).strip()
+
+        account_type = get_account_type(player_uuid)
+
+        update_player_whitelist_since(
+            player_uuid=player_uuid,
+            player_name=player_name,
+            account_type=account_type,
+            whitelisted_since=datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
+        )
+
+        record_player_access(
+            category="whitelist",
+            action="reload_add",
+            target_uuid=player_uuid,
+            target_name=player_name,
+            account_type=account_type,
+            operator_name=operator_name,
+            source=source,
+            detail=detail,
+        )
+
+        added_count += 1
+
+    for player_uuid in removed_uuid_set:
+        player = db_player_by_uuid.get(player_uuid, {})
+        player_name = str(
+            player.get("player_name") or "未知玩家"
+        ).strip()
+
+        account_type = (
+            player.get("account_type")
+            or get_account_type(player_uuid)
+        )
+
+        update_player_whitelist_status(
+            player_uuid=player_uuid,
+            player_name=player_name,
+            account_type=account_type,
+            whitelisted=False,
+        )
+
+        record_player_access(
+            category="whitelist",
+            action="reload_remove",
+            target_uuid=player_uuid,
+            target_name=player_name,
+            account_type=account_type,
+            operator_name=operator_name,
+            source=source,
+            detail=detail,
+        )
+
+        removed_count += 1
+
+    return {
+        "added_count": added_count,
+        "removed_count": removed_count,
+    }
+
+
 def rebuild_whitelist_json_from_db() -> None:
     if not is_server_ready():
         return
@@ -112,6 +254,8 @@ def is_server_ready() -> bool:
 def reload_whitelist_if_ready() -> str:
     if not is_server_ready():
         return "offline-edit"
+
+    push_recent_ui_whitelist_reload()
 
     return send_rcon_command("whitelist reload")
 

@@ -38,118 +38,161 @@
 
         <div class="player-whitelist-main">
 
-            <div class="player-whitelist-header">
+            <div id="playerWhitelistPage" class="player-whitelist-page">
 
-                <div class="player-whitelist-header-main">
+                <div class="player-whitelist-header">
 
+                    <div class="player-whitelist-header-main">
+
+                        <div class="player-whitelist-title-row">
+                            <div class="player-whitelist-title">
+                                玩家白名單管理
+                            </div>
+                        </div>
+
+                        <div class="player-whitelist-status-row">
+
+                            <div class="player-whitelist-status-left">
+
+                                <div
+                                    id="playerWhitelistSummary"
+                                    class="player-whitelist-summary"
+                                ></div>
+
+                                <div
+                                    id="playerWhitelistPlayerCount"
+                                    class="player-whitelist-player-count"
+                                >
+                                    載入中...
+                                </div>
+
+                            </div>
+
+                            <div class="player-whitelist-switch-area">
+
+                                <div class="player-whitelist-switch-group">
+
+                                    <div class="player-whitelist-switch-title">
+                                        白名單
+                                    </div>
+
+                                    <button
+                                        id="whiteListToggleBtn"
+                                        class="setting-switch-btn off"
+                                        type="button"
+                                    >
+                                        <span class="setting-switch-visual">
+                                            <span class="setting-switch-track"></span>
+                                            <span class="setting-switch-thumb"></span>
+                                        </span>
+
+                                        <span class="setting-switch-text">
+                                            已關閉
+                                        </span>
+
+                                    </button>
+
+                                </div>
+
+                                <div class="player-whitelist-switch-group">
+
+                                    <div class="player-whitelist-switch-title">
+                                        強制執行白名單
+                                    </div>
+
+                                    <button
+                                        id="enforceWhitelistToggleBtn"
+                                        class="setting-switch-btn off"
+                                        type="button"
+                                    >
+                                        <span class="setting-switch-visual">
+                                            <span class="setting-switch-track"></span>
+                                            <span class="setting-switch-thumb"></span>
+                                        </span>
+
+                                        <span class="setting-switch-text">
+                                            已關閉
+                                        </span>
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="player-whitelist-toolbar">
+
+                    <button
+                        id="openAddWhitelistPlayerBtn"
+                        class="player-whitelist-add-open-btn"
+                        type="button"
+                    >
+                        ＋ 新增玩家到白名單
+                    </button>
+
+                    <input
+                        id="playerWhitelistSearchInput"
+                        class="player-whitelist-search"
+                        type="text"
+                        placeholder="搜尋白名單玩家名稱或 UUID"
+                    >
+
+                </div>
+
+                <div
+                    id="playerWhitelistList"
+                    class="player-whitelist-list"
+                >
+                    <div class="player-whitelist-empty">
+                        尚未載入玩家資料
+                    </div>
+                </div>
+
+            </div>
+
+            <div id="playerWhitelistHistoryPage" class="player-whitelist-page hidden">
+
+                <div class="player-whitelist-header">
+                    <div class="player-whitelist-title-row">
+                        <div id="playerWhitelistHistoryTitle" class="player-whitelist-title">
+                            白名單管理：紀錄
+                        </div>
+                    </div>
+                </div>
+
+                <div class="player-whitelist-history-toolbar">
+                    <input
+                        id="playerWhitelistHistorySearchInput"
+                        class="player-whitelist-search"
+                        type="text"
+                        placeholder="搜尋白名單紀錄"
+                    >
+                </div>
+
+                <div id="playerWhitelistHistoryList" class="player-whitelist-history-list">
+                    <div class="player-whitelist-empty">尚未載入白名單紀錄</div>
+                </div>
+
+            </div>
+
+            <div id="playerWhitelistHelpPage" class="player-whitelist-page hidden">
+
+                <div class="player-whitelist-header">
                     <div class="player-whitelist-title-row">
                         <div class="player-whitelist-title">
-                            玩家白名單管理
+                            白名單管理：說明
                         </div>
                     </div>
-
-                    <div class="player-whitelist-status-row">
-
-                        <div class="player-whitelist-status-left">
-
-                            <div
-                                id="playerWhitelistSummary"
-                                class="player-whitelist-summary"
-                            ></div>
-
-                            <div
-                                id="playerWhitelistPlayerCount"
-                                class="player-whitelist-player-count"
-                            >
-                                載入中...
-                            </div>
-
-                        </div>
-
-                        <div class="player-whitelist-switch-area">
-
-                            <div class="player-whitelist-switch-group">
-
-                                <div class="player-whitelist-switch-title">
-                                    白名單
-                                </div>
-
-                                <button
-                                    id="whiteListToggleBtn"
-                                    class="setting-switch-btn off"
-                                    type="button"
-                                >
-                                    <span class="setting-switch-visual">
-                                        <span class="setting-switch-track"></span>
-                                        <span class="setting-switch-thumb"></span>
-                                    </span>
-
-                                    <span class="setting-switch-text">
-                                        已關閉
-                                    </span>
-
-                                </button>
-
-                            </div>
-
-                            <div class="player-whitelist-switch-group">
-
-                                <div class="player-whitelist-switch-title">
-                                    強制執行白名單
-                                </div>
-
-                                <button
-                                    id="enforceWhitelistToggleBtn"
-                                    class="setting-switch-btn off"
-                                    type="button"
-                                >
-                                    <span class="setting-switch-visual">
-                                        <span class="setting-switch-track"></span>
-                                        <span class="setting-switch-thumb"></span>
-                                    </span>
-
-                                    <span class="setting-switch-text">
-                                        已關閉
-                                    </span>
-
-                                </button>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
                 </div>
 
-            </div>
+                <div id="playerWhitelistHelpContent" class="player-whitelist-help"></div>
 
-            <div class="player-whitelist-toolbar">
-
-                <button
-                    id="openAddWhitelistPlayerBtn"
-                    class="player-whitelist-add-open-btn"
-                    type="button"
-                >
-                    ＋ 新增玩家到白名單
-                </button>
-
-                <input
-                    id="playerWhitelistSearchInput"
-                    class="player-whitelist-search"
-                    type="text"
-                    placeholder="搜尋白名單玩家名稱或 UUID"
-                >
-
-            </div>
-
-            <div
-                id="playerWhitelistList"
-                class="player-whitelist-list"
-            >
-                <div class="player-whitelist-empty">
-                    尚未載入玩家資料
-                </div>
             </div>
 
         </div>

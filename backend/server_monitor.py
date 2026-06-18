@@ -10,6 +10,7 @@ from backend.player_permissions.player_log_handler import (
     handle_player_log,
 )
 
+
 _status_cache = {
     "revision": 0,
     "data": {
@@ -132,14 +133,23 @@ def monitor_loop() -> None:
 
         should_publish = False
         event_data = None
+        should_sync_whitelist_on_ready = False
 
         with _lock:
             old_data = _status_cache["data"]
 
             if old_data != new_data:
+                old_state = old_data.get("state")
+                new_state = new_data.get("state")
+
                 _status_cache["revision"] += 1
                 _status_cache["data"] = new_data
                 should_publish = True
+
+                should_sync_whitelist_on_ready = (
+                    old_state != "ready"
+                    and new_state == "ready"
+                )
 
             _status_cache["last_update"] = now
 
@@ -148,6 +158,29 @@ def monitor_loop() -> None:
                 "data": _status_cache["data"],
                 "last_update": _status_cache["last_update"],
             }
+
+        if should_sync_whitelist_on_ready:
+            try:
+                from backend.player_permissions.player_whitelist_service import (
+                    sync_whitelist_reload_from_log,
+                )
+
+                result = sync_whitelist_reload_from_log(
+                    operator_name="OxOcraft",
+                    source="minecraft_json",
+                    detail="server ready whitelist json sync",
+                )
+
+                print(
+                    "[PlayerWhitelist] server ready whitelist sync:",
+                    result,
+                )
+
+            except Exception as error:
+                print(
+                    "[PlayerWhitelist] server ready whitelist sync failed:",
+                    error,
+                )
 
         if should_publish:
             publish_event("server_status_changed", event_data)

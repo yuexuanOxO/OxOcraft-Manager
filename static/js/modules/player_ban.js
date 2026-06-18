@@ -1548,7 +1548,7 @@ function getBanSourceText(source) {
     const sourceMap = {
         ui: "OxOcraft-Manager介面操作",
         offline_ui_edit: "OxOcraft-Manager",
-        minecraft_json: "OxOcraft同步",
+        minecraft_json: "Minecraft資料同步",
         player_command: "遊戲內指令",
 
         console_rcon: "UI輸入指令",

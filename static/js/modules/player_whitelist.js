@@ -813,33 +813,29 @@ function renderWhitelistHistory() {
     let rows = [...whitelistHistory];
 
     const actionFilters = [...whitelistHistoryFilters].filter(filter => filter === "add" || filter === "remove");
-    const sourceFilters = [...whitelistHistoryFilters].filter(filter => filter === "ui" || filter === "command");
-
-    if (actionFilters.length > 0) {
-        rows = rows.filter(item => {
-            const action = String(item.action || "");
-
-            const isRemove =
-                action.includes("remove") ||
-                action.includes("pardon");
-
-            const isAdd = !isRemove;
-
-            return (
-                (actionFilters.includes("add") && isAdd) ||
-                (actionFilters.includes("remove") && isRemove)
-            );
-        });
-    }
+    const sourceFilters = [...whitelistHistoryFilters].filter(filter =>
+        [
+            "oxocraft",
+            "minecraft_sync",
+            "rcon",
+            "command",
+            "system",
+        ].includes(filter)
+    );
 
     if (sourceFilters.length > 0) {
         rows = rows.filter(item => {
             const source = String(item.source || "");
 
-            const isUi =
+            const isOxocraft =
                 source === "ui" ||
-                source === "ui_reload" ||
                 source === "offline_ui_edit" ||
+                source === "ui_reload";
+
+            const isMinecraftSync =
+                source === "minecraft_json";
+
+            const isRcon =
                 source === "rcon" ||
                 source === "console_rcon" ||
                 source === "console_rcon_reload";
@@ -848,12 +844,19 @@ function renderWhitelistHistory() {
                 source === "player_command" ||
                 source === "player_command_reload";
 
+            const isSystem =
+                source === "system";
+
             return (
-                (sourceFilters.includes("ui") && isUi) ||
-                (sourceFilters.includes("command") && isCommand)
+                (sourceFilters.includes("oxocraft") && isOxocraft) ||
+                (sourceFilters.includes("minecraft_sync") && isMinecraftSync) ||
+                (sourceFilters.includes("rcon") && isRcon) ||
+                (sourceFilters.includes("command") && isCommand) ||
+                (sourceFilters.includes("system") && isSystem)
             );
         });
     }
+
 
     if (keyword) {
         rows = rows.filter(item => {
@@ -1026,14 +1029,14 @@ function getWhitelistOperatorAvatarUrl(item) {
 
 function getWhitelistSourceText(source) {
     const sourceMap = {
-        ui: "OxOcraft-Manager",
-        offline_ui_edit: "OxOcraft-Manager",
-        minecraft_json: "OxOcraft同步",
+        ui: "OxOcraft",
+        offline_ui_edit: "OxOcraft",
+        minecraft_json: "Minecraft資料同步",
         player_command: "遊戲內指令",
         console_rcon: "UI輸入指令",
         rcon: "UI輸入指令",
         system: "系統操作",
-        ui_reload: "OxOcraft-Manager",
+        ui_reload: "OxOcraft",
         console_rcon_reload: "UI輸入指令(reload)",
         player_command_reload: "遊戲內指令(reload)",
     };

@@ -760,6 +760,20 @@ function createPlayerWhitelistCard(player) {
 
 
 async function removePlayerWhitelist(player) {
+
+    const confirmed = await showConfirm({
+        title: "移出白名單",
+        message: `確定要將「${player.player_name}」移出白名單嗎？`,
+        icon: getPlayerAvatarUrl(player),
+        confirmText: "移出",
+        cancelText: "取消",
+        variant: "warning",
+    });
+
+    if (!confirmed) {
+        return;
+    }
+
     try {
         const response = await fetch(
             "/api/player/whitelist/toggle",

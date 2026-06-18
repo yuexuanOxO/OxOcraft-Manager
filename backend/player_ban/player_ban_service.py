@@ -477,65 +477,6 @@ def get_active_bans(target_type: str) -> list[dict]:
 
     return []
 
-def get_ban_history(limit: int = 100) -> list[dict]:
-    with get_connection() as conn:
-        rows = conn.execute("""
-            SELECT *
-            FROM (
-                SELECT
-                    h.id,
-                    h.action,
-                    'player' AS target_type,
-                    h.target_name,
-                    h.target_uuid,
-                    h.account_type,
-                    COALESCE(p.ban_reason, '') AS reason,
-                    h.operator_name AS operator,
-                    h.operator_uuid,
-                    h.source,
-                    h.expires_at,
-                    h.created_at,
-                    h.detail
-                FROM player_access_history h
-                LEFT JOIN players p
-                    ON lower(p.player_uuid) = lower(h.target_uuid)
-                WHERE h.category = 'ban'
-
-                UNION ALL
-
-                SELECT
-                    h.id,
-                    h.action,
-                    'ip' AS target_type,
-                    h.ip AS target_name,
-                    NULL AS target_uuid,
-                    NULL AS account_type,
-                    h.reason,
-                    h.operator_name AS operator,
-                    h.operator_uuid,
-                    h.source,
-                    h.expires_at,
-                    h.created_at,
-                    h.detail
-                FROM ip_ban_history h
-            )
-            ORDER BY created_at DESC, id DESC
-            LIMIT ?
-        """, (limit,)).fetchall()
-
-    records = [dict(row) for row in rows]
-
-    for record in records:
-        operator_uuid = str(record.get("operator_uuid") or "").strip()
-
-        record["operator_account_type"] = (
-            detect_account_type(operator_uuid)
-            if operator_uuid
-            else None
-        )
-
-    return records
-
 
 def write_player_to_banned_json(
     player_uuid: str,

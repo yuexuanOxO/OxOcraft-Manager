@@ -67,11 +67,6 @@ export function initPlayerWhitelist() {
     const enforceWhitelistToggleBtn =
         document.getElementById("enforceWhitelistToggleBtn");
 
-    const openWhitelistHelpBtn =
-        document.getElementById("openWhitelistHelpBtn");
-
-    const whitelistTooltip =
-        document.getElementById("playerWhitelistTooltip");
 
     if (!openBtn || !modal) {
         return;
@@ -143,25 +138,6 @@ export function initPlayerWhitelist() {
 
     enforceWhitelistToggleBtn?.addEventListener("click", async () => {
         await toggleWhitelistSetting("enforce-whitelist");
-    });
-
-    openWhitelistHelpBtn?.addEventListener("click", async () => {
-        await showWhitelistHelp();
-    });
-
-    openWhitelistHelpBtn?.addEventListener("mouseenter", () => {
-        whitelistTooltip?.classList.remove("hidden");
-    });
-
-    openWhitelistHelpBtn?.addEventListener("mousemove", (event) => {
-        if (!whitelistTooltip) return;
-
-        whitelistTooltip.style.left = `${event.clientX + 14}px`;
-        whitelistTooltip.style.top = `${event.clientY - 38}px`;
-    });
-
-    openWhitelistHelpBtn?.addEventListener("mouseleave", () => {
-        whitelistTooltip?.classList.add("hidden");
     });
 
     window.addEventListener(

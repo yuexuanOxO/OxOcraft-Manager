@@ -8,6 +8,11 @@ from flask import Blueprint, jsonify, request
 from backend.paths import MC_ROOT, SERVER_PROPERTIES_PATH
 from backend.rcon_service import send_rcon_command
 
+from backend.db import (
+    get_player_access_history,
+    get_ban_access_history,
+)
+
 from backend.player_permissions.player_identity_service import (
     hide_player_candidate,
     resolve_player_identity_by_name,
@@ -515,4 +520,39 @@ def api_player_avatar():
         "success": True,
         "player": player_name,
         "avatar_url": avatar_url,
+    })
+
+
+@player_bp.route("/api/player/access-history/<category>")
+def api_player_access_history(category):
+    category = str(category or "").strip()
+
+    allowed_categories = {
+        "op",
+        "whitelist",
+        "ban",
+    }
+
+    if category not in allowed_categories:
+        return jsonify({
+            "success": False,
+            "message": "不支援的紀錄類型"
+        }), 400
+
+    limit = request.args.get("limit", type=int)
+
+    if category == "ban":
+        records = get_ban_access_history(
+            limit=limit,
+        )
+    else:
+        records = get_player_access_history(
+            category=category,
+            limit=limit,
+        )
+
+    return jsonify({
+        "success": True,
+        "category": category,
+        "records": records,
     })

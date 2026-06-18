@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, request
 
+from backend.db import get_ban_access_history
 from backend.player_ban.player_ban_service import (
     get_active_bans,
-    get_ban_history,
     ban_player,
     unban_player_by_uuid,
     ban_ip,
@@ -36,7 +36,7 @@ def api_player_ban_ips():
 def api_player_ban_history():
     return jsonify({
         "success": True,
-        "records": get_ban_history(100),
+        "records": get_ban_access_history(),
     })
 
 

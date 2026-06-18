@@ -816,7 +816,7 @@ def mark_all_players_offline() -> None:
         conn.commit()
 
 
-def get_player_access_history_trim_config(
+def get_player_access_history_config(
     category: str,
 ) -> tuple[int, int]:
     category = str(category or "").strip()
@@ -833,6 +833,80 @@ def get_player_access_history_trim_config(
     return BAN_HISTORY_LIMIT, BAN_HISTORY_TRIM_TO
 
 
+def get_ban_access_history(
+    limit: int | None = None,
+) -> list[dict]:
+    max_limit = get_player_access_history_limit("ban")
+
+    if limit is None:
+        query_limit = max_limit
+    else:
+        try:
+            query_limit = int(limit)
+        except (TypeError, ValueError):
+            query_limit = max_limit
+
+        query_limit = max(1, min(query_limit, max_limit))
+
+    with get_connection() as conn:
+        player_rows = conn.execute("""
+            SELECT
+                id,
+                'player' AS target_type,
+                category,
+                action,
+                target_uuid,
+                target_name,
+                account_type,
+                operator_uuid,
+                operator_name,
+                source,
+                detail,
+                '' AS reason,
+                expires_at,
+                created_at
+            FROM player_access_history
+            WHERE category = 'ban'
+        """).fetchall()
+
+        ip_rows = conn.execute("""
+            SELECT
+                id,
+                'ip' AS target_type,
+                'ban' AS category,
+                action,
+                NULL AS target_uuid,
+                ip AS target_name,
+                NULL AS account_type,
+                operator_uuid,
+                operator_name,
+                source,
+                detail,
+                reason,
+                expires_at,
+                created_at
+            FROM ip_ban_history
+        """).fetchall()
+
+    rows = [
+        dict(row)
+        for row in player_rows
+    ] + [
+        dict(row)
+        for row in ip_rows
+    ]
+
+    rows.sort(
+        key=lambda item: (
+            str(item.get("created_at") or ""),
+            int(item.get("id") or 0),
+        ),
+        reverse=True,
+    )
+
+    return rows[:query_limit]
+
+
 def trim_player_access_history_by_category(
     conn,
     category: str,
@@ -842,7 +916,7 @@ def trim_player_access_history_by_category(
     if not category:
         return
 
-    limit, trim_to = get_player_access_history_trim_config(
+    limit, trim_to = get_player_access_history_config(
         category
     )
 
@@ -886,6 +960,49 @@ def trim_player_access_history_by_category(
         f"Deleted {delete_count} old record(s). "
         f"{trim_to} record(s) remaining."
     )
+
+
+def get_player_access_history_limit(
+    category: str,
+) -> int:
+    limit, _ = get_player_access_history_config(category)
+    return limit
+
+
+def get_player_access_history(
+    category: str,
+    limit: int | None = None,
+) -> list[dict]:
+    category = str(category or "").strip()
+
+    if not category:
+        return []
+
+    max_limit = get_player_access_history_limit(category)
+
+    if limit is None:
+        query_limit = max_limit
+    else:
+        try:
+            query_limit = int(limit)
+        except (TypeError, ValueError):
+            query_limit = max_limit
+
+        query_limit = max(1, min(query_limit, max_limit))
+
+    with get_connection() as conn:
+        rows = conn.execute("""
+            SELECT *
+            FROM player_access_history
+            WHERE category = ?
+            ORDER BY created_at DESC, id DESC
+            LIMIT ?
+        """, (
+            category,
+            query_limit,
+        )).fetchall()
+
+    return [dict(row) for row in rows]
 
 
 def add_player_access_history(

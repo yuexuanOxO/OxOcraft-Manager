@@ -20,6 +20,7 @@ let allPlayers = [];
 let candidatePlayers = [];
 let currentWhitelistTab = "whitelist";
 let whitelistHistory = [];
+const whitelistHistoryFilters = new Set();
 let whitelistSettingsTimer = null;
 let whitelistSettings = {
     white_list: false,
@@ -47,6 +48,8 @@ export function initPlayerWhitelist() {
     const whiteListToggleBtn = document.getElementById("whiteListToggleBtn");
     const enforceWhitelistToggleBtn = document.getElementById("enforceWhitelistToggleBtn");
     const historySearchInput = document.getElementById("playerWhitelistHistorySearchInput");
+    const historyFilterBtn = document.getElementById("playerWhitelistHistoryFilterBtn");
+    const historyFilterMenu = document.getElementById("playerWhitelistHistoryFilterMenu");
 
 
     if (!openBtn || !modal) {
@@ -65,6 +68,52 @@ export function initPlayerWhitelist() {
 
     historySearchInput?.addEventListener("input", () => {
         renderWhitelistHistory();
+    });
+
+    historyFilterBtn?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        historyFilterMenu?.classList.toggle("hidden");
+    });
+
+    historyFilterMenu
+        ?.querySelectorAll("button[data-filter]")
+        .forEach((button) => {
+            button.addEventListener("click", () => {
+                const filter = button.dataset.filter || "";
+
+                if (!filter) return;
+
+                if (filter === "clear") {
+                    whitelistHistoryFilters.clear();
+
+                    historyFilterMenu
+                        .querySelectorAll("button[data-filter]")
+                        .forEach(btn => {
+                            btn.classList.remove("active");
+                        });
+
+                    renderWhitelistHistory();
+                    return;
+                }
+
+                if (whitelistHistoryFilters.has(filter)) {
+                    whitelistHistoryFilters.delete(filter);
+                    button.classList.remove("active");
+                } else {
+                    whitelistHistoryFilters.add(filter);
+                    button.classList.add("active");
+                }
+
+                renderWhitelistHistory();
+            });
+        });
+
+    historyFilterMenu?.addEventListener("click", (event) => {
+        event.stopPropagation();
+    });
+
+    document.addEventListener("click", () => {
+        historyFilterMenu?.classList.add("hidden");
     });
 
     openBtn.addEventListener("click", async () => {
@@ -745,11 +794,8 @@ async function loadWhitelistHistory() {
 
 
 function renderWhitelistHistory() {
-    const list =
-        document.getElementById("playerWhitelistHistoryList");
-
-    const searchInput =
-        document.getElementById("playerWhitelistHistorySearchInput");
+    const list = document.getElementById("playerWhitelistHistoryList");
+    const searchInput = document.getElementById("playerWhitelistHistorySearchInput");
 
     if (!list) return;
 
@@ -759,6 +805,49 @@ function renderWhitelistHistory() {
             .toLowerCase();
 
     let rows = [...whitelistHistory];
+
+    const actionFilters = [...whitelistHistoryFilters].filter(filter => filter === "add" || filter === "remove");
+    const sourceFilters = [...whitelistHistoryFilters].filter(filter => filter === "ui" || filter === "command");
+
+    if (actionFilters.length > 0) {
+        rows = rows.filter(item => {
+            const action = String(item.action || "");
+
+            const isRemove =
+                action.includes("remove") ||
+                action.includes("pardon");
+
+            const isAdd = !isRemove;
+
+            return (
+                (actionFilters.includes("add") && isAdd) ||
+                (actionFilters.includes("remove") && isRemove)
+            );
+        });
+    }
+
+    if (sourceFilters.length > 0) {
+        rows = rows.filter(item => {
+            const source = String(item.source || "");
+
+            const isUi =
+                source === "ui" ||
+                source === "ui_reload" ||
+                source === "offline_ui_edit" ||
+                source === "rcon" ||
+                source === "console_rcon" ||
+                source === "console_rcon_reload";
+
+            const isCommand =
+                source === "player_command" ||
+                source === "player_command_reload";
+
+            return (
+                (sourceFilters.includes("ui") && isUi) ||
+                (sourceFilters.includes("command") && isCommand)
+            );
+        });
+    }
 
     if (keyword) {
         rows = rows.filter(item => {

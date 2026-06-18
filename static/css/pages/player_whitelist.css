@@ -1,3 +1,5 @@
+@import url("../components/filter_menu.css");
+
 .player-whitelist-modal {
     position: fixed;
     inset: 0;
@@ -154,6 +156,7 @@
 .player-whitelist-search {
     width: 100%;
     min-width: 0;
+    height: 42px;
     padding: 10px 12px;
     border: 1px solid #555;
     border-radius: 6px;
@@ -188,7 +191,7 @@
 .player-whitelist-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 4px;
     overflow-y: auto;
     padding-right: 0;
     width: 100%;
@@ -577,9 +580,12 @@
 }
 
 .player-whitelist-history-toolbar {
+    position: relative;
+
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 10px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1px;
 }
 
 .player-whitelist-history-list {
@@ -588,7 +594,7 @@
 
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 4px;
 
     overflow-y: auto;
 }

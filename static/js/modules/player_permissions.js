@@ -1373,6 +1373,17 @@ function renderPermissionHistory() {
                 ].includes(filter)
             );
 
+    const levelFilters =
+        [...permissionHistoryFilters]
+            .filter(filter =>
+                [
+                    "level_1",
+                    "level_2",
+                    "level_3",
+                    "level_4",
+                ].includes(filter)
+            );
+
     if (actionFilters.length > 0) {
         rows = rows.filter(item => {
             const action =
@@ -1423,6 +1434,21 @@ function renderPermissionHistory() {
                 (sourceFilters.includes("rcon") && isRcon) ||
                 (sourceFilters.includes("command") && isCommand) ||
                 (sourceFilters.includes("system") && isSystem)
+            );
+        });
+    }
+
+    if (levelFilters.length > 0) {
+        rows = rows.filter(item => {
+            const level =
+                getPermissionHistoryLevel(item);
+
+            if (!level) {
+                return false;
+            }
+
+            return levelFilters.includes(
+                `level_${level}`
             );
         });
     }

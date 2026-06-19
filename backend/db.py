@@ -129,6 +129,8 @@ def init_db() -> None:
 
                 op INTEGER NOT NULL DEFAULT 0,
                 op_since DATETIME,
+                op_level INTEGER NOT NULL DEFAULT 4,
+                op_bypasses_player_limit INTEGER NOT NULL DEFAULT 0,
 
                 whitelisted INTEGER NOT NULL DEFAULT 0,
                 whitelisted_since DATETIME,
@@ -652,15 +654,21 @@ def get_all_players() -> list[dict]:
     return [dict(row) for row in rows]
 
 
-def get_player_by_name(player_name: str) -> dict | None:
+def get_player_by_name_and_account_type(
+    player_name: str,
+    account_type: str,
+) -> dict | None:
     with get_connection() as conn:
         row = conn.execute("""
             SELECT *
             FROM players
             WHERE lower(player_name) = lower(?)
-            ORDER BY updated_at DESC
+              AND account_type = ?
             LIMIT 1
-        """, (player_name,)).fetchone()
+        """, (
+            player_name,
+            account_type,
+        )).fetchone()
 
     return dict(row) if row else None
 
@@ -1081,6 +1089,8 @@ def update_player_op_since(
     player_name: str,
     account_type: str,
     op_since: str,
+    op_level: int = 4,
+    op_bypasses_player_limit: bool = False,
 ) -> None:
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -1092,20 +1102,26 @@ def update_player_op_since(
                 account_type,
                 op,
                 op_since,
+                op_level,
+                op_bypasses_player_limit,
                 updated_at
             )
-            VALUES (?, ?, ?, 1, ?, ?)
+            VALUES (?, ?, ?, 1, ?, ?, ?, ?)
             ON CONFLICT(player_uuid) DO UPDATE SET
                 player_name = excluded.player_name,
                 account_type = excluded.account_type,
                 op = 1,
                 op_since = excluded.op_since,
+                op_level = excluded.op_level,
+                op_bypasses_player_limit = excluded.op_bypasses_player_limit,
                 updated_at = excluded.updated_at
         """, (
             player_uuid,
             player_name,
             account_type,
             op_since,
+            int(op_level),
+            1 if op_bypasses_player_limit else 0,
             now,
         ))
 
@@ -1364,6 +1380,99 @@ def get_op_players_from_db() -> list[dict]:
         """).fetchall()
 
     return [dict(row) for row in rows]
+
+
+def sync_player_op_entries_from_ops_entries(
+    entries: list[dict],
+) -> None:
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    normalized_entries = []
+
+    for entry in entries:
+        player_uuid = str(entry.get("uuid", "")).strip()
+        player_name = str(entry.get("name", "")).strip()
+
+        if not player_uuid or not player_name:
+            continue
+
+        try:
+            op_level = int(entry.get("level", 4))
+        except (TypeError, ValueError):
+            op_level = 4
+
+        op_level = max(1, min(op_level, 4))
+
+        bypasses_player_limit = bool(entry.get("bypassesPlayerLimit", False))
+
+        normalized_entries.append({
+            "uuid": player_uuid,
+            "name": player_name,
+            "level": op_level,
+            "bypasses": bypasses_player_limit,
+        })
+
+    normalized_uuid_set = {
+        item["uuid"].lower()
+        for item in normalized_entries
+    }
+
+    with get_connection() as conn:
+        for item in normalized_entries:
+            conn.execute("""
+                INSERT INTO players (
+                    player_uuid,
+                    player_name,
+                    account_type,
+                    op,
+                    op_since,
+                    op_level,
+                    op_bypasses_player_limit,
+                    updated_at
+                )
+                VALUES (?, ?, 'unknown', 1, ?, ?, ?, ?)
+                ON CONFLICT(player_uuid) DO UPDATE SET
+                    player_name = excluded.player_name,
+                    op = 1,
+                    op_since = COALESCE(players.op_since, excluded.op_since),
+                    op_level = excluded.op_level,
+                    op_bypasses_player_limit = excluded.op_bypasses_player_limit,
+                    updated_at = excluded.updated_at
+            """, (
+                item["uuid"],
+                item["name"],
+                now,
+                item["level"],
+                1 if item["bypasses"] else 0,
+                now,
+            ))
+
+        if normalized_uuid_set:
+            placeholders = ",".join("?" for _ in normalized_uuid_set)
+
+            conn.execute(f"""
+                UPDATE players
+                SET op = 0,
+                    op_since = NULL,
+                    updated_at = ?
+                WHERE lower(player_uuid) NOT IN ({placeholders})
+                  AND op != 0
+            """, (
+                now,
+                *normalized_uuid_set,
+            ))
+        else:
+            conn.execute("""
+                UPDATE players
+                SET op = 0,
+                    op_since = NULL,
+                    updated_at = ?
+                WHERE op != 0
+            """, (
+                now,
+            ))
+
+        conn.commit()
 
 
 def sync_player_op_flags_from_uuid_set(

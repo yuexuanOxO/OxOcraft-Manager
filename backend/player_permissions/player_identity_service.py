@@ -11,7 +11,7 @@ from backend.db import (
     mark_player_offline_by_name,
     get_all_players,
     delete_player_by_uuid,
-    get_player_by_name,
+    get_player_by_name_and_account_type,
     upsert_player_identity,
     hide_player_candidate_db as db_hide_player_candidate,
 )
@@ -271,21 +271,30 @@ def resolve_player_identity(
             "account_type": None,
         }
 
-    player = get_player_by_name(player_name)
-
-    if player:
-        return {
-            "player_uuid": player.get("player_uuid"),
-            "player_name": player.get("player_name") or player_name,
-            "account_type": player.get("account_type"),
-        }
-
     try:
         from backend.routes.player_routes import (
             is_online_mode,
             get_mojang_uuid,
             get_offline_player_uuid,
         )
+
+        current_account_type = (
+            "premium"
+            if is_online_mode()
+            else "offline"
+        )
+
+        player = get_player_by_name_and_account_type(
+            player_name,
+            current_account_type,
+        )
+
+        if player:
+            return {
+                "player_uuid": player.get("player_uuid"),
+                "player_name": player.get("player_name") or player_name,
+                "account_type": player.get("account_type"),
+            }
 
         if is_online_mode():
             player_uuid = get_mojang_uuid(player_name)

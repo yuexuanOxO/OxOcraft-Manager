@@ -13,6 +13,7 @@ from backend.player_permissions.player_identity_service import (
 
 from backend.db import (
     sync_player_op_flags_from_uuid_set,
+    sync_player_op_entries_from_ops_entries,
     get_op_players_from_db,
     upsert_player_identity,
     update_player_op_since,
@@ -187,12 +188,23 @@ def get_player_permission_list() -> list[dict]:
             {}
         )
 
+        try:
+            op_level = int(entry.get("level", 4))
+        except (TypeError, ValueError):
+            op_level = 4
+
+        op_level = max(1, min(op_level, 4))
+
         result.append({
             **known_player,
             "player_uuid": player_uuid,
             "player_name": player_name,
             "account_type": account_type,
             "op": True,
+            "op_level": op_level,
+            "op_bypasses_player_limit": bool(
+                entry.get("bypassesPlayerLimit", False)
+            ),
             "valid_for_current_mode": is_valid_for_current_mode,
         })
 
@@ -206,6 +218,20 @@ def get_effective_online_mode() -> bool:
     return str(
         properties.get("online-mode", "true")
     ).lower() == "true"
+
+
+def get_effective_op_permission_level() -> int:
+    snapshot = load_effective_settings_snapshot()
+    properties = snapshot.get("properties", {})
+
+    try:
+        level = int(
+            properties.get("op-permission-level", 4)
+        )
+    except (TypeError, ValueError):
+        level = 4
+
+    return max(1, min(level, 4))
 
 
 def is_server_ready() -> bool:
@@ -223,8 +249,8 @@ def can_add_op_by_name() -> bool:
 
 
 def sync_ops_json_to_players(source: str = "unknown") -> None:
-    sync_player_op_flags_from_uuid_set(
-        load_ops_uuid_set()
+    sync_player_op_entries_from_ops_entries(
+        load_ops_entries()
     )
 
 
@@ -241,9 +267,27 @@ def sync_ops_json_to_players_if_server_offline(
 def set_player_op(
     player_uuid: str,
     player_name: str,
+    op_level: int | None = None,
+    op_bypasses_player_limit: bool = False,
 ) -> dict:
 
     account_type = get_account_type(player_uuid)
+
+    if is_server_ready():
+        effective_op_level = get_effective_op_permission_level()
+    else:
+        try:
+            effective_op_level = int(op_level or 4)
+        except (TypeError, ValueError):
+            effective_op_level = 4
+
+    effective_op_level = max(1, min(effective_op_level, 4))
+
+    effective_bypasses_player_limit = (
+        False
+        if is_server_ready()
+        else bool(op_bypasses_player_limit)
+    )
 
     if player_uuid.lower() in load_ops_uuid_set():
         return {
@@ -271,6 +315,15 @@ def set_player_op(
 
         sync_ops_json_to_players(source="rcon_ui")
 
+        update_player_op_since(
+            player_uuid=player_uuid,
+            player_name=player_name,
+            account_type=account_type,
+            op_since=now,
+            op_level=effective_op_level,
+            op_bypasses_player_limit=effective_bypasses_player_limit,
+        )
+
         return {
             "success": True,
             "message": f"已將 {player_name} 設為管理員",
@@ -286,8 +339,8 @@ def set_player_op(
         entries.append({
             "uuid": player_uuid,
             "name": player_name,
-            "level": 4,
-            "bypassesPlayerLimit": False,
+            "level": effective_op_level,
+            "bypassesPlayerLimit": effective_bypasses_player_limit,
         })
 
         save_ops_entries(entries)
@@ -297,6 +350,8 @@ def set_player_op(
         player_name=player_name,
         account_type=account_type,
         op_since=now,
+        op_level=effective_op_level,
+        op_bypasses_player_limit=effective_bypasses_player_limit,
     )
 
     record_player_access(
@@ -380,7 +435,12 @@ def remove_player_op(player_uuid: str, player_name: str) -> dict:
     }
 
 
-def toggle_player_op(player_uuid: str, player_name: str) -> dict:
+def toggle_player_op(
+    player_uuid: str,
+    player_name: str,
+    op_level: int | None = None,
+    op_bypasses_player_limit: bool = False,
+) -> dict:
 
     online_mode = get_effective_online_mode()
 
@@ -411,7 +471,12 @@ def toggle_player_op(player_uuid: str, player_name: str) -> dict:
     if player_uuid.lower() in ops_uuid_set:
         return remove_player_op(player_uuid, player_name)
 
-    return set_player_op(player_uuid, player_name)
+    return set_player_op(
+        player_uuid,
+        player_name,
+        op_level=op_level,
+        op_bypasses_player_limit=op_bypasses_player_limit,
+    )
 
 
 def get_player_permission_candidate_list() -> list[dict]:

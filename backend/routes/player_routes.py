@@ -23,7 +23,8 @@ from backend.player_permissions.player_permission_service import (
     toggle_player_op,
     get_player_permission_candidate_list,
     can_add_op_by_name,
-    is_server_ready
+    is_server_ready,
+    get_effective_op_permission_level,
 )
 
 from backend.player_permissions.player_whitelist_service import (
@@ -238,6 +239,7 @@ def api_player_permissions():
         "online_mode": get_effective_online_mode(),
         "server_ready": is_server_ready(),
         "server_state": server_data.get("state", "offline"),
+        "op_permission_level": get_effective_op_permission_level(),
     })
 
 
@@ -247,6 +249,17 @@ def api_player_permission_toggle_op():
 
     player_uuid = str(data.get("uuid", "")).strip()
     player_name = str(data.get("name", "")).strip()
+
+    try:
+        op_level = int(data.get("level", 4))
+    except (TypeError, ValueError):
+        op_level = 4
+
+    op_level = max(1, min(op_level, 4))
+
+    op_bypasses_player_limit = bool(
+        data.get("bypassesPlayerLimit", False)
+    )
 
     if not player_uuid or not player_name:
         return jsonify({
@@ -258,6 +271,8 @@ def api_player_permission_toggle_op():
         result = toggle_player_op(
             player_uuid=player_uuid,
             player_name=player_name,
+            op_level=op_level,
+            op_bypasses_player_limit=op_bypasses_player_limit,
         )
 
         return jsonify(result)
@@ -274,6 +289,17 @@ def api_player_permission_add_op():
     data = request.get_json(silent=True) or {}
 
     player_name = str(data.get("name", "")).strip()
+
+    try:
+        op_level = int(data.get("level", 4))
+    except (TypeError, ValueError):
+        op_level = 4
+
+    op_level = max(1, min(op_level, 4))
+
+    op_bypasses_player_limit = bool(
+        data.get("bypassesPlayerLimit", False)
+    )
 
     if not player_name:
         return jsonify({
@@ -304,6 +330,8 @@ def api_player_permission_add_op():
         result = set_player_op(
             player_uuid=player_uuid,
             player_name=player_name,
+            op_level=op_level,
+            op_bypasses_player_limit=op_bypasses_player_limit,
         )
 
         return jsonify(result)

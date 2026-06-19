@@ -304,7 +304,7 @@
   },
   {
     "key": "function-permission-level",
-    "label": "函式權限等級",
+    "label": "預設給予權限等級",
     "type": "number",
     "default": "2",
     "description": "設定函數的預設權限等級。\n4個等級的詳情見 #op-permission-level。"

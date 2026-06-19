@@ -23,10 +23,47 @@ let candidatePlayers = [];
 let permissionOnlineMode = true;
 let permissionServerReady = false;
 let permissionServerState = "offline";
+let selectedOpLevel = 4;
+let defaultOpLevel = 4;
 
 const permissionHistoryFilters = new Set();
 const OXOCRAFT_OPERATOR_ICON = "/static/icons/player_ban/OxOcraft_origin.png";
 const OFFLINE_OP_HELP_DISABLED_KEY = "oxo_offline_op_help_disabled";
+
+const OP_LEVEL_INFO = {
+    1: {
+        icon: "/static/icons/op_level/gold_ingot.png",
+        title: "權限等級 1",
+        description: [
+            "可無視出生點保護。",
+            "適合只需要基本保護區管理權限的玩家。"
+        ],
+    },
+    2: {
+        icon: "/static/icons/op_level/diamond.png",
+        title: "權限等級 2",
+        description: [
+            "可使用大部分遊戲管理指令。",
+            "適合一般伺服器管理員。"
+        ],
+    },
+    3: {
+        icon: "/static/icons/op_level/netherite_ingot.png",
+        title: "權限等級 3",
+        description: [
+            "可使用更高階的管理指令。",
+            "適合需要管理玩家與伺服器狀態的管理員。"
+        ],
+    },
+    4: {
+        icon: "/static/icons/op_level/nether_star.png",
+        title: "權限等級 4",
+        description: [
+            "最高等級管理員權限。",
+            "可使用伺服器控制相關指令。"
+        ],
+    },
+};
 
 
 export function initPlayerPermissions() {
@@ -40,6 +77,7 @@ export function initPlayerPermissions() {
     const closeAddBtn = document.getElementById("closeAddOpPlayerBtn");
     const confirmAddBtn = document.getElementById("confirmAddOpPlayerBtn");
     const addInput = document.getElementById("addOpPlayerInput");
+    const bypassCheck = document.getElementById("addOpBypassPlayerLimitCheck");
     const historySearchInput = document.getElementById("playerPermissionHistorySearchInput");
     const historyFilterBtn = document.getElementById("playerPermissionHistoryFilterBtn");
     const historyFilterMenu = document.getElementById("playerPermissionHistoryFilterMenu");
@@ -48,6 +86,19 @@ export function initPlayerPermissions() {
     if (!openBtn || !modal) {
         return;
     }
+
+    document
+        .querySelectorAll(".add-op-level-option")
+        .forEach((button) => {
+            button.addEventListener("click", () => {
+                if (button.disabled) return;
+
+                selectedOpLevel =
+                    Number(button.dataset.level || defaultOpLevel);
+
+                renderAddOpLevelState();
+            });
+        });
 
     historySearchInput?.addEventListener("input", () => {
         renderPermissionHistory();
@@ -146,7 +197,15 @@ export function initPlayerPermissions() {
         addModal?.classList.remove("hidden");
         addInput.value = "";
 
+        defaultOpLevel = getDefaultOpLevel();
+        selectedOpLevel = defaultOpLevel;
+
+        if (bypassCheck) {
+            bypassCheck.checked = false;
+        }
+
         renderAddOpInputState();
+        renderAddOpLevelState();
 
         await loadOpCandidates();
     });
@@ -202,6 +261,7 @@ export function initPlayerPermissions() {
 
             renderAddOpInputState();
             renderPermissionActionButtons();
+            renderAddOpLevelState();
         }
     );
 
@@ -380,11 +440,11 @@ async function loadPlayerPermissions() {
         allPlayers = data.players || [];
 
         permissionOnlineMode = Boolean(data.online_mode);
-        permissionServerReady =
-            getUiServerState() === "ready";
+        permissionServerReady = getUiServerState() === "ready";
 
-        permissionServerState =
-            getUiServerState();
+        permissionServerState = getUiServerState();
+
+        defaultOpLevel = getDefaultOpLevelFromData(data);
 
         console.log("[Permission] server_state =", permissionServerState, data);
 
@@ -596,6 +656,25 @@ function createPlayerPermissionCard(player) {
 
         </div>
 
+        <div class="player-permission-op-detail">
+
+            <div class="player-permission-op-level">
+                權限等級：
+                <span>${escapeHtml(getOpLevel(player))}</span>
+                <img
+                    class="player-permission-op-level-icon"
+                    src="${getOpLevelIcon(player)}"
+                    alt="權限等級 ${escapeHtml(getOpLevel(player))}"
+                >
+            </div>
+
+            <div class="player-permission-op-bypass">
+                可無視玩家上限：
+                ${player.op_bypasses_player_limit ? "是" : "否"}
+            </div>
+
+        </div>
+
         <button
             class="
                 player-permission-action
@@ -687,6 +766,25 @@ function escapeHtml(text) {
 }
 
 
+function getOpLevel(player) {
+    const value = Number(player.op_level || 4);
+
+    if (!Number.isFinite(value)) {
+        return 4;
+    }
+
+    return Math.max(1, Math.min(value, 4));
+}
+
+
+function getOpLevelIcon(player) {
+    const level = getOpLevel(player);
+
+    return OP_LEVEL_INFO[level]?.icon ||
+        OP_LEVEL_INFO[4].icon;
+}
+
+
 async function handleAddOpPlayer() {
     const input =
         document.getElementById("addOpPlayerInput");
@@ -761,7 +859,13 @@ async function addPlayerOpByName(playerName) {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                name: playerName
+                name: playerName,
+                level: selectedOpLevel,
+                bypassesPlayerLimit:
+                    Boolean(
+                        document.getElementById("addOpBypassPlayerLimitCheck")
+                            ?.checked
+                    ),
             })
         }
     );
@@ -877,6 +981,103 @@ function renderPermissionActionButtons() {
                 uiLocked
             );
         });
+}
+
+
+function getDefaultOpLevelFromData(data) {
+    const value =
+        Number(data.op_permission_level || 4);
+
+    if (!Number.isFinite(value)) {
+        return 4;
+    }
+
+    return Math.max(1, Math.min(value, 4));
+}
+
+
+function getDefaultOpLevel() {
+    return Math.max(
+        1,
+        Math.min(
+            Number(defaultOpLevel || 4),
+            4
+        )
+    );
+}
+
+
+function isOpLevelLocked() {
+    return permissionServerReady;
+}
+
+
+function renderAddOpLevelState() {
+    const locked =
+        isOpLevelLocked();
+
+    const level =
+        locked
+            ? getDefaultOpLevel()
+            : selectedOpLevel;
+
+    selectedOpLevel = level;
+
+    document
+        .querySelectorAll(".add-op-level-option")
+        .forEach((button) => {
+            const buttonLevel =
+                Number(button.dataset.level || 4);
+
+            button.classList.toggle(
+                "active",
+                buttonLevel === level
+            );
+
+            button.disabled = locked;
+        });
+
+    const bypassCheck =
+        document.getElementById("addOpBypassPlayerLimitCheck");
+
+    if (bypassCheck) {
+        bypassCheck.disabled = locked;
+    }
+
+    const lockedHint =
+        document.getElementById("addOpLevelLockedHint");
+
+    lockedHint?.classList.toggle(
+        "hidden",
+        !locked
+    );
+
+    renderAddOpLevelDescription(level);
+}
+
+
+function renderAddOpLevelDescription(level) {
+    const content =
+        document.getElementById("addOpLevelDescription");
+
+    if (!content) return;
+
+    const info =
+        OP_LEVEL_INFO[level] || OP_LEVEL_INFO[4];
+
+    content.innerHTML = `
+        <div class="add-op-level-description-title">
+            ${escapeHtml(info.title)}
+        </div>
+
+        ${info.description
+            .map(text => `
+                <div class="add-op-level-description-text">
+                    ${escapeHtml(text)}
+                </div>
+            `)
+            .join("")}
+    `;
 }
 
 
@@ -1040,9 +1241,15 @@ async function togglePlayerOpFromCandidate(player) {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                uuid: player.player_uuid,
-                name: player.player_name,
-            })
+            uuid: player.player_uuid,
+            name: player.player_name,
+            level: selectedOpLevel,
+            bypassesPlayerLimit:
+                Boolean(
+                    document.getElementById("addOpBypassPlayerLimitCheck")
+                        ?.checked
+                ),
+        })
         }
     );
 

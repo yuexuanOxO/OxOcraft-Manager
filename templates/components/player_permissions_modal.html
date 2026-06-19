@@ -87,16 +87,85 @@
 
                 <div class="player-permission-header">
                     <div class="player-permission-title-row">
-                        <div class="player-permission-title">
+                        <div id="playerPermissionHistoryTitle" class="player-permission-title">
                             權限管理：紀錄
                         </div>
                     </div>
                 </div>
 
-                <div id="playerPermissionHistoryList" class="player-permission-list">
-                    <div class="player-permission-empty">
-                        權限管理紀錄功能開發中
+                <div class="player-permission-history-toolbar">
+
+                    <input
+                        id="playerPermissionHistorySearchInput"
+                        class="player-permission-search"
+                        type="text"
+                        placeholder="搜尋權限管理紀錄"
+                    >
+
+                    <div class="filter-wrap">
+                        <button
+                            id="playerPermissionHistoryFilterBtn"
+                            class="filter-btn"
+                            type="button"
+                            title="篩選紀錄"
+                        >
+                            <img
+                                src="/static/icons/general_icon/hopper.png"
+                                alt="篩選"
+                            >
+                        </button>
+
+                        <div
+                            id="playerPermissionHistoryFilterMenu"
+                            class="filter-menu hidden"
+                        >
+                            <div class="filter-title">
+                                操作
+                            </div>
+
+                            <div class="filter-tags">
+                                <button type="button" data-filter="add">
+                                    加入管理員
+                                </button>
+
+                                <button type="button" data-filter="remove">
+                                    移除管理員
+                                </button>
+                            </div>
+
+                            <div class="filter-title">
+                                操作來源
+                            </div>
+
+                            <div class="filter-tags">
+                                <button type="button" data-filter="oxocraft">OxOcraft</button>
+                                <button type="button" data-filter="minecraft_sync">Minecraft資料同步</button>
+                                <button type="button" data-filter="rcon">UI輸入指令</button>
+                                <button type="button" data-filter="command">遊戲內指令</button>
+                                <button type="button" data-filter="system">系統</button>
+                            </div>
+
+                            <div class="filter-actions">
+                                <button
+                                    type="button"
+                                    data-filter="clear"
+                                    class="filter-clear-btn"
+                                >
+                                    <img
+                                        src="/static/icons/general_icon/brush.png"
+                                        alt="清除篩選"
+                                    >
+
+                                    <span>清除篩選</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
+
+                </div>
+
+                <div id="playerPermissionHistoryList" class="player-permission-history-list">
+                    <div class="player-permission-empty">尚未載入權限管理紀錄</div>
                 </div>
 
             </div>

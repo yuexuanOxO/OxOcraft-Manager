@@ -24,8 +24,9 @@ let permissionOnlineMode = true;
 let permissionServerReady = false;
 let permissionServerState = "offline";
 
-const OFFLINE_OP_HELP_DISABLED_KEY =
-    "oxo_offline_op_help_disabled";
+const permissionHistoryFilters = new Set();
+const OXOCRAFT_OPERATOR_ICON = "/static/icons/player_ban/OxOcraft_origin.png";
+const OFFLINE_OP_HELP_DISABLED_KEY = "oxo_offline_op_help_disabled";
 
 
 export function initPlayerPermissions() {
@@ -39,11 +40,64 @@ export function initPlayerPermissions() {
     const closeAddBtn = document.getElementById("closeAddOpPlayerBtn");
     const confirmAddBtn = document.getElementById("confirmAddOpPlayerBtn");
     const addInput = document.getElementById("addOpPlayerInput");
+    const historySearchInput = document.getElementById("playerPermissionHistorySearchInput");
+    const historyFilterBtn = document.getElementById("playerPermissionHistoryFilterBtn");
+    const historyFilterMenu = document.getElementById("playerPermissionHistoryFilterMenu");
 
 
     if (!openBtn || !modal) {
         return;
     }
+
+    historySearchInput?.addEventListener("input", () => {
+        renderPermissionHistory();
+    });
+
+    historyFilterBtn?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        historyFilterMenu?.classList.toggle("hidden");
+    });
+
+    historyFilterMenu
+        ?.querySelectorAll("button[data-filter]")
+        .forEach((button) => {
+            button.addEventListener("click", () => {
+                const filter = button.dataset.filter || "";
+
+                if (!filter) return;
+
+                if (filter === "clear") {
+                    permissionHistoryFilters.clear();
+
+                    historyFilterMenu
+                        .querySelectorAll("button[data-filter]")
+                        .forEach(btn => {
+                            btn.classList.remove("active");
+                        });
+
+                    renderPermissionHistory();
+                    return;
+                }
+
+                if (permissionHistoryFilters.has(filter)) {
+                    permissionHistoryFilters.delete(filter);
+                    button.classList.remove("active");
+                } else {
+                    permissionHistoryFilters.add(filter);
+                    button.classList.add("active");
+                }
+
+                renderPermissionHistory();
+            });
+        });
+
+    historyFilterMenu?.addEventListener("click", (event) => {
+        event.stopPropagation();
+    });
+
+    document.addEventListener("click", () => {
+        historyFilterMenu?.classList.add("hidden");
+    });
 
     document.querySelectorAll(".player-permission-tab").forEach((button) => {
         button.addEventListener("click", async () => {
@@ -155,17 +209,14 @@ export function initPlayerPermissions() {
 
 
 function updatePermissionTabs() {
-    document
-        .querySelectorAll(".player-permission-tab")
-        .forEach((button) => {
+    document.querySelectorAll(".player-permission-tab").forEach((button) => {
             button.classList.toggle(
                 "active",
                 button.dataset.tab === currentPermissionTab
             );
         });
 
-    document
-        .getElementById("playerPermissionPage")
+    document.getElementById("playerPermissionPage")
         ?.classList.toggle(
             "hidden",
             currentPermissionTab !== "permissions"
@@ -184,6 +235,13 @@ function updatePermissionTabs() {
             "hidden",
             currentPermissionTab !== "help"
         );
+
+    const historySearchInput = document.getElementById("playerPermissionHistorySearchInput");
+
+    if (historySearchInput) {
+        historySearchInput.value = "";
+    }
+
 }
 
 
@@ -194,7 +252,7 @@ async function loadCurrentPermissionTab() {
     }
 
     if (currentPermissionTab === "history") {
-        renderPermissionHistoryPage();
+        await loadPermissionHistory();
         return;
     }
 
@@ -1065,17 +1123,338 @@ async function deleteOpCandidate(player) {
 }
 
 
-function renderPermissionHistoryPage() {
+async function loadPermissionHistory() {
     const list =
         document.getElementById("playerPermissionHistoryList");
 
+    if (list) {
+        list.innerHTML = `
+            <div class="player-permission-empty">
+                載入權限管理紀錄中...
+            </div>
+        `;
+    }
+
+    try {
+        const response = await fetch(
+            "/api/player/access-history/op",
+            { cache: "no-store" }
+        );
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(
+                data.message || "權限管理紀錄載入失敗"
+            );
+        }
+
+        permissionHistory = data.records || [];
+
+        renderPermissionHistory();
+
+    } catch (error) {
+        console.error("權限管理紀錄載入失敗:", error);
+
+        if (list) {
+            list.innerHTML = `
+                <div class="player-permission-empty">
+                    權限管理紀錄載入失敗
+                </div>
+            `;
+        }
+    }
+}
+
+
+function renderPermissionHistory() {
+    const list =
+        document.getElementById("playerPermissionHistoryList");
+
+    const searchInput =
+        document.getElementById("playerPermissionHistorySearchInput");
+
     if (!list) return;
 
-    list.innerHTML = `
-        <div class="player-permission-empty">
-            權限管理紀錄功能開發中
+    const keyword =
+        (searchInput?.value || "")
+            .trim()
+            .toLowerCase();
+
+    let rows = [...permissionHistory];
+
+    const actionFilters =
+        [...permissionHistoryFilters]
+            .filter(filter =>
+                filter === "add" ||
+                filter === "remove"
+            );
+
+    const sourceFilters =
+        [...permissionHistoryFilters]
+            .filter(filter =>
+                [
+                    "oxocraft",
+                    "minecraft_sync",
+                    "rcon",
+                    "command",
+                    "system",
+                ].includes(filter)
+            );
+
+    if (actionFilters.length > 0) {
+        rows = rows.filter(item => {
+            const action =
+                String(item.action || "").toLowerCase();
+
+            const isRemove =
+                action.includes("remove") ||
+                action.includes("deop");
+
+            const isAdd =
+                action.includes("add") ||
+                action.includes("op");
+
+            return (
+                (actionFilters.includes("add") && isAdd && !isRemove) ||
+                (actionFilters.includes("remove") && isRemove)
+            );
+        });
+    }
+
+    if (sourceFilters.length > 0) {
+        rows = rows.filter(item => {
+            const source = String(item.source || "");
+
+            const isOxocraft =
+                source === "ui" ||
+                source === "offline_ui_edit" ||
+                source === "ui_reload";
+
+            const isMinecraftSync =
+                source === "minecraft_json";
+
+            const isRcon =
+                source === "rcon" ||
+                source === "console_rcon" ||
+                source === "console_rcon_reload";
+
+            const isCommand =
+                source === "player_command" ||
+                source === "player_command_reload";
+
+            const isSystem =
+                source === "system";
+
+            return (
+                (sourceFilters.includes("oxocraft") && isOxocraft) ||
+                (sourceFilters.includes("minecraft_sync") && isMinecraftSync) ||
+                (sourceFilters.includes("rcon") && isRcon) ||
+                (sourceFilters.includes("command") && isCommand) ||
+                (sourceFilters.includes("system") && isSystem)
+            );
+        });
+    }
+
+    if (keyword) {
+        rows = rows.filter(item => {
+            return (
+                String(item.target_name || "")
+                    .toLowerCase()
+                    .includes(keyword)
+                ||
+                String(item.target_uuid || "")
+                    .toLowerCase()
+                    .includes(keyword)
+            );
+        });
+    }
+
+    list.innerHTML = "";
+
+    if (rows.length === 0) {
+        list.innerHTML = `
+            <div class="player-permission-empty">
+                目前沒有符合條件的權限管理紀錄
+            </div>
+        `;
+        return;
+    }
+
+    rows.forEach(item => {
+        list.appendChild(
+            createPermissionHistoryCard(item)
+        );
+    });
+}
+
+
+function createPermissionHistoryCard(item) {
+    const card = document.createElement("div");
+
+    card.className = "player-permission-history-card";
+
+    const actionText =
+        getPermissionHistoryActionText(item.action);
+
+    const operator =
+        getDisplayPermissionOperator(item);
+
+    card.innerHTML = `
+        <img
+            class="player-permission-history-avatar"
+            src="${getPlayerAvatarUrl({
+                player_uuid: item.target_uuid,
+                player_name: item.target_name,
+                account_type: item.account_type
+            })}"
+            alt="${escapeHtml(item.target_name || "玩家")}"
+        >
+
+        <div class="player-permission-history-main">
+
+            <div class="player-permission-history-title-row">
+                <span class="player-permission-history-action">
+                    ${escapeHtml(actionText)}
+                </span>
+
+                <span class="player-permission-history-target">
+                    ${escapeHtml(item.target_name || "未知玩家")}
+                </span>
+            </div>
+
+            <div class="player-permission-history-meta">
+                UUID：${escapeHtml(item.target_uuid || "未知")}
+            </div>
+
+            <div class="player-permission-history-meta">
+                日期：${escapeHtml(formatDateTime(item.created_at))}
+            </div>
+
+        </div>
+
+        <div class="player-permission-history-right">
+
+            <div class="player-permission-history-source">
+                <span class="player-permission-history-label">
+                    操作來源：
+                </span>
+
+                <span class="player-permission-history-value">
+                    ${escapeHtml(getPermissionSourceText(item.source))}
+                </span>
+            </div>
+
+            <div class="player-permission-history-operator">
+                <span class="player-permission-history-label">
+                    操作人：
+                </span>
+
+                <img
+                    class="player-permission-history-operator-avatar
+                        ${operator === "OxOcraft" ? "oxocraft" : "player"}"
+                    src="${getPermissionOperatorAvatarUrl(item)}"
+                    alt="${escapeHtml(operator)}"
+                >
+
+                <span class="player-permission-history-operator-name">
+                    ${escapeHtml(operator)}
+                </span>
+            </div>
+
         </div>
     `;
+
+    return card;
+}
+
+
+function getPermissionHistoryActionText(action) {
+    action = String(action || "");
+
+    if (
+        action.includes("remove") ||
+        action.includes("deop")
+    ) {
+        return "移除管理員";
+    }
+
+    return "加入管理員";
+}
+
+
+function getDisplayPermissionOperator(item) {
+    const operator =
+        String(item.operator_name || "OxOcraft").trim();
+
+    const source =
+        String(item.source || "").trim();
+
+    if (
+        source === "ui" ||
+        source === "offline_ui_edit" ||
+        source === "minecraft_json" ||
+        source === "rcon" ||
+        source === "console_rcon" ||
+        operator === "Rcon" ||
+        operator === "ops.json 同步"
+    ) {
+        return "OxOcraft";
+    }
+
+    return operator || "OxOcraft";
+}
+
+
+function getPermissionOperatorAvatarUrl(item) {
+    const operator =
+        getDisplayPermissionOperator(item);
+
+    if (operator === "OxOcraft") {
+        return OXOCRAFT_OPERATOR_ICON;
+    }
+
+    return getPlayerAvatarUrl({
+        player_uuid: item.operator_uuid || "",
+        player_name: operator,
+        account_type:
+            item.operator_account_type ||
+            item.account_type ||
+            "unknown"
+    });
+}
+
+
+function getPermissionSourceText(source) {
+    const sourceMap = {
+        ui: "OxOcraft",
+        offline_ui_edit: "OxOcraft",
+        minecraft_json: "Minecraft資料同步",
+        player_command: "遊戲內指令",
+        console_rcon: "UI輸入指令",
+        rcon: "UI輸入指令",
+        system: "系統操作",
+        ui_reload: "OxOcraft",
+        console_rcon_reload: "UI輸入指令(reload)",
+        player_command_reload: "遊戲內指令(reload)",
+    };
+
+    return sourceMap[source] || source || "未知";
+}
+
+
+function formatDateTime(text) {
+    if (!text) {
+        return "未知";
+    }
+
+    const value = String(text).trim();
+
+    if (value.length >= 16) {
+        return value.slice(0, 16);
+    }
+
+    return value;
 }
 
 

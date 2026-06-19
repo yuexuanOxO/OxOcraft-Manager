@@ -1462,14 +1462,12 @@ function renderPermissionHistory() {
 
 function createPermissionHistoryCard(item) {
     const card = document.createElement("div");
+    const actionText = getPermissionHistoryActionText(item.action);
+    const operator = getDisplayPermissionOperator(item);
+    const levelIcon = getPermissionHistoryLevelIcon(item);
+    const bypassText = getPermissionHistoryBypassText(item);
 
     card.className = "player-permission-history-card";
-
-    const actionText =
-        getPermissionHistoryActionText(item.action);
-
-    const operator =
-        getDisplayPermissionOperator(item);
 
     card.innerHTML = `
         <img
@@ -1492,6 +1490,18 @@ function createPermissionHistoryCard(item) {
                 <span class="player-permission-history-target">
                     ${escapeHtml(item.target_name || "未知玩家")}
                 </span>
+
+                ${
+                    levelIcon
+                        ? `
+                            <img
+                                class="player-permission-history-level-icon"
+                                src="${levelIcon}"
+                                alt="權限等級"
+                            >
+                        `
+                        : ""
+                }
             </div>
 
             <div class="player-permission-history-meta">
@@ -1501,6 +1511,16 @@ function createPermissionHistoryCard(item) {
             <div class="player-permission-history-meta">
                 日期：${escapeHtml(formatDateTime(item.created_at))}
             </div>
+
+            ${
+                bypassText
+                    ? `
+                        <div class="player-permission-history-meta">
+                            ${escapeHtml(bypassText)}
+                        </div>
+                    `
+                    : ""
+            }
 
         </div>
 
@@ -1626,6 +1646,68 @@ function formatDateTime(text) {
     }
 
     return value;
+}
+
+
+function getPermissionHistoryDetail(item) {
+    try {
+        const detail = JSON.parse(item.detail || "{}");
+
+        if (
+            detail &&
+            typeof detail === "object" &&
+            !Array.isArray(detail)
+        ) {
+            return detail;
+        }
+
+        return {};
+    } catch {
+        return {};
+    }
+}
+
+
+function getPermissionHistoryLevel(item) {
+    const detail =
+        getPermissionHistoryDetail(item);
+
+    const value =
+        Number(detail.op_level || 0);
+
+    if (!Number.isFinite(value) || value <= 0) {
+        return null;
+    }
+
+    return Math.max(1, Math.min(value, 4));
+}
+
+
+function getPermissionHistoryLevelIcon(item) {
+    const level =
+        getPermissionHistoryLevel(item);
+
+    if (!level) {
+        return "";
+    }
+
+    return OP_LEVEL_INFO[level]?.icon || "";
+}
+
+
+function getPermissionHistoryBypassText(item) {
+    const detail =
+        getPermissionHistoryDetail(item);
+
+    if (
+        typeof detail.op_bypasses_player_limit !== "boolean"
+    ) {
+        return "";
+    }
+
+    return detail.op_bypasses_player_limit
+        ? "可無視玩家上限：是"
+        : "可無視玩家上限：否";
 }
 
 

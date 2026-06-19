@@ -1158,3 +1158,11 @@
 .add-op-bypass-help:hover::after {
     display: block;
 }
+
+.player-permission-history-level-icon {
+    width: 32px;
+    height: 32px;
+
+    object-fit: contain;
+    image-rendering: pixelated;
+}

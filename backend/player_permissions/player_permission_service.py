@@ -234,6 +234,28 @@ def get_effective_op_permission_level() -> int:
     return max(1, min(level, 4))
 
 
+def build_op_history_detail(
+    op_level: int | None = None,
+    op_bypasses_player_limit: bool = False,
+) -> str:
+    try:
+        level = int(op_level or 4)
+    except (TypeError, ValueError):
+        level = 4
+
+    level = max(1, min(level, 4))
+
+    return json.dumps(
+        {
+            "op_level": level,
+            "op_bypasses_player_limit": bool(
+                op_bypasses_player_limit
+            ),
+        },
+        ensure_ascii=False,
+    )
+
+
 def is_server_ready() -> bool:
     status = get_cached_server_status()
     data = status.get("data", {})
@@ -362,7 +384,19 @@ def set_player_op(
         account_type=account_type,
         operator_name="OxOcraft",
         source="offline_ui_edit",
-        detail="offline-edit",
+        detail=build_op_history_detail(
+            op_level=effective_op_level,
+            op_bypasses_player_limit=effective_bypasses_player_limit,
+        ),
+    )
+
+    update_player_op_since(
+        player_uuid=player_uuid,
+        player_name=player_name,
+        account_type=account_type,
+        op_since=now,
+        op_level=effective_op_level,
+        op_bypasses_player_limit=effective_bypasses_player_limit,
     )
 
     return {
@@ -424,7 +458,7 @@ def remove_player_op(player_uuid: str, player_name: str) -> dict:
         account_type=get_account_type(player_uuid),
         operator_name="OxOcraft",
         source="offline_ui_edit",
-        detail="offline-edit",
+        detail="{}",
     )
 
     return {

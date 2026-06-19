@@ -35,15 +35,15 @@ const OP_LEVEL_INFO = {
         icon: "/static/icons/op_level/gold_ingot.png",
         title: "權限等級 1",
         description: [
-            "可無視出生點保護。",
-            "適合只需要基本保護區管理權限的玩家。"
+            "可無視出生點保護，適合只需要基本保護區管理權限的玩家。",
+            "(出生點保護：需在有一名管理員及一名一般玩家才會才會生效。)"
         ],
     },
     2: {
         icon: "/static/icons/op_level/diamond.png",
         title: "權限等級 2",
         description: [
-            "可使用大部分遊戲管理指令。",
+            "可使用大部分遊戲管理指令(傳送、給物品、切換模式等...)。",
             "適合一般伺服器管理員。"
         ],
     },
@@ -51,7 +51,7 @@ const OP_LEVEL_INFO = {
         icon: "/static/icons/op_level/netherite_ingot.png",
         title: "權限等級 3",
         description: [
-            "可使用更高階的管理指令。",
+            "可使用更高階的管理指令(封鎖、踢出、管理 OP等...)。",
             "適合需要管理玩家與伺服器狀態的管理員。"
         ],
     },
@@ -60,7 +60,7 @@ const OP_LEVEL_INFO = {
         title: "權限等級 4",
         description: [
             "最高等級管理員權限。",
-            "可使用伺服器控制相關指令。"
+            "完整伺服器管理權限。建議僅服主使用。"
         ],
     },
 };
@@ -659,13 +659,17 @@ function createPlayerPermissionCard(player) {
         <div class="player-permission-op-detail">
 
             <div class="player-permission-op-level">
-                權限等級：
-                <span>${escapeHtml(getOpLevel(player))}</span>
+
+                <span>權限等級：</span>
+
+                <span>Lv${escapeHtml(getOpLevel(player))}</span>
+
                 <img
                     class="player-permission-op-level-icon"
                     src="${getOpLevelIcon(player)}"
                     alt="權限等級 ${escapeHtml(getOpLevel(player))}"
                 >
+
             </div>
 
             <div class="player-permission-op-bypass">
@@ -820,6 +824,19 @@ async function handleAddOpPlayer() {
 
         input.value = "";
 
+        selectedOpLevel = getDefaultOpLevel();
+
+        const bypassCheck =
+            document.getElementById(
+                "addOpBypassPlayerLimitCheck"
+            );
+
+        if (bypassCheck) {
+            bypassCheck.checked = false;
+        }
+
+        renderAddOpLevelState();
+
         await showInfo({
             title: "玩家權限",
             message: data.message,
@@ -840,7 +857,7 @@ async function handleAddOpPlayer() {
 
         if (confirmBtn) {
             confirmBtn.disabled = false;
-            confirmBtn.textContent = "新增";
+            confirmBtn.textContent = "＋加入管理員";
         }
 
         renderAddOpInputState();
@@ -1193,35 +1210,18 @@ function createOpCandidateCard(player) {
     const deleteBtn =
         card.querySelector(".op-candidate-delete-btn");
 
-    addBtn?.addEventListener("click", async () => {
-        if (addBtn.disabled) return;
+    addBtn?.addEventListener("click", () => {
 
-        addBtn.disabled = true;
-        addBtn.textContent = "…";
+        const input = document.getElementById("addOpPlayerInput");
 
-        try {
-            const data =
-                await togglePlayerOpFromCandidate(player);
-
-            await showInfo({
-                title: "玩家權限",
-                message: data.message,
-                confirmText: "關閉",
-                variant: "success"
-            });
-
-        } catch (error) {
-            addBtn.disabled = false;
-            addBtn.textContent = "＋";
-            console.error("加入候選玩家失敗:", error);
-
-            await showInfo({
-                title: "錯誤",
-                message: error.message || "新增管理員失敗",
-                confirmText: "關閉",
-                variant: "error"
-            });
+        if (!input) {
+            return;
         }
+
+        input.value = player.player_name;
+
+        input.focus();
+
     });
 
     deleteBtn?.addEventListener("click", async () => {
@@ -1229,42 +1229,6 @@ function createOpCandidateCard(player) {
     });
 
     return card;
-}
-
-
-async function togglePlayerOpFromCandidate(player) {
-    const response = await fetch(
-        "/api/player/permission/toggle-op",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-            uuid: player.player_uuid,
-            name: player.player_name,
-            level: selectedOpLevel,
-            bypassesPlayerLimit:
-                Boolean(
-                    document.getElementById("addOpBypassPlayerLimitCheck")
-                        ?.checked
-                ),
-        })
-        }
-    );
-
-    const data = await response.json();
-
-    if (!data.success) {
-        throw new Error(
-            data.message || "新增管理員失敗"
-        );
-    }
-
-    await loadPlayerPermissions();
-    await loadOpCandidates();
-
-    return data;
 }
 
 

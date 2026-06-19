@@ -734,3 +734,25 @@
 .player-permission-help-card-text + .player-permission-help-card-text {
     margin-top: 4px;
 }
+
+#playerPermissionHelpPage .player-permission-header {
+    justify-content: center;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+#playerPermissionHelpPage .player-permission-title-row {
+    width: 100%;
+    justify-content: center;
+}
+
+#playerPermissionHistoryPage .player-permission-header {
+    justify-content: center;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+#playerPermissionHistoryPage .player-permission-title-row {
+    width: 100%;
+    justify-content: center;
+}

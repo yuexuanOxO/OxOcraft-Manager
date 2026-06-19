@@ -312,7 +312,7 @@ function renderBanModeBadge() {
 
     summary.innerHTML = `
         <div class="player-ban-mode ${banOnlineMode ? "online" : "offline"}">
-            ${banOnlineMode ? "✓ 已開啟正版驗證" : "⚠ 未開啟正版驗證"}
+            ${banOnlineMode ? "✓ 正版伺服器" : "⚠ 離線伺服器"}
         </div>
     `;
 }

@@ -687,8 +687,8 @@ function updateWhitelistModeSummary(onlineMode) {
         ">
             ${
                 onlineMode
-                    ? "✓ 已開啟正版驗證"
-                    : "⚠ 未開啟正版驗證"
+                    ? "✓ 正版伺服器"
+                    : "⚠ 離線伺服器"
             }
         </span>
     `;

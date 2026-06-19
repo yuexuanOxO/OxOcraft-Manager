@@ -1,6 +1,11 @@
 from flask import Blueprint, jsonify, request
 
 from backend.db import get_ban_access_history
+
+from backend.player_permissions.player_permission_service import (
+    get_effective_online_mode,
+)
+
 from backend.player_ban.player_ban_service import (
     get_active_bans,
     ban_player,
@@ -21,6 +26,7 @@ def api_player_ban_players():
     return jsonify({
         "success": True,
         "players": get_active_bans("player"),
+        "online_mode": get_effective_online_mode(),
     })
 
 
@@ -29,6 +35,7 @@ def api_player_ban_ips():
     return jsonify({
         "success": True,
         "ips": get_active_bans("ip"),
+        "online_mode": get_effective_online_mode(),
     })
 
 

@@ -22,6 +22,8 @@ let banHistory = [];
 let banCandidatePlayers = [];
 let canAddBanPlayerByName = true;
 let selectedBanCandidatePlayer = null;
+let banOnlineMode = true;
+
 const banHistoryFilters = new Set();
 
 const OXOCRAFT_OPERATOR_ICON =
@@ -267,6 +269,7 @@ async function loadCurrentBanTab() {
             if (!data.success) throw new Error(data.message || "讀取封鎖玩家失敗");
 
             banPlayers = data.players || [];
+            banOnlineMode = Boolean(data.online_mode);
         }
 
         if (currentBanTab === "ips") {
@@ -276,6 +279,7 @@ async function loadCurrentBanTab() {
             if (!data.success) throw new Error(data.message || "讀取封鎖IP失敗");
 
             banIps = data.ips || [];
+            banOnlineMode = Boolean(data.online_mode);
         }
 
         if (currentBanTab === "history") {
@@ -306,20 +310,9 @@ function renderBanModeBadge() {
 
     if (!summary) return;
 
-    const sourceRows =
-        currentBanTab === "ips"
-            ? banIps
-            : banPlayers;
-
-    const hasOfflineModeData =
-        sourceRows.some(item => item.account_type === "offline");
-
-    const isOnlineMode =
-        !hasOfflineModeData;
-
     summary.innerHTML = `
-        <div class="player-ban-mode ${isOnlineMode ? "online" : "offline"}">
-            ${isOnlineMode ? "✓ 已開啟正版驗證" : "⚠ 離線模式"}
+        <div class="player-ban-mode ${banOnlineMode ? "online" : "offline"}">
+            ${banOnlineMode ? "✓ 已開啟正版驗證" : "⚠ 未開啟正版驗證"}
         </div>
     `;
 }

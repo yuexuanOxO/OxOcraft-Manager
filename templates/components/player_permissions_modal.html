@@ -1,60 +1,120 @@
 <div id="playerPermissionModal" class="player-permission-modal hidden">
     <div class="player-permission-panel">
 
-        <div class="help-tabs">
+        <div class="player-permission-side-tabs">
+
             <button
-                id="openPermissionHelpBtn"
-                class="help-tab-btn"
+                class="player-permission-tab active"
                 type="button"
+                data-tab="permissions"
+                title="管理員"
             >
-                <img src="/static/icons/general_icon/knowledge_book.png">
+                <img src="/static/icons/feature_button/command_block.gif" alt="">
+                <span>管理員</span>
             </button>
+
+            <button
+                class="player-permission-tab"
+                type="button"
+                data-tab="history"
+                title="權限紀錄"
+            >
+                <img src="/static/icons/general_icon/list.png" alt="">
+                <span>紀錄</span>
+            </button>
+
+            <button
+                class="player-permission-tab"
+                type="button"
+                data-tab="help"
+                title="權限說明"
+            >
+                <img src="/static/icons/general_icon/knowledge_book.png" alt="">
+                <span>說明</span>
+            </button>
+
         </div>
 
-        <div class="player-permission-header">
-            <div class="player-permission-header-main"><div>
-                <div class="player-permission-title-row">
-                    <div class="player-permission-title">
-                        玩家權限管理
+        <div class="player-permission-main">
+
+            <div id="playerPermissionPage" class="player-permission-page">
+
+                <div class="player-permission-header">
+                    <div class="player-permission-header-main">
+                        <div class="player-permission-title-row">
+                            <div class="player-permission-title">
+                                玩家權限管理
+                            </div>
+                        </div>
+
+                        <div id="playerPermissionSummary" class="player-permission-summary"></div>
+
+                        <div
+                            id="playerPermissionPlayerCount"
+                            class="player-permission-player-count"
+                        >
+                            載入中...
+                        </div>
                     </div>
                 </div>
-                <div id="playerPermissionSummary" class="player-permission-summary">
+
+                <div class="player-permission-toolbar">
+
+                    <button
+                        id="openAddOpPlayerBtn"
+                        class="player-permission-add-open-btn"
+                        type="button"
+                    >
+                        + 新增玩家到管理員
+                    </button>
+
+                    <input
+                        id="playerPermissionSearchInput"
+                        class="player-permission-search"
+                        type="text"
+                        placeholder="搜尋玩家名稱或 UUID"
+                    >
+
                 </div>
 
-                <div id="playerPermissionPlayerCount"
-                    class="player-permission-player-count">
-                    載入中...
+                <div id="playerPermissionList" class="player-permission-list">
+                    <div class="player-permission-empty">尚未載入玩家資料</div>
                 </div>
+
             </div>
 
-            <!-- <button id="closePlayerPermissionBtn" class="player-permission-close-btn" type="button">
-                ✕
-            </button> -->
-                
+            <div id="playerPermissionHistoryPage" class="player-permission-page hidden">
+
+                <div class="player-permission-header">
+                    <div class="player-permission-title-row">
+                        <div class="player-permission-title">
+                            權限管理：紀錄
+                        </div>
+                    </div>
+                </div>
+
+                <div id="playerPermissionHistoryList" class="player-permission-list">
+                    <div class="player-permission-empty">
+                        權限管理紀錄功能開發中
+                    </div>
+                </div>
+
             </div>
-            
-        </div>
 
-        <div class="player-permission-toolbar">
+            <div id="playerPermissionHelpPage" class="player-permission-page hidden">
 
-            <button id="openAddOpPlayerBtn" class="player-permission-add-open-btn" type="button">
-                + 新增玩家到管理員
-            </button>
+                <div class="player-permission-header">
+                    <div class="player-permission-title-row">
+                        <div class="player-permission-title">
+                            權限管理：說明
+                        </div>
+                    </div>
+                </div>
 
-            <input
-                id="playerPermissionSearchInput"
-                class="player-permission-search"
-                type="text"
-                placeholder="搜尋玩家名稱或 UUID"
-            >
+                <div id="playerPermissionHelpContent" class="player-permission-help"></div>
 
-            <button id="refreshPlayerPermissionBtn" class="player-permission-refresh-btn" type="button">
-                重新整理
-            </button>
-        </div>
+            </div>
 
-        <div id="playerPermissionList" class="player-permission-list">
-            <div class="player-permission-empty">尚未載入玩家資料</div>
         </div>
 
     </div>
@@ -86,9 +146,4 @@
             </div>
         </div>
     </div>
-
-    <div id="playerPermissionTooltip" class="help-tooltip hidden">
-        權限管理說明
-    </div>
-
 </div>

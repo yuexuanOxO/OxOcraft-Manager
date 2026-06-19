@@ -16,6 +16,8 @@ import {
 } from "./server_ui_state.js";
 
 let currentFilter = "op";
+let currentPermissionTab = "permissions";
+let permissionHistory = [];
 let allPlayers = [];
 let candidatePlayers = [];
 let permissionOnlineMode = true;
@@ -27,49 +29,45 @@ const OFFLINE_OP_HELP_DISABLED_KEY =
 
 
 export function initPlayerPermissions() {
-    const openBtn =
-        document.getElementById("playerPermissionBtn");
+    const openBtn = document.getElementById("playerPermissionBtn");
+    const modal = document.getElementById("playerPermissionModal");
+    const closeBtn = document.getElementById("closePlayerPermissionBtn");
+    const refreshBtn = document.getElementById("refreshPlayerPermissionBtn");
+    const searchInput = document.getElementById("playerPermissionSearchInput");
+    const openAddBtn = document.getElementById("openAddOpPlayerBtn");
+    const addModal = document.getElementById("addOpPlayerModal");
+    const closeAddBtn = document.getElementById("closeAddOpPlayerBtn");
+    const confirmAddBtn = document.getElementById("confirmAddOpPlayerBtn");
+    const addInput = document.getElementById("addOpPlayerInput");
 
-    const modal =
-        document.getElementById("playerPermissionModal");
-
-    const closeBtn =
-        document.getElementById("closePlayerPermissionBtn");
-
-    const refreshBtn =
-        document.getElementById("refreshPlayerPermissionBtn");
-
-    const searchInput =
-        document.getElementById("playerPermissionSearchInput");
-
-    const openAddBtn =
-        document.getElementById("openAddOpPlayerBtn");
-
-    const addModal =
-        document.getElementById("addOpPlayerModal");
-
-    const closeAddBtn =
-        document.getElementById("closeAddOpPlayerBtn");
-
-    const confirmAddBtn =
-        document.getElementById("confirmAddOpPlayerBtn");
-
-    const addInput =
-        document.getElementById("addOpPlayerInput");
-
-    const openPermissionHelpBtn =
-        document.getElementById("openPermissionHelpBtn");
-
-    const permissionTooltip =
-        document.getElementById("playerPermissionTooltip");
 
     if (!openBtn || !modal) {
         return;
     }
 
+    document.querySelectorAll(".player-permission-tab").forEach((button) => {
+        button.addEventListener("click", async () => {
+            const nextTab =
+                button.dataset.tab || "permissions";
+
+            if (currentPermissionTab === nextTab) {
+                return;
+            }
+
+            currentPermissionTab = nextTab;
+
+            updatePermissionTabs();
+            await loadCurrentPermissionTab();
+        });
+    });
+
     openBtn.addEventListener("click", async () => {
         modal.classList.remove("hidden");
-        await loadPlayerPermissions();
+
+        currentPermissionTab = "permissions";
+        updatePermissionTabs();
+
+        await loadCurrentPermissionTab();
     });
 
     closeBtn?.addEventListener("click", () => {
@@ -119,25 +117,6 @@ export function initPlayerPermissions() {
         }
     });
 
-    openPermissionHelpBtn?.addEventListener("click", async () => {
-        await showPermissionHelp();
-    });
-
-    openPermissionHelpBtn?.addEventListener("mouseenter", () => {
-        permissionTooltip?.classList.remove("hidden");
-    });
-
-    openPermissionHelpBtn?.addEventListener("mousemove", (event) => {
-        if (!permissionTooltip) return;
-
-        permissionTooltip.style.left = `${event.clientX + 14}px`;
-        permissionTooltip.style.top = `${event.clientY - 38}px`;
-    });
-
-    openPermissionHelpBtn?.addEventListener("mouseleave", () => {
-        permissionTooltip?.classList.add("hidden");
-    });
-
     window.addEventListener(
         "player-permissions-should-refresh",
         async () => {
@@ -172,6 +151,54 @@ export function initPlayerPermissions() {
         }
     );
 
+}
+
+
+function updatePermissionTabs() {
+    document
+        .querySelectorAll(".player-permission-tab")
+        .forEach((button) => {
+            button.classList.toggle(
+                "active",
+                button.dataset.tab === currentPermissionTab
+            );
+        });
+
+    document
+        .getElementById("playerPermissionPage")
+        ?.classList.toggle(
+            "hidden",
+            currentPermissionTab !== "permissions"
+        );
+
+    document
+        .getElementById("playerPermissionHistoryPage")
+        ?.classList.toggle(
+            "hidden",
+            currentPermissionTab !== "history"
+        );
+
+    document
+        .getElementById("playerPermissionHelpPage")
+        ?.classList.toggle(
+            "hidden",
+            currentPermissionTab !== "help"
+        );
+}
+
+
+async function loadCurrentPermissionTab() {
+    if (currentPermissionTab === "permissions") {
+        await loadPlayerPermissions();
+        return;
+    }
+
+    if (currentPermissionTab === "history") {
+        renderPermissionHistoryPage();
+        return;
+    }
+
+    renderPermissionHelpPage();
 }
 
 
@@ -311,13 +338,14 @@ async function loadPlayerPermissions() {
         renderAddOpInputState();
         renderPermissionActionButtons();
 
-        if (
-            permissionServerReady
-            && !permissionOnlineMode
-            && localStorage.getItem(OFFLINE_OP_HELP_DISABLED_KEY) !== "1"
-        ) {
-            await showPermissionHelp(true);
-        }
+        // 自動提醒暫停使用，保留 showPermissionHelp() 供之後導覽或提醒功能使用。
+        // if (
+        //     permissionServerReady
+        //     && !permissionOnlineMode
+        //     && localStorage.getItem(OFFLINE_OP_HELP_DISABLED_KEY) !== "1"
+        // ) {
+        //     await showPermissionHelp(true);
+        // }
 
     } catch (error) {
         console.error("玩家權限資料載入失敗:", error);
@@ -1034,4 +1062,78 @@ async function deleteOpCandidate(player) {
             variant: "error"
         });
     }
+}
+
+
+function renderPermissionHistoryPage() {
+    const list =
+        document.getElementById("playerPermissionHistoryList");
+
+    if (!list) return;
+
+    list.innerHTML = `
+        <div class="player-permission-empty">
+            權限管理紀錄功能開發中
+        </div>
+    `;
+}
+
+
+function renderPermissionHelpPage() {
+    const content =
+        document.getElementById("playerPermissionHelpContent");
+
+    if (!content) return;
+
+    const sections = [
+        {
+            title: "離線模式注意事項",
+            content: [
+                "伺服器在離線模式且正在運行時，Minecraft /op 與 /deop 可能受玩家名稱大小寫與快取影響。",
+                "若存在 creeper1 / Creeper1 這類只差大小寫的玩家名稱，權限可能會套用到錯誤玩家。"
+            ]
+        },
+        {
+            title: "建議操作方式",
+            content: [
+                "請先讓玩家進入伺服器一次，再從「之前加入過的玩家」清單加入管理員。",
+                "避免讓玩家使用只差大小寫的名稱。",
+                "若看到灰色或標示無效的玩家資料，代表該 UUID 不符合目前伺服器的登入模式，建議移除。"
+            ]
+        },
+        {
+            title: "為什麼會發生?",
+            content: [
+                "Minecraft 的 OP 權限實際依 UUID 判斷。",
+                "正版驗證模式使用 Mojang UUID；離線模式則依玩家名稱產生 OfflinePlayer UUID。",
+                "在線使用 /op 時，Minecraft 會自行解析玩家名稱，因此 OxOcraft 無法完全控制它最後套用到哪個 UUID。"
+            ]
+        },
+        {
+            title: "如果權限套用錯誤怎麼辦?",
+            content: [
+                "請先從權限管理頁移除錯誤的玩家資料。",
+                "若在線移除仍不正常，請關閉伺服器後再調整 OP 名單。",
+                "若希望完全避免此類問題，建議改用正版驗證模式。"
+            ]
+        }
+    ];
+
+    content.innerHTML = sections
+        .map(section => `
+            <section class="player-permission-help-card">
+                <h3 class="player-permission-help-card-title">
+                    ${escapeHtml(section.title)}
+                </h3>
+
+                ${section.content
+                    .map(text => `
+                        <p class="player-permission-help-card-text">
+                            ${escapeHtml(text)}
+                        </p>
+                    `)
+                    .join("")}
+            </section>
+        `)
+        .join("");
 }

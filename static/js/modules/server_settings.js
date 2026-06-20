@@ -67,7 +67,7 @@ const SERVER_SETTING_GROUPS = [
 export function initServerSettings() {
     setupServerSettingsModal();
     setupServerSettingSearch();
-    setupServerSettingHelp();
+    setupServerSettingTooltip();
     setupServerSettingsStatusSync();
 }
 
@@ -79,8 +79,106 @@ function setupServerSettingsStatusSync() {
 }
 
 
-function setupServerSettingHelp() {
-    document.addEventListener("click", (event) => {
+function setupServerSettingTooltip() {
+    let tooltip = null;
+    let showTimer = null;
+
+    function removeTooltip() {
+        if (showTimer) {
+            clearTimeout(showTimer);
+            showTimer = null;
+        }
+
+        if (tooltip) {
+            tooltip.remove();
+            tooltip = null;
+        }
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    function buildTooltipHtml(field) {
+        const title = escapeHtml(field.label || field.key);
+        const key = escapeHtml(field.key || "");
+        const description = escapeHtml(
+            field.description || "目前沒有說明。"
+        ).replace(/\n/g, "<br>");
+
+        const defaultValue =
+            field.default !== undefined && field.default !== ""
+                ? escapeHtml(field.default)
+                : "無";
+
+        const locked = !!field.locked;
+        const statusText = locked
+            ? escapeHtml(
+                field.lockedReason ||
+                "此設定由 OxOcraft-Manager 管理，不能修改。"
+            )
+            : "可修改";
+
+        const statusClass = locked
+            ? "server-setting-tooltip-status-bad"
+            : "server-setting-tooltip-status-good";
+
+        return `
+            <div class="server-setting-tooltip-title">
+                <span>${title}</span>
+                <span class="server-setting-tooltip-key">(${key})</span>
+            </div>
+
+            <div class="server-setting-tooltip-desc">
+                ${description}
+            </div>
+
+            <div class="server-setting-tooltip-meta">
+                <div>
+                    <span class="server-setting-tooltip-meta-label">預設值：</span>
+                    <span class="server-setting-tooltip-default">${defaultValue}</span>
+                </div>
+                <div>
+                    <span class="server-setting-tooltip-meta-label">狀態：</span>
+                    <span class="${statusClass}">${statusText}</span>
+                </div>
+            </div>
+        `;
+    }
+
+    function moveTooltip(event) {
+        if (!tooltip) return;
+
+        const padding = 16;
+        const offsetX = 56;
+        const offsetY = -24;
+
+        let left = event.clientX + offsetX;
+        let top = event.clientY + offsetY;
+
+        tooltip.style.left = `${left}px`;
+        tooltip.style.top = `${top}px`;
+
+        const rect = tooltip.getBoundingClientRect();
+
+        if (rect.right > window.innerWidth - padding) {
+            left = event.clientX - rect.width - offsetX;
+        }
+
+        if (rect.bottom > window.innerHeight - padding) {
+            top = event.clientY - rect.height - offsetY;
+        }
+
+        tooltip.style.left = `${Math.max(padding, left)}px`;
+        tooltip.style.top = `${Math.max(padding, top)}px`;
+    }
+
+    document.addEventListener("mouseover", (event) => {
         const helpBtn = event.target.closest(".setting-help-btn");
         if (!helpBtn) return;
 
@@ -88,12 +186,36 @@ function setupServerSettingHelp() {
         const field = serverSettingFields.find(item => item.key === key);
         if (!field) return;
 
-        showInfo({
-            title: `${field.label}\n(${field.key})`,
-            message: `${field.description || "目前沒有說明。"}`
-        });
+        removeTooltip();
 
+        showTimer = setTimeout(() => {
+            tooltip = document.createElement("div");
+            tooltip.className = "server-setting-tooltip";
+            tooltip.innerHTML = buildTooltipHtml(field);
+
+            document.body.appendChild(tooltip);
+            moveTooltip(event);
+        }, 160);
     });
+
+    document.addEventListener("mousemove", (event) => {
+        const helpBtn = event.target.closest(".setting-help-btn");
+
+        if (!helpBtn) {
+            return;
+        }
+
+        moveTooltip(event);
+    });
+
+    document.addEventListener("mouseout", (event) => {
+        const helpBtn = event.target.closest(".setting-help-btn");
+        if (!helpBtn) return;
+
+        removeTooltip();
+    });
+
+    window.addEventListener("scroll", removeTooltip, true);
 }
 
 
@@ -396,7 +518,7 @@ function renderServerSettings() {
         label.innerHTML = `
             <div class="setting-label-main">
                 <span>${field.label}</span>
-                <button class="setting-help-btn" type="button" data-key="${field.key}">?</button>
+                <button class="setting-help-btn" type="button" data-key="${field.key}">ⓘ</button>
             </div>
             <div class="setting-label-key">(${field.key})</div>
         `;

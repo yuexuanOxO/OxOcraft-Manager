@@ -229,18 +229,29 @@
 .setting-help-btn{
     width: 22px;
     height: 22px;
-    border: 1px solid #5d5c5c99;
+
+    border: none;
     border-radius: 50%;
+
     background: transparent;
-    color: #5d5c5c99;
+
+    color: #8f8f8f;
+    font-size: 16px;
     font-weight: bold;
-    cursor: pointer;
     line-height: 1;
+
+    cursor: help;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
 }
 
 .setting-help-btn:hover{
-    background: #5d5c5c99;
-    color: #111;
+    color: #ffffff;
+    text-shadow: 0 0 6px rgba(180, 120, 255, .85);
 }
 
 
@@ -650,4 +661,80 @@
     color: #9a9a9a;
     font-size: 14px;
     line-height: 1.5;
+}
+
+.server-setting-tooltip{
+    position: fixed;
+    z-index: 60000;
+
+    width: max-content;
+    max-width: 620px;
+
+    padding: 16px 18px;
+
+    background: rgba(18, 0, 28, .94);
+
+    border: 3px solid #3d1466;
+    border-radius: 8px;
+
+    box-shadow:
+        inset 0 0 0 2px rgba(120, 55, 190, .35),
+        5px 5px 0 rgba(0, 0, 0, .78);
+
+    color: #dcdcdc;
+
+    font-size: 18px;
+    line-height: 1.6;
+
+    pointer-events: none;
+    white-space: normal;
+    box-sizing: border-box;
+}
+
+.server-setting-tooltip-title{
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: bold;
+
+    margin-bottom: 10px;
+
+    white-space: nowrap;
+}
+
+.server-setting-tooltip-key{
+    color: #8a8a8a;
+    font-weight: normal;
+    margin-left: 4px;
+}
+
+.server-setting-tooltip-desc{
+    color: #d6d6d6;
+    margin-bottom: 10px;
+}
+
+.server-setting-tooltip-meta{
+    margin-top: 8px;
+    padding-top: 8px;
+
+    border-top: 1px solid rgba(255, 255, 255, .14);
+
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.server-setting-tooltip-meta-label{
+    color: #ffffff;
+}
+
+.server-setting-tooltip-default{
+    color: #ffd45c;
+}
+
+.server-setting-tooltip-status-good{
+    color: #65ff65;
+}
+
+.server-setting-tooltip-status-bad{
+    color: #ff6060;
 }

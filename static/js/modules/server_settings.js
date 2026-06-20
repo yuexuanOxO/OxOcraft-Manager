@@ -1,17 +1,3 @@
-let serverSettingKeyword = "";
-let serverSettingsServerState = "offline";
-let serverSettingFields = [];
-let serverSettingsState = {};
-let serverSettingsEffectiveState = {};
-let serverSettingsBusyMode = null;
-let serverSettingsBusyUnlockAt = 0;
-let serverSettingsBusyRecheckTimer = null;
-let pendingServerIconFile = null;
-let pendingServerIconPreviewUrl = null;
-let serverIconNeedsRestart = false;
-
-const SERVER_SETTINGS_BUSY_MIN_MS = 1000;
-
 import {
     latestServerStatusData
 } from "./server_status.js";
@@ -24,6 +10,59 @@ import {
     showConfirm,
     showInfo
 } from "./system_dialog.js";
+
+
+let serverSettingKeyword = "";
+let serverSettingsServerState = "offline";
+let serverSettingFields = [];
+let serverSettingsState = {};
+let serverSettingsEffectiveState = {};
+let serverSettingsBusyMode = null;
+let serverSettingsBusyUnlockAt = 0;
+let serverSettingsBusyRecheckTimer = null;
+let pendingServerIconFile = null;
+let pendingServerIconPreviewUrl = null;
+let serverIconNeedsRestart = false;
+const SERVER_SETTINGS_BUSY_MIN_MS = 1000;
+
+const SERVER_SETTING_GROUPS = [
+    {
+        key: "java",
+        label: "Java",
+        description: "伺服器啟動時使用的 Java 記憶體設定。"
+    },
+    {
+        key: "general",
+        label: "一般",
+        description: "最常使用的伺服器基本設定。"
+    },
+    {
+        key: "game",
+        label: "遊戲",
+        description: "影響玩家進入伺服器後的遊戲規則。"
+    },
+    {
+        key: "world",
+        label: "世界",
+        description: "建立或載入世界時使用的設定，目前暫時保留在此頁。"
+    },
+    {
+        key: "network",
+        label: "網路",
+        description: "玩家連線、伺服器列表、RCON 與 Query 相關設定。"
+    },
+    {
+        key: "performance",
+        label: "效能",
+        description: "影響伺服器負載、TPS、區塊與網路資料量的設定。"
+    },
+    {
+        key: "advanced",
+        label: "進階",
+        description: "一般情況較少修改，建議了解用途後再調整。"
+    }
+];
+
 
 export function initServerSettings() {
     setupServerSettingsModal();
@@ -269,28 +308,81 @@ function renderServerSettings() {
 
     body.innerHTML = "";
 
-    serverSettingFields.forEach((field) => {
+    let renderedGroupSet = new Set();
 
-        const keyword = serverSettingKeyword;
+    const groupOrderMap = new Map(
+        SERVER_SETTING_GROUPS.map((group, index) => [
+            group.key,
+            index
+        ])
+    );
 
-        if(keyword){
+    const visibleFields = serverSettingFields
+        .filter((field) => {
+            const keyword = serverSettingKeyword;
 
-            const searchText = `
-                ${field.key}
-                ${field.label}
-                ${field.description || ""}
-            `.toLowerCase();
+            if (keyword) {
+                const searchText = `
+                    ${field.key}
+                    ${field.label}
+                    ${field.description || ""}
+                `.toLowerCase();
 
-            if(!searchText.includes(keyword)){
-                return;
+                if (!searchText.includes(keyword)) {
+                    return false;
+                }
             }
-        }
 
-        if (field.dependsOn) {
-            const parentValue = serverSettingsState[field.dependsOn.key];
-            if (parentValue !== field.dependsOn.value) {
-                return;
+            if (field.dependsOn) {
+                const parentValue = serverSettingsState[field.dependsOn.key];
+                if (parentValue !== field.dependsOn.value) {
+                    return false;
+                }
             }
+
+            return true;
+        })
+        .sort((a, b) => {
+            const groupA = a.group || "advanced";
+            const groupB = b.group || "advanced";
+
+            const orderA = groupOrderMap.get(groupA) ?? 999;
+            const orderB = groupOrderMap.get(groupB) ?? 999;
+
+            if (orderA !== orderB) {
+                return orderA - orderB;
+            }
+
+            return serverSettingFields.indexOf(a) - serverSettingFields.indexOf(b);
+        });
+
+    visibleFields.forEach((field) => {
+
+        const groupKey = field.group || "advanced";
+
+        if (!renderedGroupSet.has(groupKey)) {
+            renderedGroupSet.add(groupKey);
+
+            const group = SERVER_SETTING_GROUPS.find(
+                item => item.key === groupKey
+            ) || {
+                label: "其他",
+                description: ""
+            };
+
+            const groupBlock = document.createElement("div");
+            groupBlock.className = "setting-group-header";
+
+            groupBlock.innerHTML = `
+                <div class="setting-group-title">${group.label}</div>
+                ${
+                    group.description
+                        ? `<div class="setting-group-description">${group.description}</div>`
+                        : ""
+                }
+            `;
+
+            body.appendChild(groupBlock);
         }
 
         const row = document.createElement("div");

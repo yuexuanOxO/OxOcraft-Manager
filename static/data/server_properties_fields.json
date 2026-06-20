@@ -1,6 +1,7 @@
 [
   {
     "key": "java_xms",
+    "group": "java",
     "label": "伺服器可用初始記憶體",
     "type": "text",
     "default": "2G",
@@ -9,6 +10,7 @@
   },
   {
     "key": "java_xmx",
+    "group": "java",
     "label": "伺服器可用最大記憶體",
     "type": "text",
     "default": "4G",
@@ -17,6 +19,7 @@
   },
   {
     "key": "server-port",
+    "group": "network",
     "label": "伺服器連線埠",
     "type": "number",
     "default": "25565",
@@ -24,6 +27,7 @@
   },
   {
     "key": "server-ip",
+    "group": "network",
     "label": "綁定 IP",
     "type": "text",
     "default": "",
@@ -31,6 +35,7 @@
   },
   {
     "key": "motd",
+    "group": "general",
     "label": "伺服器介紹",
     "type": "text",
     "default": "A Minecraft Server",
@@ -38,6 +43,7 @@
   },
   {
     "key": "max-players",
+    "group": "general",
     "label": "最大玩家數",
     "type": "number",
     "default": "20",
@@ -45,6 +51,7 @@
   },
   {
     "key": "online-mode",
+    "group": "general",
     "label": "正版驗證",
     "type": "boolean",
     "default": "true",
@@ -52,6 +59,7 @@
   },
   {
     "key": "enable-status",
+    "group": "general",
     "label": "允許狀態查詢",
     "type": "boolean",
     "default": "true",
@@ -59,6 +67,7 @@
   },
   {
     "key": "hide-online-players",
+    "group": "general",
     "label": "隱藏線上玩家",
     "type": "boolean",
     "default": "false",
@@ -66,6 +75,7 @@
   },
   {
     "key": "player-idle-timeout",
+    "group": "general",
     "label": "閒置踢出時間",
     "type": "number",
     "default": "0",
@@ -73,6 +83,7 @@
   },
   {
     "key": "difficulty",
+    "group": "game",
     "label": "遊戲難度",
     "type": "select",
     "default": "easy",
@@ -86,6 +97,7 @@
   },
   {
     "key": "gamemode",
+    "group": "game",
     "label": "預設遊戲模式",
     "type": "select",
     "default": "survival",
@@ -99,6 +111,7 @@
   },
   {
     "key": "force-gamemode",
+    "group": "game",
     "label": "強制遊戲模式",
     "type": "boolean",
     "default": "false",
@@ -106,6 +119,7 @@
   },
   {
     "key": "hardcore",
+    "group": "game",
     "label": "極限模式",
     "type": "boolean",
     "default": "false",
@@ -113,6 +127,7 @@
   },
   {
     "key": "pvp",
+    "group": "game",
     "label": "允許玩家互相傷害",
     "type": "boolean",
     "default": "true",
@@ -120,6 +135,7 @@
   },
   {
     "key": "allow-flight",
+    "group": "game",
     "label": "允許飛行",
     "type": "boolean",
     "default": "false",
@@ -127,6 +143,7 @@
   },
   {
     "key": "allow-nether",
+    "group": "game",
     "label": "允許進入地獄",
     "type": "boolean",
     "default": "true",
@@ -134,6 +151,7 @@
   },
   {
     "key": "level-name",
+    "group": "world",
     "label": "世界名稱",
     "type": "text",
     "default": "world",
@@ -141,6 +159,7 @@
   },
   {
     "key": "level-seed",
+    "group": "world",
     "label": "世界種子碼",
     "type": "text",
     "default": "",
@@ -148,6 +167,7 @@
   },
   {
     "key": "level-type",
+    "group": "world",
     "label": "世界類型",
     "type": "text",
     "default": "minecraft\\:normal",
@@ -155,6 +175,7 @@
   },
   {
     "key": "generator-settings",
+    "group": "world",
     "label": "世界生成設定",
     "type": "text",
     "default": "{}",
@@ -162,6 +183,7 @@
   },
   {
     "key": "generate-structures",
+    "group": "world",
     "label": "生成結構",
     "type": "boolean",
     "default": "true",
@@ -169,6 +191,7 @@
   },
   {
     "key": "max-world-size",
+    "group": "game",
     "label": "世界最大範圍",
     "type": "number",
     "default": "29999984",
@@ -176,6 +199,7 @@
   },
   {
     "key": "spawn-protection",
+    "group": "game",
     "label": "重生點保護範圍",
     "type": "number",
     "default": "16",
@@ -183,6 +207,7 @@
   },
   {
     "key": "spawn-monsters",
+    "group": "game",
     "label": "生成怪物",
     "type": "boolean",
     "default": "true",
@@ -190,6 +215,7 @@
   },
   {
     "key": "spawn-animals",
+    "group": "game",
     "label": "生成動物",
     "type": "boolean",
     "default": "true",
@@ -197,6 +223,7 @@
   },
   {
     "key": "spawn-npcs",
+    "group": "game",
     "label": "生成村民",
     "type": "boolean",
     "default": "true",
@@ -204,6 +231,7 @@
   },
   {
     "key": "view-distance",
+    "group": "performance",
     "label": "視野距離",
     "type": "number",
     "default": "10",
@@ -211,6 +239,7 @@
   },
   {
     "key": "simulation-distance",
+    "group": "performance",
     "label": "模擬距離",
     "type": "number",
     "default": "10",
@@ -218,6 +247,7 @@
   },
   {
     "key": "entity-broadcast-range-percentage",
+    "group": "performance",
     "label": "實體同步範圍百分比",
     "type": "number",
     "default": "100",
@@ -225,6 +255,7 @@
   },
   {
     "key": "enable-query",
+    "group": "network",
     "label": "啟用 Query",
     "type": "boolean",
     "default": "true",
@@ -234,6 +265,7 @@
   },
   {
     "key": "query.port",
+    "group": "network",
     "label": "Query 連線埠",
     "type": "number",
     "default": "25565",
@@ -248,6 +280,7 @@
   },
   {
     "key": "enable-rcon",
+    "group": "network",
     "label": "啟用 RCON",
     "type": "boolean",
     "default": "true",
@@ -257,6 +290,7 @@
   },
   {
     "key": "rcon.port",
+    "group": "network",
     "label": "RCON 連線埠",
     "type": "number",
     "default": "25575",
@@ -270,6 +304,7 @@
   },
   {
     "key": "rcon.password",
+    "group": "network",
     "label": "RCON 密碼",
     "type": "text",
     "default": "自動生成",
@@ -283,6 +318,7 @@
   },
   {
     "key": "broadcast-rcon-to-ops",
+    "group": "advanced",
     "label": "RCON 訊息廣播給 OP",
     "type": "boolean",
     "default": "true",
@@ -290,6 +326,7 @@
   },
   {
     "key": "enable-command-block",
+    "group": "game",
     "label": "啟用命令方塊",
     "type": "boolean",
     "default": "false",
@@ -297,6 +334,7 @@
   },
   {
     "key": "op-permission-level",
+    "group": "advanced",
     "label": "OP 權限等級",
     "type": "number",
     "default": "4",
@@ -304,6 +342,7 @@
   },
   {
     "key": "function-permission-level",
+    "group": "advanced",
     "label": "預設給予權限等級",
     "type": "number",
     "default": "2",
@@ -311,6 +350,7 @@
   },
   {
     "key": "broadcast-console-to-ops",
+    "group": "advanced",
     "label": "控制台訊息廣播給 OP",
     "type": "boolean",
     "default": "true",
@@ -318,6 +358,7 @@
   },
   {
     "key": "network-compression-threshold",
+    "group": "performance",
     "label": "網路壓縮門檻",
     "type": "number",
     "default": "256",
@@ -325,6 +366,7 @@
   },
   {
     "key": "rate-limit",
+    "group": "performance",
     "label": "封包速率限制",
     "type": "number",
     "default": "0",
@@ -332,6 +374,7 @@
   },
   {
     "key": "prevent-proxy-connections",
+    "group": "network",
     "label": "防止代理連線",
     "type": "boolean",
     "default": "false",
@@ -339,6 +382,7 @@
   },
   {
     "key": "enforce-secure-profile",
+    "group": "network",
     "label": "強制安全玩家檔案",
     "type": "boolean",
     "default": "true",
@@ -346,6 +390,7 @@
   },
   {
     "key": "sync-chunk-writes",
+    "group": "performance",
     "label": "同步寫入區塊",
     "type": "boolean",
     "default": "true",
@@ -353,6 +398,7 @@
   },
   {
     "key": "use-native-transport",
+    "group": "performance",
     "label": "使用原生網路傳輸",
     "type": "boolean",
     "default": "true",
@@ -360,6 +406,7 @@
   },
   {
     "key": "enable-jmx-monitoring",
+    "group": "advanced",
     "label": "啟用 JMX 監控",
     "type": "boolean",
     "default": "false",
@@ -367,6 +414,7 @@
   },
   {
     "key": "log-ips",
+    "group": "network",
     "label": "記錄玩家 IP",
     "type": "boolean",
     "default": "true",
@@ -374,6 +422,7 @@
   },
   {
     "key": "max-tick-time",
+    "group": "performance",
     "label": "最大 Tick 時間",
     "type": "number",
     "default": "60000",
@@ -381,6 +430,7 @@
   },
   {
     "key": "max-chained-neighbor-updates",
+    "group": "performance",
     "label": "最大連鎖方塊更新",
     "type": "number",
     "default": "1000000",
@@ -388,6 +438,7 @@
   },
   {
     "key": "resource-pack",
+    "group": "advanced",
     "label": "資源包網址",
     "type": "text",
     "default": "",
@@ -395,6 +446,7 @@
   },
   {
     "key": "resource-pack-sha1",
+    "group": "advanced",
     "label": "資源包 SHA-1",
     "type": "text",
     "default": "",
@@ -402,6 +454,7 @@
   },
   {
     "key": "resource-pack-prompt",
+    "group": "advanced",
     "label": "資源包提示文字",
     "type": "text",
     "default": "",
@@ -409,6 +462,7 @@
   },
   {
     "key": "require-resource-pack",
+    "group": "advanced",
     "label": "強制使用資源包",
     "type": "boolean",
     "default": "false",
@@ -416,6 +470,7 @@
   },
   {
     "key": "initial-enabled-packs",
+    "group": "world",
     "label": "預設啟用資料包",
     "type": "text",
     "default": "vanilla",
@@ -423,6 +478,7 @@
   },
   {
     "key": "initial-disabled-packs",
+    "group": "world",
     "label": "預設停用資料包",
     "type": "text",
     "default": "",
@@ -430,6 +486,7 @@
   },
   {
     "key": "text-filtering-config",
+    "group": "advanced",
     "label": "文字過濾設定",
     "type": "text",
     "default": "",

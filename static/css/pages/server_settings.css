@@ -625,3 +625,29 @@
 
     gap: 0;
 }
+
+.setting-group-header{
+    margin: 30px 0 18px;
+    padding-bottom: 10px;
+
+    border-bottom: 2px solid #444;
+}
+
+.setting-group-header:first-child{
+    margin-top: 0;
+}
+
+.setting-group-title{
+    color: #ffffff;
+    font-size: 28px;
+    font-weight: bold;
+    line-height: 1.2;
+}
+
+.setting-group-description{
+    margin-top: 6px;
+
+    color: #9a9a9a;
+    font-size: 14px;
+    line-height: 1.5;
+}

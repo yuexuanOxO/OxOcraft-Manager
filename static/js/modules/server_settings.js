@@ -424,13 +424,14 @@ export async function loadServerSettings() {
     }
 }
 
+
 function renderServerSettings() {
     const body = document.getElementById("serverSettingsBody");
     if (!body) return;
 
     body.innerHTML = "";
 
-    let renderedGroupSet = new Set();
+    const renderedGroupSet = new Set();
 
     const groupOrderMap = new Map(
         SERVER_SETTING_GROUPS.map((group, index) => [
@@ -438,6 +439,21 @@ function renderServerSettings() {
             index
         ])
     );
+
+    function syncDirtyBadge(container, key) {
+        let badge = container.querySelector(".setting-dirty-badge");
+
+        if (isFieldDirty(key)) {
+            if (!badge) {
+                badge = document.createElement("div");
+                badge.className = "setting-dirty-badge";
+                badge.textContent = "● 待套用";
+                container.appendChild(badge);
+            }
+        } else {
+            badge?.remove();
+        }
+    }
 
     const visibleFields = serverSettingFields
         .filter((field) => {
@@ -479,7 +495,6 @@ function renderServerSettings() {
         });
 
     visibleFields.forEach((field) => {
-
         const groupKey = field.group || "advanced";
 
         if (!renderedGroupSet.has(groupKey)) {
@@ -509,6 +524,7 @@ function renderServerSettings() {
 
         const row = document.createElement("div");
         row.className = "setting-row";
+
         if (field.dependsOn) {
             row.classList.add("setting-child-row");
         }
@@ -527,7 +543,6 @@ function renderServerSettings() {
         valueWrap.className = "setting-value";
 
         if (field.type === "boolean") {
-
             const boolWrap = document.createElement("div");
             boolWrap.className = "setting-bool-wrap";
 
@@ -547,10 +562,6 @@ function renderServerSettings() {
 
             btn.classList.toggle("on", isTrue);
             btn.classList.toggle("off", !isTrue);
-
-            if (isFieldDirty(field.key)) {
-                btn.classList.add("dirty");
-            }
 
             btn.innerHTML = `
                 <span class="setting-switch-visual">
@@ -579,11 +590,15 @@ function renderServerSettings() {
             defaultText.textContent = `預設值:${defaultValue}`;
 
             boolWrap.appendChild(btn);
+            syncDirtyBadge(boolWrap, field.key);
             boolWrap.appendChild(defaultText);
 
             valueWrap.appendChild(boolWrap);
 
         } else if (field.type === "select") {
+            const selectWrap = document.createElement("div");
+            selectWrap.className = "setting-inline-wrap";
+
             const select = document.createElement("select");
             select.className = "setting-input";
             select.dataset.key = field.key;
@@ -592,10 +607,6 @@ function renderServerSettings() {
                 select.disabled = true;
                 select.classList.add("locked");
                 select.title = field.lockedReason || "此設定由 OxOcraft-Manager 管理，不能修改。";
-            }
-
-            if (isFieldDirty(field.key)) {
-                select.classList.add("dirty");
             }
 
             const currentValue = serverSettingsState[field.key] || "";
@@ -610,17 +621,15 @@ function renderServerSettings() {
 
             select.addEventListener("change", () => {
                 serverSettingsState[field.key] = select.value;
-
-                if (isFieldDirty(field.key)) {
-                    select.classList.add("dirty");
-                } else {
-                    select.classList.remove("dirty");
-                }
-
+                syncDirtyBadge(selectWrap, field.key);
                 updateServerSettingsStatusCard();
             });
 
-            valueWrap.appendChild(select);
+            selectWrap.appendChild(select);
+            syncDirtyBadge(selectWrap, field.key);
+
+            valueWrap.appendChild(selectWrap);
+
         } else {
             const input = document.createElement("input");
             input.className = "setting-input";
@@ -644,10 +653,6 @@ function renderServerSettings() {
 
             input.value = serverSettingsState[field.key] || "";
 
-            if (isFieldDirty(field.key)) {
-                input.classList.add("dirty");
-            }
-
             const defaultValue =
                 field.default !== undefined && field.default !== ""
                     ? field.default
@@ -655,21 +660,15 @@ function renderServerSettings() {
 
             input.placeholder = `預設值:${defaultValue}`;
 
-            input.addEventListener("input", () => {
-                serverSettingsState[field.key] = input.value;
-
-                if (isFieldDirty(field.key)) {
-                    input.classList.add("dirty");
-                } else {
-                    input.classList.remove("dirty");
-                }
-
-                updateServerSettingsStatusCard();
-            });
-
             if (isPasswordField) {
                 const passwordWrap = document.createElement("div");
                 passwordWrap.className = "setting-password-wrap";
+
+                input.addEventListener("input", () => {
+                    serverSettingsState[field.key] = input.value;
+                    syncDirtyBadge(passwordWrap, field.key);
+                    updateServerSettingsStatusCard();
+                });
 
                 const toggleBtn = document.createElement("button");
                 toggleBtn.type = "button";
@@ -690,7 +689,6 @@ function renderServerSettings() {
                 });
 
                 regenBtn.addEventListener("click", async () => {
-
                     const confirmed = await showConfirm({
                         title: "重新生成 RCON 密碼",
                         message: "請問是否要重新生成RCON的密碼?",
@@ -701,14 +699,11 @@ function renderServerSettings() {
                     if (!confirmed) return;
 
                     try {
-
                         regenBtn.disabled = true;
 
                         const response = await fetch(
                             "/api/server/regenerate-rcon-password",
-                            {
-                                method: "POST"
-                            }
+                            { method: "POST" }
                         );
 
                         const data = await response.json();
@@ -722,15 +717,12 @@ function renderServerSettings() {
                         }
 
                         input.value = data.password;
-
                         serverSettingsState[field.key] = data.password;
 
-                        input.classList.add("dirty");
-
+                        syncDirtyBadge(passwordWrap, field.key);
                         updateServerSettingsStatusCard();
 
                     } catch (error) {
-
                         console.error(error);
                         showInfo({
                             title: "重新生成失敗",
@@ -738,7 +730,6 @@ function renderServerSettings() {
                         });
 
                     } finally {
-
                         regenBtn.disabled = false;
                     }
                 });
@@ -746,11 +737,25 @@ function renderServerSettings() {
                 passwordWrap.appendChild(input);
                 passwordWrap.appendChild(toggleBtn);
                 passwordWrap.appendChild(regenBtn);
-                valueWrap.appendChild(passwordWrap);
-            } else {
-                valueWrap.appendChild(input);
-            }
+                syncDirtyBadge(passwordWrap, field.key);
 
+                valueWrap.appendChild(passwordWrap);
+
+            } else {
+                const inputWrap = document.createElement("div");
+                inputWrap.className = "setting-inline-wrap";
+
+                input.addEventListener("input", () => {
+                    serverSettingsState[field.key] = input.value;
+                    syncDirtyBadge(inputWrap, field.key);
+                    updateServerSettingsStatusCard();
+                });
+
+                inputWrap.appendChild(input);
+                syncDirtyBadge(inputWrap, field.key);
+
+                valueWrap.appendChild(inputWrap);
+            }
         }
 
         row.appendChild(label);
@@ -1254,3 +1259,4 @@ function isFieldDirty(key) {
 
     return current !== effective;
 }
+

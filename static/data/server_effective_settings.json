@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-06-20T12:41:33",
-    "properties_modified_comment": "Sat Jun 20 12:41:22 CST 2026",
+    "captured_at": "2026-06-20T22:09:15",
+    "properties_modified_comment": "Sat Jun 20 22:09:13 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -11,7 +11,7 @@
         "generator-settings": "{}",
         "enforce-secure-profile": "true",
         "level-name": "world11",
-        "motd": "A Minecraft Server",
+        "motd": "A Minecraft Server1",
         "query.port": "25565",
         "pvp": "true",
         "generate-structures": "true",
@@ -21,8 +21,8 @@
         "max-tick-time": "60000",
         "require-resource-pack": "false",
         "use-native-transport": "true",
-        "max-players": "20",
-        "online-mode": "false",
+        "max-players": "3",
+        "online-mode": "true",
         "enable-status": "true",
         "allow-flight": "false",
         "initial-disabled-packs": "",
@@ -40,7 +40,7 @@
         "resource-pack": "",
         "entity-broadcast-range-percentage": "100",
         "simulation-distance": "10",
-        "rcon.password": "EHo1iS5PPPUNJZ01sHUHLpOvStTIme96",
+        "rcon.password": "zMruBbenOXP8FGMQbt7p97FFnUGWProW",
         "player-idle-timeout": "0",
         "force-gamemode": "false",
         "rate-limit": "0",
@@ -61,7 +61,7 @@
         "max-world-size": "29999984"
     },
     "runtime_config": {
-        "java_xms": "2G",
-        "java_xmx": "4G"
+        "java_xms": "1G",
+        "java_xmx": "3G"
     }
 }

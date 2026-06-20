@@ -738,3 +738,17 @@
 .server-setting-tooltip-status-bad{
     color: #ff6060;
 }
+
+.setting-dirty-badge{
+    color: #f3a52d;
+    font-size: 13px;
+    font-weight: bold;
+    white-space: nowrap;
+    text-shadow: 0 0 8px rgba(243,165,45,.55);
+}
+
+.setting-inline-wrap{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}

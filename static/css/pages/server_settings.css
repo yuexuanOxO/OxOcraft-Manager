@@ -172,12 +172,6 @@
     margin-bottom: 14px;
 }
 
-.setting-child-row{
-    margin-left: 34px;
-    padding-left: 18px;
-    border-left: 3px solid #555;
-}
-
 .setting-label{
     width: 240px;
     color: white;
@@ -186,8 +180,6 @@
 .setting-value{
     flex: 1;
 }
-
-
 
 .setting-bool-btn{
     min-width: 86px;
@@ -745,4 +737,45 @@
     display: flex;
     align-items: center;
     gap: 10px;
+}
+
+.setting-children{
+    position: relative;
+    margin-left: 34px;
+}
+
+.setting-children::before{
+    content: "";
+    position: absolute;
+
+    left: 0;
+    top: -16px;
+    bottom: 11px;
+
+    width: 3px;
+    background: #555;
+
+    z-index: 3;
+}
+
+.setting-child-row{
+    position: relative;
+    margin-left: 0;
+    padding-left: 24px;
+    border-left: none;
+}
+
+.setting-child-row::before{
+    content: "";
+    position: absolute;
+
+    left: 3px;
+    top: 24px;
+
+    width: 17px;
+    height: 3px;
+
+    background: #555;
+
+    z-index: 2;
 }

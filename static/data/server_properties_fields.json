@@ -258,6 +258,7 @@
     "group": "network",
     "label": "啟用 Query",
     "type": "boolean",
+    "hasChildren": true,
     "default": "false",
     "description": "允許使用GameSpy4協議的伺服器監聽器。用於取得伺服器資訊。\n\n註：此設定由OxOcraft-Manager用於偵測伺服器狀態，不能關閉，若修改會造成OxOcraft-Manager異常。",
     "locked": true,
@@ -268,6 +269,7 @@
     "group": "network",
     "label": "Query 連線埠",
     "type": "number",
+    "isChild": true,
     "default": "25565",
     "description": "設定監聽伺服器的埠號（參見 enable-query）。\n\n註：此設定由OxOcraft-Manager用於偵測伺服器狀態，不能修改，若修改會造成OxOcraft-Manager異常。",
     "dependsOn": {
@@ -283,6 +285,7 @@
     "group": "network",
     "label": "啟用 RCON",
     "type": "boolean",
+    "hasChildren": true,
     "default": "false",
     "description": "是否允許遠程訪問伺服器控制台。\n由於RCON協議傳輸資料時沒有加密，所以不建議把RCON暴露在網際網路上。RCON用戶端和伺服器端交換的所有資料(包括RCON密碼)都會洩露給正在監聽此連接的人。\n但是OxOcraft-Manager需要使用所以會開啟方便UI對伺服器進行操作,若關閉大部分功能都將受影響。",
     "locked": true,
@@ -293,6 +296,7 @@
     "group": "network",
     "label": "RCON 連線埠",
     "type": "number",
+    "isChild": true,
     "default": "25575",
     "description": "設定RCON遠程訪問的埠號。",
     "dependsOn": {
@@ -307,6 +311,7 @@
     "group": "network",
     "label": "RCON 密碼",
     "type": "text",
+    "isChild": true,
     "default": "無(OxOcraft改成自動生成)",
     "description": "設定RCON遠程訪問的密碼（參見enable-rcon）。RCON：能允許其他應用程式透過網際網路與Minecraft伺服器連接並互動的遠程控制台協議。",
     "dependsOn": {

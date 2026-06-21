@@ -496,7 +496,8 @@ function renderServerSettings() {
             return serverSettingFields.indexOf(a) - serverSettingFields.indexOf(b);
         });
 
-    visibleFields.forEach((field) => {
+    for (let i = 0; i < visibleFields.length; i++) {
+        const field = visibleFields[i];
         const runtimeLockReason = getServerSettingRuntimeLock(field);
         const isLocked = !!field.locked || !!runtimeLockReason;
         const lockedReason =
@@ -534,7 +535,7 @@ function renderServerSettings() {
         const row = document.createElement("div");
         row.className = "setting-row";
 
-        if (field.dependsOn) {
+        if (field.dependsOn && !field.isChild) {
             row.classList.add("setting-child-row");
         }
 
@@ -759,8 +760,23 @@ function renderServerSettings() {
 
         row.appendChild(label);
         row.appendChild(valueWrap);
-        body.appendChild(row);
-    });
+
+        if (field.isChild) {
+            row.classList.add("setting-child-row");
+
+            let childrenWrap = body.lastElementChild;
+
+            if (!childrenWrap || !childrenWrap.classList.contains("setting-children")) {
+                childrenWrap = document.createElement("div");
+                childrenWrap.className = "setting-children";
+                body.appendChild(childrenWrap);
+            }
+
+            childrenWrap.appendChild(row);
+        } else {
+            body.appendChild(row);
+        }
+    }
 }
 
 

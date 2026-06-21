@@ -258,7 +258,7 @@
     "group": "network",
     "label": "啟用 Query",
     "type": "boolean",
-    "default": "true",
+    "default": "false",
     "description": "允許使用GameSpy4協議的伺服器監聽器。用於取得伺服器資訊。\n\n註：此設定由OxOcraft-Manager用於偵測伺服器狀態，不能關閉，若修改會造成OxOcraft-Manager異常。",
     "locked": true,
     "lockedReason": "此設定由 OxOcraft-Manager 用於偵測伺服器狀態，不能關閉。"
@@ -283,7 +283,7 @@
     "group": "network",
     "label": "啟用 RCON",
     "type": "boolean",
-    "default": "true",
+    "default": "false",
     "description": "是否允許遠程訪問伺服器控制台。\n由於RCON協議傳輸資料時沒有加密，所以不建議把RCON暴露在網際網路上。RCON用戶端和伺服器端交換的所有資料(包括RCON密碼)都會洩露給正在監聽此連接的人。\n但是OxOcraft-Manager需要使用所以會開啟方便UI對伺服器進行操作,若關閉大部分功能都將受影響。",
     "locked": true,
     "lockedReason": "此設定由 OxOcraft-Manager 用於偵測伺服器狀態，不能關閉。"
@@ -307,7 +307,7 @@
     "group": "network",
     "label": "RCON 密碼",
     "type": "text",
-    "default": "自動生成",
+    "default": "無(OxOcraft改成自動生成)",
     "description": "設定RCON遠程訪問的密碼（參見enable-rcon）。RCON：能允許其他應用程式透過網際網路與Minecraft伺服器連接並互動的遠程控制台協議。",
     "dependsOn": {
       "key": "enable-rcon",
@@ -336,16 +336,28 @@
     "key": "op-permission-level",
     "group": "advanced",
     "label": "OP 權限等級",
-    "type": "number",
     "default": "4",
+    "type": "select",
+    "options": [
+      { "value": "1", "label": "Lv1(可無視出生點保護)" },
+      { "value": "2", "label": "Lv2(可使用基本指令)" },
+      { "value": "3", "label": "Lv3(可使用伺服器指令)" },
+      { "value": "4", "label": "Lv4(可使用所有指令)" }
+    ],
     "description": "設定使用/op指令時OP的權限等級。所有存檔會從之前的存檔繼承能力和指令。\n1.OP可以繞過重生點保護。\n2.OP可以使用所有單人遊戲作弊指令（除了/publish，因為不能在伺服器上使用；/debug也是）並使用指令方塊。指令方塊和領域服服主/管理員有此等級權限。\n3.OP可以使用大多數多人遊戲中獨有的指令，包括 /debug，以及管理玩家的指令（/ban，/op等等）。\n4.OP可以使用所有指令，包括 /stop, /save-all, /save-on 和 /save-off。"
   },
   {
     "key": "function-permission-level",
     "group": "advanced",
     "label": "函數權限等級",
-    "type": "number",
     "default": "2",
+    "type": "select",
+    "options": [
+      { "value": "1", "label": "Lv1(可無視出生點保護)" },
+      { "value": "2", "label": "Lv2(可使用基本指令)" },
+      { "value": "3", "label": "Lv3(可使用伺服器指令)" },
+      { "value": "4", "label": "Lv4(可使用所有指令)" }
+    ],
     "description": "設定Data Pack(.mcfunction)執行指令時所擁有的OP權限等級。較高的等級可使用更多高權限指令。\n簡單來說就是資料包可使用的權限等級。"
   },
   {
@@ -418,7 +430,9 @@
     "label": "記錄玩家 IP",
     "type": "boolean",
     "default": "true",
-    "description": "是否在有新玩家加入遊戲時，在伺服器日誌中記錄其IP位址。\ntrue：在日誌中記錄新加入玩家的IP位址。\nfalse：在日誌中隱藏新加入玩家的IP位址。"
+    "description": "是否在有新玩家加入遊戲時，在伺服器日誌中記錄其IP位址。\ntrue：在日誌中記錄新加入玩家的IP位址。\nfalse：在日誌中隱藏新加入玩家的IP位址。",
+    "locked": true,
+    "lockedReason": "此設定由 OxOcraft-Manager 用於偵測玩家狀態，不能關閉。"
   },
   {
     "key": "max-tick-time",

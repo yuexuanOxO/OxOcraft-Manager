@@ -261,12 +261,6 @@
     gap: 12px;
 }
 
-.setting-default-text{
-    font-size: 13px;
-    color: #777;
-    white-space: nowrap;
-}
-
 .server-preview-icon-wrapper{
     position: relative;
 }

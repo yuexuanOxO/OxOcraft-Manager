@@ -588,19 +588,9 @@ function renderServerSettings() {
                 updateServerSettingsStatusCard();
             });
 
-            const defaultText = document.createElement("div");
-            defaultText.className = "setting-default-text";
-
-            const defaultValue =
-                field.default !== undefined && field.default !== ""
-                    ? field.default
-                    : "無";
-
-            defaultText.textContent = `預設值:${defaultValue}`;
-
             boolWrap.appendChild(btn);
+
             syncDirtyBadge(boolWrap, field.key);
-            boolWrap.appendChild(defaultText);
 
             valueWrap.appendChild(boolWrap);
 

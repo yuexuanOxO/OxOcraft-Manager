@@ -116,9 +116,11 @@ function setupServerSettingTooltip() {
                 ? escapeHtml(field.default)
                 : "無";
 
-        const locked = !!field.locked;
+        const runtimeLockReason = getServerSettingRuntimeLock(field);
+        const locked = !!field.locked || !!runtimeLockReason;
         const statusText = locked
             ? escapeHtml(
+                runtimeLockReason ||
                 field.lockedReason ||
                 "此設定由 OxOcraft-Manager 管理，不能修改。"
             )
@@ -495,6 +497,13 @@ function renderServerSettings() {
         });
 
     visibleFields.forEach((field) => {
+        const runtimeLockReason = getServerSettingRuntimeLock(field);
+        const isLocked = !!field.locked || !!runtimeLockReason;
+        const lockedReason =
+            runtimeLockReason ||
+            field.lockedReason ||
+            "此設定由 OxOcraft-Manager 管理，不能修改。";
+
         const groupKey = field.group || "advanced";
 
         if (!renderedGroupSet.has(groupKey)) {
@@ -551,10 +560,10 @@ function renderServerSettings() {
             btn.className = "setting-switch-btn";
             btn.dataset.key = field.key;
 
-            if (field.locked) {
+            if (isLocked) {
                 btn.disabled = true;
                 btn.classList.add("locked");
-                btn.title = field.lockedReason || "此設定由 OxOcraft-Manager 管理，不能修改。";
+                btn.title = lockedReason;
             }
 
             const value = String(serverSettingsState[field.key] || "false").toLowerCase();
@@ -572,7 +581,7 @@ function renderServerSettings() {
             `;
 
             btn.addEventListener("click", () => {
-                if (field.locked) return;
+                if (isLocked) return;
 
                 serverSettingsState[field.key] = isTrue ? "false" : "true";
                 renderServerSettings();
@@ -603,10 +612,10 @@ function renderServerSettings() {
             select.className = "setting-input";
             select.dataset.key = field.key;
 
-            if (field.locked) {
+            if (isLocked) {
                 select.disabled = true;
                 select.classList.add("locked");
-                select.title = field.lockedReason || "此設定由 OxOcraft-Manager 管理，不能修改。";
+                select.title = lockedReason;
             }
 
             const currentValue = serverSettingsState[field.key] || "";
@@ -635,10 +644,10 @@ function renderServerSettings() {
             input.className = "setting-input";
             input.dataset.key = field.key;
 
-            if (field.locked) {
+            if (isLocked) {
                 input.disabled = true;
                 input.classList.add("locked");
-                input.title = field.lockedReason || "此設定由 OxOcraft-Manager 管理，不能修改。";
+                input.title = lockedReason;
             }
 
             const isPasswordField =
@@ -1260,3 +1269,16 @@ function isFieldDirty(key) {
     return current !== effective;
 }
 
+
+function getServerSettingRuntimeLock(field) {
+    if (!field) return null;
+
+    if (
+        field.key === "difficulty" &&
+        String(serverSettingsState["hardcore"] ?? "false").toLowerCase() === "true"
+    ) {
+        return "極限模式(hardcore)已開啟，已鎖定成困難(hard)。";
+    }
+
+    return null;
+}

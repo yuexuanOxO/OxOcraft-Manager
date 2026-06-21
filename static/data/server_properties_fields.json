@@ -314,7 +314,7 @@
       "value": "true"
     },
     "locked": true,
-    "lockedReason": "此設定由 OxOcraft-Manager 用於偵測伺服器狀態，不能關閉。"
+    "lockedReason": "此設定由 OxOcraft-Manager 用於偵測伺服器狀態，僅能修改密碼。"
   },
   {
     "key": "broadcast-rcon-to-ops",
@@ -343,10 +343,10 @@
   {
     "key": "function-permission-level",
     "group": "advanced",
-    "label": "預設給予權限等級",
+    "label": "函數權限等級",
     "type": "number",
     "default": "2",
-    "description": "設定函數的預設權限等級。\n4個等級的詳情見 #op-permission-level。"
+    "description": "設定Data Pack(.mcfunction)執行指令時所擁有的OP權限等級。較高的等級可使用更多高權限指令。\n簡單來說就是資料包可使用的權限等級。"
   },
   {
     "key": "broadcast-console-to-ops",

@@ -510,5 +510,121 @@
     "type": "text",
     "default": "",
     "description": "伺服器中需要被屏蔽的文字。[需要測試]"
+  },
+  {
+    "key": "management-server-enabled",
+    "group": "advanced",
+    "label": "啟用 Minecraft 管理協定",
+    "type": "boolean",
+    "hasChildren": true,
+    "default": "true",
+    "description": "啟用 Minecraft Server Management Protocol，讓 OxOcraft-Manager 能即時取得伺服器狀態、玩家列表與管理事件。",
+    "locked": true,
+    "lockedReason": "此設定由 OxOcraft-Manager 用於管理伺服器，不能關閉。"
+  },
+  {
+    "key": "management-server-host",
+    "group": "advanced",
+    "label": "管理協定位址",
+    "type": "text",
+    "isChild": true,
+    "default": "localhost",
+    "description": "設定 Minecraft 管理協定監聽的主機位址。一般情況下維持 localhost 即可。",
+    "dependsOn": {
+      "key": "management-server-enabled",
+      "value": "true"
+    },
+    "locked": true,
+    "lockedReason": "此設定由 OxOcraft-Manager 管理，維持localhost。"
+  },
+  {
+    "key": "management-server-port",
+    "group": "advanced",
+    "label": "管理協定連接埠",
+    "type": "number",
+    "isChild": true,
+    "default": "25585",
+    "description": "設定 Minecraft 管理協定監聽的連接埠。OxOcraft-Manager 預設使用 25585。",
+    "dependsOn": {
+      "key": "management-server-enabled",
+      "value": "true"
+    },
+    "locked": true,
+    "lockedReason": "此設定由 OxOcraft-Manager 用於連線管理協定，不能修改。"
+  },
+  {
+    "key": "management-server-secret",
+    "group": "advanced",
+    "label": "管理協定密鑰",
+    "type": "text",
+    "isChild": true,
+    "default": "",
+    "description": "連線 Minecraft 管理協定時使用的驗證密鑰。此密鑰會由 OxOcraft-Manager 自動生成。",
+    "dependsOn": {
+      "key": "management-server-enabled",
+      "value": "true"
+    },
+    "locked": true,
+    "lockedReason": "此密鑰由 OxOcraft-Manager 自動管理，不能手動修改。"
+  },
+  {
+    "key": "management-server-tls-enabled",
+    "group": "advanced",
+    "label": "啟用管理協定 TLS",
+    "type": "boolean",
+    "isChild": true,
+    "default": "false",
+    "description": "是否讓 Minecraft 管理協定使用加密連線。OxOcraft-Manager 預設只在本機連線，因此通常不需要啟用。",
+    "dependsOn": {
+      "key": "management-server-enabled",
+      "value": "true"
+    },
+    "locked": true,
+    "lockedReason": "OxOcraft-Manager 預設使用本機未加密連線，避免增加設定複雜度。"
+  },
+  {
+    "key": "management-server-tls-keystore",
+    "group": "advanced",
+    "label": "管理協定 TLS 金鑰庫",
+    "type": "text",
+    "isChild": true,
+    "default": "",
+    "description": "TLS 使用的 keystore 檔案路徑。只有啟用 TLS 時才需要設定。",
+    "dependsOn": {
+      "key": "management-server-enabled",
+      "value": "true"
+    },
+    "locked": true,
+    "lockedReason": "目前 OxOcraft-Manager 不使用 TLS keystore。"
+  },
+  {
+    "key": "management-server-tls-keystore-password",
+    "group": "advanced",
+    "label": "管理協定 TLS 金鑰庫密碼",
+    "type": "text",
+    "isChild": true,
+    "default": "",
+    "description": "TLS keystore 的密碼。只有啟用 TLS 時才需要設定。",
+    "dependsOn": {
+      "key": "management-server-enabled",
+      "value": "true"
+    },
+    "locked": true,
+    "lockedReason": "目前 OxOcraft-Manager 不使用 TLS keystore。"
+  },
+  {
+    "key": "management-server-allowed-origins",
+    "group": "advanced",
+    "label": "管理協定允許來源",
+    "type": "text",
+    "isChild": true,
+    "default": "",
+    "description": "限制允許連線到 Minecraft 管理協定的來源。一般本機使用可留空。",
+    "dependsOn": {
+      "key": "management-server-enabled",
+      "value": "true"
+    },
+    "locked": true,
+    "lockedReason": "此設定由 OxOcraft-Manager 管理。"
   }
 ]

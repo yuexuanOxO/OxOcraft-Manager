@@ -8,7 +8,7 @@ import websockets
 
 HOST = "127.0.0.1"
 PORT = 25585
-SECRET = "3viIjT4jkPl8iS3sb2wyhVYEYx3ZznZm3Re9A0bO"
+SECRET = "DEDxsQDzFyP2poUIIUy1yY2RzVuTtW4H0yxE15WM"
 TLS_ENABLED = False
 
 RETRY_SECONDS = 2

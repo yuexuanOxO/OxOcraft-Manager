@@ -1,13 +1,17 @@
 from flask import Blueprint, jsonify, request, send_file
 from PIL import Image
 from werkzeug.utils import secure_filename
-from backend.config_files import load_or_create_config, save_config,generate_rcon_password
 from backend.server_config_sync import init_rcon_config
 from backend.server_effective_settings import load_effective_settings_snapshot
 from backend.server_runtime import validate_server_bind_ip
-
 from backend.paths import SERVER_PROPERTIES_PATH,MC_ROOT,STATIC_DIR
 
+from backend.config_files import (
+    load_or_create_config,
+    save_config,
+    generate_rcon_password,
+    generate_management_secret,
+)
 
 from backend.server_settings.server_properties import (
     DEFAULT_SERVER_PROPERTIES,
@@ -193,6 +197,43 @@ def api_regenerate_rcon_password():
         return jsonify({
             "success": True,
             "password": new_password
+        })
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error)
+        }), 500
+
+
+@settings_bp.route(
+    "/api/server/regenerate-management-secret",
+    methods=["POST"]
+)
+def api_regenerate_management_secret():
+    try:
+        current_props = read_properties_file(
+            SERVER_PROPERTIES_PATH
+        )
+
+        new_secret = generate_management_secret()
+
+        current_props[
+            "management-server-secret"
+        ] = new_secret
+
+        lines = format_properties_for_write(
+            current_props
+        )
+
+        write_properties_file(
+            SERVER_PROPERTIES_PATH,
+            lines
+        )
+
+        return jsonify({
+            "success": True,
+            "password": new_secret
         })
 
     except Exception as error:

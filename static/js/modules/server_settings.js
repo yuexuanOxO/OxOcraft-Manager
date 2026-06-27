@@ -643,7 +643,8 @@ function renderServerSettings() {
 
             const isPasswordField =
                 field.key === "rcon.password" ||
-                field.key === "rcon_password";
+                field.key === "rcon_password" ||
+                field.key === "management-server-secret";
 
             input.type = isPasswordField
                 ? "password"
@@ -680,7 +681,10 @@ function renderServerSettings() {
                 regenBtn.type = "button";
                 regenBtn.className = "setting-password-regenerate";
                 regenBtn.innerHTML = `<img src="/static/icons/server_settings/refresh_16.png" alt="refresh">`;
-                regenBtn.title = "重新生成 RCON 密碼";
+                regenBtn.title =
+                    field.key === "management-server-secret"
+                        ? "重新生成管理協定密鑰"
+                        : "重新生成 RCON 密碼";
 
                 toggleBtn.addEventListener("click", () => {
                     const isHidden = input.type === "password";
@@ -689,9 +693,20 @@ function renderServerSettings() {
                 });
 
                 regenBtn.addEventListener("click", async () => {
+                    const isManagement =
+                        field.key === "management-server-secret";
+
+                    const title = isManagement
+                        ? "重新生成管理協定密鑰"
+                        : "重新生成 RCON 密碼";
+
+                    const message = isManagement
+                        ? "請問是否要重新生成管理協定密鑰？"
+                        : "請問是否要重新生成 RCON 密碼？";
+
                     const confirmed = await showConfirm({
-                        title: "重新生成 RCON 密碼",
-                        message: "請問是否要重新生成RCON的密碼?",
+                        title,
+                        message,
                         confirmText: "確定",
                         cancelText: "取消"
                     });
@@ -701,10 +716,13 @@ function renderServerSettings() {
                     try {
                         regenBtn.disabled = true;
 
-                        const response = await fetch(
-                            "/api/server/regenerate-rcon-password",
-                            { method: "POST" }
-                        );
+                        const api = isManagement
+                            ? "/api/server/regenerate-management-secret"
+                            : "/api/server/regenerate-rcon-password";
+
+                        const response = await fetch(api, {
+                            method: "POST"
+                        });
 
                         const data = await response.json();
 
@@ -1241,7 +1259,8 @@ function updateServerSettingsDirtyList() {
 
         const isPasswordField =
             key === "rcon.password" ||
-            key === "rcon_password";
+            key === "rcon_password" ||
+            key === "management-server-secret";
 
         if (isPasswordField) {
             div.textContent =

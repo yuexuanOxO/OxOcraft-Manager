@@ -1,7 +1,10 @@
 from typing import Dict
 
 from backend.paths import SERVER_PROPERTIES_PATH
-from backend.config_files import load_or_create_config
+from backend.config_files import (
+    load_or_create_config,
+    generate_management_secret,
+)
 from backend.server_settings.server_properties import (
     read_properties_file,
     format_properties_for_write,
@@ -10,20 +13,43 @@ from backend.server_settings.server_properties import (
 
 
 def sync_rcon_to_server_properties(config: Dict) -> None:
+
+    server_properties = read_properties_file(
+        SERVER_PROPERTIES_PATH
+    )
+
+    if not server_properties.get(
+        "management-server-secret",
+        ""
+    ).strip():
+        server_properties[
+            "management-server-secret"
+        ] = generate_management_secret()
+
     updates = {
         "enable-rcon": "true",
         "rcon.port": str(config["rcon_port"]),
         "rcon.password": str(config["rcon_password"]),
-        "query.port": str(config.get("query_port", 25565)),
-        "enable-query":"true"
+        "query.port": str(
+            config.get("query_port", 25565)
+        ),
+        "enable-query": "true",
 
+        "management-server-enabled": "true",
+        "management-server-host": "localhost",
+        "management-server-port": "25585",
     }
 
-    server_properties = read_properties_file(SERVER_PROPERTIES_PATH)
     server_properties.update(updates)
 
-    lines = format_properties_for_write(server_properties)
-    write_properties_file(SERVER_PROPERTIES_PATH, lines)
+    lines = format_properties_for_write(
+        server_properties
+    )
+
+    write_properties_file(
+        SERVER_PROPERTIES_PATH,
+        lines,
+    )
 
 
 def init_rcon_config() -> Dict:

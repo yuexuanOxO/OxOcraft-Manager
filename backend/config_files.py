@@ -7,9 +7,21 @@ from typing import Dict
 
 from backend.paths import CONFIG_PATH, EULA_PATH
 
-def generate_rcon_password(length: int = 32) -> str:
+def generate_secure_password(length: int = 40) -> str:
     chars = string.ascii_letters + string.digits
-    return "".join(secrets.choice(chars) for _ in range(length))
+
+    return "".join(
+        secrets.choice(chars)
+        for _ in range(length)
+    )
+
+
+def generate_rcon_password() -> str:
+    return generate_secure_password()
+
+
+def generate_management_secret() -> str:
+    return generate_secure_password()
 
 DEFAULT_CONFIG = {
     "rcon_host": "127.0.0.1",

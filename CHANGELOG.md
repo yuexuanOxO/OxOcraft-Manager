@@ -30,6 +30,8 @@
 
 ### Changed
 
+* 修改 將Server Management Protocol相關參數加入**伺服器設定**，並將密碼生成跟RCON共用(生成密碼格式原本32碼變成40碼)
+
 * 修改 將目前OxOcraft-Manager的架構大改，改成使用Server Management Protocol，預計將Query棄用全面更新資料來源
 
 ### Fixed

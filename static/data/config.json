@@ -1,7 +1,7 @@
 {
     "rcon_host": "127.0.0.1",
     "rcon_port": 25575,
-    "rcon_password": "HrtrvXArKvQyKZtCVbw8QRt8IaQdqOvx",
+    "rcon_password": "TIt7dy78uC15xVaK984Z4nlS0SQTfMn3sATwaYzk",
     "java_xms": "1G",
     "java_xmx": "3G",
     "manual_backup_root": "D:\\Minecraft\\server\\world_backup",

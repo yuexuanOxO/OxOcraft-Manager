@@ -59,6 +59,14 @@ DEFAULT_SERVER_PROPERTIES = {
     "spawn-protection": "16",
     "resource-pack-sha1": "",
     "max-world-size": "29999984",
+    "management-server-enabled": "true",
+    "management-server-host": "localhost",
+    "management-server-port": "25585",
+    "management-server-secret": "",
+    "management-server-tls-enabled": "false",
+    "management-server-tls-keystore": "",
+    "management-server-tls-keystore-password": "",
+    "management-server-allowed-origins": "",
 }
 
 

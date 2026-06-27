@@ -22,6 +22,22 @@
 
 ---
 
+## [v0.10.0] -2026-06-27
+
+### Added
+
+* N/A
+
+### Changed
+
+* 修改 將目前OxOcraft-Manager的架構大改，改成使用Server Management Protocol，預計將Query棄用全面更新資料來源
+
+### Fixed
+
+* N/A
+
+---
+
 ## [v0.9.12] - 2026-06-21
 
 ### Added

@@ -22,21 +22,31 @@
 
 ---
 
-## [v0.10.0] -2026-06-27
+## [v0.10.0] - 2026-06-27 ~ 2026-06-28
 
 ### Added
 
-* N/A
+* 新增 管理協定密鑰(management-server-secret)重新生成功能。
+
+* 新增 管理協定密鑰顯示/隱藏功能(與RCON密碼共用)。
 
 ### Changed
 
-* 修改 將Server Management Protocol相關參數加入**伺服器設定**，並將密碼生成跟RCON共用(生成密碼格式原本32碼變成40碼)
+* 修改 升級Python執行環境由Python 3.10.6更新至Python 3.13。
 
-* 修改 將目前OxOcraft-Manager的架構大改，改成使用Server Management Protocol，預計將Query棄用全面更新資料來源
+* 修改 更新Pillow、cryptography、cffi等第三方套件版本。
+
+* 修改 重建專案虛擬環境(venv)並重新產生requirements.txt。
+
+* 修改 management-server-secret改成由OxOcraft-Manager自動生成與管理。
+
+* 修改 RCON密碼與management-server-secret共用40碼英數字密碼生成機制。
 
 ### Fixed
 
-* N/A
+* 修復 Python 3.13環境下Pillow _imaging載入失敗問題。
+
+* 修復 Google OAuth相關套件缺少_cffi_backend導致程式無法啟動問題。
 
 ---
 

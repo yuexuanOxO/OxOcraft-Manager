@@ -7,6 +7,9 @@ import ssl
 
 import websockets
 
+from backend.management_api.dto.player import parse_player_dto
+from backend.management_api.state import add_player, remove_player
+
 from backend.management_api.protocol import (
     JsonRpcRequest,
     is_jsonrpc_notification,
@@ -27,6 +30,8 @@ STATUS_METHOD = "minecraft:server/status"
 SERVER_STOPPING_NOTIFICATION = "minecraft:notification/server/stopping"
 SERVER_SAVING_NOTIFICATION = "minecraft:notification/server/saving"
 SERVER_SAVED_NOTIFICATION = "minecraft:notification/server/saved"
+PLAYER_JOINED_NOTIFICATION = "minecraft:notification/players/joined"
+PLAYER_LEFT_NOTIFICATION = "minecraft:notification/players/left"
 
 
 class ManagementApiClient:
@@ -152,6 +157,7 @@ class ManagementApiClient:
         mark_server_started(
             version_name=version_name,
             version_protocol=version_protocol,
+            players=status.players,
         )
 
         try:
@@ -167,12 +173,31 @@ class ManagementApiClient:
             pass
 
     def handle_notification(self, data: dict) -> None:
+
         method = str(data.get("method", ""))
 
         if not method:
             return
 
         mark_notification(method)
+
+        params = data.get("params")
+
+        player = None
+
+        if isinstance(params, list) and params:
+            player = parse_player_dto(params[0])
+
+        elif isinstance(params, dict):
+            player = parse_player_dto(params.get("player"))
+
+        if method == PLAYER_JOINED_NOTIFICATION:
+            add_player(player)
+            return
+
+        if method == PLAYER_LEFT_NOTIFICATION:
+            remove_player(player)
+            return
 
         if method == SERVER_STOPPING_NOTIFICATION:
             try:

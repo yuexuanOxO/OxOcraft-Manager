@@ -6,6 +6,12 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
+from backend.management_api.dto import (
+    ServerStatusDto,
+    ServerVersionDto,
+)
+from backend.management_api.dto.player import parse_player_dto
+
 
 @dataclass
 class JsonRpcRequest:
@@ -30,18 +36,6 @@ class JsonRpcRequest:
             self.to_dict(),
             ensure_ascii=False,
         )
-
-
-@dataclass
-class ServerVersionDto:
-    name: str
-    protocol: int | None = None
-
-
-@dataclass
-class ServerStatusDto:
-    started: bool
-    version: ServerVersionDto | None = None
 
 
 def parse_json_message(raw: str) -> dict[str, Any] | None:
@@ -81,7 +75,18 @@ def parse_server_status_result(
             protocol=version_data.get("protocol"),
         )
 
+    players = []
+
+    players_data = result.get("players")
+    if isinstance(players_data, list):
+        for item in players_data:
+            player = parse_player_dto(item)
+
+            if player is not None:
+                players.append(player)
+
     return ServerStatusDto(
         started=bool(result.get("started")),
         version=version,
+        players=players,
     )

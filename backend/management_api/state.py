@@ -6,6 +6,9 @@ import threading
 import time
 from dataclasses import dataclass, field
 
+from backend.management_api.dto import PlayerDto
+
+
 
 @dataclass
 class ManagementState:
@@ -16,6 +19,7 @@ class ManagementState:
     version_protocol: int | None = None
     last_method: str | None = None
     last_update: float = field(default_factory=time.time)
+    players: list[PlayerDto] = field(default_factory=list)
 
 
 _state = ManagementState()
@@ -32,6 +36,7 @@ def get_management_state() -> ManagementState:
             version_protocol=_state.version_protocol,
             last_method=_state.last_method,
             last_update=_state.last_update,
+            players=list(_state.players),
         )
 
 
@@ -44,6 +49,7 @@ def mark_connected() -> None:
         _state.version_name = None
         _state.version_protocol = None
         _state.last_update = time.time()
+        _state.players = []
 
 
 def mark_disconnected(error: str | None = None) -> None:
@@ -54,11 +60,13 @@ def mark_disconnected(error: str | None = None) -> None:
         _state.version_name = None
         _state.version_protocol = None
         _state.last_update = time.time()
+        _state.players = []
 
 
 def mark_server_started(
     version_name: str | None = None,
     version_protocol: int | None = None,
+    players: list[PlayerDto] | None = None,
 ) -> None:
     with _lock:
         _state.connected = True
@@ -66,6 +74,7 @@ def mark_server_started(
         _state.error = None
         _state.version_name = version_name
         _state.version_protocol = version_protocol
+        _state.players = list(players or [])
         _state.last_update = time.time()
 
 
@@ -74,3 +83,31 @@ def mark_notification(method: str) -> None:
         _state.last_method = method
         _state.last_update = time.time()
 
+
+def add_player(player: PlayerDto | None) -> None:
+    if player is None:
+        return
+
+    with _lock:
+        players = [
+            item for item in _state.players
+            if item.id != player.id and item.name != player.name
+        ]
+
+        players.append(player)
+
+        _state.players = players
+        _state.last_update = time.time()
+
+
+def remove_player(player: PlayerDto | None) -> None:
+    if player is None:
+        return
+
+    with _lock:
+        _state.players = [
+            item for item in _state.players
+            if item.id != player.id and item.name != player.name
+        ]
+
+        _state.last_update = time.time()

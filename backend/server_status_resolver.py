@@ -61,7 +61,14 @@ def build_ready_payload(state) -> dict[str, Any]:
         "management_ready": True,
         "status_source": "management_api",
         "version": state.version_name,
-        "players_online": 0,
+        "players_online": len(state.players),
         "players_max": 0,
-        "players": [],
+        "players": [
+            {
+                "id": player.id,
+                "name": player.name,
+                "avatar_url": f"https://mc-heads.net/avatar/{player.name}",
+            }
+            for player in state.players
+        ],
     }

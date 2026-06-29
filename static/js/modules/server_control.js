@@ -176,7 +176,7 @@ export async function waitForServerStatus(targetOnline, timeoutMs = 30000, inter
 
     while (Date.now() - startTime < timeoutMs) {
         try {
-            const response = await fetch("/api/server/query-status?force=1", {cache: "no-store"});
+            const response = await fetch("/api/server/status?force=1", {cache: "no-store"});
             const payload = await response.json();
 
             const data = payload.data || payload;

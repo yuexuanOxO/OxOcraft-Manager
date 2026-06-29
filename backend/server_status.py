@@ -1,8 +1,10 @@
 import socket
 from pathlib import Path
+from mcstatus import JavaServer
+
 from backend.paths import SERVER_PROPERTIES_PATH
 from backend.server_settings.server_properties import read_properties_file
-from mcstatus import JavaServer
+from backend.server_status_resolver import build_management_status_payload
 
 
 
@@ -210,6 +212,11 @@ def get_server_query_status(host: str | None = None) -> dict:
         runtime_state = get_server_runtime_state()
     except Exception:
         pass
+
+    management_payload = build_management_status_payload(runtime_state)
+
+    if management_payload is not None:
+        return management_payload
 
     if runtime_state == "stopping":
         try:

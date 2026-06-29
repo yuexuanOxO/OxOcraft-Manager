@@ -1,4 +1,6 @@
 import queue
+from dataclasses import asdict
+from backend.management_api.state import get_management_state
 from backend.server_runtime import start_server, stop_server
 from backend.server_setup import get_server_setup_status
 from backend.server_status import get_server_query_status
@@ -16,6 +18,18 @@ from backend.server_monitor import (
 server_bp = Blueprint("server", __name__)
 
 
+def build_server_status_response():
+    force = request.args.get("force") == "1"
+
+    if force:
+        payload = refresh_server_status_now()
+    else:
+        payload = get_cached_server_status()
+
+    response = jsonify(payload)
+    response.headers["Cache-Control"] = "no-store"
+
+    return response
 
 
 @server_bp.route("/api/server/setup-status")
@@ -59,17 +73,14 @@ def api_server_stop():
     })
 
 
+@server_bp.route("/api/server/status")
+def api_server_status():
+    return build_server_status_response()
+
+
 @server_bp.route("/api/server/query-status")
 def api_server_query_status():
-    force = request.args.get("force") == "1"
-
-    if force:
-        response = jsonify(refresh_server_status_now())
-    else:
-        response = jsonify(get_cached_server_status())
-
-    response.headers["Cache-Control"] = "no-store"
-    return response
+    return build_server_status_response()
 
 
 @server_bp.route("/api/events")
@@ -104,5 +115,18 @@ def api_events():
     response = Response(stream(), mimetype="text/event-stream")
     response.headers["Cache-Control"] = "no-cache"
     response.headers["X-Accel-Buffering"] = "no"
+
+    return response
+
+
+@server_bp.route("/api/server/management-status")
+def api_server_management_status():
+    state = get_management_state()
+
+    response = jsonify({
+        "success": True,
+        "management": asdict(state),
+    })
+    response.headers["Cache-Control"] = "no-store"
 
     return response

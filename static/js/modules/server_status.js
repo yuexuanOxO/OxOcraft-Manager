@@ -88,7 +88,7 @@ export function handleBackendDisconnected() {
 
 export async function updateStatus() {
     try {
-        const response = await fetch("/api/server/query-status?force=1", { cache: "no-store" });
+        const response = await fetch("/api/server/status?force=1", { cache: "no-store" });
         const payload = await response.json();
         applyServerStatusPayload(payload);
 

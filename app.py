@@ -26,6 +26,7 @@ from backend.routes.cloud_routes import cloud_bp
 from backend.routes.notification_routes import notification_bp
 from backend.routes.player_ban_routes import player_ban_bp
 
+from backend.management_api.monitor import start_management_api_monitor
 
 
 
@@ -48,6 +49,7 @@ app.register_blueprint(cloud_bp)
 app.register_blueprint(notification_bp)
 
 
+
 def open_browser():
     webbrowser.open("http://127.0.0.1:5000", new=2)
 
@@ -67,6 +69,16 @@ if __name__ == "__main__":
         start_auto_backup_scheduler()
         start_player_ban_scheduler()
         
+
+        start_management_api_monitor(
+            host="127.0.0.1",
+            port=25585,
+            secret="Dz5cCjcoHqjNfM3YUghit0iTSVL2Jxustde7Jhkr",
+            tls_enabled=False,
+        )
+        print("Management API 監聽已啟動")
+
+
     except Exception as error:
         print(f"初始化失敗：{error}")
 

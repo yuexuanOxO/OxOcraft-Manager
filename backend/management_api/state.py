@@ -20,6 +20,7 @@ class ManagementState:
     last_method: str | None = None
     last_update: float = field(default_factory=time.time)
     players: list[PlayerDto] = field(default_factory=list)
+    max_players: int = 0
 
 
 _state = ManagementState()
@@ -37,6 +38,7 @@ def get_management_state() -> ManagementState:
             last_method=_state.last_method,
             last_update=_state.last_update,
             players=list(_state.players),
+            max_players=_state.max_players,
         )
 
 
@@ -50,6 +52,7 @@ def mark_connected() -> None:
         _state.version_protocol = None
         _state.last_update = time.time()
         _state.players = []
+        _state.max_players = 0
 
 
 def mark_disconnected(error: str | None = None) -> None:
@@ -61,6 +64,7 @@ def mark_disconnected(error: str | None = None) -> None:
         _state.version_protocol = None
         _state.last_update = time.time()
         _state.players = []
+        _state.max_players = 0
 
 
 def mark_server_started(
@@ -110,4 +114,10 @@ def remove_player(player: PlayerDto | None) -> None:
             if item.id != player.id and item.name != player.name
         ]
 
+        _state.last_update = time.time()
+
+
+def mark_max_players(max_players: int | None = None) -> None:
+    with _lock:
+        _state.max_players = int(max_players or 0)
         _state.last_update = time.time()

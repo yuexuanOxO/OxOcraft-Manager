@@ -62,7 +62,7 @@ def build_ready_payload(state) -> dict[str, Any]:
         "status_source": "management_api",
         "version": state.version_name,
         "players_online": len(state.players),
-        "players_max": 0,
+        "players_max": state.max_players,
         "players": [
             {
                 "id": player.id,

@@ -22,6 +22,7 @@ from backend.management_api.state import (
     mark_disconnected,
     mark_notification,
     mark_server_started,
+    mark_max_players,
 )
 
 
@@ -32,6 +33,7 @@ SERVER_SAVING_NOTIFICATION = "minecraft:notification/server/saving"
 SERVER_SAVED_NOTIFICATION = "minecraft:notification/server/saved"
 PLAYER_JOINED_NOTIFICATION = "minecraft:notification/players/joined"
 PLAYER_LEFT_NOTIFICATION = "minecraft:notification/players/left"
+MAX_PLAYERS_METHOD = "minecraft:serversettings/max_players"
 
 
 class ManagementApiClient:
@@ -133,6 +135,10 @@ class ManagementApiClient:
 
         result = data.get("result")
 
+        if isinstance(result, int):
+            mark_max_players(result)
+            return
+
         if not isinstance(result, dict):
             return
 
@@ -159,6 +165,13 @@ class ManagementApiClient:
             version_protocol=version_protocol,
             players=status.players,
         )
+
+        try:
+            asyncio.create_task(
+                self.send_rpc(self._ws, MAX_PLAYERS_METHOD)
+            )
+        except Exception:
+            pass
 
         try:
             from backend.server_runtime import (

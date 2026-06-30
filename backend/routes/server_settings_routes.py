@@ -4,6 +4,7 @@ from werkzeug.utils import secure_filename
 from backend.server_config_sync import init_rcon_config
 from backend.server_effective_settings import load_effective_settings_snapshot
 from backend.server_runtime import validate_server_bind_ip
+from backend.management_api.monitor import update_management_secret
 from backend.paths import SERVER_PROPERTIES_PATH,MC_ROOT,STATIC_DIR
 
 from backend.config_files import (
@@ -230,6 +231,8 @@ def api_regenerate_management_secret():
             SERVER_PROPERTIES_PATH,
             lines
         )
+
+        update_management_secret(new_secret)
 
         return jsonify({
             "success": True,

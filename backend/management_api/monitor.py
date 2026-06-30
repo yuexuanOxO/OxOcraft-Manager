@@ -1,5 +1,3 @@
-# backend/management_api/monitor.py
-
 from __future__ import annotations
 
 import asyncio
@@ -14,6 +12,7 @@ from backend.management_api.client import (
 _monitor_thread: threading.Thread | None = None
 _monitor_started = False
 _monitor_lock = threading.Lock()
+_current_client: ManagementApiClient | None = None
 
 
 def start_management_api_monitor(
@@ -24,6 +23,7 @@ def start_management_api_monitor(
 ) -> None:
     global _monitor_thread
     global _monitor_started
+    global _current_client
 
     with _monitor_lock:
         if _monitor_started:
@@ -31,7 +31,7 @@ def start_management_api_monitor(
 
         _monitor_started = True
 
-        client = ManagementApiClient(
+        _current_client = ManagementApiClient(
             host=host,
             port=port,
             secret=secret,
@@ -40,11 +40,17 @@ def start_management_api_monitor(
 
         _monitor_thread = threading.Thread(
             target=_run_client_thread,
-            args=(client,),
+            args=(_current_client,),
             daemon=True,
         )
 
         _monitor_thread.start()
+
+
+def update_management_secret(secret: str) -> None:
+    with _monitor_lock:
+        if _current_client is not None:
+            _current_client.secret = secret
 
 
 def _run_client_thread(client: ManagementApiClient) -> None:

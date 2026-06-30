@@ -206,10 +206,22 @@ class ManagementApiClient:
 
         if method == PLAYER_JOINED_NOTIFICATION:
             add_player(player)
+
+            from backend.server_monitor import (
+                refresh_server_status_now,
+            )
+
+            refresh_server_status_now()
             return
 
         if method == PLAYER_LEFT_NOTIFICATION:
             remove_player(player)
+
+            from backend.server_monitor import (
+                refresh_server_status_now,
+            )
+
+            refresh_server_status_now()
             return
 
         if method == SERVER_STOPPING_NOTIFICATION:

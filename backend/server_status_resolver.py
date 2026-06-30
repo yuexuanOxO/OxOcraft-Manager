@@ -53,6 +53,12 @@ def build_management_status_payload(
 
 
 def build_ready_payload(state) -> dict[str, Any]:
+    from backend.player_permissions.player_permission_service import (
+        get_effective_online_mode,
+    )
+
+    online_mode = get_effective_online_mode()
+
     return {
         "online": True,
         "state": "ready",
@@ -65,9 +71,13 @@ def build_ready_payload(state) -> dict[str, Any]:
         "players_max": state.max_players,
         "players": [
             {
-                "id": player.id,
+                "uuid": player.id,
                 "name": player.name,
-                "avatar_url": f"https://mc-heads.net/avatar/{player.name}",
+                "account_type": (
+                    "premium"
+                    if online_mode
+                    else "offline"
+                )
             }
             for player in state.players
         ],

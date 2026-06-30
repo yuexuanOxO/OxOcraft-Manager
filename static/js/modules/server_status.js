@@ -1,5 +1,9 @@
 import { showOfflineCat } from "./log_console.js";
 
+import {
+    getPlayerAvatarUrl
+} from "./player_avatar.js";
+
 
 let fallbackPollingTimer = null;
 let backendDisconnected = false;
@@ -129,71 +133,6 @@ function setPlayersFromQuery(players) {
 }
 
 
-export function addPlayerFromLog(playerName) {
-    if (!playerName) return;
-
-    const existingPlayer =
-        currentPlayers.get(playerName);
-
-    if (existingPlayer) {
-        return;
-    }
-
-    currentPlayers.set(playerName, {
-        name: playerName,
-        avatar_url: "/static/img/player/default_skins/steve.png"
-    });
-
-    renderPlayersFromQuery(
-        [...currentPlayers.values()]
-    );
-
-    refreshPlayerAvatarFromBackend(playerName);
-}
-
-
-export function removePlayerFromLog(playerName) {
-    if (!playerName) return;
-
-    currentPlayers.delete(playerName);
-
-    renderPlayersFromQuery(
-        [...currentPlayers.values()]
-    );
-}
-
-
-async function refreshPlayerAvatarFromBackend(playerName) {
-    try {
-        const response = await fetch(
-            `/api/player/avatar?player=${encodeURIComponent(playerName)}`,
-            { cache: "no-store" }
-        );
-
-        const data = await response.json();
-
-        if (!data.success) return;
-
-        const currentPlayer =
-            currentPlayers.get(playerName);
-
-        if (!currentPlayer) return;
-
-        currentPlayers.set(playerName, {
-            ...currentPlayer,
-            avatar_url: data.avatar_url
-        });
-
-        renderPlayersFromQuery(
-            [...currentPlayers.values()]
-        );
-
-    } catch (error) {
-        console.error("更新玩家頭像失敗:", error);
-    }
-}
-
-
 async function loadEffectiveOnlineModeForAvatars() {
     try {
         const response = await fetch(
@@ -220,16 +159,6 @@ async function loadEffectiveOnlineModeForAvatars() {
         console.error("讀取正版驗證狀態失敗:", error);
         return false;
     }
-}
-
-
-function getPlayerAvatarUrl(player) {
-    if (typeof player === "string") {
-        return `https://mc-heads.net/avatar/${encodeURIComponent(player)}`;
-    }
-
-    return player.avatar_url
-        || `https://mc-heads.net/avatar/${encodeURIComponent(player.name)}`;
 }
 
 

@@ -1,7 +1,5 @@
 import {
     applyServerStatusPayload,
-    addPlayerFromLog,
-    removePlayerFromLog,
     handleBackendDisconnected
 } from "./server_status.js";
 
@@ -98,18 +96,6 @@ export function initServerEvents() {
         const line = payload.line || "";
 
         appendLogLine(line);
-
-        const joinMatch = line.match(/\]:\s*(.+?) joined the game$/);
-        const leftMatch = line.match(/\]:\s*(.+?) left the game$/);
-
-
-        if (joinMatch) {
-            addPlayerFromLog(joinMatch[1]);
-        }
-
-        if (leftMatch) {
-            removePlayerFromLog(leftMatch[1]);
-        }
 
     });
 

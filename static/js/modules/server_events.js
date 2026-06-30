@@ -5,7 +5,8 @@ import {
 
 import {
     appendLogLine,
-    clearLogTextOnly
+    clearLogTextOnly,
+    showOfflineCat
 } from "./log_console.js";
 
 import {
@@ -52,11 +53,16 @@ export function initServerEvents() {
 
     serverEvents.addEventListener("server_status_changed", (event) => {
         const payload = JSON.parse(event.data);
+        const data = payload.data || {};
 
-        updateUiServerState(payload.data);
+        updateUiServerState(data);
 
         applyServerStatusPayload(payload);
-        updateServerSettingsFooterModeByState(payload.data);
+        updateServerSettingsFooterModeByState(data);
+
+        if (data.state === "offline") {
+            showOfflineCat();
+        }
     });
 
     serverEvents.onerror = () => {

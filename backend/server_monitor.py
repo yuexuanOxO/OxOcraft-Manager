@@ -202,11 +202,14 @@ def start_server_monitor() -> None:
 def format_sse(event_name: str, data: dict) -> str:
     return f"event: {event_name}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
+
 def refresh_server_status_now() -> dict:
     global _status_cache
 
     new_data = get_server_query_status()
     now = time.time()
+
+    should_publish = False
 
     with _lock:
         old_data = _status_cache["data"]
@@ -214,6 +217,7 @@ def refresh_server_status_now() -> dict:
         if old_data != new_data:
             _status_cache["revision"] += 1
             _status_cache["data"] = new_data
+            should_publish = True
 
         _status_cache["last_update"] = now
 
@@ -223,7 +227,8 @@ def refresh_server_status_now() -> dict:
             "last_update": _status_cache["last_update"],
         }
 
-    publish_event("server_status_changed", event_data)
+    if should_publish:
+        publish_event("server_status_changed", event_data)
 
     return event_data
 

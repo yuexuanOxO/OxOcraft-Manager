@@ -282,7 +282,16 @@ async def run_management_client_forever(
             mark_disconnected(f"Management Server WebSocket 握手失敗：{error}")
 
         except websockets.exceptions.ConnectionClosed as error:
-            mark_disconnected(f"Management Server 連線關閉：{error}")
+            try:
+                from backend.server_runtime import get_server_runtime_state
+
+                if get_server_runtime_state() == "stopping":
+                    mark_disconnected()
+                else:
+                    mark_disconnected(f"Management Server 連線關閉：{error}")
+
+            except Exception:
+                mark_disconnected(f"Management Server 連線關閉：{error}")
 
         except OSError as error:
             mark_disconnected(f"Management Server OS 錯誤：{error}")

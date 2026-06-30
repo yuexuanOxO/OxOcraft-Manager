@@ -36,7 +36,7 @@ def build_management_status_payload(
             "status_source": "management_api",
         }
 
-    if state.error:
+    if state.error and runtime_state != "stopping":
         return {
             "online": False,
             "state": "error",

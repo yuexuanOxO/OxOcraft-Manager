@@ -258,10 +258,10 @@
     "group": "network",
     "label": "啟用 Query",
     "type": "boolean",
-    "hasChildren": true,
+    "hasChildren": false,
     "default": "false",
     "description": "允許使用GameSpy4協議的伺服器監聽器。用於取得伺服器資訊。\n\n註：此設定由OxOcraft-Manager用於偵測伺服器狀態，不能關閉，若修改會造成OxOcraft-Manager異常。",
-    "locked": true,
+    "locked": false,
     "lockedReason": "此設定由 OxOcraft-Manager 用於偵測伺服器狀態，不能關閉。"
   },
   {
@@ -276,7 +276,7 @@
       "key": "enable-query",
       "value": "true"
     },
-    "locked": true,
+    "locked": false,
     "lockedReason": "此設定由 OxOcraft-Manager 用於查詢伺服器狀態，避免與 server-port 不一致。"
 
   },

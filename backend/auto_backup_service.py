@@ -206,18 +206,6 @@ def send_private_backup_notice(
         return False
 
 
-def get_player_event_from_log(line: str) -> tuple[str, str] | None:
-    join_match = re.search(r"\]:\s*(.+?) joined the game$", line)
-    if join_match:
-        return "joined", join_match.group(1).strip()
-
-    left_match = re.search(r"\]:\s*(.+?) left the game$", line)
-    if left_match:
-        return "left", left_match.group(1).strip()
-
-    return None
-
-
 def wait_until(target_time: datetime) -> None:
     while datetime.now() < target_time:
         time.sleep(1)
@@ -314,21 +302,25 @@ def run_auto_backup_flow(scheduled_time: datetime) -> None:
         def handle_player_status_change(event_type: str, event_data: dict) -> None:
             nonlocal active_players
 
-            if event_type != "log_append":
-                return
+            if event_type == "management_player_joined":
+                player_name = str(event_data.get("name", "")).strip()
 
-            player_event = get_player_event_from_log(event_data.get("line", ""))
-            if not player_event:
-                return
+                if not player_name:
+                    return
 
-            action, player_name = player_event
-            if action == "joined":
                 if player_name not in active_players:
                     send_private_backup_notice(player_name, scheduled_time)
+
                 active_players.add(player_name)
                 return
 
-            active_players.discard(player_name)
+            if event_type == "management_player_left":
+                player_name = str(event_data.get("name", "")).strip()
+
+                if not player_name:
+                    return
+
+                active_players.discard(player_name)
 
         register_event_handler(handle_player_status_change)
 

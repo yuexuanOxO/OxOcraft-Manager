@@ -208,8 +208,15 @@ class ManagementApiClient:
             add_player(player)
 
             from backend.server_monitor import (
+                publish_event,
                 refresh_server_status_now,
             )
+
+            if player is not None:
+                publish_event("management_player_joined", {
+                    "id": player.id,
+                    "name": player.name,
+                })
 
             refresh_server_status_now()
             return
@@ -218,8 +225,15 @@ class ManagementApiClient:
             remove_player(player)
 
             from backend.server_monitor import (
+                publish_event,
                 refresh_server_status_now,
             )
+
+            if player is not None:
+                publish_event("management_player_left", {
+                    "id": player.id,
+                    "name": player.name,
+                })
 
             refresh_server_status_now()
             return

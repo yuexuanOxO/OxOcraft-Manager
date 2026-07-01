@@ -27,6 +27,7 @@ from backend.management_api.monitor import get_management_client
 from backend.management_api.operators import (
     management_add_operator,
     management_remove_operator,
+    management_list_operators,
 )
 
 OPS_FILE = MC_ROOT / "ops.json"
@@ -137,31 +138,83 @@ def get_ops_entry_by_uuid(player_uuid: str) -> dict | None:
     return None
 
 
+def build_permission_list_from_management_operators(
+    operators: list[dict],
+) -> list[dict]:
+    online_mode = get_effective_online_mode()
+    known_players = get_known_players()
+
+    known_by_uuid = {
+        str(player.get("player_uuid", "")).lower(): player
+        for player in known_players
+        if player.get("player_uuid")
+    }
+
+    result = []
+
+    for item in operators:
+        if not isinstance(item, dict):
+            continue
+
+        player = item.get("player")
+
+        if not isinstance(player, dict):
+            continue
+
+        player_uuid = str(player.get("id", "")).strip()
+        player_name = str(player.get("name", "")).strip()
+
+        if not player_uuid or not player_name:
+            continue
+
+        account_type = get_account_type(player_uuid)
+
+        is_valid_for_current_mode = (
+            account_type == "premium"
+            if online_mode
+            else account_type == "offline"
+        )
+
+        known_player = known_by_uuid.get(
+            player_uuid.lower(),
+            {}
+        )
+
+        try:
+            op_level = int(
+                item.get("permissionLevel", 4)
+            )
+        except (TypeError, ValueError):
+            op_level = 4
+
+        op_level = max(1, min(op_level, 4))
+
+        result.append({
+            **known_player,
+            "player_uuid": player_uuid,
+            "player_name": player_name,
+            "account_type": account_type,
+            "op": True,
+            "op_level": op_level,
+            "op_bypasses_player_limit": bool(
+                item.get("bypassesPlayerLimit", False)
+            ),
+            "valid_for_current_mode": is_valid_for_current_mode,
+        })
+
+    return result
+
+
 def get_player_permission_list() -> list[dict]:
     online_mode = get_effective_online_mode()
 
     if is_server_ready():
-        players = get_op_players_from_db()
+        client = get_management_client()
+        operators = management_list_operators(client)
 
-        result = []
-
-        for player in players:
-            player_uuid = str(player.get("player_uuid", "")).strip()
-            account_type = player.get("account_type") or get_account_type(player_uuid)
-
-            is_valid_for_current_mode = (
-                account_type == "premium"
-                if online_mode
-                else account_type == "offline"
-            )
-
-            result.append({
-                **player,
-                "op": True,
-                "valid_for_current_mode": is_valid_for_current_mode,
-            })
-
-        return result
+        return build_permission_list_from_management_operators(
+            operators
+        )
 
     entries = load_ops_entries()
     known_players = get_known_players()

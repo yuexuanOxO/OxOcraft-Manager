@@ -171,7 +171,7 @@ def monitor_loop() -> None:
         with _lock:
             old_data = _status_cache["data"]
 
-            if old_data != new_data:
+            if get_status_publish_key(old_data) != get_status_publish_key(new_data):
                 old_state = old_data.get("state")
                 new_state = new_data.get("state")
 
@@ -264,7 +264,7 @@ def refresh_server_status_now() -> dict:
     with _lock:
         old_data = _status_cache["data"]
 
-        if old_data != new_data:
+        if get_status_publish_key(old_data) != get_status_publish_key(new_data):
             _status_cache["revision"] += 1
             _status_cache["data"] = new_data
             should_publish = True
@@ -283,4 +283,19 @@ def refresh_server_status_now() -> dict:
     return event_data
 
 
+def get_status_publish_key(data: dict) -> dict:
+    state = data.get("state")
 
+    if state in ("starting", "stopping"):
+        return {
+            "online": data.get("online"),
+            "state": state,
+        }
+
+    if state == "offline":
+        return {
+            "online": False,
+            "state": "offline",
+        }
+
+    return data

@@ -23,6 +23,12 @@ from backend.player_permissions.player_access_history_service import (
     record_player_access,
 )
 
+from backend.management_api.monitor import get_management_client
+from backend.management_api.operators import (
+    management_add_operator,
+    management_remove_operator,
+)
+
 OPS_FILE = MC_ROOT / "ops.json"
 
 
@@ -264,10 +270,7 @@ def is_server_ready() -> bool:
 
 
 def can_add_op_by_name() -> bool:
-    if not is_server_ready():
-        return True
-
-    return get_effective_online_mode()
+    return True
 
 
 def sync_ops_json_to_players(source: str = "unknown") -> None:
@@ -295,20 +298,15 @@ def set_player_op(
 
     account_type = get_account_type(player_uuid)
 
-    if is_server_ready():
-        effective_op_level = get_effective_op_permission_level()
-    else:
-        try:
-            effective_op_level = int(op_level or 4)
-        except (TypeError, ValueError):
-            effective_op_level = 4
+    try:
+        effective_op_level = int(op_level or 4)
+    except (TypeError, ValueError):
+        effective_op_level = 4
 
     effective_op_level = max(1, min(effective_op_level, 4))
 
-    effective_bypasses_player_limit = (
-        False
-        if is_server_ready()
-        else bool(op_bypasses_player_limit)
+    effective_bypasses_player_limit = bool(
+        op_bypasses_player_limit
     )
 
     if player_uuid.lower() in load_ops_uuid_set():
@@ -333,9 +331,17 @@ def set_player_op(
             player_name=player_name,
         )
 
-        result = send_rcon_command(f"op {player_name}")
+        client = get_management_client()
 
-        sync_ops_json_to_players(source="rcon_ui")
+        result = management_add_operator(
+            client=client,
+            player_uuid=player_uuid,
+            player_name=player_name,
+            permission_level=effective_op_level,
+            bypasses_player_limit=effective_bypasses_player_limit,
+        )
+
+        sync_management_operators_to_players(result)
 
         update_player_op_since(
             player_uuid=player_uuid,
@@ -427,19 +433,15 @@ def remove_player_op(player_uuid: str, player_name: str) -> dict:
             player_name=effective_name,
         )
 
-        result = send_rcon_command(f"deop {effective_name}")
+        client = get_management_client()
 
-        sync_ops_json_to_players(source="rcon_ui")
+        result = management_remove_operator(
+            client=client,
+            player_uuid=player_uuid,
+            player_name=effective_name,
+        )
 
-        still_op = player_uuid.lower() in load_ops_uuid_set()
-
-        if still_op:
-            return {
-                "success": False,
-                "message": f"嘗試收回 {effective_name} 的管理員權限，但 ops.json 仍保留該 UUID，請確認玩家名稱大小寫是否正確",
-                "result": result,
-                "op": True,
-            }
+        sync_management_operators_to_players(result)
 
         return {
             "success": True,
@@ -447,6 +449,7 @@ def remove_player_op(player_uuid: str, player_name: str) -> dict:
             "result": result,
             "op": False,
         }
+
 
     remove_ops_entry_by_uuid(player_uuid)
 
@@ -475,30 +478,6 @@ def toggle_player_op(
     op_level: int | None = None,
     op_bypasses_player_limit: bool = False,
 ) -> dict:
-
-    online_mode = get_effective_online_mode()
-
-    if (
-        is_server_ready()
-        and not online_mode
-    ):
-
-        known_players = get_known_players()
-
-        known_uuid_set = {
-            str(player.get("player_uuid", "")).lower()
-            for player in known_players
-        }
-
-        if player_uuid.lower() not in known_uuid_set:
-            return {
-                "success": False,
-                "message": (
-                    "離線模式且伺服器在線時，"
-                    "只能對已加入過伺服器的玩家設定 OP"
-                ),
-            }
-
 
     ops_uuid_set = load_ops_uuid_set()
 
@@ -550,3 +529,33 @@ def get_player_permission_candidate_list() -> list[dict]:
     return result
 
 
+def sync_management_operators_to_players(
+    operators: list[dict],
+) -> None:
+    entries = []
+
+    for item in operators:
+        if not isinstance(item, dict):
+            continue
+
+        player = item.get("player")
+
+        if not isinstance(player, dict):
+            continue
+
+        player_uuid = str(player.get("id", "")).strip()
+        player_name = str(player.get("name", "")).strip()
+
+        if not player_uuid or not player_name:
+            continue
+
+        entries.append({
+            "uuid": player_uuid,
+            "name": player_name,
+            "level": item.get("permissionLevel", 4),
+            "bypassesPlayerLimit": bool(
+                item.get("bypassesPlayerLimit", False)
+            ),
+        })
+
+    sync_player_op_entries_from_ops_entries(entries)

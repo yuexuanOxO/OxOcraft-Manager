@@ -1025,7 +1025,7 @@ function getDefaultOpLevel() {
 
 
 function isOpLevelLocked() {
-    return permissionServerReady;
+    return isPermissionActionLocked();
 }
 
 
@@ -1105,17 +1105,12 @@ function renderAddOpInputState() {
     const confirmBtn =
         document.getElementById("confirmAddOpPlayerBtn");
 
-    const locked =
-        isPermissionActionLocked()
-        || (
-            permissionServerReady
-            && !permissionOnlineMode
-        );
+    const locked = isPermissionActionLocked();
 
     if (input) {
         input.disabled = locked;
         input.placeholder = locked
-            ? "離線模式且伺服器在線時，請從下方玩家清單加入"
+            ? "伺服器狀態切換中，請稍後再操作"
             : "請輸入玩家名稱";
     }
 

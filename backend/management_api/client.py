@@ -53,6 +53,8 @@ class ManagementApiClient:
         self._request_id = 0
         self._ws = None
         self._pending_status = None
+        self._pending_requests = {}
+        self._loop = None
 
     def build_url(self) -> str:
         scheme = "wss" if self.tls_enabled else "ws"
@@ -93,6 +95,57 @@ class ManagementApiClient:
         await ws.send(request.to_json())
 
         return request_id
+    
+
+    async def send_rpc_and_wait(
+        self,
+        method: str,
+        params=None,
+        timeout: int = 5,
+    ):
+        if self._ws is None:
+            raise RuntimeError("Management Server 尚未連線")
+
+        loop = asyncio.get_running_loop()
+        request_id = self.next_request_id()
+        future = loop.create_future()
+
+        self._pending_requests[request_id] = future
+
+        request = JsonRpcRequest(
+            id=request_id,
+            method=method,
+            params=params,
+        )
+
+        await self._ws.send(request.to_json())
+
+        try:
+            return await asyncio.wait_for(future, timeout)
+        finally:
+            self._pending_requests.pop(request_id, None)
+
+
+    def call_rpc_threadsafe(
+        self,
+        method: str,
+        params=None,
+        timeout: int = 5,
+    ):
+        if self._loop is None:
+            raise RuntimeError("Management Server event loop 尚未建立")
+
+        future = asyncio.run_coroutine_threadsafe(
+            self.send_rpc_and_wait(
+                method=method,
+                params=params,
+                timeout=timeout,
+            ),
+            self._loop,
+        )
+
+        return future.result(timeout + 1)
+
 
     async def listen_once(self) -> None:
         url = self.build_url()
@@ -107,6 +160,7 @@ class ManagementApiClient:
             mark_connected()
 
             self._ws = ws
+            self._loop = asyncio.get_running_loop()
 
             await self.send_rpc(ws, STATUS_METHOD)
 
@@ -129,6 +183,23 @@ class ManagementApiClient:
             return
 
     def handle_response(self, data: dict) -> None:
+
+        response_id = data.get("id")
+
+        if response_id in self._pending_requests:
+            future = self._pending_requests.pop(response_id)
+
+            if future.done():
+                return
+
+            if "error" in data:
+                future.set_exception(
+                    RuntimeError(str(data["error"]))
+                )
+            else:
+                future.set_result(data.get("result"))
+
+            return
 
         if "error" in data:
             mark_disconnected(str(data["error"]))

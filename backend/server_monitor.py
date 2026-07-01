@@ -135,21 +135,6 @@ def monitor_loop() -> None:
             from backend.server_runtime import get_server_runtime_state
             runtime_state = get_server_runtime_state()
         except Exception:
-            runtime_state = "?"
-
-        print(
-            "[STATUS LOOP]",
-            time.time(),
-            "runtime=",
-            runtime_state,
-            "data=",
-            new_data,
-        )
-
-        try:
-            from backend.server_runtime import get_server_runtime_state
-            runtime_state = get_server_runtime_state()
-        except Exception:
             runtime_state = "offline"
 
         if (
@@ -241,23 +226,6 @@ def refresh_server_status_now() -> dict:
 
     new_data = get_server_query_status()
     now = time.time()
-
-    # print("[STATUS BUILD]", now, new_data)
-
-    try:
-        from backend.server_runtime import get_server_runtime_state
-        runtime_state = get_server_runtime_state()
-    except Exception:
-        runtime_state = "?"
-
-    print(
-        "[STATUS BUILD]",
-        time.time(),
-        "runtime=",
-        runtime_state,
-        "data=",
-        new_data,
-    )
 
     should_publish = False
 

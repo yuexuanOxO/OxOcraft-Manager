@@ -15,6 +15,15 @@ _monitor_lock = threading.Lock()
 _current_client: ManagementApiClient | None = None
 
 
+def get_management_client() -> ManagementApiClient:
+    if _current_client is None:
+        raise RuntimeError(
+            "Management API Client 尚未初始化"
+        )
+
+    return _current_client
+
+
 def start_management_api_monitor(
     host: str = "127.0.0.1",
     port: int = 25585,

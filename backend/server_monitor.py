@@ -131,6 +131,39 @@ def monitor_loop() -> None:
         new_data = get_server_query_status()
         now = time.time()
 
+        try:
+            from backend.server_runtime import get_server_runtime_state
+            runtime_state = get_server_runtime_state()
+        except Exception:
+            runtime_state = "?"
+
+        print(
+            "[STATUS LOOP]",
+            time.time(),
+            "runtime=",
+            runtime_state,
+            "data=",
+            new_data,
+        )
+
+        try:
+            from backend.server_runtime import get_server_runtime_state
+            runtime_state = get_server_runtime_state()
+        except Exception:
+            runtime_state = "offline"
+
+        if (
+            runtime_state == "starting"
+            and new_data.get("state") == "offline"
+        ):
+            new_data = {
+                "online": False,
+                "state": "starting",
+                "message": "伺服器啟動中",
+                "management_ready": False,
+                "status_source": "runtime_guard",
+            }
+
         should_publish = False
         event_data = None
         should_sync_whitelist_on_ready = False
@@ -210,6 +243,21 @@ def refresh_server_status_now() -> dict:
     now = time.time()
 
     # print("[STATUS BUILD]", now, new_data)
+
+    try:
+        from backend.server_runtime import get_server_runtime_state
+        runtime_state = get_server_runtime_state()
+    except Exception:
+        runtime_state = "?"
+
+    print(
+        "[STATUS BUILD]",
+        time.time(),
+        "runtime=",
+        runtime_state,
+        "data=",
+        new_data,
+    )
 
     should_publish = False
 

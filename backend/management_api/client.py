@@ -52,6 +52,7 @@ class ManagementApiClient:
         self.open_timeout_seconds = open_timeout_seconds
         self._request_id = 0
         self._ws = None
+        self._pending_status = None
 
     def build_url(self) -> str:
         scheme = "wss" if self.tls_enabled else "ws"
@@ -136,7 +137,7 @@ class ManagementApiClient:
         result = data.get("result")
 
         if isinstance(result, int):
-            mark_max_players(result)
+            self._handle_max_players_response(result)
             return
 
         if not isinstance(result, dict):
@@ -153,6 +154,29 @@ class ManagementApiClient:
                 pass
             return
 
+        self._pending_status = status
+
+        try:
+            asyncio.create_task(
+                self.send_rpc(self._ws, MAX_PLAYERS_METHOD)
+            )
+        except Exception:
+            self._mark_ready_from_status(status)
+
+
+    def _handle_max_players_response(self, max_players: int) -> None:
+        mark_max_players(max_players)
+
+        if self._pending_status is None:
+            return
+
+        status = self._pending_status
+        self._pending_status = None
+
+        self._mark_ready_from_status(status)
+
+
+    def _mark_ready_from_status(self, status) -> None:
         version_name = None
         version_protocol = None
 
@@ -167,13 +191,6 @@ class ManagementApiClient:
         )
 
         try:
-            asyncio.create_task(
-                self.send_rpc(self._ws, MAX_PLAYERS_METHOD)
-            )
-        except Exception:
-            pass
-
-        try:
             from backend.server_runtime import (
                 get_server_runtime_state,
                 set_server_runtime_state,
@@ -184,6 +201,7 @@ class ManagementApiClient:
 
         except Exception:
             pass
+
 
     def handle_notification(self, data: dict) -> None:
 

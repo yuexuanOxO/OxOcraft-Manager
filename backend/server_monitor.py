@@ -209,6 +209,8 @@ def refresh_server_status_now() -> dict:
     new_data = get_server_query_status()
     now = time.time()
 
+    # print("[STATUS BUILD]", now, new_data)
+
     should_publish = False
 
     with _lock:

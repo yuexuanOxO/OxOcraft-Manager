@@ -317,6 +317,14 @@ export function applyServerStatusPayload(payload) {
     const data = payload.data;
     latestServerStatusData = data;
 
+    console.log(
+        "[STATUS]",
+        payload.revision,
+        data.state,
+        data.online,
+        new Date().toLocaleTimeString()
+    );
+
     const isFirstStatus = !hasReceivedFirstStatus;
     hasReceivedFirstStatus = true;
 

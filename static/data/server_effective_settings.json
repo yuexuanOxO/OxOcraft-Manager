@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-06-30T15:24:25",
-    "properties_modified_comment": "Tue Jun 30 15:24:17 CST 2026",
+    "captured_at": "2026-07-01T11:40:12",
+    "properties_modified_comment": "Wed Jul 01 11:39:42 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -10,7 +10,7 @@
         "enable-query": "true",
         "generator-settings": "{}",
         "enforce-secure-profile": "true",
-        "level-name": "world11",
+        "level-name": "world",
         "motd": "A Minecraft Server",
         "query.port": "25565",
         "pvp": "true",
@@ -66,7 +66,15 @@
         "management-server-tls-enabled": "false",
         "management-server-tls-keystore": "",
         "management-server-tls-keystore-password": "",
-        "management-server-allowed-origins": ""
+        "management-server-allowed-origins": "",
+        "accepts-transfers": "false",
+        "bug-report-link": "",
+        "enable-code-of-conduct": "false",
+        "pause-when-empty-seconds": "60",
+        "region-file-compression": "deflate",
+        "resource-pack-id": "",
+        "status-heartbeat-interval": "0",
+        "text-filtering-version": "0"
     },
     "runtime_config": {
         "java_xms": "1G",

@@ -76,7 +76,6 @@ def handle_server_output() -> None:
 
         if "Done (" in line and "For help, type" in line:
             print("[Runtime Debug] Detected server ready from log.")
-            set_server_runtime_state("ready")
 
             try:
                 from backend.player_permissions.player_permission_service import (

@@ -242,13 +242,26 @@ export function initPlayerPermissions() {
         renderAddOpInputState();
     });
 
-    window.addEventListener(
-        "player-permissions-should-refresh",
-        async () => {
+    window.addEventListener("player-permissions-should-refresh", async (event) => {
+            console.log(
+                "[Permission] refresh event received",
+                event.detail
+            );
+
             const modal =
                 document.getElementById("playerPermissionModal");
 
             if (!modal || modal.classList.contains("hidden")) {
+                return;
+            }
+
+            const state = getUiServerState();
+
+            if (state === "starting" || state === "stopping") {
+                console.log(
+                    "[Permission] skip refresh during transition:",
+                    state
+                );
                 return;
             }
 
@@ -257,20 +270,18 @@ export function initPlayerPermissions() {
         }
     );
 
-    window.addEventListener(
-        "server-ui-state-changed",
-        (event) => {
-
+    window.addEventListener("server-ui-state-changed", (event) => {
             const data = event.detail;
 
             if (!data) return;
 
             permissionServerReady =
-                data.state === "ready";
+                data.rawState === "ready" || data.state === "ready";
 
             permissionServerState =
-                data.state || "offline";
+                data.rawState || data.state || "offline";
 
+            updatePermissionModeSummary();
             renderAddOpInputState();
             renderPermissionActionButtons();
             renderAddOpLevelState();
@@ -452,9 +463,9 @@ async function loadPlayerPermissions() {
         allPlayers = data.players || [];
 
         permissionOnlineMode = Boolean(data.online_mode);
-        permissionServerReady = getUiServerState() === "ready";
+        permissionServerReady = Boolean(data.server_ready);
 
-        permissionServerState = getUiServerState();
+        permissionServerState = data.server_state || getUiServerState();
 
         defaultOpLevel = getDefaultOpLevelFromData(data);
 
@@ -492,9 +503,7 @@ async function loadPlayerPermissions() {
 }
 
 
-function updatePermissionModeSummary(
-    onlineMode
-) {
+function updatePermissionModeSummary() {
     const summary =
         document.getElementById(
             "playerPermissionSummary"
@@ -502,15 +511,18 @@ function updatePermissionModeSummary(
 
     if (!summary) return;
 
+    const isReady =
+        permissionServerReady;
+
     summary.innerHTML = `
         <span class="
             player-permission-mode
-            ${onlineMode ? "online" : "offline"}
+            ${isReady ? "online-manage" : "offline-config"}
         ">
             ${
-                onlineMode
-                    ? "✓ 正版伺服器"
-                    : "⚠ 離線伺服器"
+                isReady
+                    ? "⚙ 在線管理模式"
+                    : "⚙ 離線設定模式"
             }
         </span>
     `;

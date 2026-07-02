@@ -355,6 +355,18 @@
     background: rgba(192, 139, 66, 0.12);
 }
 
+.player-permission-mode.online-manage {
+    border-color: #4f9d69;
+    color: #8ee891;
+    background: rgba(79, 157, 105, 0.12);
+}
+
+.player-permission-mode.offline-config {
+    border-color: #c08b42;
+    color: #f0c36a;
+    background: rgba(192, 139, 66, 0.12);
+}
+
 .player-permission-meta.empty {
     visibility: hidden;
 }

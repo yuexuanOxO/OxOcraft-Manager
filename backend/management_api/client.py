@@ -10,6 +10,14 @@ import websockets
 from backend.management_api.dto.player import parse_player_dto
 from backend.management_api.state import add_player, remove_player
 
+from backend.player_permissions.player_identity_service import (
+    get_account_type,
+)
+
+from backend.db import (
+    upsert_player_login,
+)
+
 from backend.management_api.protocol import (
     JsonRpcRequest,
     is_jsonrpc_notification,
@@ -295,6 +303,19 @@ class ManagementApiClient:
 
         if method == PLAYER_JOINED_NOTIFICATION:
             add_player(player)
+
+            if player is not None:
+                try:
+                    upsert_player_login(
+                        player_uuid=player.id,
+                        player_name=player.name,
+                        account_type=get_account_type(player.id),
+                    )
+                except Exception as error:
+                    print(
+                        "[Management] player join sync failed:",
+                        error,
+                    )
 
             from backend.server_monitor import (
                 publish_event,

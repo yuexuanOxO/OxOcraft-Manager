@@ -34,7 +34,7 @@ const OFFLINE_OP_HELP_DISABLED_KEY = "oxo_offline_op_help_disabled";
 const OP_LEVEL_INFO = {
     1: {
         icon: "/static/icons/op_level/gold_ingot.png",
-        title: "權限等級 1",
+        title: "權限等級 1 (僅可修改出生點，不常使用)",
         description: [
             "可無視出生點保護，適合只需要基本保護區管理權限的玩家。",
             "(出生點保護：需在有一名管理員及一名一般玩家才會才會生效。)"
@@ -42,7 +42,7 @@ const OP_LEVEL_INFO = {
     },
     2: {
         icon: "/static/icons/op_level/diamond.png",
-        title: "權限等級 2",
+        title: "權限等級 2 (若不確定要給多高權限建議給)",
         description: [
             "可使用大部分遊戲管理指令(傳送、給物品、切換模式等...)。",
             "適合一般伺服器管理員。"
@@ -50,7 +50,7 @@ const OP_LEVEL_INFO = {
     },
     3: {
         icon: "/static/icons/op_level/netherite_ingot.png",
-        title: "權限等級 3",
+        title: "權限等級 3 (擁有僅限於服主的權限)",
         description: [
             "可使用更高階的管理指令(封鎖、踢出、管理 OP等...)。",
             "適合需要管理玩家與伺服器狀態的管理員。"
@@ -58,7 +58,7 @@ const OP_LEVEL_INFO = {
     },
     4: {
         icon: "/static/icons/op_level/nether_star.png",
-        title: "權限等級 4",
+        title: "權限等級 4 (與服主相同的權限)",
         description: [
             "最高等級管理員權限。",
             "完整伺服器管理權限。建議僅服主使用。"
@@ -808,21 +808,21 @@ async function handleAddOpPlayer() {
     const playerName =
         (input?.value || "").trim();
 
-    if (permissionServerReady && !selectedOpCandidate) {
-        await showInfo({
-            title: "玩家權限",
-            message: "請先選擇一位在線玩家",
-            confirmText: "關閉",
-            variant: "warning"
-        });
-
-        return;
-    }
-
     const confirmBtn =
         document.getElementById("confirmAddOpPlayerBtn");
 
-    if (!playerName) {
+    if (permissionServerReady) {
+        if (!selectedOpCandidate) {
+            await showInfo({
+                title: "玩家權限",
+                message: "請先選擇一位在線玩家",
+                confirmText: "關閉",
+                variant: "warning"
+            });
+
+            return;
+        }
+    } else if (!playerName) {
         await showInfo({
             title: "玩家權限",
             message: "請輸入玩家名稱",
@@ -1168,7 +1168,7 @@ function renderAddOpInputState() {
             ? "在線玩家"
             : "之前加入過的玩家";
     }
-    
+
 }
 
 
@@ -1266,13 +1266,16 @@ function createOpCandidateCard(player) {
                 ＋
             </button>
 
-            <button
-                class="op-candidate-delete-btn"
-                type="button"
-                title="刪除玩家紀錄"
-            >
-                ✕
-            </button>
+            ${permissionServerReady ? "" : `
+                <button
+                    class="op-candidate-delete-btn"
+                    type="button"
+                    title="刪除玩家紀錄"
+                >
+                    ✕
+                </button>
+            `}
+
         </div>
     `;
 
@@ -1295,7 +1298,7 @@ function createOpCandidateCard(player) {
 
         const input = document.getElementById("addOpPlayerInput");
 
-        if (input) {
+        if (!permissionServerReady && input) {
             input.value = player.player_name;
             input.focus();
         }

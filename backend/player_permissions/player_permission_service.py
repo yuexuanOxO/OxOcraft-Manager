@@ -12,9 +12,7 @@ from backend.player_permissions.player_identity_service import (
 )
 
 from backend.db import (
-    sync_player_op_flags_from_uuid_set,
     sync_player_op_entries_from_ops_entries,
-    get_op_players_from_db,
     upsert_player_identity,
     update_player_op_since,
 )
@@ -23,6 +21,7 @@ from backend.player_permissions.player_access_history_service import (
     record_player_access,
 )
 
+from backend.management_api.state import get_management_state
 from backend.management_api.monitor import get_management_client
 from backend.management_api.operators import (
     management_add_operator,
@@ -545,13 +544,47 @@ def toggle_player_op(
     )
 
 
+def get_online_player_permission_candidates() -> list[dict]:
+    state = get_management_state()
+
+    result = []
+
+    for player in state.players:
+        player_uuid = str(player.id or "").strip()
+        player_name = str(player.name or "").strip()
+
+        if not player_uuid or not player_name:
+            continue
+
+        result.append({
+            "player_uuid": player_uuid,
+            "player_name": player_name,
+            "account_type": get_account_type(player_uuid),
+            "show_in_player_candidates": 1,
+            "online": True,
+            "op": False,
+        })
+
+    return result
+
+
 def get_player_permission_candidate_list() -> list[dict]:
-    ops_uuid_set = load_ops_uuid_set()
     online_mode = get_effective_online_mode()
 
-    if is_server_ready() and not online_mode:
-        players = get_current_usercache_players()
+    if is_server_ready():
+        client = get_management_client()
+        operators = management_list_operators(client)
+
+        op_uuid_set = {
+            str(item.get("player", {}).get("id", "")).lower()
+            for item in operators
+            if isinstance(item, dict)
+        }
+
+        players = get_online_player_permission_candidates()
+
     else:
+        op_uuid_set = load_ops_uuid_set()
         players = get_known_players()
 
     result = []
@@ -571,12 +604,13 @@ def get_player_permission_candidate_list() -> list[dict]:
 
         player_uuid = str(player.get("player_uuid", "")).lower()
 
-        if player_uuid in ops_uuid_set:
+        if player_uuid in op_uuid_set:
             continue
 
         result.append({
             **player,
             "op": False,
+            "online": bool(player.get("online", False)),
         })
 
     return result

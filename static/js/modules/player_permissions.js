@@ -25,6 +25,7 @@ let permissionServerReady = false;
 let permissionServerState = "offline";
 let selectedOpLevel = 4;
 let defaultOpLevel = 4;
+let selectedOpCandidate = null;
 
 const permissionHistoryFilters = new Set();
 const OXOCRAFT_OPERATOR_ICON = "/static/icons/player_ban/OxOcraft_origin.png";
@@ -196,6 +197,7 @@ export function initPlayerPermissions() {
     openAddBtn?.addEventListener("click", async () => {
         addModal?.classList.remove("hidden");
         addInput.value = "";
+        selectedOpCandidate = null;
 
         defaultOpLevel = getDefaultOpLevel();
         selectedOpLevel = defaultOpLevel;
@@ -228,6 +230,16 @@ export function initPlayerPermissions() {
         if (event.key === "Enter") {
             await handleAddOpPlayer();
         }
+    });
+
+    addInput?.addEventListener("input", () => {
+        if (!permissionServerReady) {
+            return;
+        }
+
+        selectedOpCandidate = null;
+        renderOpCandidates();
+        renderAddOpInputState();
     });
 
     window.addEventListener(
@@ -796,6 +808,17 @@ async function handleAddOpPlayer() {
     const playerName =
         (input?.value || "").trim();
 
+    if (permissionServerReady && !selectedOpCandidate) {
+        await showInfo({
+            title: "玩家權限",
+            message: "請先選擇一位在線玩家",
+            confirmText: "關閉",
+            variant: "warning"
+        });
+
+        return;
+    }
+
     const confirmBtn =
         document.getElementById("confirmAddOpPlayerBtn");
 
@@ -868,22 +891,34 @@ async function handleAddOpPlayer() {
 
 
 async function addPlayerOpByName(playerName) {
+    const payload = {
+        level: selectedOpLevel,
+        bypassesPlayerLimit:
+            Boolean(
+                document.getElementById("addOpBypassPlayerLimitCheck")
+                    ?.checked
+            ),
+    };
+
+    let url = "/api/player/permission/add-op";
+
+    if (permissionServerReady && selectedOpCandidate) {
+        url = "/api/player/permission/toggle-op";
+
+        payload.uuid = selectedOpCandidate.player_uuid;
+        payload.name = selectedOpCandidate.player_name;
+    } else {
+        payload.name = playerName;
+    }
+
     const response = await fetch(
-        "/api/player/permission/add-op",
+        url,
         {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-                name: playerName,
-                level: selectedOpLevel,
-                bypassesPlayerLimit:
-                    Boolean(
-                        document.getElementById("addOpBypassPlayerLimitCheck")
-                            ?.checked
-                    ),
-            })
+            body: JSON.stringify(payload)
         }
     );
 
@@ -895,11 +930,14 @@ async function addPlayerOpByName(playerName) {
         );
     }
 
+    selectedOpCandidate = null;
+
     await loadPlayerPermissions();
     await loadOpCandidates();
 
     return data;
 }
+
 
 async function loadOpCandidates() {
     const list =
@@ -1111,12 +1149,26 @@ function renderAddOpInputState() {
         input.disabled = locked;
         input.placeholder = locked
             ? "伺服器狀態切換中，請稍後再操作"
-            : "請輸入玩家名稱";
+            : (
+                permissionServerReady
+                    ? "搜尋在線玩家"
+                    : "請輸入玩家名稱"
+            );
     }
 
     if (confirmBtn) {
         confirmBtn.disabled = locked;
     }
+
+    const subtitle =
+        document.getElementById("addOpPlayerSubtitle");
+
+    if (subtitle) {
+        subtitle.textContent = permissionServerReady
+            ? "在線玩家"
+            : "之前加入過的玩家";
+    }
+    
 }
 
 
@@ -1126,7 +1178,29 @@ function renderOpCandidates() {
 
     if (!list) return;
 
-    const players = [...candidatePlayers];
+    const input =
+            document.getElementById("addOpPlayerInput");
+
+        const keyword =
+            (input?.value || "")
+                .trim()
+                .toLowerCase();
+
+        let players = [...candidatePlayers];
+
+        if (permissionServerReady && keyword) {
+            players = players.filter(player => {
+                return (
+                    String(player.player_name || "")
+                        .toLowerCase()
+                        .includes(keyword)
+                    ||
+                    String(player.player_uuid || "")
+                        .toLowerCase()
+                        .includes(keyword)
+                );
+            });
+        }
 
     list.innerHTML = "";
 
@@ -1151,6 +1225,13 @@ function createOpCandidateCard(player) {
     const card = document.createElement("div");
 
     card.className = "op-candidate-card";
+
+    if (
+        selectedOpCandidate &&
+        selectedOpCandidate.player_uuid === player.player_uuid
+    ) {
+        card.classList.add("selected");
+    }
 
     const avatarUrl = getPlayerAvatarUrl(player);
 
@@ -1205,18 +1286,35 @@ function createOpCandidateCard(player) {
     const deleteBtn =
         card.querySelector(".op-candidate-delete-btn");
 
-    addBtn?.addEventListener("click", () => {
-
-        const input = document.getElementById("addOpPlayerInput");
-
-        if (!input) {
+    const selectCandidate = () => {
+        if (isPermissionActionLocked()) {
             return;
         }
 
-        input.value = player.player_name;
+        selectedOpCandidate = player;
 
-        input.focus();
+        const input = document.getElementById("addOpPlayerInput");
 
+        if (input) {
+            input.value = player.player_name;
+            input.focus();
+        }
+
+        renderOpCandidates();
+        renderAddOpInputState();
+    };
+
+    card.addEventListener("click", (event) => {
+        if (event.target.closest(".op-candidate-delete-btn")) {
+            return;
+        }
+
+        selectCandidate();
+    });
+
+    addBtn?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        selectCandidate();
     });
 
     deleteBtn?.addEventListener("click", async () => {

@@ -806,6 +806,19 @@ async function togglePlayerOp(player) {
             player.op_since = data.op_since;
         }
 
+        window.dispatchEvent(
+            new CustomEvent(
+                "player-op-status-changed",
+                {
+                    detail: {
+                        player: player.player_name,
+                        uuid: player.player_uuid,
+                        op: data.op
+                    }
+                }
+            )
+        );
+
         renderPlayerPermissionList();
 
         await showInfo({
@@ -898,6 +911,15 @@ async function handleAddOpPlayer() {
     }
 
     try {
+
+        const addedPlayer =
+            selectedOpCandidate ||
+            lockedOpCandidate ||
+            {
+                player_name: playerName,
+                player_uuid: ""
+            };
+
         const data =
             await addPlayerOpByName(playerName);
 
@@ -915,6 +937,20 @@ async function handleAddOpPlayer() {
         }
 
         renderAddOpLevelState();
+
+        window.dispatchEvent(
+            new CustomEvent(
+                "player-op-status-changed",
+                {
+                    detail: {
+                        player: addedPlayer.player_name,
+                        uuid: addedPlayer.player_uuid,
+                        op: true
+                    }
+                }
+            )
+        );
+
         closeAddOpPlayerModal();
 
         await showInfo({

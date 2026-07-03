@@ -317,10 +317,9 @@ function handlePlayerOpStatusChanged(event) {
 
     if (!detail) return;
 
-    const {
-        player,
-        op
-    } = detail;
+    const player = String(detail.player || "");
+    const uuid = String(detail.uuid || "");
+    const op = Boolean(detail.op);
 
     const opBtn = document.querySelector(
         `.player-menu-item[data-action="toggle-op"][data-player="${CSS.escape(player)}"]`
@@ -331,6 +330,13 @@ function handlePlayerOpStatusChanged(event) {
     opBtn.textContent = op
         ? "收回管理員權限"
         : "設為管理員";
+
+    opBtn.dataset.op = op ? "1" : "0";
+    opBtn.dataset.player = player;
+
+    if (uuid) {
+        opBtn.dataset.uuid = uuid;
+    }
 }
 
 

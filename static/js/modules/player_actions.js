@@ -80,6 +80,16 @@ async function handlePlayerMenuClick(event) {
             const playerUuid = menuItem.dataset.uuid || "";
             const playerName = menuItem.dataset.player || player;
 
+            if (!playerUuid || !playerName) {
+                await showInfo({
+                    title: "操作失敗",
+                    message: "缺少玩家 UUID 或名稱，無法修改管理員權限",
+                    confirmText: "關閉",
+                    variant: "error"
+                });
+                return;
+            }
+
             if (!isOp) {
                 await openAddOpPlayerModalWithLockedPlayer({
                     player_uuid: playerUuid,
@@ -92,14 +102,14 @@ async function handlePlayerMenuClick(event) {
             }
 
             try {
-                const response = await fetch("/api/player/action", {
+                const response = await fetch("/api/player/permission/toggle-op", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        action: "toggle-op",
-                        player: player
+                        uuid: playerUuid,
+                        name: playerName
                     })
                 });
 
@@ -127,20 +137,12 @@ async function handlePlayerMenuClick(event) {
                     {
                         detail: {
                             player,
+                            uuid: playerUuid,
                             op: data.op
                         }
                     }
                 ));
 
-                const playerOpBtn = document.querySelector(
-                    `.player-menu-item[data-action="toggle-op"][data-player="${CSS.escape(player)}"]`
-                );
-
-                if (playerOpBtn) {
-                    playerOpBtn.textContent = data.op
-                        ? "收回管理員權限"
-                        : "設為管理員";
-                }
 
             } catch (error) {
                 console.error("管理員權限操作失敗:", error);

@@ -95,6 +95,7 @@ async function handlePlayerMenuClick(event) {
                     player_uuid: playerUuid,
                     player_name: playerName,
                     name: playerName,
+                    account_type: menuItem.dataset.accountType || "unknown",
                     online: true,
                 });
 

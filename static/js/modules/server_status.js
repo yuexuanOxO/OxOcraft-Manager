@@ -192,6 +192,9 @@ function renderPlayersFromQuery(players) {
             player_uuid: playerUuid,
             player_name: playerName,
             name: playerName,
+            account_type: effectiveOnlineModeForAvatars
+                ? "premium"
+                : "offline",
             online: true,
         };
 
@@ -233,6 +236,7 @@ function renderPlayersFromQuery(players) {
         opBtn.disabled = true;
         opBtn.dataset.action = "toggle-op";
         opBtn.dataset.player = playerName;
+        opBtn.dataset.accountType = playerData.account_type;
 
         const kickBtn = document.createElement("button");
         kickBtn.className = "player-menu-item";

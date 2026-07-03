@@ -212,103 +212,105 @@
 
         </div>
 
+
     </div>
 
-    <div id="addOpPlayerModal" class="add-op-player-modal hidden">
-        <div class="add-op-player-panel">
-            <div class="add-op-player-header">
-                <div class="add-op-player-title">新增玩家到管理員</div>
-                <button id="closeAddOpPlayerBtn" class="player-permission-close-btn" type="button">✕</button>
-            </div>
+</div>
 
-            <div class="add-op-player-input-row">
-                <input
-                    id="addOpPlayerInput"
-                    class="player-permission-search"
-                    type="text"
-                    placeholder="請輸入玩家名稱"
-                >
-            </div>
+<div id="addOpPlayerModal" class="add-op-player-modal hidden">
+    <div class="add-op-player-panel">
+        <div class="add-op-player-header">
+            <div class="add-op-player-title">新增玩家到管理員</div>
+            <button id="closeAddOpPlayerBtn" class="player-permission-close-btn" type="button">✕</button>
+        </div>
 
-            <div id="addOpPlayerSubtitle" class="add-op-player-subtitle">
-                之前加入過的玩家
-            </div>
+        <div class="add-op-player-input-row">
+            <input
+                id="addOpPlayerInput"
+                class="player-permission-search"
+                type="text"
+                placeholder="請輸入玩家名稱"
+            >
+        </div>
 
-            <div id="opCandidateList" class="op-candidate-list">
-                <div class="player-permission-empty">尚未載入玩家資料</div>
-            </div>
+        <div id="addOpPlayerSubtitle" class="add-op-player-subtitle">
+            之前加入過的玩家
+        </div>
 
-            <div class="add-op-level-section">
+        <div id="opCandidateList" class="op-candidate-list">
+            <div class="player-permission-empty">尚未載入玩家資料</div>
+        </div>
 
-                <div class="add-op-level-header">
-                    <div class="add-op-level-title">
-                        權限等級
-                    </div>
+        <div class="add-op-level-section">
 
-                    <div
-                        id="addOpLevelLockedHint"
-                        class="add-op-level-locked-hint hidden"
-                    >
-                        預設給予權限等級已鎖定
-                    </div>
+            <div class="add-op-level-header">
+                <div class="add-op-level-title">
+                    權限等級
                 </div>
 
-                <div id="addOpLevelOptions" class="add-op-level-options">
-
-                    <button class="add-op-level-option" type="button" data-level="1">
-                        <span>Lv1</span>
-                        <img src="/static/icons/op_level/gold_ingot.png" alt="">
-                    </button>
-
-                    <button class="add-op-level-option" type="button" data-level="2">
-                        <span>Lv2</span>
-                        <img src="/static/icons/op_level/diamond.png" alt="">
-                    </button>
-
-                    <button class="add-op-level-option" type="button" data-level="3">
-                        <span>Lv3</span>
-                        <img src="/static/icons/op_level/netherite_ingot.png" alt="">
-                    </button>
-
-                    <button class="add-op-level-option" type="button" data-level="4">
-                        <span>Lv4</span>
-                        <img src="/static/icons/op_level/nether_star.png" alt="">
-                    </button>
-
+                <div
+                    id="addOpLevelLockedHint"
+                    class="add-op-level-locked-hint hidden"
+                >
+                    預設給予權限等級已鎖定
                 </div>
-
-                <label class="add-op-bypass-row">
-                    <input
-                        id="addOpBypassPlayerLimitCheck"
-                        type="checkbox"
-                    >
-
-                    <span>可無視玩家人數上限</span>
-
-                    <span
-                        class="add-op-bypass-help"
-                        data-mc-tooltip="當伺服器已達最大玩家數時，此玩家仍可登入伺服器。"
-                    >
-                        i
-                    </span>
-                </label>
-
-                <div id="addOpLevelDescription" class="add-op-level-description"></div>
-
             </div>
 
-            <div class="add-op-player-footer">
+            <div id="addOpLevelOptions" class="add-op-level-options">
 
-                <button
-                    id="confirmAddOpPlayerBtn"
-                    class="player-permission-action normal add-op-confirm-btn"
-                    type="button"
-                >
-                    ＋加入管理員
+                <button class="add-op-level-option" type="button" data-level="1">
+                    <span>Lv1</span>
+                    <img src="/static/icons/op_level/gold_ingot.png" alt="">
+                </button>
+
+                <button class="add-op-level-option" type="button" data-level="2">
+                    <span>Lv2</span>
+                    <img src="/static/icons/op_level/diamond.png" alt="">
+                </button>
+
+                <button class="add-op-level-option" type="button" data-level="3">
+                    <span>Lv3</span>
+                    <img src="/static/icons/op_level/netherite_ingot.png" alt="">
+                </button>
+
+                <button class="add-op-level-option" type="button" data-level="4">
+                    <span>Lv4</span>
+                    <img src="/static/icons/op_level/nether_star.png" alt="">
                 </button>
 
             </div>
 
+            <label class="add-op-bypass-row">
+                <input
+                    id="addOpBypassPlayerLimitCheck"
+                    type="checkbox"
+                >
+
+                <span>可無視玩家人數上限</span>
+
+                <span
+                    class="add-op-bypass-help"
+                    data-mc-tooltip="當伺服器已達最大玩家數時，此玩家仍可登入伺服器。"
+                >
+                    i
+                </span>
+            </label>
+
+            <div id="addOpLevelDescription" class="add-op-level-description"></div>
+
         </div>
+
+        <div class="add-op-player-footer">
+
+            <button
+                id="confirmAddOpPlayerBtn"
+                class="player-permission-action normal add-op-confirm-btn"
+                type="button"
+            >
+                ＋加入管理員
+            </button>
+
+        </div>
+
     </div>
 </div>

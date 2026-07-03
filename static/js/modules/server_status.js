@@ -183,6 +183,18 @@ function renderPlayersFromQuery(players) {
     players.forEach(player => {
         const playerName = getPlayerName(player);
 
+        const playerUuid =
+            typeof player === "string"
+                ? ""
+                : String(player.id || player.uuid || player.player_uuid || "");
+
+        const playerData = {
+            player_uuid: playerUuid,
+            player_name: playerName,
+            name: playerName,
+            online: true,
+        };
+
         const item = document.createElement("div");
         item.className = "player-item";
 
@@ -230,7 +242,7 @@ function renderPlayersFromQuery(players) {
         kickBtn.dataset.player = playerName;
 
         menu.appendChild(opBtn);
-        loadPlayerOpStatus(playerName, opBtn);
+        loadPlayerOpStatus(playerData, opBtn);
 
         menu.appendChild(kickBtn);
 
@@ -247,28 +259,54 @@ function renderPlayersFromQuery(players) {
 async function loadPlayerOpStatus(player, opBtn) {
     try {
         const response = await fetch(
-            `/api/player/op-status?player=${encodeURIComponent(player)}`,
+            "/api/player/permissions",
             { cache: "no-store" }
         );
 
         const data = await response.json();
 
         if (!data.success) {
-            opBtn.textContent = "設為/收回管理員";
-            opBtn.disabled = false;
-            return;
+            throw new Error(data.message || "讀取玩家 OP 狀態失敗");
         }
 
-        opBtn.textContent = data.op
+        const playerUuid = String(player.player_uuid || "").toLowerCase();
+        const playerName = String(player.player_name || "").toLowerCase();
+
+        const opPlayer = (data.players || []).find(item => {
+            const itemUuid = String(item.player_uuid || "").toLowerCase();
+            const itemName = String(item.player_name || "").toLowerCase();
+
+            return (
+                (playerUuid && itemUuid === playerUuid) ||
+                (!playerUuid && itemName === playerName)
+            );
+        });
+
+        const isOp = Boolean(opPlayer?.op);
+
+        opBtn.textContent = isOp
             ? "收回管理員權限"
             : "設為管理員";
+
+        opBtn.dataset.op = isOp ? "1" : "0";
+
+        if (opPlayer) {
+            opBtn.dataset.uuid = opPlayer.player_uuid || player.player_uuid || "";
+            opBtn.dataset.player = opPlayer.player_name || player.player_name || "";
+        } else {
+            opBtn.dataset.uuid = player.player_uuid || "";
+            opBtn.dataset.player = player.player_name || "";
+        }
 
         opBtn.disabled = false;
 
     } catch (error) {
         console.error("讀取玩家 OP 狀態失敗:", error);
 
-        opBtn.textContent = "設為/收回管理員";
+        opBtn.textContent = "設為管理員";
+        opBtn.dataset.op = "0";
+        opBtn.dataset.uuid = player.player_uuid || "";
+        opBtn.dataset.player = player.player_name || "";
         opBtn.disabled = false;
     }
 }

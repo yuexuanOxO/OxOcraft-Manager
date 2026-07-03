@@ -1,4 +1,7 @@
 import { showConfirm, showInfo } from "./system_dialog.js";
+import {
+    openAddOpPlayerModalWithLockedPlayer
+} from "./player_permissions.js";
 
 
 function closeAllPlayerMenus() {
@@ -73,6 +76,21 @@ async function handlePlayerMenuClick(event) {
         }
 
         if (action === "toggle-op") {
+            const isOp = menuItem.dataset.op === "1";
+            const playerUuid = menuItem.dataset.uuid || "";
+            const playerName = menuItem.dataset.player || player;
+
+            if (!isOp) {
+                await openAddOpPlayerModalWithLockedPlayer({
+                    player_uuid: playerUuid,
+                    player_name: playerName,
+                    name: playerName,
+                    online: true,
+                });
+
+                return;
+            }
+
             try {
                 const response = await fetch("/api/player/action", {
                     method: "POST",

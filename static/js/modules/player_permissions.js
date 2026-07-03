@@ -20,12 +20,12 @@ let currentPermissionTab = "permissions";
 let permissionHistory = [];
 let allPlayers = [];
 let candidatePlayers = [];
-let permissionOnlineMode = true;
 let permissionServerReady = false;
 let permissionServerState = "offline";
 let selectedOpLevel = 4;
 let defaultOpLevel = 4;
 let selectedOpCandidate = null;
+let lockedOpCandidate = null;
 
 const permissionHistoryFilters = new Set();
 const OXOCRAFT_OPERATOR_ICON = "/static/icons/player_ban/OxOcraft_origin.png";
@@ -65,6 +65,44 @@ const OP_LEVEL_INFO = {
         ],
     },
 };
+
+
+export async function openAddOpPlayerModalWithLockedPlayer(player) {
+    const addModal = document.getElementById("addOpPlayerModal");
+    const addInput = document.getElementById("addOpPlayerInput");
+    const bypassCheck = document.getElementById("addOpBypassPlayerLimitCheck");
+
+    if (!addModal || !addInput) return;
+
+    lockedOpCandidate = player;
+    selectedOpCandidate = player;
+
+    defaultOpLevel = getDefaultOpLevel();
+    selectedOpLevel = defaultOpLevel;
+
+    addInput.value = player.player_name || player.name || "";
+
+    if (bypassCheck) {
+        bypassCheck.checked = false;
+    }
+
+    addModal.classList.remove("hidden");
+
+    renderAddOpInputState();
+    renderAddOpLevelState();
+    renderOpCandidates();
+}
+
+
+function closeAddOpPlayerModal() {
+    const addModal =
+        document.getElementById("addOpPlayerModal");
+
+    lockedOpCandidate = null;
+    selectedOpCandidate = null;
+
+    addModal?.classList.add("hidden");
+}
 
 
 export function initPlayerPermissions() {
@@ -195,9 +233,12 @@ export function initPlayerPermissions() {
     });
 
     openAddBtn?.addEventListener("click", async () => {
-        addModal?.classList.remove("hidden");
-        addInput.value = "";
-        selectedOpCandidate = null;
+    addModal?.classList.remove("hidden");
+
+    lockedOpCandidate = null;
+    selectedOpCandidate = null;
+
+    addInput.value = "";
 
         defaultOpLevel = getDefaultOpLevel();
         selectedOpLevel = defaultOpLevel;
@@ -213,12 +254,12 @@ export function initPlayerPermissions() {
     });
 
     closeAddBtn?.addEventListener("click", () => {
-        addModal?.classList.add("hidden");
+        closeAddOpPlayerModal();
     });
 
     addModal?.addEventListener("click", (event) => {
         if (event.target === addModal) {
-            addModal.classList.add("hidden");
+            closeAddOpPlayerModal();
         }
     });
 
@@ -233,6 +274,10 @@ export function initPlayerPermissions() {
     });
 
     addInput?.addEventListener("input", () => {
+        if (lockedOpCandidate) {
+            return;
+        }
+
         if (!permissionServerReady) {
             return;
         }
@@ -462,7 +507,6 @@ async function loadPlayerPermissions() {
 
         allPlayers = data.players || [];
 
-        permissionOnlineMode = Boolean(data.online_mode);
         permissionServerReady = Boolean(data.server_ready);
 
         permissionServerState = data.server_state || getUiServerState();
@@ -871,6 +915,7 @@ async function handleAddOpPlayer() {
         }
 
         renderAddOpLevelState();
+        closeAddOpPlayerModal();
 
         await showInfo({
             title: "玩家權限",
@@ -1158,13 +1203,17 @@ function renderAddOpInputState() {
     const locked = isPermissionActionLocked();
 
     if (input) {
-        input.disabled = locked;
+        input.disabled = locked || !!lockedOpCandidate;
         input.placeholder = locked
             ? "伺服器狀態切換中，請稍後再操作"
             : (
-                permissionServerReady
-                    ? "搜尋在線玩家"
-                    : "請輸入玩家名稱"
+                lockedOpCandidate
+                    ? "已從玩家列表選擇玩家"
+                    : (
+                        permissionServerReady
+                            ? "搜尋在線玩家"
+                            : "請輸入玩家名稱"
+                    )
             );
     }
 
@@ -1198,7 +1247,9 @@ function renderOpCandidates() {
                 .trim()
                 .toLowerCase();
 
-        let players = [...candidatePlayers];
+        let players = lockedOpCandidate
+            ? [lockedOpCandidate]
+            : [...candidatePlayers];
 
         if (permissionServerReady && keyword) {
             players = players.filter(player => {
@@ -1717,6 +1768,7 @@ function getDisplayPermissionOperator(item) {
 
     if (
         source === "ui" ||
+        source === "online_ui_manage" ||
         source === "offline_ui_edit" ||
         source === "minecraft_json" ||
         source === "rcon" ||
@@ -1753,7 +1805,7 @@ function getPermissionOperatorAvatarUrl(item) {
 function getPermissionSourceText(source) {
     const sourceMap = {
         ui: "OxOcraft",
-        offline_ui_edit: "OxOcraft",
+        offline_ui_edit: "離線設定模式",
         minecraft_json: "Minecraft資料同步",
         player_command: "遊戲內指令",
         console_rcon: "UI輸入指令",
@@ -1762,6 +1814,7 @@ function getPermissionSourceText(source) {
         ui_reload: "OxOcraft",
         console_rcon_reload: "UI輸入指令(reload)",
         player_command_reload: "遊戲內指令(reload)",
+        online_ui_manage: "在線管理模式",
     };
 
     return sourceMap[source] || source || "未知";

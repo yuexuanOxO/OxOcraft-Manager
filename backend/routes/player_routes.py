@@ -22,7 +22,6 @@ from backend.player_permissions.player_permission_service import (
     get_player_permission_list,
     toggle_player_op,
     get_player_permission_candidate_list,
-    can_add_op_by_name,
     is_server_ready,
     get_effective_op_permission_level,
 )
@@ -307,11 +306,6 @@ def api_player_permission_add_op():
             "message": "請輸入玩家名稱"
         }), 400
 
-    if not can_add_op_by_name():
-        return jsonify({
-            "success": False,
-            "message": "離線模式且伺服器在線時，不能手動輸入玩家名稱新增 OP。請先讓玩家進入伺服器一次，再從「之前加入過的玩家」清單加入。"
-        }), 400
 
     identity = resolve_player_identity_by_name(player_name)
 

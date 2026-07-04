@@ -374,17 +374,28 @@ export function applyServerStatusPayload(payload) {
 
     
 
+    const shouldClearPlayers =
+        !data.online ||
+        data.state === "offline" ||
+        data.state === "starting" ||
+        data.state === "stopping";
+
     if (isFirstStatus && data.state === "offline") {
         showOfflineCat();
-        clearPlayersList();
     }
 
-    if (!isFirstStatus && previousServerState !== "offline" && data.state === "offline") {
+    if (
+        !isFirstStatus &&
+        previousServerState !== "offline" &&
+        data.state === "offline"
+    ) {
         showOfflineCat();
-        clearPlayersList();
     }
 
-    if (data.online && data.query_ready !== false) {
+    if (shouldClearPlayers) {
+        currentPlayers.clear();
+        clearPlayersList();
+    } else if (data.online && data.query_ready !== false) {
         setPlayersFromQuery(data.players || []);
     }
 

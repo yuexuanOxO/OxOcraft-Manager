@@ -1475,58 +1475,6 @@ def sync_player_op_entries_from_ops_entries(
         conn.commit()
 
 
-def sync_player_op_flags_from_uuid_set(
-    op_uuid_set: set[str],
-) -> None:
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    normalized = {
-        str(player_uuid).lower()
-        for player_uuid in op_uuid_set
-        if player_uuid
-    }
-
-    with get_connection() as conn:
-        if normalized:
-            placeholders = ",".join("?" for _ in normalized)
-
-            conn.execute(f"""
-                UPDATE players
-                SET op = 1,
-                    op_since = COALESCE(op_since, ?),
-                    updated_at = ?
-                WHERE lower(player_uuid) IN ({placeholders})
-            """, (
-                now,
-                now,
-                *normalized,
-            ))
-
-            conn.execute(f"""
-                UPDATE players
-                SET op = 0,
-                    op_since = NULL,
-                    updated_at = ?
-                WHERE lower(player_uuid) NOT IN ({placeholders})
-                AND op != 0
-            """, (
-                now,
-                *normalized,
-            ))
-        else:
-            conn.execute("""
-                UPDATE players
-                SET op = 0,
-                    op_since = NULL,
-                    updated_at = ?
-                WHERE op != 0
-            """, (
-                now,
-            ))
-
-        conn.commit()
-
-
 def sync_player_whitelist_flags_from_uuid_set(
     whitelist_uuid_set: set[str],
 ) -> None:

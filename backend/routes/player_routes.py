@@ -155,33 +155,6 @@ def api_player_action():
                 "result": result
             })
 
-        elif action == "toggle-op":
-            player_uuid = resolve_player_uuid(player)
-
-            if not player_uuid:
-                return jsonify({
-                    "success": False,
-                    "message": f"無法取得玩家 {player} 的 UUID，請確認網路連線或玩家名稱是否正確"
-                }), 400
-
-            if is_player_op(player):
-                result = send_rcon_command(f"deop {player}")
-
-                return jsonify({
-                    "success": True,
-                    "message": f"已收回 {player} 的管理員權限",
-                    "result": result,
-                    "op": False
-                })
-
-            result = send_rcon_command(f"op {player}")
-
-            return jsonify({
-                "success": True,
-                "message": f"已將 {player} 設為管理員!",
-                "result": result,
-                "op": True
-            })
 
         else:
             return jsonify({
@@ -194,32 +167,6 @@ def api_player_action():
             "success": False,
             "message": str(error)
         }), 500
-    
-
-@player_bp.route("/api/player/op-status")
-def api_player_op_status():
-    player = str(request.args.get("player", "")).strip()
-
-    if not player:
-        return jsonify({
-            "success": False,
-            "message": "缺少玩家名稱"
-        }), 400
-
-    player_uuid = resolve_player_uuid(player)
-
-    if not player_uuid:
-        return jsonify({
-            "success": False,
-            "message": f"無法取得玩家 {player} 的 UUID"
-        }), 400
-
-    return jsonify({
-        "success": True,
-        "player": player,
-        "uuid": player_uuid,
-        "op": is_player_op(player)
-    })
 
 
 @player_bp.route("/api/player/permissions")

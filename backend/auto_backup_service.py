@@ -494,7 +494,7 @@ def start_auto_backup_scheduler() -> None:
 
     _scheduler_thread = threading.Thread(
         target=scheduler_loop,
-        daemon=False
+        daemon=True
     )
     _scheduler_thread.start()
 

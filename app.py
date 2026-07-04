@@ -87,4 +87,17 @@ if __name__ == "__main__":
         print(f"初始化失敗：{error}")
 
     threading.Timer(1, open_browser).start()
-    app.run(debug=False)
+    try:
+        app.run(debug=False)
+
+    finally:
+        print("===== Python Exit =====")
+
+        import threading
+
+        for t in threading.enumerate():
+            print(
+                f"{t.name} "
+                f"daemon={t.daemon} "
+                f"alive={t.is_alive()}"
+            )

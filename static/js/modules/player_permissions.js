@@ -1005,7 +1005,7 @@ async function resolveOpCandidateByInput(playerName) {
     });
 
     if (!confirmed) {
-        return false;
+        return "cancelled";
     }
 
     const exists = candidatePlayers.some(item =>
@@ -1049,6 +1049,10 @@ async function handleAddOpPlayer() {
                 const resolved =
                     await resolveOpCandidateByInput(playerName);
 
+                if (resolved === "cancelled") {
+                    return;
+                }
+
                 if (!resolved) {
                     await showInfo({
                         title: "玩家權限",
@@ -1062,10 +1066,7 @@ async function handleAddOpPlayer() {
                     return;
                 }
 
-                /*
-                    搜尋/選中玩家只到這裡停止。
-                    使用者需要再確認權限等級後，第二次按「加入管理員」才真正送出。
-                */
+
                 return;
 
             } catch (error) {

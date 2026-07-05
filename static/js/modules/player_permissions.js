@@ -645,6 +645,9 @@ function renderPlayerPermissionList() {
         String(player.permission_state || "") !== "online"
     );
 
+    onlinePlayers.sort(comparePlayerName);
+    offlinePlayers.sort(comparePlayerName);
+
     appendPermissionGroup(
         list,
         "上線",
@@ -661,6 +664,15 @@ function renderPlayerPermissionList() {
 
     renderPermissionActionButtons();
 
+}
+
+
+function comparePlayerName(a, b) {
+    return String(a.player_name || "")
+        .toLowerCase()
+        .localeCompare(
+            String(b.player_name || "").toLowerCase()
+        );
 }
 
 

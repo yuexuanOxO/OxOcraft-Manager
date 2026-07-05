@@ -105,16 +105,35 @@
     line-height: 1;
 }
 
+.player-permission-header-top {
+    display: grid;
+    grid-template-columns: 180px 1fr 180px;
+    align-items: center;
+}
+
+.player-permission-header-status {
+    min-width: 0;
+}
+
+.player-permission-header-spacer {
+    min-width: 0;
+}
+
+.player-permission-page-title {
+    color: #f5f5f5;
+    font-size: 22px;
+    font-weight: bold;
+    text-align: center;
+}
+
 .player-permission-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 16px;
 
-    margin-top: -10px;
-
     border-bottom: 1px solid #444;
-    padding-bottom: 12px;
+    padding-bottom: 8px;
 }
 
 .player-permission-title {
@@ -633,12 +652,6 @@
     background: rgba(75, 120, 184, 0.12);
 }
 
-.player-permission-title-row {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
 .player-permission-header-main {
     flex: 1;
 }
@@ -807,12 +820,12 @@
     flex: 1;
     min-height: 0;
 
-    padding: 10px 10px 10px;
+    padding: 0 10px 10px;
     overflow: hidden;
 
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 10px;
 }
 
 .player-permission-page {
@@ -821,7 +834,7 @@
 
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 8px;
 }
 
 .player-permission-page.hidden {
@@ -1414,4 +1427,48 @@
 
 .player-permission-card.offline-player .player-permission-action {
     filter: none;
+}
+
+.player-permission-search-wrap {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+}
+
+.player-permission-search-input {
+    padding-right: 48px;
+}
+
+.player-permission-search-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+
+    width: 42px;
+    height: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: 1px solid #555;
+    border-radius: 0 6px 6px 0;
+
+    background: #2b2b2b;
+    cursor: pointer;
+}
+
+.player-permission-search-btn:hover {
+    background: #3a3324;
+    border-color: #c08b42;
+}
+
+.player-permission-search-btn img {
+    width: 32px;
+    height: 32px;
+
+    object-fit: contain;
+    image-rendering: pixelated;
 }

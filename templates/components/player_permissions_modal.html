@@ -41,19 +41,25 @@
 
                 <div class="player-permission-header">
                     <div class="player-permission-header-main">
-                        <div class="player-permission-title-row">
-                            <div class="player-permission-title">
+                        <div class="player-permission-header-top">
+
+                            <div class="player-permission-header-status">
+                                <div id="playerPermissionSummary" class="player-permission-summary"></div>
+
+                                <div
+                                    id="playerPermissionPlayerCount"
+                                    class="player-permission-player-count"
+                                >
+                                    載入中...
+                                </div>
+                            </div>
+
+                            <div class="player-permission-page-title">
                                 玩家權限管理
                             </div>
-                        </div>
 
-                        <div id="playerPermissionSummary" class="player-permission-summary"></div>
+                            <div class="player-permission-header-spacer"></div>
 
-                        <div
-                            id="playerPermissionPlayerCount"
-                            class="player-permission-player-count"
-                        >
-                            載入中...
                         </div>
                     </div>
                 </div>
@@ -68,12 +74,26 @@
                         + 新增玩家到管理員
                     </button>
 
-                    <input
-                        id="playerPermissionSearchInput"
-                        class="player-permission-search"
-                        type="text"
-                        placeholder="搜尋玩家名稱或 UUID"
-                    >
+                    <div class="player-permission-search-wrap">
+                        <input
+                            id="playerPermissionSearchInput"
+                            class="player-permission-search player-permission-search-input"
+                            type="text"
+                            placeholder="搜尋玩家名稱或 UUID"
+                        >
+
+                        <button
+                            id="playerPermissionSearchBtn"
+                            class="player-permission-search-btn"
+                            type="button"
+                            title="搜尋玩家"
+                        >
+                            <img
+                                src="/static/icons/server_settings/spyglass.png"
+                                alt="搜尋"
+                            >
+                        </button>
+                    </div>
 
                 </div>
 

@@ -27,6 +27,7 @@ let selectedOpLevel = 4;
 let defaultOpLevel = 4;
 let selectedOpCandidate = null;
 let lockedOpCandidate = null;
+let permissionSearchKeyword = "";
 
 const permissionHistoryFilters = new Set();
 const OXOCRAFT_OPERATOR_ICON = "/static/icons/player_ban/OxOcraft_origin.png";
@@ -122,6 +123,7 @@ export function initPlayerPermissions() {
     const historySearchInput = document.getElementById("playerPermissionHistorySearchInput");
     const historyFilterBtn = document.getElementById("playerPermissionHistoryFilterBtn");
     const historyFilterMenu = document.getElementById("playerPermissionHistoryFilterMenu");
+    const permissionSearchBtn = document.getElementById("playerPermissionSearchBtn");
 
 
     if (!openBtn || !modal) {
@@ -230,8 +232,15 @@ export function initPlayerPermissions() {
         await loadPlayerPermissions();
     });
 
-    searchInput?.addEventListener("input", () => {
-        renderPlayerPermissionList();
+
+    permissionSearchBtn?.addEventListener("click", () => {
+        applyPlayerPermissionSearch();
+    });
+
+    searchInput?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            applyPlayerPermissionSearch();
+        }
     });
 
     openAddBtn?.addEventListener("click", async () => {
@@ -587,10 +596,7 @@ function renderPlayerPermissionList() {
 
     if (!list) return;
 
-    const keyword =
-        (searchInput?.value || "")
-            .trim()
-            .toLowerCase();
+    const keyword = permissionSearchKeyword;
 
     let players = [...allPlayers];
 
@@ -2313,4 +2319,17 @@ function renderPermissionStateBadge(player) {
             ${escapeHtml(info.text)}
         </div>
     `;
+}
+
+
+function applyPlayerPermissionSearch() {
+    const searchInput =
+        document.getElementById("playerPermissionSearchInput");
+
+    permissionSearchKeyword =
+        (searchInput?.value || "")
+            .trim()
+            .toLowerCase();
+
+    renderPlayerPermissionList();
 }

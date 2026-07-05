@@ -610,15 +610,9 @@ function renderPlayerPermissionList() {
 
     if (keyword) {
         players = players.filter(player => {
-            return (
-                String(player.player_name || "")
-                    .toLowerCase()
-                    .includes(keyword)
-                ||
-                String(player.player_uuid || "")
-                    .toLowerCase()
-                    .includes(keyword)
-            );
+            return String(player.player_name || "")
+                .toLowerCase()
+                .includes(keyword);
         });
     }
 

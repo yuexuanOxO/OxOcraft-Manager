@@ -1,7 +1,6 @@
 import json
 import hashlib
 import uuid
-import urllib.request
 from datetime import datetime, timedelta
 
 from backend.paths import MC_ROOT,SERVER_PROPERTIES_PATH
@@ -12,6 +11,7 @@ from backend.player_permissions.player_identity_service import (
     get_known_players,
     get_account_type,
     resolve_player_identity_by_name,
+    get_mojang_player_profile,
 )
 
 from backend.player_permissions.player_permission_service import (
@@ -478,32 +478,6 @@ def toggle_player_whitelist(
         player_uuid,
         player_name,
     )
-
-
-def get_mojang_uuid(player_name: str) -> str | None:
-    url = f"https://api.mojang.com/users/profiles/minecraft/{player_name}"
-
-    try:
-        request_obj = urllib.request.Request(
-            url,
-            headers={"User-Agent": "OxOcraft-Manager"}
-        )
-
-        with urllib.request.urlopen(request_obj, timeout=5) as response:
-            if response.status == 204:
-                return None
-
-            data = json.loads(response.read().decode("utf-8"))
-
-        raw_uuid = data.get("id")
-
-        if not raw_uuid:
-            return None
-
-        return str(uuid.UUID(raw_uuid))
-
-    except Exception:
-        return None
 
 
 def get_player_whitelist_candidate_list() -> list[dict]:

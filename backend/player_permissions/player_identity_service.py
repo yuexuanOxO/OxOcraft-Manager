@@ -1,6 +1,7 @@
 import json
 import uuid
 import re
+import urllib.request
 
 from backend.paths import MC_ROOT
 from backend.db import (
@@ -73,6 +74,41 @@ def get_account_type(player_uuid: str) -> str:
 
     except Exception:
         return "unknown"
+
+
+def get_mojang_player_profile(player_name: str) -> dict | None:
+    player_name = str(player_name or "").strip()
+
+    if not player_name:
+        return None
+
+    url = f"https://api.mojang.com/users/profiles/minecraft/{player_name}"
+
+    try:
+        request_obj = urllib.request.Request(
+            url,
+            headers={"User-Agent": "OxOcraft-Manager"}
+        )
+
+        with urllib.request.urlopen(request_obj, timeout=5) as response:
+            if response.status == 204:
+                return None
+
+            data = json.loads(response.read().decode("utf-8"))
+
+        raw_uuid = data.get("id")
+        actual_name = data.get("name")
+
+        if not raw_uuid or not actual_name:
+            return None
+
+        return {
+            "uuid": str(uuid.UUID(raw_uuid)),
+            "name": actual_name,
+        }
+
+    except Exception:
+        return None
 
 
 def sync_usercache_to_db() -> None:
@@ -278,7 +314,6 @@ def resolve_player_identity(
     try:
         from backend.routes.player_routes import (
             is_online_mode,
-            get_mojang_uuid,
             get_offline_player_uuid,
         )
 
@@ -301,7 +336,14 @@ def resolve_player_identity(
             }
 
         if is_online_mode():
-            player_uuid = get_mojang_uuid(player_name)
+            profile = get_mojang_player_profile(player_name)
+
+            if profile:
+                player_uuid = profile["uuid"]
+                player_name = profile["name"]
+            else:
+                player_uuid = None
+
             account_type = "premium"
         else:
             player_uuid = get_offline_player_uuid(player_name)

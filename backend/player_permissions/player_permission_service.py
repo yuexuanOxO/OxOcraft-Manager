@@ -7,6 +7,7 @@ from backend.server_effective_settings import load_effective_settings_snapshot
 from backend.player_permissions.player_identity_service import (
     get_known_players,
     get_account_type,
+    get_mojang_player_profile,
 )
 
 from backend.db import (
@@ -766,9 +767,13 @@ def resolve_op_candidate_by_name(
             }
 
     try:
-        from backend.routes.player_routes import get_mojang_uuid
+        profile = get_mojang_player_profile(player_name)
 
-        player_uuid = get_mojang_uuid(player_name)
+        if profile:
+            player_uuid = profile["uuid"]
+            player_name = profile["name"]
+        else:
+            player_uuid = None
 
     except Exception as error:
         print("[Permission] resolve op candidate failed:", error)

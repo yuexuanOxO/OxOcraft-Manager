@@ -16,6 +16,7 @@ from backend.db import (
 from backend.player_permissions.player_identity_service import (
     hide_player_candidate,
     resolve_player_identity_by_name,
+    get_mojang_player_profile,
 )
 
 from backend.player_permissions.player_permission_service import (
@@ -83,35 +84,14 @@ def get_offline_player_uuid(player_name: str) -> str:
     return str(uuid.UUID(bytes=bytes(digest)))
 
 
-def get_mojang_uuid(player_name: str) -> str | None:
-    url = f"https://api.mojang.com/users/profiles/minecraft/{player_name}"
-
-    try:
-        request_obj = urllib.request.Request(
-            url,
-            headers={"User-Agent": "OxOcraft-Manager"}
-        )
-
-        with urllib.request.urlopen(request_obj, timeout=5) as response:
-            if response.status == 204:
-                return None
-
-            data = json.loads(response.read().decode("utf-8"))
-
-        raw_uuid = data.get("id")
-
-        if not raw_uuid:
-            return None
-
-        return str(uuid.UUID(raw_uuid))
-
-    except Exception:
-        return None
-
-
 def resolve_player_uuid(player_name: str) -> str | None:
     if is_online_mode():
-        return get_mojang_uuid(player_name)
+        profile = get_mojang_player_profile(player_name)
+
+        if not profile:
+            return None
+
+        return profile["uuid"]
 
     return get_offline_player_uuid(player_name)
 

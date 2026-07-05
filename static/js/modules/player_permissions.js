@@ -948,8 +948,7 @@ async function resolveOpCandidateByInput(playerName) {
     if (existingPlayer) {
         selectedOpCandidate = existingPlayer;
 
-        const input =
-            document.getElementById("addOpPlayerInput");
+        const input = document.getElementById("addOpPlayerInput");
 
         if (input) {
             input.value = existingPlayer.player_name;
@@ -957,6 +956,7 @@ async function resolveOpCandidateByInput(playerName) {
 
         renderOpCandidates();
         renderAddOpInputState();
+        scrollSelectedOpCandidateIntoView();
 
         return true;
     }
@@ -1028,20 +1028,25 @@ async function resolveOpCandidateByInput(playerName) {
 
     renderOpCandidates();
     renderAddOpInputState();
+    scrollSelectedOpCandidateIntoView();
 
     return true;
 }
 
 
 async function handleAddOpPlayer() {
-    const input =
-        document.getElementById("addOpPlayerInput");
+    const input = document.getElementById("addOpPlayerInput");
+    const playerName = (input?.value || "").trim();
+    const confirmBtn = document.getElementById("confirmAddOpPlayerBtn");
 
-    const playerName =
-        (input?.value || "").trim();
-
-    const confirmBtn =
-        document.getElementById("confirmAddOpPlayerBtn");
+    if (
+        selectedOpCandidate &&
+        playerName &&
+        String(selectedOpCandidate.player_name || "").toLowerCase()
+            !== playerName.toLowerCase()
+    ) {
+        selectedOpCandidate = null;
+    }
 
     if (permissionOnlineMode) {
         if (!selectedOpCandidate) {
@@ -1511,6 +1516,23 @@ function renderOpCandidates() {
             createOpCandidateCard(player)
         );
     });
+}
+
+
+function scrollSelectedOpCandidateIntoView() {
+    window.setTimeout(() => {
+        const selectedCard =
+            document.querySelector(".op-candidate-card.selected");
+
+        if (!selectedCard) {
+            return;
+        }
+
+        selectedCard.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+        });
+    }, 0);
 }
 
 

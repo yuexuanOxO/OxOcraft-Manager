@@ -736,11 +736,6 @@ def resolve_op_candidate_by_name(
             "message": "請輸入玩家名稱",
         }
 
-    if not is_server_ready():
-        return {
-            "success": False,
-            "message": "離線設定模式不支援搜尋新增玩家",
-        }
 
     if not get_effective_online_mode():
         return {

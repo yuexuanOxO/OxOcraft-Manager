@@ -961,7 +961,7 @@ async function resolveOpCandidateByInput(playerName) {
         return true;
     }
 
-    if (!permissionServerReady || !permissionOnlineMode) {
+    if (!permissionOnlineMode) {
         return false;
     }
 
@@ -1043,7 +1043,7 @@ async function handleAddOpPlayer() {
     const confirmBtn =
         document.getElementById("confirmAddOpPlayerBtn");
 
-    if (permissionServerReady) {
+    if (permissionOnlineMode) {
         if (!selectedOpCandidate) {
             try {
                 const resolved =
@@ -1056,9 +1056,7 @@ async function handleAddOpPlayer() {
                 if (!resolved) {
                     await showInfo({
                         title: "玩家權限",
-                        message: permissionOnlineMode
-                            ? "請先選擇或搜尋一位正版玩家"
-                            : "請先選擇一位可在線編輯的玩家",
+                        message: "請先選擇或搜尋一位正版玩家",
                         confirmText: "關閉",
                         variant: "warning"
                     });
@@ -1066,9 +1064,7 @@ async function handleAddOpPlayer() {
                     return;
                 }
 
-
                 return;
-
             } catch (error) {
                 await showInfo({
                     title: "錯誤",
@@ -1079,6 +1075,17 @@ async function handleAddOpPlayer() {
 
                 return;
             }
+        }
+    } else if (permissionServerReady) {
+        if (!selectedOpCandidate) {
+            await showInfo({
+                title: "玩家權限",
+                message: "請先選擇一位可在線編輯的玩家",
+                confirmText: "關閉",
+                variant: "warning"
+            });
+
+            return;
         }
     } else if (!playerName) {
         await showInfo({

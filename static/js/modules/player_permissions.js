@@ -1061,6 +1061,13 @@ async function handleAddOpPlayer() {
 
                     return;
                 }
+
+                /*
+                    搜尋/選中玩家只到這裡停止。
+                    使用者需要再確認權限等級後，第二次按「加入管理員」才真正送出。
+                */
+                return;
+
             } catch (error) {
                 await showInfo({
                     title: "錯誤",

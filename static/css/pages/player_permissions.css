@@ -989,7 +989,7 @@
 .player-permission-history-operator {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
 }
 
 .player-permission-history-label {
@@ -1468,4 +1468,86 @@
 
     object-fit: contain;
     image-rendering: pixelated;
+}
+
+.player-permission-history-update-row {
+    margin-top: 5px;
+
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+
+    color: #cfcfcf;
+    font-size: 13px;
+}
+
+.player-permission-history-old-value {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+
+    color: #999;
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+.player-permission-history-new-value {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+
+    color: #f0c36a;
+    font-weight: bold;
+}
+
+.player-permission-history-arrow {
+    color: #aaa;
+    font-weight: bold;
+}
+
+.player-permission-history-level-icon.small {
+    width: 32px;
+    height: 32px;
+}
+
+.player-permission-history-update-row.compact {
+    gap: 4px;
+}
+
+.player-permission-history-update-label {
+    color: #cfcfcf;
+}
+
+.player-permission-history-old-value.level {
+    color: #888;
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+.player-permission-history-new-value.level {
+    color: #f0c36a;
+    font-weight: bold;
+}
+
+.player-permission-history-level-icon.small.old {
+    opacity: 0.65;
+    filter: grayscale(60%);
+}
+
+.player-permission-history-title-update {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.player-permission-history-operator-avatar.unknown {
+    width: 32px;
+    height: 32px;
+
+    border: 0;
+    border-radius: 0;
+
+    image-rendering: pixelated;
+    background: transparent;
 }

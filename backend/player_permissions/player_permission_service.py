@@ -14,6 +14,7 @@ from backend.db import (
     sync_player_op_entries_from_ops_entries,
     upsert_player_identity,
     update_player_op_since,
+    get_op_players_from_db,
 )
 
 from backend.player_permissions.player_access_history_service import (
@@ -321,6 +322,36 @@ def build_op_history_detail(
     )
 
 
+def normalize_op_level(value) -> int:
+    try:
+        level = int(value or 4)
+    except (TypeError, ValueError):
+        level = 4
+
+    return max(1, min(level, 4))
+
+
+def build_op_update_history_detail(
+    old_op_level: int,
+    new_op_level: int,
+    old_bypasses_player_limit: bool,
+    new_bypasses_player_limit: bool,
+) -> str:
+    return json.dumps(
+        {
+            "old_op_level": normalize_op_level(old_op_level),
+            "new_op_level": normalize_op_level(new_op_level),
+            "old_op_bypasses_player_limit": bool(
+                old_bypasses_player_limit
+            ),
+            "new_op_bypasses_player_limit": bool(
+                new_bypasses_player_limit
+            ),
+        },
+        ensure_ascii=False,
+    )
+
+
 def is_server_ready() -> bool:
     status = get_cached_server_status()
     data = status.get("data", {})
@@ -341,17 +372,144 @@ def get_online_uuid_set() -> set[str]:
     }
 
 
-def sync_ops_json_to_players() -> None:
+def sync_ops_json_to_players(
+    operator_name: str = "Unknown",
+    source: str = "minecraft_json",
+    detail: str = "ops.json sync",
+) -> dict:
+    before_players = get_op_players_from_db()
+    after_entries = load_ops_entries()
+
+    before_by_uuid = {
+        str(player.get("player_uuid", "")).lower(): player
+        for player in before_players
+        if player.get("player_uuid")
+    }
+
+    after_by_uuid = {
+        str(entry.get("uuid", "")).lower(): entry
+        for entry in after_entries
+        if entry.get("uuid")
+    }
+
+    before_uuid_set = set(before_by_uuid.keys())
+    after_uuid_set = set(after_by_uuid.keys())
+
+    added_uuid_set = after_uuid_set - before_uuid_set
+    removed_uuid_set = before_uuid_set - after_uuid_set
+    common_uuid_set = before_uuid_set & after_uuid_set
+
+    added_count = 0
+    removed_count = 0
+    updated_count = 0
+
+    for player_uuid in added_uuid_set:
+        entry = after_by_uuid[player_uuid]
+
+        op_level = normalize_op_level(
+            entry.get("level", 4)
+        )
+
+        bypasses_player_limit = bool(
+            entry.get("bypassesPlayerLimit", False)
+        )
+
+        record_player_access(
+            category="op",
+            action="add",
+            target_uuid=entry.get("uuid"),
+            target_name=entry.get("name", "未知玩家"),
+            account_type=get_account_type(entry.get("uuid")),
+            operator_name=operator_name,
+            source=source,
+            detail=build_op_history_detail(
+                op_level=op_level,
+                op_bypasses_player_limit=bypasses_player_limit,
+            ),
+        )
+
+        added_count += 1
+
+    for player_uuid in removed_uuid_set:
+        player = before_by_uuid[player_uuid]
+
+        record_player_access(
+            category="op",
+            action="remove",
+            target_uuid=player.get("player_uuid"),
+            target_name=player.get("player_name", "未知玩家"),
+            account_type=player.get("account_type"),
+            operator_name=operator_name,
+            source=source,
+            detail="{}",
+        )
+
+        removed_count += 1
+
+    for player_uuid in common_uuid_set:
+        before = before_by_uuid[player_uuid]
+        after = after_by_uuid[player_uuid]
+
+        old_level = normalize_op_level(
+            before.get("op_level", 4)
+        )
+
+        new_level = normalize_op_level(
+            after.get("level", 4)
+        )
+
+        old_bypass = bool(
+            int(before.get("op_bypasses_player_limit", 0) or 0)
+        )
+
+        new_bypass = bool(
+            after.get("bypassesPlayerLimit", False)
+        )
+
+        if old_level == new_level and old_bypass == new_bypass:
+            continue
+
+        record_player_access(
+            category="op",
+            action="update",
+            target_uuid=after.get("uuid"),
+            target_name=after.get(
+                "name",
+                before.get("player_name", "未知玩家")
+            ),
+            account_type=before.get("account_type")
+                or get_account_type(after.get("uuid")),
+            operator_name=operator_name,
+            source=source,
+            detail=build_op_update_history_detail(
+                old_op_level=old_level,
+                new_op_level=new_level,
+                old_bypasses_player_limit=old_bypass,
+                new_bypasses_player_limit=new_bypass,
+            ),
+        )
+
+        updated_count += 1
+
     sync_player_op_entries_from_ops_entries(
-        load_ops_entries()
+        after_entries
     )
 
+    return {
+        "added_count": added_count,
+        "removed_count": removed_count,
+        "updated_count": updated_count,
+    }
 
 def sync_ops_json_to_players_if_server_offline() -> None:
     if is_server_ready():
         return
 
-    sync_ops_json_to_players()
+    sync_ops_json_to_players(
+        operator_name="Unknown",
+        source="minecraft_json",
+        detail="offline ops.json sync",
+    )
 
 
 def set_player_op(

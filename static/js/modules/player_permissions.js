@@ -31,6 +31,7 @@ let permissionSearchKeyword = "";
 
 const permissionHistoryFilters = new Set();
 const OXOCRAFT_OPERATOR_ICON = "/static/icons/player_ban/OxOcraft_origin.png";
+const UNKNOWN_OPERATOR_ICON = "/static/icons/general_icon/unknown.png";
 const OFFLINE_OP_HELP_DISABLED_KEY = "oxo_offline_op_help_disabled";
 
 const OP_LEVEL_INFO = {
@@ -1837,7 +1838,8 @@ function renderPermissionHistory() {
         [...permissionHistoryFilters]
             .filter(filter =>
                 filter === "add" ||
-                filter === "remove"
+                filter === "remove" ||
+                filter === "update"
             );
 
     const sourceFilters =
@@ -1868,17 +1870,22 @@ function renderPermissionHistory() {
             const action =
                 String(item.action || "").toLowerCase();
 
-            const isRemove =
-                action.includes("remove") ||
-                action.includes("deop");
+            const isUpdate = action.includes("update");
+
+            const isRemove = action.includes("remove") || action.includes("deop");
 
             const isAdd =
-                action.includes("add") ||
-                action.includes("op");
+                !isUpdate &&
+                !isRemove &&
+                (
+                    action.includes("add") ||
+                    action.includes("op")
+                );
 
             return (
-                (actionFilters.includes("add") && isAdd && !isRemove) ||
-                (actionFilters.includes("remove") && isRemove)
+                (actionFilters.includes("add") && isAdd) ||
+                (actionFilters.includes("remove") && isRemove) ||
+                (actionFilters.includes("update") && isUpdate)
             );
         });
     }
@@ -1971,6 +1978,13 @@ function createPermissionHistoryCard(item) {
     const operator = getDisplayPermissionOperator(item);
     const levelIcon = getPermissionHistoryLevelIcon(item);
     const bypassText = getPermissionHistoryBypassText(item);
+    const updateLevelTitleHtml = getPermissionHistoryUpdateLevelTitleHtml(item);
+    const updateBypassDetailHtml = getPermissionHistoryUpdateBypassDetailHtml(item);
+    const isUpdate = String(item.action || "")
+        .toLowerCase()
+        .includes("update");
+
+
 
     card.className = "player-permission-history-card";
 
@@ -1997,15 +2011,19 @@ function createPermissionHistoryCard(item) {
                 </span>
 
                 ${
-                    levelIcon
-                        ? `
-                            <img
-                                class="player-permission-history-level-icon"
-                                src="${levelIcon}"
-                                alt="權限等級"
-                            >
-                        `
-                        : ""
+                    isUpdate
+                        ? updateLevelTitleHtml
+                        : (
+                            levelIcon
+                                ? `
+                                    <img
+                                        class="player-permission-history-level-icon"
+                                        src="${levelIcon}"
+                                        alt="權限等級"
+                                    >
+                                `
+                                : ""
+                        )
                 }
             </div>
 
@@ -2026,6 +2044,8 @@ function createPermissionHistoryCard(item) {
                     `
                     : ""
             }
+
+            ${updateBypassDetailHtml}
 
         </div>
 
@@ -2048,7 +2068,15 @@ function createPermissionHistoryCard(item) {
 
                 <img
                     class="player-permission-history-operator-avatar
-                        ${operator === "OxOcraft" ? "oxocraft" : "player"}"
+                        ${
+                            operator === "OxOcraft"
+                                ? "oxocraft"
+                                : (
+                                    operator.toLowerCase() === "unknown"
+                                        ? "unknown"
+                                        : "player"
+                                )
+                        }"
                     src="${getPermissionOperatorAvatarUrl(item)}"
                     alt="${escapeHtml(operator)}"
                 >
@@ -2067,6 +2095,10 @@ function createPermissionHistoryCard(item) {
 
 function getPermissionHistoryActionText(action) {
     action = String(action || "");
+
+    if (action.includes("update")) {
+        return "修改管理員";
+    }
 
     if (
         action.includes("remove") ||
@@ -2090,7 +2122,6 @@ function getDisplayPermissionOperator(item) {
         source === "ui" ||
         source === "online_ui_manage" ||
         source === "offline_ui_edit" ||
-        source === "minecraft_json" ||
         source === "rcon" ||
         source === "console_rcon" ||
         operator === "Rcon" ||
@@ -2109,6 +2140,10 @@ function getPermissionOperatorAvatarUrl(item) {
 
     if (operator === "OxOcraft") {
         return OXOCRAFT_OPERATOR_ICON;
+    }
+
+    if (operator.toLowerCase() === "unknown") {
+        return UNKNOWN_OPERATOR_ICON;
     }
 
     return getPlayerAvatarUrl({
@@ -2215,6 +2250,89 @@ function getPermissionHistoryBypassText(item) {
     return detail.op_bypasses_player_limit
         ? "可無視玩家上限：是"
         : "可無視玩家上限：否";
+}
+
+
+function getPermissionHistoryUpdateLevelTitleHtml(item) {
+    const action =
+        String(item.action || "").toLowerCase();
+
+    if (!action.includes("update")) {
+        return "";
+    }
+
+    const detail = getPermissionHistoryDetail(item);
+
+    const oldLevel = Number(detail.old_op_level || 4);
+    const newLevel = Number(detail.new_op_level || 4);
+
+    if (oldLevel === newLevel) {
+        return "";
+    }
+
+    return `
+        <span class="player-permission-history-title-update">
+            <span class="player-permission-history-old-value level">
+                Lv${escapeHtml(oldLevel)}
+            </span>
+
+            <img
+                class="player-permission-history-level-icon small old"
+                src="${getOpLevelIcon({ op_level: oldLevel })}"
+                alt="Lv${escapeHtml(oldLevel)}"
+            >
+
+            <span class="player-permission-history-arrow">></span>
+
+            <span class="player-permission-history-new-value level">
+                Lv${escapeHtml(newLevel)}
+            </span>
+
+            <img
+                class="player-permission-history-level-icon small"
+                src="${getOpLevelIcon({ op_level: newLevel })}"
+                alt="Lv${escapeHtml(newLevel)}"
+            >
+        </span>
+    `;
+}
+
+
+function getPermissionHistoryUpdateBypassDetailHtml(item) {
+    const action =
+        String(item.action || "").toLowerCase();
+
+    if (!action.includes("update")) {
+        return "";
+    }
+
+    const detail = getPermissionHistoryDetail(item);
+
+    const hasBypassChange =
+        typeof detail.old_op_bypasses_player_limit === "boolean" &&
+        typeof detail.new_op_bypasses_player_limit === "boolean" &&
+        detail.old_op_bypasses_player_limit !==
+            detail.new_op_bypasses_player_limit;
+
+    if (!hasBypassChange) {
+        return "";
+    }
+
+    return `
+        <div class="player-permission-history-update-row">
+            <span>可無視玩家上限：</span>
+
+            <span class="player-permission-history-old-value">
+                ${detail.old_op_bypasses_player_limit ? "是" : "否"}
+            </span>
+
+            <span class="player-permission-history-arrow">></span>
+
+            <span class="player-permission-history-new-value">
+                ${detail.new_op_bypasses_player_limit ? "是" : "否"}
+            </span>
+        </div>
+    `;
 }
 
 

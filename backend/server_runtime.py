@@ -82,7 +82,11 @@ def handle_server_output() -> None:
                     sync_ops_json_to_players,
                 )
 
-                sync_ops_json_to_players(source="server_ready")
+                sync_ops_json_to_players(
+                    operator_name="Unknown",
+                    source="minecraft_json",
+                    detail="server ready ops.json sync",
+                )
 
                 from backend.server_monitor import publish_event
                 publish_event("player_permission_should_refresh", {

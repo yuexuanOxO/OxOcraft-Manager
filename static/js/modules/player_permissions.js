@@ -117,6 +117,7 @@ export function initPlayerPermissions() {
     const closeAddBtn = document.getElementById("closeAddOpPlayerBtn");
     const confirmAddBtn = document.getElementById("confirmAddOpPlayerBtn");
     const addInput = document.getElementById("addOpPlayerInput");
+    const searchOpBtn = document.getElementById("searchOpPlayerBtn");
     const bypassCheck = document.getElementById("addOpBypassPlayerLimitCheck");
     const historySearchInput = document.getElementById("playerPermissionHistorySearchInput");
     const historyFilterBtn = document.getElementById("playerPermissionHistoryFilterBtn");
@@ -268,9 +269,13 @@ export function initPlayerPermissions() {
         await handleAddOpPlayer();
     });
 
+    searchOpBtn?.addEventListener("click", async () => {
+        await handleSearchOpPlayer();
+    });
+
     addInput?.addEventListener("keydown", async (event) => {
         if (event.key === "Enter") {
-            await handleAddOpPlayer();
+            await handleSearchOpPlayer();
         }
     });
 
@@ -1034,6 +1039,54 @@ async function resolveOpCandidateByInput(playerName) {
 }
 
 
+async function handleSearchOpPlayer() {
+    const input =
+        document.getElementById("addOpPlayerInput");
+
+    const playerName =
+        (input?.value || "").trim();
+
+    if (!playerName) {
+        await showInfo({
+            title: "玩家權限",
+            message: "請輸入玩家名稱",
+            confirmText: "關閉",
+            variant: "warning"
+        });
+
+        return;
+    }
+
+    try {
+        const resolved =
+            await resolveOpCandidateByInput(playerName);
+
+        if (resolved === "cancelled") {
+            return;
+        }
+
+        if (!resolved) {
+            await showInfo({
+                title: "玩家權限",
+                message: permissionOnlineMode
+                    ? "找不到符合的正版玩家"
+                    : "請從清單選擇可編輯的玩家",
+                confirmText: "關閉",
+                variant: "warning"
+            });
+        }
+
+    } catch (error) {
+        await showInfo({
+            title: "錯誤",
+            message: error.message || "搜尋玩家失敗",
+            confirmText: "關閉",
+            variant: "error"
+        });
+    }
+}
+
+
 async function handleAddOpPlayer() {
     const input = document.getElementById("addOpPlayerInput");
     const playerName = (input?.value || "").trim();
@@ -1431,12 +1484,9 @@ function renderAddOpLevelDescription(level) {
 
 
 function renderAddOpInputState() {
-    const input =
-        document.getElementById("addOpPlayerInput");
-
-    const confirmBtn =
-        document.getElementById("confirmAddOpPlayerBtn");
-
+    const input = document.getElementById("addOpPlayerInput");
+    const confirmBtn = document.getElementById("confirmAddOpPlayerBtn");
+    const searchBtn = document.getElementById("searchOpPlayerBtn");
     const locked = isPermissionActionLocked();
 
     if (input) {
@@ -1458,8 +1508,11 @@ function renderAddOpInputState() {
         confirmBtn.disabled = locked;
     }
 
-    const subtitle =
-        document.getElementById("addOpPlayerSubtitle");
+    if (searchBtn) {
+        searchBtn.disabled = locked || !!lockedOpCandidate;
+    }
+
+    const subtitle = document.getElementById("addOpPlayerSubtitle");
 
     if (subtitle) {
         subtitle.textContent = "之前加入過 / 已新增的玩家";

@@ -221,16 +221,29 @@
     <div class="add-op-player-panel">
         <div class="add-op-player-header">
             <div class="add-op-player-title">新增玩家到管理員</div>
-            <button id="closeAddOpPlayerBtn" class="player-permission-close-btn" type="button">✕</button>
         </div>
 
         <div class="add-op-player-input-row">
-            <input
-                id="addOpPlayerInput"
-                class="player-permission-search"
-                type="text"
-                placeholder="請輸入玩家名稱"
-            >
+            <div class="add-op-player-search-wrap">
+                <input
+                    id="addOpPlayerInput"
+                    class="player-permission-search add-op-player-search-input"
+                    type="text"
+                    placeholder="請輸入玩家名稱"
+                >
+
+                <button
+                    id="searchOpPlayerBtn"
+                    class="add-op-search-btn"
+                    type="button"
+                    title="搜尋玩家"
+                >
+                    <img
+                        src="/static/icons/server_settings/spyglass.png"
+                        alt="搜尋"
+                    >
+                </button>
+            </div>
         </div>
 
         <div id="addOpPlayerSubtitle" class="add-op-player-subtitle">

@@ -245,66 +245,61 @@ def maybe_refresh_player_permission_from_log(line: str) -> None:
     target_name = matched.group("target").strip()
     log_operator = matched.group("operator").strip()
 
-    
-
     is_rcon = log_operator.lower() == "rcon"
 
+    if is_rcon:
+        source = "console_rcon"
+        operator_name = "Rcon"
+        operator_uuid = None
+    else:
+        source = "player_command"
+        operator_name = log_operator
+        operator_uuid = None
+
+        try:
+            from backend.player_permissions.player_identity_service import (
+                resolve_player_identity,
+            )
+
+            identity = resolve_player_identity(log_operator)
+
+            if identity:
+                operator_uuid = identity.get("player_uuid")
+
+        except Exception as error:
+            print(
+                "[PlayerPermission] resolve operator identity failed:",
+                error,
+            )
+
     try:
-        from backend.player_permissions.player_permission_service import (
-            sync_ops_json_to_players,
-            pop_recent_ui_op_command_if_match,
-        )
-
-        from backend.player_permissions.player_identity_service import (
-            resolve_player_identity,
-        )
-
         from backend.player_permissions.player_access_history_service import (
             record_player_access,
         )
-
-
-        if is_rcon and pop_recent_ui_op_command_if_match(
-            action=action,
-            player_name=target_name,
-        ):
-            source = "ui"
-            operator_name = "OxOcraft"
-        elif is_rcon:
-            source = "console_rcon"
-            operator_name = "Rcon"
-        else:
-            source = "player_command"
-            operator_name = log_operator
-
-
-
-        sync_ops_json_to_players(source=source)
 
         record_player_access(
             category="op",
             action=action,
             target_name=target_name,
+            operator_uuid=operator_uuid,
             operator_name=operator_name,
             source=source,
             detail=line,
         )
 
-        if source != "ui":
-            if action == "add":
-                message = f"{operator_name} 將 {target_name} 設為管理員"
-                notification_type = "info"
-            else:
-                message = f"{operator_name} 收回了 {target_name} 的管理員權限"
-                notification_type = "warning"
+        if action == "add":
+            message = f"{operator_name} 將 {target_name} 設為管理員"
+            notification_type = "info"
+        else:
+            message = f"{operator_name} 收回了 {target_name} 的管理員權限"
+            notification_type = "warning"
 
-            create_notification(
-                title="管理員已更新",
-                message=message,
-                type=notification_type,
-                source="player_permission",
-            )
-
+        create_notification(
+            title="管理員已更新",
+            message=message,
+            type=notification_type,
+            source="player_permission",
+        )
 
         publish_event("player_permission_should_refresh", {
             "reason": "minecraft_op_log",

@@ -92,6 +92,7 @@ def build_permission_list_from_management_operators(
 ) -> list[dict]:
     online_mode = get_effective_online_mode()
     known_players = get_known_players()
+    online_uuid_set = get_online_uuid_set()
 
     known_by_uuid = {
         str(player.get("player_uuid", "")).lower(): player
@@ -138,7 +139,7 @@ def build_permission_list_from_management_operators(
 
         op_level = max(1, min(op_level, 4))
 
-        result.append({
+        merged_player = {
             **known_player,
             "player_uuid": player_uuid,
             "player_name": player_name,
@@ -149,7 +150,15 @@ def build_permission_list_from_management_operators(
                 item.get("bypassesPlayerLimit", False)
             ),
             "valid_for_current_mode": is_valid_for_current_mode,
-        })
+        }
+
+        result.append(
+            build_permission_player_state(
+                merged_player,
+                online_mode,
+                online_uuid_set,
+            )
+        )
 
     return result
 
@@ -167,6 +176,7 @@ def get_player_permission_list() -> list[dict]:
 
     entries = load_ops_entries()
     known_players = get_known_players()
+    online_uuid_set = get_online_uuid_set()
 
     known_by_uuid = {
         str(player.get("player_uuid", "")).lower(): player
@@ -203,7 +213,7 @@ def get_player_permission_list() -> list[dict]:
 
         op_level = max(1, min(op_level, 4))
 
-        result.append({
+        merged_player = {
             **known_player,
             "player_uuid": player_uuid,
             "player_name": player_name,
@@ -214,7 +224,15 @@ def get_player_permission_list() -> list[dict]:
                 entry.get("bypassesPlayerLimit", False)
             ),
             "valid_for_current_mode": is_valid_for_current_mode,
-        })
+        }
+
+        result.append(
+            build_permission_player_state(
+                merged_player,
+                online_mode,
+                online_uuid_set,
+            )
+        )
 
     return result
 
@@ -240,6 +258,44 @@ def get_effective_op_permission_level() -> int:
         level = 4
 
     return max(1, min(level, 4))
+
+
+def build_permission_player_state(
+    player: dict,
+    online_mode: bool,
+    online_uuid_set: set[str] | None = None,
+) -> dict:
+    online_uuid_set = online_uuid_set or set()
+
+    player_uuid = str(
+        player.get("player_uuid", "")
+    ).lower()
+
+    is_online = player_uuid in online_uuid_set
+
+    in_usercache = bool(
+        int(player.get("in_usercache", 0) or 0)
+    )
+
+    if is_online:
+        permission_state = "online"
+        permission_online_editable = True
+    elif online_mode:
+        permission_state = "offline"
+        permission_online_editable = True
+    elif in_usercache:
+        permission_state = "offline_usercache"
+        permission_online_editable = True
+    else:
+        permission_state = "offline_only"
+        permission_online_editable = False
+
+    return {
+        **player,
+        "in_usercache": in_usercache,
+        "permission_state": permission_state,
+        "permission_online_editable": permission_online_editable,
+    }
 
 
 def build_op_history_detail(
@@ -269,6 +325,19 @@ def is_server_ready() -> bool:
     data = status.get("data", {})
 
     return data.get("state") == "ready" and data.get("online") is True
+
+
+def get_online_uuid_set() -> set[str]:
+    if not is_server_ready():
+        return set()
+
+    state = get_management_state()
+
+    return {
+        str(player.id or "").lower()
+        for player in state.players
+        if player and player.id
+    }
 
 
 def sync_ops_json_to_players() -> None:
@@ -363,6 +432,17 @@ def set_player_op(
             "op": True,
             "op_since": now,
         }
+    
+    if not can_edit_op_online(player_uuid):
+        return {
+            "success": False,
+            "message": (
+                f"{player_name} 不在目前 Minecraft usercache 中，"
+                "離線模式下無法在 Server 在線時修改此玩家 OP，"
+                "請關閉伺服器後使用離線設定模式。"
+            ),
+            "op": False,
+        }
 
     entries = load_ops_entries()
     ops_uuid_set = load_ops_uuid_set()
@@ -418,6 +498,26 @@ def set_player_op(
     }
 
 
+def can_edit_op_online(
+    player_uuid: str,
+) -> bool:
+    if not is_server_ready():
+        return True
+
+    online_mode = get_effective_online_mode()
+
+    if online_mode:
+        return True
+
+    known_players = get_known_players()
+
+    for player in known_players:
+        if str(player.get("player_uuid", "")).lower() == player_uuid.lower():
+            return bool(int(player.get("in_usercache", 0) or 0))
+
+    return False
+
+
 def remove_player_op(player_uuid: str, player_name: str) -> dict:
     ops_entry = get_ops_entry_by_uuid(player_uuid)
     effective_name = str(
@@ -459,6 +559,16 @@ def remove_player_op(player_uuid: str, player_name: str) -> dict:
             "op": False,
         }
 
+    if not can_edit_op_online(player_uuid):
+        return {
+            "success": False,
+            "message": (
+                f"{effective_name} 不在目前 Minecraft usercache 中，"
+                "離線模式下無法在 Server 在線時移除此玩家 OP，"
+                "請關閉伺服器後使用離線設定模式。"
+            ),
+            "op": True,
+        }
 
     remove_ops_entry_by_uuid(player_uuid)
 
@@ -527,6 +637,7 @@ def get_online_player_permission_candidates() -> list[dict]:
 
 def get_player_permission_candidate_list() -> list[dict]:
     online_mode = get_effective_online_mode()
+    online_uuid_set = get_online_uuid_set()
 
     if is_server_ready():
         client = get_management_client()
@@ -538,7 +649,7 @@ def get_player_permission_candidate_list() -> list[dict]:
             if isinstance(item, dict)
         }
 
-        players = get_online_player_permission_candidates()
+        players = get_known_players()
 
     else:
         op_uuid_set = load_ops_uuid_set()
@@ -547,7 +658,6 @@ def get_player_permission_candidate_list() -> list[dict]:
     result = []
 
     for player in players:
-
         if int(player.get("show_in_player_candidates", 1) or 0) != 1:
             continue
 
@@ -559,16 +669,25 @@ def get_player_permission_candidate_list() -> list[dict]:
         if not online_mode and account_type != "offline":
             continue
 
+        if is_server_ready() and not online_mode:
+            if int(player.get("in_usercache", 0) or 0) != 1:
+                continue
+
         player_uuid = str(player.get("player_uuid", "")).lower()
 
         if player_uuid in op_uuid_set:
             continue
 
-        result.append({
-            **player,
-            "op": False,
-            "online": bool(player.get("online", False)),
-        })
+        result.append(
+            build_permission_player_state(
+                {
+                    **player,
+                    "op": False,
+                },
+                online_mode,
+                online_uuid_set,
+            )
+        )
 
     return result
 
@@ -603,3 +722,87 @@ def sync_management_operators_to_players(
         })
 
     sync_player_op_entries_from_ops_entries(entries)
+
+
+def resolve_op_candidate_by_name(
+    player_name: str,
+) -> dict:
+    player_name = str(player_name or "").strip()
+
+    if not player_name:
+        return {
+            "success": False,
+            "message": "請輸入玩家名稱",
+        }
+
+    if not is_server_ready():
+        return {
+            "success": False,
+            "message": "離線設定模式不支援搜尋新增玩家",
+        }
+
+    if not get_effective_online_mode():
+        return {
+            "success": False,
+            "message": "離線版在線管理只能選擇 usercache 中的玩家",
+        }
+
+    known_players = get_known_players()
+
+    for player in known_players:
+        if (
+            str(player.get("account_type", "")) == "premium"
+            and str(player.get("player_name", "")).lower()
+            == player_name.lower()
+        ):
+            return {
+                "success": True,
+                "message": "",
+                "already_exists": True,
+                "player": build_permission_player_state(
+                    player,
+                    online_mode=True,
+                ),
+            }
+
+    try:
+        from backend.routes.player_routes import get_mojang_uuid
+
+        player_uuid = get_mojang_uuid(player_name)
+
+    except Exception as error:
+        print("[Permission] resolve op candidate failed:", error)
+        player_uuid = None
+
+    if not player_uuid:
+        return {
+            "success": False,
+            "message": f"找不到正版玩家 {player_name}",
+        }
+
+    upsert_player_identity(
+        player_uuid=player_uuid,
+        player_name=player_name,
+        account_type="premium",
+    )
+
+    player = {
+        "player_uuid": player_uuid,
+        "player_name": player_name,
+        "account_type": "premium",
+        "show_in_player_candidates": 1,
+        "op": False,
+        "in_usercache": 0,
+        "is_online": False,
+    }
+
+    return {
+        "success": True,
+        "message": "",
+        "already_exists": True,
+        "player": build_permission_player_state(
+            player,
+            online_mode=True,
+            online_uuid_set=get_online_uuid_set(),
+        ),
+    }

@@ -1239,3 +1239,107 @@
     object-fit: contain;
     image-rendering: pixelated;
 }
+
+.player-permission-state-badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+
+    font-size: 12px;
+    border: 1px solid #555;
+}
+
+.player-permission-state-badge.online {
+    color: #8ee891;
+    border-color: rgba(142, 232, 145, 0.45);
+    background: rgba(79, 157, 105, 0.12);
+}
+
+.player-permission-state-badge.offline {
+    color: #bdbdbd;
+    border-color: rgba(189, 189, 189, 0.35);
+    background: rgba(189, 189, 189, 0.08);
+}
+
+.player-permission-state-badge.usercache {
+    color: #ffd37a;
+    border-color: rgba(255, 211, 122, 0.45);
+    background: rgba(255, 211, 122, 0.12);
+}
+
+.player-permission-state-badge.offline-only {
+    color: #ff9c9c;
+    border-color: rgba(255, 156, 156, 0.45);
+    background: rgba(255, 156, 156, 0.12);
+}
+
+.player-permission-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.player-permission-group + .player-permission-group {
+    margin-top: 6px;
+}
+
+.player-permission-group-header {
+    width: 100%;
+    height: 32px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 10px;
+
+    border: 2px solid #b85c5c;
+    border-radius: 0;
+
+    background: transparent;
+    color: #ff4f6a;
+
+    font-size: 18px;
+    font-weight: bold;
+
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.player-permission-group.online .player-permission-group-header {
+    border-color: #4f9d69;
+    color: #8ee891;
+}
+
+.player-permission-group.offline .player-permission-group-header {
+    border-color: #777;
+    color: #aaa;
+}
+
+.player-permission-group-arrow {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.player-permission-group-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.player-permission-group.collapsed .player-permission-group-body {
+    display: none;
+}
+
+.player-permission-group.collapsed .player-permission-group-arrow {
+    transform: rotate(-90deg);
+}
+
+.player-permission-card.offline-player {
+    opacity: 0.55;
+    filter: grayscale(65%);
+}
+
+.player-permission-card.offline-player .player-permission-action {
+    filter: none;
+}

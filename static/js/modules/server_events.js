@@ -149,6 +149,42 @@ export function initServerEvents() {
         }
     );
 
+    serverEvents.addEventListener(
+        "management_player_joined",
+        () => {
+            console.log("[PlayerPermission] player joined refresh received");
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "player-permissions-should-refresh",
+                    {
+                        detail: {
+                            source: "management_player_joined"
+                        }
+                    }
+                )
+            );
+        }
+    );
+
+    serverEvents.addEventListener(
+        "management_player_left",
+        () => {
+            console.log("[PlayerPermission] player left refresh received");
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "player-permissions-should-refresh",
+                    {
+                        detail: {
+                            source: "management_player_left"
+                        }
+                    }
+                )
+            );
+        }
+    );
+
     serverEvents.addEventListener("backup_started", (event) => {
         const data = JSON.parse(event.data);
 

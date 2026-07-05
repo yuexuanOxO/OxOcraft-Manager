@@ -21,6 +21,7 @@ let permissionHistory = [];
 let allPlayers = [];
 let candidatePlayers = [];
 let permissionServerReady = false;
+let permissionOnlineMode = true;
 let permissionServerState = "offline";
 let selectedOpLevel = 4;
 let defaultOpLevel = 4;
@@ -508,6 +509,7 @@ async function loadPlayerPermissions() {
         allPlayers = data.players || [];
 
         permissionServerReady = Boolean(data.server_ready);
+        permissionOnlineMode = Boolean(data.online_mode);
 
         permissionServerState = data.server_state || getUiServerState();
 
@@ -574,14 +576,9 @@ function updatePermissionModeSummary() {
 
 
 function renderPlayerPermissionList() {
-    const list =
-        document.getElementById("playerPermissionList");
-
-    const summary =
-        document.getElementById("playerPermissionSummary");
-
-    const searchInput =
-        document.getElementById("playerPermissionSearchInput");
+    const list = document.getElementById("playerPermissionList");
+    const summary = document.getElementById("playerPermissionSummary");
+    const searchInput = document.getElementById("playerPermissionSearchInput");
 
     if (!list) return;
 
@@ -635,14 +632,67 @@ function renderPlayerPermissionList() {
         return;
     }
 
-    players.forEach(player => {
-        list.appendChild(
-            createPlayerPermissionCard(player)
-        );
-    });
+    const onlinePlayers = players.filter(player =>
+        String(player.permission_state || "") === "online"
+    );
+
+    const offlinePlayers = players.filter(player =>
+        String(player.permission_state || "") !== "online"
+    );
+
+    appendPermissionGroup(
+        list,
+        "上線",
+        onlinePlayers,
+        "online"
+    );
+
+    appendPermissionGroup(
+        list,
+        "離線",
+        offlinePlayers,
+        "offline"
+    );
 
     renderPermissionActionButtons();
 
+}
+
+
+function appendPermissionGroup(list, title, players, groupType) {
+    const group = document.createElement("div");
+    group.className = `player-permission-group ${groupType}`;
+
+    const header = document.createElement("button");
+    header.className = "player-permission-group-header";
+    header.type = "button";
+
+    header.innerHTML = `
+        <span>${escapeHtml(title)} (${players.length})</span>
+        <span class="player-permission-group-arrow">▾</span>
+    `;
+
+    const body = document.createElement("div");
+    body.className = "player-permission-group-body";
+
+    players.forEach(player => {
+        const card = createPlayerPermissionCard(player);
+
+        if (groupType === "offline") {
+            card.classList.add("offline-player");
+        }
+
+        body.appendChild(card);
+    });
+
+    header.addEventListener("click", () => {
+        group.classList.toggle("collapsed");
+    });
+
+    group.appendChild(header);
+    group.appendChild(body);
+
+    list.appendChild(group);
 }
 
 
@@ -763,8 +813,15 @@ function createPlayerPermissionCard(player) {
     const actionBtn =
         card.querySelector(".player-permission-action");
 
-    if (isPermissionActionLocked()) {
+    if (
+        isPermissionActionLocked() ||
+        (
+            permissionServerReady &&
+            player.permission_online_editable === false
+        )
+    ) {
         actionBtn.disabled = true;
+        actionBtn.title = "此玩家目前只能在伺服器關閉後使用離線設定模式編輯";
     }
 
     actionBtn?.addEventListener("click", async () => {
@@ -870,6 +927,112 @@ function getOpLevelIcon(player) {
 }
 
 
+function findOpCandidateByName(playerName) {
+    const keyword = String(playerName || "")
+        .trim()
+        .toLowerCase();
+
+    if (!keyword) return null;
+
+    return candidatePlayers.find(player => {
+        return String(player.player_name || "")
+            .toLowerCase() === keyword;
+    }) || null;
+}
+
+
+async function resolveOpCandidateByInput(playerName) {
+    const existingPlayer =
+        findOpCandidateByName(playerName);
+
+    if (existingPlayer) {
+        selectedOpCandidate = existingPlayer;
+
+        const input =
+            document.getElementById("addOpPlayerInput");
+
+        if (input) {
+            input.value = existingPlayer.player_name;
+        }
+
+        renderOpCandidates();
+        renderAddOpInputState();
+
+        return true;
+    }
+
+    if (!permissionServerReady || !permissionOnlineMode) {
+        return false;
+    }
+
+    const response = await fetch(
+        "/api/player/permission/resolve-candidate",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                name: playerName,
+            })
+        }
+    );
+
+    const data = await response.json();
+
+    if (!data.success) {
+        throw new Error(
+            data.message || "搜尋玩家失敗"
+        );
+    }
+
+    const player = data.player;
+
+    if (!player) {
+        throw new Error("搜尋玩家失敗");
+    }
+
+    const confirmed = await showConfirm({
+        title: "搜尋結果",
+        message:
+            `請問是否為這位玩家？\n\n` +
+            `玩家 ID：${player.player_name}\n` +
+            `UUID：${player.player_uuid}`,
+        icon: getPlayerAvatarUrl(player),
+        confirmText: "是",
+        cancelText: "不是",
+        variant: "info",
+    });
+
+    if (!confirmed) {
+        return false;
+    }
+
+    const exists = candidatePlayers.some(item =>
+        String(item.player_uuid || "").toLowerCase()
+        === String(player.player_uuid || "").toLowerCase()
+    );
+
+    if (!exists) {
+        candidatePlayers.unshift(player);
+    }
+
+    selectedOpCandidate = player;
+
+    const input =
+        document.getElementById("addOpPlayerInput");
+
+    if (input) {
+        input.value = player.player_name;
+    }
+
+    renderOpCandidates();
+    renderAddOpInputState();
+
+    return true;
+}
+
+
 async function handleAddOpPlayer() {
     const input =
         document.getElementById("addOpPlayerInput");
@@ -882,14 +1045,32 @@ async function handleAddOpPlayer() {
 
     if (permissionServerReady) {
         if (!selectedOpCandidate) {
-            await showInfo({
-                title: "玩家權限",
-                message: "請先選擇一位在線玩家",
-                confirmText: "關閉",
-                variant: "warning"
-            });
+            try {
+                const resolved =
+                    await resolveOpCandidateByInput(playerName);
 
-            return;
+                if (!resolved) {
+                    await showInfo({
+                        title: "玩家權限",
+                        message: permissionOnlineMode
+                            ? "請先選擇或搜尋一位正版玩家"
+                            : "請先選擇一位可在線編輯的玩家",
+                        confirmText: "關閉",
+                        variant: "warning"
+                    });
+
+                    return;
+                }
+            } catch (error) {
+                await showInfo({
+                    title: "錯誤",
+                    message: error.message || "搜尋玩家失敗",
+                    confirmText: "關閉",
+                    variant: "error"
+                });
+
+                return;
+            }
         }
     } else if (!playerName) {
         await showInfo({
@@ -1261,9 +1442,7 @@ function renderAddOpInputState() {
         document.getElementById("addOpPlayerSubtitle");
 
     if (subtitle) {
-        subtitle.textContent = permissionServerReady
-            ? "在線玩家"
-            : "之前加入過的玩家";
+        subtitle.textContent = "之前加入過 / 已新增的玩家";
     }
 
 }
@@ -1991,4 +2170,42 @@ function renderPermissionHelpPage() {
             </section>
         `)
         .join("");
+}
+
+
+function renderPermissionStateBadge(player) {
+    const state =
+        String(player.permission_state || "");
+
+    const stateMap = {
+        online: {
+            className: "online",
+            text: "在線",
+        },
+        offline: {
+            className: "offline",
+            text: "離線",
+        },
+        offline_usercache: {
+            className: "usercache",
+            text: "離線（曾加入過 Server）",
+        },
+        offline_only: {
+            className: "offline-only",
+            text: "僅離線編輯",
+        },
+    };
+
+    const info = stateMap[state];
+
+    if (!info) return "";
+
+    return `
+        <div class="
+            player-permission-state-badge
+            ${info.className}
+        ">
+            ${escapeHtml(info.text)}
+        </div>
+    `;
 }

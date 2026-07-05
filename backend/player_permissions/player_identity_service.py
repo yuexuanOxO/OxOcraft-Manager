@@ -14,6 +14,7 @@ from backend.db import (
     get_player_by_name_and_account_type,
     upsert_player_identity,
     hide_player_candidate_db as db_hide_player_candidate,
+    sync_players_usercache_flags,
 )
 
 
@@ -75,10 +76,9 @@ def get_account_type(player_uuid: str) -> str:
 
 
 def sync_usercache_to_db() -> None:
-    if not USERCACHE_FILE.exists():
-        return
-
     usercache_data = load_usercache_data()
+
+    usercache_uuid_set = set()
 
     for entry in usercache_data:
         player_uuid = str(entry.get("uuid", "")).strip()
@@ -88,12 +88,16 @@ def sync_usercache_to_db() -> None:
         if not player_uuid or not player_name:
             continue
 
+        usercache_uuid_set.add(player_uuid.lower())
+
         upsert_player_from_usercache(
             player_uuid=player_uuid,
             player_name=player_name,
             account_type=get_account_type(player_uuid),
             usercache_expires_on=expires_on,
         )
+
+    sync_players_usercache_flags(usercache_uuid_set)
 
 
 def get_current_usercache_players() -> list[dict]:

@@ -118,7 +118,7 @@ def init_db() -> None:
                 player_name TEXT NOT NULL,
 
                 account_type TEXT NOT NULL DEFAULT 'unknown',
-                is_online INTEGER NOT NULL DEFAULT 0,
+                in_usercache INTEGER NOT NULL DEFAULT 0,
 
                 first_seen_at DATETIME,
                 last_seen_at DATETIME,
@@ -542,21 +542,89 @@ def upsert_player_from_usercache(
                 player_uuid,
                 player_name,
                 account_type,
+                in_usercache,
                 usercache_expires_on,
                 show_in_player_candidates,
                 updated_at
             )
-            VALUES (?, ?, ?, ?, 1, ?)
+            VALUES (?, ?, ?, 1, ?, 1, ?)
             ON CONFLICT(player_uuid) DO UPDATE SET
                 player_name = excluded.player_name,
                 account_type = excluded.account_type,
+                in_usercache = 1,
                 usercache_expires_on = excluded.usercache_expires_on,
+                show_in_player_candidates = 1,
                 updated_at = excluded.updated_at
         """, (
             player_uuid,
             player_name,
             account_type,
             usercache_expires_on,
+            now,
+        ))
+
+        conn.commit()
+
+
+def sync_players_usercache_flags(
+    usercache_uuid_set: set[str],
+) -> None:
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    normalized = {
+        str(player_uuid).lower()
+        for player_uuid in usercache_uuid_set
+        if player_uuid
+    }
+
+    with get_connection() as conn:
+        if normalized:
+            placeholders = ",".join("?" for _ in normalized)
+
+            conn.execute(f"""
+                UPDATE players
+                SET in_usercache = 1,
+                    show_in_player_candidates = 1,
+                    updated_at = ?
+                WHERE lower(player_uuid) IN ({placeholders})
+            """, (
+                now,
+                *normalized,
+            ))
+
+            conn.execute(f"""
+                UPDATE players
+                SET in_usercache = 0,
+                    updated_at = ?
+                WHERE lower(player_uuid) NOT IN ({placeholders})
+                  AND in_usercache != 0
+            """, (
+                now,
+                *normalized,
+            ))
+        else:
+            conn.execute("""
+                UPDATE players
+                SET in_usercache = 0,
+                    updated_at = ?
+                WHERE in_usercache != 0
+            """, (
+                now,
+            ))
+
+        conn.commit()
+
+
+def clear_all_players_usercache_flags() -> None:
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with get_connection() as conn:
+        conn.execute("""
+            UPDATE players
+            SET in_usercache = 0,
+                updated_at = ?
+            WHERE in_usercache != 0
+        """, (
             now,
         ))
 

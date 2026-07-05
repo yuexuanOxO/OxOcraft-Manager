@@ -257,6 +257,7 @@ function renderPlayersFromQuery(players) {
         item.appendChild(menuWrap);
         playersList.appendChild(item);
     });
+
 }
 
 

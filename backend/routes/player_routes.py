@@ -24,6 +24,7 @@ from backend.player_permissions.player_permission_service import (
     get_player_permission_candidate_list,
     is_server_ready,
     get_effective_op_permission_level,
+    resolve_op_candidate_by_name,
 )
 
 from backend.player_permissions.player_whitelist_service import (
@@ -388,6 +389,33 @@ def api_player_permission_candidates():
         "success": True,
         "players": get_player_permission_candidate_list(),
     })
+
+
+@player_bp.route(
+    "/api/player/permission/resolve-candidate",
+    methods=["POST"]
+)
+def api_player_permission_resolve_candidate():
+    data = request.get_json(silent=True) or {}
+
+    player_name = str(data.get("name", "")).strip()
+
+    if not player_name:
+        return jsonify({
+            "success": False,
+            "message": "請輸入玩家名稱"
+        }), 400
+
+    try:
+        result = resolve_op_candidate_by_name(player_name)
+        status = 200 if result.get("success") else 400
+        return jsonify(result), status
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error)
+        }), 500
 
 
 @player_bp.route(

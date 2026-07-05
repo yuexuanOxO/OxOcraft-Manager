@@ -109,9 +109,7 @@ export function initServerEvents() {
         clearLogTextOnly();
     });
 
-    serverEvents.addEventListener(
-        "player_ban_should_refresh",
-        () => {
+    serverEvents.addEventListener("player_ban_should_refresh",() => {
             console.log("[PlayerBan] SSE refresh received");
 
             window.dispatchEvent(
@@ -123,9 +121,7 @@ export function initServerEvents() {
         }
     );
 
-    serverEvents.addEventListener(
-        "player_whitelist_should_refresh",
-        () => {
+    serverEvents.addEventListener("player_whitelist_should_refresh",() => {
             console.log("[PlayerWhitelist] SSE refresh received");
 
             window.dispatchEvent(
@@ -136,9 +132,7 @@ export function initServerEvents() {
         }
     );
 
-    serverEvents.addEventListener(
-        "player_permission_should_refresh",
-        () => {
+    serverEvents.addEventListener("player_permission_should_refresh",() => {
             console.log("[PlayerPermission] SSE refresh received");
 
             window.dispatchEvent(
@@ -149,9 +143,7 @@ export function initServerEvents() {
         }
     );
 
-    serverEvents.addEventListener(
-        "management_player_joined",
-        () => {
+    serverEvents.addEventListener("management_player_joined",() => {
             console.log("[PlayerPermission] player joined refresh received");
 
             window.dispatchEvent(
@@ -167,9 +159,7 @@ export function initServerEvents() {
         }
     );
 
-    serverEvents.addEventListener(
-        "management_player_left",
-        () => {
+    serverEvents.addEventListener("management_player_left", () => {
             console.log("[PlayerPermission] player left refresh received");
 
             window.dispatchEvent(
@@ -178,6 +168,38 @@ export function initServerEvents() {
                     {
                         detail: {
                             source: "management_player_left"
+                        }
+                    }
+                )
+            );
+        }
+    );
+
+    serverEvents.addEventListener("management_operator_added",() => {
+            console.log("[PlayerPermission] operator added refresh received");
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "player-permissions-should-refresh",
+                    {
+                        detail: {
+                            source: "management_operator_added"
+                        }
+                    }
+                )
+            );
+        }
+    );
+
+    serverEvents.addEventListener("management_operator_removed",() => {
+            console.log("[PlayerPermission] operator removed refresh received");
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "player-permissions-should-refresh",
+                    {
+                        detail: {
+                            source: "management_operator_removed"
                         }
                     }
                 )

@@ -42,6 +42,9 @@ SERVER_SAVED_NOTIFICATION = "minecraft:notification/server/saved"
 PLAYER_JOINED_NOTIFICATION = "minecraft:notification/players/joined"
 PLAYER_LEFT_NOTIFICATION = "minecraft:notification/players/left"
 MAX_PLAYERS_METHOD = "minecraft:serversettings/max_players"
+OPERATORS_ADDED_NOTIFICATION = "minecraft:notification/operators/added"
+OPERATORS_REMOVED_NOTIFICATION = "minecraft:notification/operators/removed"
+
 
 
 class ManagementApiClient:
@@ -346,6 +349,30 @@ class ManagementApiClient:
                 })
 
             refresh_server_status_now()
+            return
+
+        if method == OPERATORS_ADDED_NOTIFICATION:
+            from backend.server_monitor import publish_event
+
+            publish_event(
+                "management_operator_added",
+                {
+                    "source": "management_api"
+                }
+            )
+
+            return
+
+        if method == OPERATORS_REMOVED_NOTIFICATION:
+            from backend.server_monitor import publish_event
+
+            publish_event(
+                "management_operator_removed",
+                {
+                    "source": "management_api"
+                }
+            )
+
             return
 
         if method == SERVER_STOPPING_NOTIFICATION:

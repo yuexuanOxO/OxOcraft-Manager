@@ -677,25 +677,28 @@ function appendPermissionGroup(list, title, players, groupType) {
         <span class="player-permission-group-arrow">▾</span>
     `;
 
-    const body = document.createElement("div");
-    body.className = "player-permission-group-body";
+    group.appendChild(header);
 
-    players.forEach(player => {
-        const card = createPlayerPermissionCard(player);
+    if (players.length > 0) {
+        const body = document.createElement("div");
+        body.className = "player-permission-group-body";
 
-        if (groupType === "offline") {
-            card.classList.add("offline-player");
-        }
+        players.forEach(player => {
+            const card = createPlayerPermissionCard(player);
 
-        body.appendChild(card);
-    });
+            if (groupType === "offline") {
+                card.classList.add("offline-player");
+            }
+
+            body.appendChild(card);
+        });
+
+        group.appendChild(body);
+    }
 
     header.addEventListener("click", () => {
         group.classList.toggle("collapsed");
     });
-
-    group.appendChild(header);
-    group.appendChild(body);
 
     list.appendChild(group);
 }

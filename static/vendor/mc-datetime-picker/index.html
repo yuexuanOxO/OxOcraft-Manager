@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>OxOcraft Minecraft DateTime Picker Test</title>
+
+  <link rel="stylesheet" href="mc_datetime_picker.css">
+  <link rel="stylesheet" href="flatpickr/flatpickr.min.css">
+
+  <script src="flatpickr/flatpickr.min.js"></script>
+  <script src="flatpickr/l10n/zh-tw.js"></script>
+  <script src="mc_datetime_picker.js"></script>
+</head>
+
+<body>
+  <div class="demo-box">
+    <div class="demo-title">單一時間點：自動備份</div>
+    <input id="backupTime" class="mc-input" placeholder="選擇備份時間">
+  </div>
+
+  <div class="demo-box">
+    <div class="demo-title">時間區間：操作紀錄查詢</div>
+    <input id="startTime" class="mc-input" placeholder="開始時間">
+    <br><br>
+    <input id="endTime" class="mc-input" placeholder="結束時間">
+  </div>
+
+  <script>
+    McDateTimePicker.create({
+      selector: "#backupTime",
+      defaultDate: "2026-07-06 13:00"
+    });
+
+    McDateTimePicker.create({
+      selector: "#startTime",
+      defaultDate: "2026-07-01 01:00"
+    });
+
+    McDateTimePicker.create({
+      selector: "#endTime",
+      defaultDate: "2026-07-06 13:00"
+    });
+  </script>
+</body>
+</html>

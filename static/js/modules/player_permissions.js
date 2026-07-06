@@ -265,10 +265,46 @@ export function initPlayerPermissions() {
         event.stopPropagation();
     });
 
-    document.addEventListener("click", () => {
-        historyFilterMenu?.classList.add("hidden");
-        historyTimeMenu?.classList.add("hidden");
-    });
+    // document.addEventListener("click", (event) => {
+    //     if (event.target === modal) {
+    //         return;
+    //     }
+
+    //     const clickedInsideTimeMenu =
+    //         historyTimeMenu?.contains(event.target);
+
+    //     const clickedTimeButton =
+    //         historyTimeBtn?.contains(event.target);
+
+    //     const clickedInsideFlatpickr =
+    //         event.target.closest(".flatpickr-calendar");
+
+    //     if (
+    //         clickedInsideTimeMenu ||
+    //         clickedTimeButton ||
+    //         clickedInsideFlatpickr
+    //     ) {
+    //         return;
+    //     }
+
+    //     if (isFlatpickrOpen()) {
+    //         closeOpenFlatpickr();
+    //         event.stopPropagation();
+    //         return;
+    //     }
+
+    //     if (!historyTimeMenu?.classList.contains("hidden")) {
+    //         historyTimeMenu.classList.add("hidden");
+    //         event.stopPropagation();
+    //         return;
+    //     }
+
+    //     if (!historyFilterMenu?.classList.contains("hidden")) {
+    //         historyFilterMenu.classList.add("hidden");
+    //         event.stopPropagation();
+    //         return;
+    //     }
+    // });
 
     document.querySelectorAll(".player-permission-tab").forEach((button) => {
         button.addEventListener("click", async () => {
@@ -300,9 +336,27 @@ export function initPlayerPermissions() {
     });
 
     modal.addEventListener("click", (event) => {
-        if (event.target === modal) {
-            modal.classList.add("hidden");
+
+        if (event.target !== modal) {
+            return;
         }
+
+        if (isFlatpickrOpen()) {
+            closeOpenFlatpickr();
+            return;
+        }
+
+        if (!historyTimeMenu.classList.contains("hidden")) {
+            historyTimeMenu.classList.add("hidden");
+            return;
+        }
+
+        if (!historyFilterMenu.classList.contains("hidden")) {
+            historyFilterMenu.classList.add("hidden");
+            return;
+        }
+
+        modal.classList.add("hidden");
     });
 
     refreshBtn?.addEventListener("click", async () => {
@@ -425,6 +479,21 @@ export function initPlayerPermissions() {
         }
     );
 
+}
+
+
+function isFlatpickrOpen() {
+    return Boolean(
+        document.querySelector(".flatpickr-calendar.open")
+    );
+}
+
+function closeOpenFlatpickr() {
+    document
+        .querySelectorAll(".flatpickr-calendar.open")
+        .forEach(calendar => {
+            calendar._flatpickr?.close();
+        });
 }
 
 

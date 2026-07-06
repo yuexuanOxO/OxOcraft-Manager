@@ -28,6 +28,7 @@ let defaultOpLevel = 4;
 let selectedOpCandidate = null;
 let lockedOpCandidate = null;
 let permissionSearchKeyword = "";
+let permissionHistorySearchKeyword = "";
 
 const permissionHistoryFilters = new Set();
 const OXOCRAFT_OPERATOR_ICON = "/static/icons/player_ban/OxOcraft_origin.png";
@@ -122,6 +123,7 @@ export function initPlayerPermissions() {
     const searchOpBtn = document.getElementById("searchOpPlayerBtn");
     const bypassCheck = document.getElementById("addOpBypassPlayerLimitCheck");
     const historySearchInput = document.getElementById("playerPermissionHistorySearchInput");
+    const historySearchBtn = document.getElementById("playerPermissionHistorySearchBtn");
     const historyFilterBtn = document.getElementById("playerPermissionHistoryFilterBtn");
     const historyFilterMenu = document.getElementById("playerPermissionHistoryFilterMenu");
     const permissionSearchBtn = document.getElementById("playerPermissionSearchBtn");
@@ -144,8 +146,14 @@ export function initPlayerPermissions() {
             });
         });
 
-    historySearchInput?.addEventListener("input", () => {
-        renderPermissionHistory();
+    historySearchInput?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            applyPermissionHistorySearch();
+        }
+    });
+
+    historySearchBtn?.addEventListener("click", () => {
+        applyPermissionHistorySearch();
     });
 
     historyFilterBtn?.addEventListener("click", (event) => {
@@ -1819,18 +1827,10 @@ async function loadPermissionHistory() {
 
 
 function renderPermissionHistory() {
-    const list =
-        document.getElementById("playerPermissionHistoryList");
-
-    const searchInput =
-        document.getElementById("playerPermissionHistorySearchInput");
+    const list = document.getElementById("playerPermissionHistoryList");
+    const keyword = permissionHistorySearchKeyword;
 
     if (!list) return;
-
-    const keyword =
-        (searchInput?.value || "")
-            .trim()
-            .toLowerCase();
 
     let rows = [...permissionHistory];
 
@@ -2444,4 +2444,16 @@ function applyPlayerPermissionSearch() {
             .toLowerCase();
 
     renderPlayerPermissionList();
+}
+
+function applyPermissionHistorySearch() {
+    const searchInput =
+        document.getElementById("playerPermissionHistorySearchInput");
+
+    permissionHistorySearchKeyword =
+        (searchInput?.value || "")
+            .trim()
+            .toLowerCase();
+
+    renderPermissionHistory();
 }

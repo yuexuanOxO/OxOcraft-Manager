@@ -124,6 +124,76 @@
                         >
 
                         <button
+                            id="playerPermissionHistoryTimeBtn"
+                            class="filter-btn player-permission-history-time-btn"
+                            type="button"
+                            title="時間篩選"
+                        >
+                            <img
+                                src="/static/icons/general_icon/clock.gif"
+                                alt="時間篩選"
+                            >
+                        </button>
+
+                        <div
+                            id="playerPermissionHistoryTimeMenu"
+                            class="filter-menu player-permission-history-time-menu hidden"
+                        >
+                            <div class="filter-title">時間篩選</div>
+
+                            <div class="permission-time-filter-row">
+                                <label>開始時間</label>
+                                <input
+                                    id="playerPermissionHistoryStartTime"
+                                    class="permission-time-filter-input mc-input"
+                                    type="text"
+                                    placeholder="開始時間"
+                                >
+                            </div>
+
+                            <div class="permission-time-filter-row">
+                                <label>結束時間</label>
+                                <input
+                                    id="playerPermissionHistoryEndTime"
+                                    class="permission-time-filter-input mc-input"
+                                    type="text"
+                                    placeholder="結束時間"
+                                >
+                            </div>
+
+                            <div class="filter-title">快速選擇</div>
+
+                            <div class="filter-tags">
+                                <button type="button" data-time-range="today">今天</button>
+                                <button type="button" data-time-range="7d">近7天</button>
+                                <button type="button" data-time-range="30d">近30天</button>
+                                <button type="button" data-time-range="all">全部</button>
+                            </div>
+
+                            <div class="filter-actions">
+                                <button
+                                    id="playerPermissionHistoryApplyTimeBtn"
+                                    type="button"
+                                    class="filter-clear-btn"
+                                >
+                                    <span>套用時間</span>
+                                </button>
+
+                                <button
+                                    id="playerPermissionHistoryClearTimeBtn"
+                                    type="button"
+                                    class="filter-clear-btn"
+                                >
+                                    <img
+                                        src="/static/icons/general_icon/brush.png"
+                                        alt="清除時間"
+                                    >
+                                    <span>清除時間</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button
                             id="playerPermissionHistoryFilterBtn"
                             class="filter-btn player-permission-history-filter-btn"
                             type="button"

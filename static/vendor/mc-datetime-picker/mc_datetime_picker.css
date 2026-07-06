@@ -1,3 +1,5 @@
+@import url("flatpickr/flatpickr.min.css");
+
 :root {
   --block: 32px;
   --days-width: 224px;

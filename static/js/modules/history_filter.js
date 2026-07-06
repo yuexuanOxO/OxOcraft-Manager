@@ -1,7 +1,9 @@
 export function parseHistoryDate(value) {
     if (!value) return null;
 
-    const date = new Date(String(value).replace(" ", "T"));
+    const text = String(value).trim();
+
+    const date = new Date(text.replace(" ", "T"));
 
     if (Number.isNaN(date.getTime())) {
         return null;
@@ -23,14 +25,8 @@ export function filterRowsByDateRange(rows, options = {}) {
         const itemDate = parseHistoryDate(getDate(item));
 
         if (!itemDate) return false;
-
-        if (start && itemDate < start) {
-            return false;
-        }
-
-        if (end && itemDate > end) {
-            return false;
-        }
+        if (start && itemDate < start) return false;
+        if (end && itemDate > end) return false;
 
         return true;
     });

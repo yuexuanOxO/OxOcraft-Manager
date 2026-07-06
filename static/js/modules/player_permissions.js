@@ -15,6 +15,11 @@ import {
     isUiServerTransitionState
 } from "./server_ui_state.js";
 
+import {
+    filterRowsByDateRange,
+} from "./history_filter.js";
+
+
 let currentFilter = "op";
 let currentPermissionTab = "permissions";
 let permissionHistory = [];
@@ -29,6 +34,11 @@ let selectedOpCandidate = null;
 let lockedOpCandidate = null;
 let permissionSearchKeyword = "";
 let permissionHistorySearchKeyword = "";
+let permissionHistoryStartTime = "";
+let permissionHistoryEndTime = "";
+let permissionHistoryStartPicker = null;
+let permissionHistoryEndPicker = null;
+
 
 const permissionHistoryFilters = new Set();
 const OXOCRAFT_OPERATOR_ICON = "/static/icons/player_ban/OxOcraft_origin.png";
@@ -127,15 +137,42 @@ export function initPlayerPermissions() {
     const historyFilterBtn = document.getElementById("playerPermissionHistoryFilterBtn");
     const historyFilterMenu = document.getElementById("playerPermissionHistoryFilterMenu");
     const permissionSearchBtn = document.getElementById("playerPermissionSearchBtn");
+    const historyTimeBtn = document.getElementById("playerPermissionHistoryTimeBtn");
+    const historyTimeMenu = document.getElementById("playerPermissionHistoryTimeMenu");
+    const historyStartTimeInput = document.getElementById("playerPermissionHistoryStartTime");
+    const historyEndTimeInput = document.getElementById("playerPermissionHistoryEndTime");
+    const historyApplyTimeBtn = document.getElementById("playerPermissionHistoryApplyTimeBtn");
+    const historyClearTimeBtn = document.getElementById("playerPermissionHistoryClearTimeBtn");
+
+
+    if (!window.McDateTimePicker) {
+        console.warn("McDateTimePicker 尚未載入，時間篩選器不會初始化。");
+    } else {
+        if (historyStartTimeInput && !permissionHistoryStartPicker) {
+            permissionHistoryStartPicker = window.McDateTimePicker.create({
+                selector: "#playerPermissionHistoryStartTime",
+                defaultDate: null,
+                enableTime: true,
+                minuteIncrement: 5,
+            }).instance;
+        }
+
+        if (historyEndTimeInput && !permissionHistoryEndPicker) {
+            permissionHistoryEndPicker = window.McDateTimePicker.create({
+                selector: "#playerPermissionHistoryEndTime",
+                defaultDate: null,
+                enableTime: true,
+                minuteIncrement: 5,
+            }).instance;
+        }
+    }
 
 
     if (!openBtn || !modal) {
         return;
     }
 
-    document
-        .querySelectorAll(".add-op-level-option")
-        .forEach((button) => {
+    document.querySelectorAll(".add-op-level-option").forEach((button) => {
             button.addEventListener("click", () => {
                 if (button.disabled) return;
 
@@ -158,12 +195,42 @@ export function initPlayerPermissions() {
 
     historyFilterBtn?.addEventListener("click", (event) => {
         event.stopPropagation();
+
         historyFilterMenu?.classList.toggle("hidden");
+        historyTimeMenu?.classList.add("hidden");
     });
 
-    historyFilterMenu
-        ?.querySelectorAll("button[data-filter]")
+    historyTimeBtn?.addEventListener("click", (event) => {
+        event.stopPropagation();
+
+        historyTimeMenu?.classList.toggle("hidden");
+        historyFilterMenu?.classList.add("hidden");
+    });
+
+    historyTimeMenu?.addEventListener("click", (event) => {
+        event.stopPropagation();
+    });
+
+    historyApplyTimeBtn?.addEventListener("click", () => {
+        applyPermissionHistoryTimeFilter();
+        historyTimeMenu?.classList.add("hidden");
+    });
+
+    historyClearTimeBtn?.addEventListener("click", () => {
+        clearPermissionHistoryTimeFilter();
+    });
+
+    historyTimeMenu
+        ?.querySelectorAll("button[data-time-range]")
         .forEach((button) => {
+            button.addEventListener("click", () => {
+                applyPermissionHistoryQuickTimeRange(
+                    button.dataset.timeRange || "all"
+                );
+            });
+        });
+
+    historyFilterMenu?.querySelectorAll("button[data-filter]").forEach((button) => {
             button.addEventListener("click", () => {
                 const filter = button.dataset.filter || "";
 
@@ -200,6 +267,7 @@ export function initPlayerPermissions() {
 
     document.addEventListener("click", () => {
         historyFilterMenu?.classList.add("hidden");
+        historyTimeMenu?.classList.add("hidden");
     });
 
     document.querySelectorAll(".player-permission-tab").forEach((button) => {
@@ -1834,6 +1902,12 @@ function renderPermissionHistory() {
 
     let rows = [...permissionHistory];
 
+    rows = filterRowsByDateRange(rows, {
+        getDate: item => item.created_at,
+        start: permissionHistoryStartTime,
+        end: permissionHistoryEndTime,
+    });
+
     const actionFilters =
         [...permissionHistoryFilters]
             .filter(filter =>
@@ -2446,6 +2520,7 @@ function applyPlayerPermissionSearch() {
     renderPlayerPermissionList();
 }
 
+
 function applyPermissionHistorySearch() {
     const searchInput =
         document.getElementById("playerPermissionHistorySearchInput");
@@ -2456,4 +2531,67 @@ function applyPermissionHistorySearch() {
             .toLowerCase();
 
     renderPermissionHistory();
+}
+
+
+function applyPermissionHistoryTimeFilter() {
+    const startInput =
+        document.getElementById("playerPermissionHistoryStartTime");
+
+    const endInput =
+        document.getElementById("playerPermissionHistoryEndTime");
+
+    permissionHistoryStartTime =
+        (startInput?.value || "").trim();
+
+    permissionHistoryEndTime =
+        (endInput?.value || "").trim();
+
+    renderPermissionHistory();
+}
+
+function clearPermissionHistoryTimeFilter() {
+    permissionHistoryStartTime = "";
+    permissionHistoryEndTime = "";
+
+    permissionHistoryStartPicker?.clear();
+    permissionHistoryEndPicker?.clear();
+
+    const startInput =
+        document.getElementById("playerPermissionHistoryStartTime");
+
+    const endInput =
+        document.getElementById("playerPermissionHistoryEndTime");
+
+    if (startInput) startInput.value = "";
+    if (endInput) endInput.value = "";
+
+    renderPermissionHistory();
+}
+
+function applyPermissionHistoryQuickTimeRange(range) {
+    if (range === "all") {
+        clearPermissionHistoryTimeFilter();
+        return;
+    }
+
+    const now = new Date();
+    const start = new Date(now);
+
+    if (range === "today") {
+        start.setHours(0, 0, 0, 0);
+    }
+
+    if (range === "7d") {
+        start.setDate(now.getDate() - 7);
+    }
+
+    if (range === "30d") {
+        start.setDate(now.getDate() - 30);
+    }
+
+    permissionHistoryStartPicker?.setDate(start, true);
+    permissionHistoryEndPicker?.setDate(now, true);
+
+    applyPermissionHistoryTimeFilter();
 }

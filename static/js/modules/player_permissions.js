@@ -25,6 +25,10 @@ import {
     closeFlatpickr,
 } from "./ui_close_stack.js";
 
+import {
+    initMinecraftTooltip,
+} from "./common/mc_tooltip.js";
+
 
 
 let currentFilter = "op";
@@ -179,6 +183,8 @@ export function initPlayerPermissions() {
     if (!openBtn || !modal) {
         return;
     }
+
+    initMinecraftTooltip();
 
     document.querySelectorAll(".add-op-level-option").forEach((button) => {
             button.addEventListener("click", () => {

@@ -44,3 +44,9 @@
 
 @import url("../vendor/mc-datetime-picker/mc_datetime_picker.css");
 
+/* =========================
+   Common
+========================= */
+
+@import url("./common/mc_tooltip.css");
+

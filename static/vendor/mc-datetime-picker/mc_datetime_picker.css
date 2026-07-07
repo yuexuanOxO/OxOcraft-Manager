@@ -176,7 +176,7 @@
 
 .mc-calendar .flatpickr-rContainer {
   background-image: url("assets/blocks/stone.png");
-  background-size: 16px 16px;
+  background-size: 32px 32px;
   background-repeat: repeat;
 }
 
@@ -194,12 +194,14 @@
 
 .mc-calendar .dayContainer {
   background-image: url("assets/blocks/stone.png");
-  background-size: 16px 16px;
+  background-size: 32px 32px;
   background-repeat: repeat;
 }
 
 .mc-calendar.mc-night .dayContainer {
   background-image: url("assets/blocks/deepslate.png");
+  background-size: 32px 32px;
+  background-repeat: repeat;
 }
 
 .mc-calendar .flatpickr-day {

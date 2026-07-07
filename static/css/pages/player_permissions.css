@@ -1259,45 +1259,6 @@
     user-select: none;
 }
 
-.add-op-bypass-help::after {
-    content: attr(data-mc-tooltip);
-
-    position: absolute;
-    left: 50%;
-    bottom: calc(100% + 8px);
-    transform: translateX(-50%);
-
-    z-index: 9999;
-
-    display: none;
-
-    width: max-content;
-    max-width: 360px;
-
-    padding: 6px 10px;
-
-    background: #170024;
-    border: 3px solid #7c3cff;
-    border-radius: 8px;
-
-    box-shadow:
-        0 0 0 2px #170024,
-        inset 0 0 0 1px rgba(255,255,255,0.08),
-        0 6px 12px rgba(0,0,0,.45);
-
-    color: #ffffff;
-    font-size: 14px;
-    font-weight: normal;
-    line-height: 1.5;
-    white-space: nowrap;
-
-    pointer-events: none;
-}
-
-.add-op-bypass-help:hover::after {
-    display: block;
-}
-
 .player-permission-history-level-icon {
     width: 32px;
     height: 32px;

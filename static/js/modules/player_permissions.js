@@ -853,7 +853,7 @@ function renderPlayerPermissionList() {
 
     appendPermissionGroup(
         list,
-        "上線",
+        "在線",
         onlinePlayers,
         "online"
     );
@@ -883,37 +883,34 @@ function appendPermissionGroup(list, title, players, groupType) {
     const group = document.createElement("div");
     group.className = `player-permission-group ${groupType}`;
 
-    const header = document.createElement("button");
-    header.className = "player-permission-group-header";
-    header.type = "button";
+    group.innerHTML = `
+        <div class="player-permission-group-header">
+            <span class="player-permission-group-title">
+                ${escapeHtml(title)}
+            </span>
 
-    header.innerHTML = `
-        <span>${escapeHtml(title)} (${players.length})</span>
-        <span class="player-permission-group-arrow">▾</span>
+            <span class="player-permission-group-line"></span>
+
+            <span class="player-permission-group-count">
+                ${players.length}
+            </span>
+        </div>
     `;
 
-    group.appendChild(header);
+    const body = document.createElement("div");
+    body.className = "player-permission-group-body";
 
-    if (players.length > 0) {
-        const body = document.createElement("div");
-        body.className = "player-permission-group-body";
+    players.forEach(player => {
+        const card = createPlayerPermissionCard(player);
 
-        players.forEach(player => {
-            const card = createPlayerPermissionCard(player);
+        if (groupType === "offline") {
+            card.classList.add("offline-player");
+        }
 
-            if (groupType === "offline") {
-                card.classList.add("offline-player");
-            }
-
-            body.appendChild(card);
-        });
-
-        group.appendChild(body);
-    }
-
-    header.addEventListener("click", () => {
-        group.classList.toggle("collapsed");
+        body.appendChild(card);
     });
+
+    group.appendChild(body);
 
     list.appendChild(group);
 }
@@ -983,7 +980,7 @@ function createPlayerPermissionCard(player) {
                         player.op_since
                             ? `
                                 <div class="player-permission-meta">
-                                    曾成為管理員：
+                                    成為管理員：
                                     ${escapeHtml(player.op_since)}
                                 </div>
                             `
@@ -1021,15 +1018,15 @@ function createPlayerPermissionCard(player) {
         </div>
 
         <button
-            class="
-                player-permission-action
-                ${player.op ? "op" : "normal"}
-            "
+            class="${
+                player.op
+                    ? "player-permission-action mc-danger-icon-btn player-permission-remove-btn"
+                    : "player-permission-action normal"
+            }"
             type="button"
+            ${player.op ? 'data-mc-tooltip="移除管理員"' : ""}
         >
-            ${player.op
-                ? "收回管理員權限"
-                : "設為管理員"}
+            ${player.op ? "✕" : "設為管理員"}
         </button>
     `;
 
@@ -1048,6 +1045,21 @@ function createPlayerPermissionCard(player) {
     }
 
     actionBtn?.addEventListener("click", async () => {
+        if (player.op) {
+            const confirmed = await showConfirm({
+                title: "移除管理員",
+                message: `是否要移除「${player.player_name}」的管理員權限？`,
+                icon: avatarUrl,
+                confirmText: "移除",
+                cancelText: "取消",
+                variant: "warning",
+            });
+
+            if (!confirmed) {
+                return;
+            }
+        }
+
         await togglePlayerOp(player);
     });
 
@@ -1854,7 +1866,7 @@ function createOpCandidateCard(player) {
 
             ${permissionServerReady ? "" : `
                 <button
-                    class="op-candidate-delete-btn"
+                    class="mc-danger-icon-btn op-candidate-delete-btn"
                     type="button"
                     title="刪除玩家紀錄"
                 >

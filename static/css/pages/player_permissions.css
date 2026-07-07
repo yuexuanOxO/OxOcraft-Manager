@@ -1363,58 +1363,10 @@
     margin-top: 1px;
 }
 
-.player-permission-group-header {
-    width: 100%;
-    height: 34px;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    padding: 0 12px;
-
-    border: 1px solid #3f3f3f;
-    border-radius: 6px;
-
-    background: #252525;
-    color: #d8d8d8;
-
-    font-size: 17px;
-    font-weight: bold;
-
-    cursor: pointer;
-    box-sizing: border-box;
-}
-
-.player-permission-group.online .player-permission-group-header {
-    border-color: rgba(79, 157, 105, 0.45);
-    color: #8ee891;
-    background: rgba(79, 157, 105, 0.10);
-}
-
-.player-permission-group.offline .player-permission-group-header {
-    border-color: rgba(130, 130, 130, 0.45);
-    color: #bdbdbd;
-    background: rgba(130, 130, 130, 0.10);
-}
-
-.player-permission-group-arrow {
-    font-size: 20px;
-    line-height: 1;
-}
-
 .player-permission-group-body {
     display: flex;
     flex-direction: column;
     gap: 4px;
-}
-
-.player-permission-group.collapsed .player-permission-group-body {
-    display: none;
-}
-
-.player-permission-group.collapsed .player-permission-group-arrow {
-    transform: rotate(-90deg);
 }
 
 .player-permission-card.offline-player {
@@ -1759,4 +1711,110 @@
     width: 16px;
     height: 16px;
     image-rendering: pixelated;
+}
+
+
+.player-permission-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.player-permission-group + .player-permission-group {
+    margin-top: 18px;
+}
+
+.player-permission-group-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 0 2px;
+
+    user-select: none;
+}
+
+.player-permission-group-title {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.player-permission-group-count {
+    font-size: 16px;
+    font-weight: bold;
+    opacity: .75;
+}
+
+.player-permission-group-line {
+    width: 40px;
+    height: 1px;
+    flex: 0 0 40px;
+
+    background: rgba(255,255,255,.18);
+}
+
+.player-permission-group.online
+.player-permission-group-title {
+    color: #8ee891;
+}
+
+.player-permission-group.offline
+.player-permission-group-title {
+    color: #bdbdbd;
+}
+
+.player-permission-group.online
+.player-permission-group-count {
+    color: #8ee891;
+}
+
+.player-permission-group.offline
+.player-permission-group-count {
+    color: #bdbdbd;
+}
+
+.player-permission-group-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.mc-danger-icon-btn {
+    width: 42px;
+    height: 42px;
+
+    flex-shrink: 0;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: 1px solid #b85c5c;
+    border-radius: 6px;
+
+    background: #303030;
+    color: #ff9c9c;
+
+    font-size: 22px;
+    font-weight: bold;
+    line-height: 1;
+
+    cursor: pointer;
+}
+
+.mc-danger-icon-btn:hover {
+    background: #422e2e;
+}
+
+.mc-danger-icon-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(100%);
+}
+
+.op-candidate-delete-btn {
+    width: 42px;
+    height: 42px;
 }

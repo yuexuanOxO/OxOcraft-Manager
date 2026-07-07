@@ -19,6 +19,13 @@ import {
     filterRowsByDateRange,
 } from "./history_filter.js";
 
+import {
+    closeFirstAvailableLayer,
+    isFlatpickrOpen,
+    closeFlatpickr,
+} from "./ui_close_stack.js";
+
+
 
 let currentFilter = "op";
 let currentPermissionTab = "permissions";
@@ -38,6 +45,7 @@ let permissionHistoryStartTime = "";
 let permissionHistoryEndTime = "";
 let permissionHistoryStartPicker = null;
 let permissionHistoryEndPicker = null;
+let permissionHistoryFlatpickrWasOpenOnPointerDown = false;
 
 
 const permissionHistoryFilters = new Set();
@@ -335,28 +343,77 @@ export function initPlayerPermissions() {
         modal.classList.add("hidden");
     });
 
-    modal.addEventListener("click", (event) => {
+    modal.addEventListener(
+        "pointerdown",
+        (event) => {
+            const clickedInsideFlatpickr =
+                event.target.closest(".flatpickr-calendar");
 
+            const clickedInsideTimeMenu =
+                historyTimeMenu?.contains(event.target);
+
+            permissionHistoryFlatpickrWasOpenOnPointerDown =
+                isFlatpickrOpen(
+                    permissionHistoryStartPicker,
+                    permissionHistoryEndPicker
+                )
+                && !clickedInsideFlatpickr
+                && !clickedInsideTimeMenu;
+        },
+        true
+    );
+
+    modal.addEventListener("click", (event) => {
         if (event.target !== modal) {
             return;
         }
 
-        if (isFlatpickrOpen()) {
-            closeOpenFlatpickr();
-            return;
-        }
+        const closed = closeFirstAvailableLayer([
+            {
+                isOpen: () =>
+                    permissionHistoryFlatpickrWasOpenOnPointerDown ||
+                    isFlatpickrOpen(
+                        permissionHistoryStartPicker,
+                        permissionHistoryEndPicker
+                    ),
+                close: () => {
+                    closeFlatpickr(
+                        permissionHistoryStartPicker,
+                        permissionHistoryEndPicker
+                    );
 
-        if (!historyTimeMenu.classList.contains("hidden")) {
-            historyTimeMenu.classList.add("hidden");
-            return;
-        }
+                    permissionHistoryFlatpickrWasOpenOnPointerDown = false;
+                },
+            },
+            {
+                isOpen: () =>
+                    historyTimeMenu &&
+                    !historyTimeMenu.classList.contains("hidden"),
+                close: () => {
+                    historyTimeMenu.classList.add("hidden");
+                },
+            },
+            {
+                isOpen: () =>
+                    historyFilterMenu &&
+                    !historyFilterMenu.classList.contains("hidden"),
+                close: () => {
+                    historyFilterMenu.classList.add("hidden");
+                },
+            },
+            {
+                isOpen: () =>
+                    modal &&
+                    !modal.classList.contains("hidden"),
+                close: () => {
+                    modal.classList.add("hidden");
+                },
+            },
+        ]);
 
-        if (!historyFilterMenu.classList.contains("hidden")) {
-            historyFilterMenu.classList.add("hidden");
-            return;
+        if (!closed) {
+            permissionHistoryFlatpickrWasOpenOnPointerDown = false;
         }
-
-        modal.classList.add("hidden");
     });
 
     refreshBtn?.addEventListener("click", async () => {
@@ -479,21 +536,6 @@ export function initPlayerPermissions() {
         }
     );
 
-}
-
-
-function isFlatpickrOpen() {
-    return Boolean(
-        document.querySelector(".flatpickr-calendar.open")
-    );
-}
-
-function closeOpenFlatpickr() {
-    document
-        .querySelectorAll(".flatpickr-calendar.open")
-        .forEach(calendar => {
-            calendar._flatpickr?.close();
-        });
 }
 
 

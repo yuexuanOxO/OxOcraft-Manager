@@ -1371,11 +1371,6 @@
     cursor: pointer;
 }
 
-.player-permission-search-btn:hover {
-    background: #3a3324;
-    border-color: #c08b42;
-}
-
 .player-permission-search-btn img {
     width: 32px;
     height: 32px;
@@ -1493,11 +1488,6 @@
     cursor: pointer;
 }
 
-.player-permission-history-time-btn:hover {
-    background: #3a3324;
-    border-color: #c08b42;
-}
-
 .player-permission-history-time-btn img {
     width: 32px;
     height: 32px;
@@ -1529,11 +1519,6 @@
 .player-permission-history-search-btn {
     right: 0;
     border-radius: 0 6px 6px 0;
-}
-
-.player-permission-history-filter-btn:hover {
-    background: #3a3324;
-    border-color: #c08b42;
 }
 
 .player-permission-history-filter-btn img {

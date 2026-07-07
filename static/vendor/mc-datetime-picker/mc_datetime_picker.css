@@ -132,6 +132,8 @@
   filter: drop-shadow(2px 2px 0 #000);
 }
 
+
+
 /* ===== weekday row ===== */
 
 .mc-calendar .flatpickr-weekdays {
@@ -277,8 +279,15 @@
 }
 
 .mc-calendar .flatpickr-time .flatpickr-time-separator {
-  color: #777;
-  font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+
+    text-shadow: 2px 2px 0 #000;
 }
 
 .mc-calendar .numInputWrapper span.arrowUp:after {

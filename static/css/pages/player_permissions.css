@@ -1728,3 +1728,35 @@
 .permission-time-filter-row .flatpickr-input::placeholder {
     color: #888;
 }
+
+.permission-time-apply-row {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0 12px;
+}
+
+#playerPermissionHistoryApplyTimeBtn.permission-time-apply-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    background: #3d8f2f !important;
+    border-color: #24561d !important;
+    color: #ffffff !important;
+
+    font-weight: bold;
+}
+
+#playerPermissionHistoryApplyTimeBtn.permission-time-apply-btn:hover {
+    background: #4ca83b !important;
+}
+
+#playerPermissionHistoryApplyTimeBtn.permission-time-apply-btn:active {
+    background: #327826 !important;
+}
+
+#playerPermissionHistoryApplyTimeBtn.permission-time-apply-btn img {
+    width: 16px;
+    height: 16px;
+    image-rendering: pixelated;
+}

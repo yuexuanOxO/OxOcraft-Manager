@@ -364,11 +364,23 @@ export function initPlayerPermissions() {
     );
 
     modal.addEventListener("click", (event) => {
-        if (event.target !== modal) {
+        const clickedInsideTimeMenu = historyTimeMenu?.contains(event.target);
+        const clickedTimeButton = historyTimeBtn?.contains(event.target);
+        const clickedInsideFilterMenu = historyFilterMenu?.contains(event.target);
+        const clickedFilterButton = historyFilterBtn?.contains(event.target);
+        const clickedInsideFlatpickr = event.target.closest(".flatpickr-calendar");
+
+        if (
+            clickedInsideTimeMenu ||
+            clickedTimeButton ||
+            clickedInsideFilterMenu ||
+            clickedFilterButton ||
+            clickedInsideFlatpickr
+        ) {
             return;
         }
 
-        const closed = closeFirstAvailableLayer([
+        closeFirstAvailableLayer([
             {
                 isOpen: () =>
                     permissionHistoryFlatpickrWasOpenOnPointerDown ||
@@ -403,6 +415,7 @@ export function initPlayerPermissions() {
             },
             {
                 isOpen: () =>
+                    event.target === modal &&
                     modal &&
                     !modal.classList.contains("hidden"),
                 close: () => {
@@ -410,10 +423,6 @@ export function initPlayerPermissions() {
                 },
             },
         ]);
-
-        if (!closed) {
-            permissionHistoryFlatpickrWasOpenOnPointerDown = false;
-        }
     });
 
     refreshBtn?.addEventListener("click", async () => {

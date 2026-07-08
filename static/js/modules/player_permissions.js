@@ -496,10 +496,6 @@ export function initPlayerPermissions() {
             return;
         }
 
-        if (!permissionServerReady) {
-            return;
-        }
-
         selectedOpCandidate = null;
         renderOpCandidates();
         renderAddOpInputState();

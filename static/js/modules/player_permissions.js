@@ -529,10 +529,12 @@ export function initPlayerPermissions() {
         }
     );
 
-    window.addEventListener("server-ui-state-changed", (event) => {
+    window.addEventListener("server-ui-state-changed", async (event) => {
             const data = event.detail;
 
             if (!data) return;
+
+            const wasReady = permissionServerReady;
 
             permissionServerReady =
                 data.rawState === "ready" || data.state === "ready";
@@ -544,6 +546,20 @@ export function initPlayerPermissions() {
             renderAddOpInputState();
             renderPermissionActionButtons();
             renderAddOpLevelState();
+
+            const modal =
+                document.getElementById("playerPermissionModal");
+
+            const isPermissionModalOpen =
+                modal && !modal.classList.contains("hidden");
+
+            if (
+                isPermissionModalOpen &&
+                !wasReady &&
+                permissionServerReady
+            ) {
+                await loadPlayerPermissions();
+            }
         }
     );
 

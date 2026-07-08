@@ -1163,15 +1163,18 @@ function getOpLevelIcon(player) {
 
 
 function findOpCandidateByName(playerName) {
-    const keyword = String(playerName || "")
-        .trim()
-        .toLowerCase();
+    const keyword = String(playerName || "").trim();
 
     if (!keyword) return null;
 
     return candidatePlayers.find(player => {
-        return String(player.player_name || "")
-            .toLowerCase() === keyword;
+        const name = String(player.player_name || "").trim();
+
+        if (permissionOnlineMode) {
+            return name.toLowerCase() === keyword.toLowerCase();
+        }
+
+        return name === keyword;
     }) || null;
 }
 
@@ -1196,7 +1199,7 @@ async function resolveOpCandidateByInput(playerName) {
         return true;
     }
 
-    if (!permissionOnlineMode) {
+    if (permissionServerReady && !permissionOnlineMode) {
         return false;
     }
 
@@ -1298,9 +1301,13 @@ async function handleSearchOpPlayer() {
         if (!resolved) {
             await showInfo({
                 title: "玩家權限",
-                message: permissionOnlineMode
-                    ? "找不到符合的正版玩家"
-                    : "請從清單選擇可編輯的玩家",
+                message: !permissionServerReady
+                    ? "離線設定模式可直接輸入玩家名稱後加入"
+                    : (
+                        permissionOnlineMode
+                            ? "找不到符合的正版玩家"
+                            : "請從清單選擇可在線編輯的玩家"
+                    ),
                 confirmText: "關閉",
                 variant: "warning"
             });
@@ -1331,7 +1338,7 @@ async function handleAddOpPlayer() {
         selectedOpCandidate = null;
     }
 
-    if (permissionOnlineMode) {
+    if (permissionServerReady && permissionOnlineMode) {
         if (!selectedOpCandidate) {
             try {
                 const resolved =

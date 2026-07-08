@@ -741,6 +741,25 @@ def get_player_by_name_and_account_type(
     return dict(row) if row else None
 
 
+def get_player_by_name_and_account_type_exact(
+    player_name: str,
+    account_type: str,
+) -> dict | None:
+    with get_connection() as conn:
+        row = conn.execute("""
+            SELECT *
+            FROM players
+            WHERE player_name = ?
+              AND account_type = ?
+            LIMIT 1
+        """, (
+            player_name,
+            account_type,
+        )).fetchone()
+
+    return dict(row) if row else None
+
+
 def upsert_player_identity(
     player_uuid: str,
     player_name: str,

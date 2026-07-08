@@ -13,6 +13,7 @@ from backend.db import (
     get_all_players,
     delete_player_by_uuid,
     get_player_by_name_and_account_type,
+    get_player_by_name_and_account_type_exact,
     upsert_player_identity,
     hide_player_candidate_db as db_hide_player_candidate,
     sync_players_usercache_flags,
@@ -323,10 +324,16 @@ def resolve_player_identity(
             else "offline"
         )
 
-        player = get_player_by_name_and_account_type(
-            player_name,
-            current_account_type,
-        )
+        if current_account_type == "premium":
+            player = get_player_by_name_and_account_type(
+                player_name,
+                current_account_type,
+            )
+        else:
+            player = get_player_by_name_and_account_type_exact(
+                player_name,
+                current_account_type,
+            )
 
         if player:
             return {

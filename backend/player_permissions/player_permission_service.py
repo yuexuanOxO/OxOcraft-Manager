@@ -8,6 +8,7 @@ from backend.player_permissions.player_identity_service import (
     get_known_players,
     get_account_type,
     get_mojang_player_profile,
+    resolve_player_identity_by_name,
 )
 
 from backend.db import (
@@ -894,73 +895,56 @@ def resolve_op_candidate_by_name(
             "message": "請輸入玩家名稱",
         }
 
+    online_mode = get_effective_online_mode()
 
-    if not get_effective_online_mode():
+    if is_server_ready() and not online_mode:
         return {
             "success": False,
             "message": "離線版在線管理只能選擇 usercache 中的玩家",
         }
 
+    identity = resolve_player_identity_by_name(player_name)
+
+    if not identity.get("success"):
+        return {
+            "success": False,
+            "message": identity.get("message") or "玩家解析失敗",
+        }
+
+    player_uuid = identity.get("player_uuid")
+    resolved_name = identity.get("player_name") or player_name
+    account_type = identity.get("account_type")
+
     known_players = get_known_players()
+
+    known_player = None
 
     for player in known_players:
         if (
-            str(player.get("account_type", "")) == "premium"
-            and str(player.get("player_name", "")).lower()
-            == player_name.lower()
+            str(player.get("player_uuid", "")).lower()
+            == str(player_uuid).lower()
         ):
-            return {
-                "success": True,
-                "message": "",
-                "already_exists": True,
-                "player": build_permission_player_state(
-                    player,
-                    online_mode=True,
-                ),
-            }
-
-    try:
-        profile = get_mojang_player_profile(player_name)
-
-        if profile:
-            player_uuid = profile["uuid"]
-            player_name = profile["name"]
-        else:
-            player_uuid = None
-
-    except Exception as error:
-        print("[Permission] resolve op candidate failed:", error)
-        player_uuid = None
-
-    if not player_uuid:
-        return {
-            "success": False,
-            "message": f"找不到正版玩家 {player_name}",
-        }
-
-    upsert_player_identity(
-        player_uuid=player_uuid,
-        player_name=player_name,
-        account_type="premium",
-    )
+            known_player = player
+            break
 
     player = {
+        **(known_player or {}),
         "player_uuid": player_uuid,
-        "player_name": player_name,
-        "account_type": "premium",
+        "player_name": resolved_name,
+        "account_type": account_type,
         "show_in_player_candidates": 1,
         "op": False,
-        "in_usercache": 0,
+        "in_usercache": (known_player or {}).get("in_usercache", 0),
         "is_online": False,
     }
 
     return {
         "success": True,
         "message": "",
-        "already_exists": True,
+        "already_exists": known_player is not None,
         "player": build_permission_player_state(
             player,
-            online_mode=True,
+            online_mode=online_mode,
             online_uuid_set=get_online_uuid_set(),
         ),
     }

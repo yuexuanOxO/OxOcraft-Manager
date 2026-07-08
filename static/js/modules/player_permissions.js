@@ -866,14 +866,23 @@ function renderPlayerPermissionList() {
 
 
 function comparePlayerName(a, b) {
-    const aOnline =
-        String(a.permission_state || "") === "online";
+    function getPriority(player) {
+        if (player.permission_state === "online") {
+            return 0;
+        }
 
-    const bOnline =
-        String(b.permission_state || "") === "online";
+        if (player.permission_online_editable) {
+            return 1;
+        }
 
-    if (aOnline !== bOnline) {
-        return aOnline ? -1 : 1;
+        return 2;
+    }
+
+    const priorityDiff =
+        getPriority(a) - getPriority(b);
+
+    if (priorityDiff !== 0) {
+        return priorityDiff;
     }
 
     return String(a.player_name || "")
@@ -2630,11 +2639,11 @@ function renderPermissionStateBadge(player) {
         },
         offline_usercache: {
             className: "usercache",
-            text: "離線（曾加入過 Server）",
+            text: "離線",
         },
         offline_only: {
             className: "offline-only",
-            text: "僅離線編輯",
+            text: "離線(未加入過伺服器)",
         },
     };
 

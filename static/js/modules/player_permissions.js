@@ -922,9 +922,25 @@ function createPlayerPermissionCard(player) {
         card.classList.add("invalid-mode");
     }
 
+    const onlineEditLocked =
+        permissionServerReady &&
+        !permissionOnlineMode &&
+        player.permission_online_editable === false;
+
+    if (onlineEditLocked) {
+        card.classList.add("online-edit-locked");
+    }
+
     const avatarUrl = getPlayerAvatarUrl(player);
 
     card.innerHTML = `
+
+        ${onlineEditLocked ? `
+            <div class="player-permission-online-lock-overlay">
+                必須讓玩家加入伺服器後，或關閉伺服器使用離線設定模式才可修改
+            </div>
+        ` : ""}
+
         <img
             class="player-permission-avatar"
             src="${avatarUrl}"
@@ -1037,7 +1053,7 @@ function createPlayerPermissionCard(player) {
         )
     ) {
         actionBtn.disabled = true;
-        actionBtn.title = "此玩家目前只能在伺服器關閉後使用離線設定模式編輯";
+        actionBtn.title = "未開啟正版驗證時，此玩家必須加入過伺服器，或關閉伺服器後才能修改 OP";
     }
 
     actionBtn?.addEventListener("click", async () => {

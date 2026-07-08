@@ -852,30 +852,13 @@ function renderPlayerPermissionList() {
         return;
     }
 
-    const onlinePlayers = players.filter(player =>
-        String(player.permission_state || "") === "online"
-    );
+    players.sort(comparePlayerName);
 
-    const offlinePlayers = players.filter(player =>
-        String(player.permission_state || "") !== "online"
-    );
-
-    onlinePlayers.sort(comparePlayerName);
-    offlinePlayers.sort(comparePlayerName);
-
-    appendPermissionGroup(
-        list,
-        "在線",
-        onlinePlayers,
-        "online"
-    );
-
-    appendPermissionGroup(
-        list,
-        "離線",
-        offlinePlayers,
-        "offline"
-    );
+    players.forEach(player => {
+        list.appendChild(
+            createPlayerPermissionCard(player)
+        );
+    });
 
     renderPermissionActionButtons();
 
@@ -977,6 +960,8 @@ function createPlayerPermissionCard(player) {
                 ">
                     ${getAccountTypeLabel(player)}
                 </div>
+
+                ${renderPermissionStateBadge(player)}
 
             </div>
 

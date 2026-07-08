@@ -866,6 +866,16 @@ function renderPlayerPermissionList() {
 
 
 function comparePlayerName(a, b) {
+    const aOnline =
+        String(a.permission_state || "") === "online";
+
+    const bOnline =
+        String(b.permission_state || "") === "online";
+
+    if (aOnline !== bOnline) {
+        return aOnline ? -1 : 1;
+    }
+
     return String(a.player_name || "")
         .toLowerCase()
         .localeCompare(

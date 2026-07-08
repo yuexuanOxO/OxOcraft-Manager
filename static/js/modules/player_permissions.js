@@ -1214,12 +1214,6 @@ async function resolveOpCandidateByInput(playerName) {
     if (existingPlayer) {
         selectedOpCandidate = existingPlayer;
 
-        const input = document.getElementById("addOpPlayerInput");
-
-        if (input) {
-            input.value = existingPlayer.player_name;
-        }
-
         renderOpCandidates();
         renderAddOpInputState();
         scrollSelectedOpCandidateIntoView();
@@ -1284,13 +1278,6 @@ async function resolveOpCandidateByInput(playerName) {
     }
 
     selectedOpCandidate = player;
-
-    const input =
-        document.getElementById("addOpPlayerInput");
-
-    if (input) {
-        input.value = player.player_name;
-    }
 
     renderOpCandidates();
     renderAddOpInputState();
@@ -1357,14 +1344,6 @@ async function handleAddOpPlayer() {
     const playerName = (input?.value || "").trim();
     const confirmBtn = document.getElementById("confirmAddOpPlayerBtn");
 
-    if (
-        selectedOpCandidate &&
-        playerName &&
-        String(selectedOpCandidate.player_name || "").toLowerCase()
-            !== playerName.toLowerCase()
-    ) {
-        selectedOpCandidate = null;
-    }
 
     if (permissionServerReady && permissionOnlineMode) {
         if (!selectedOpCandidate) {
@@ -1410,7 +1389,7 @@ async function handleAddOpPlayer() {
 
             return;
         }
-    } else if (!playerName) {
+    } else if (!selectedOpCandidate && !playerName) {
         await showInfo({
             title: "玩家權限",
             message: "請輸入玩家名稱",
@@ -1514,7 +1493,7 @@ async function addPlayerOpByName(playerName) {
 
     let url = "/api/player/permission/add-op";
 
-    if (permissionServerReady && selectedOpCandidate) {
+    if (selectedOpCandidate) {
         url = "/api/player/permission/toggle-op";
 
         payload.uuid = selectedOpCandidate.player_uuid;
@@ -1923,12 +1902,16 @@ function createOpCandidateCard(player) {
 
         selectedOpCandidate = player;
 
-        const input = document.getElementById("addOpPlayerInput");
+        const selectCandidate = () => {
+            if (isPermissionActionLocked()) {
+                return;
+            }
 
-        if (!permissionServerReady && input) {
-            input.value = player.player_name;
-            input.focus();
-        }
+            selectedOpCandidate = player;
+
+            renderOpCandidates();
+            renderAddOpInputState();
+        };
 
         renderOpCandidates();
         renderAddOpInputState();

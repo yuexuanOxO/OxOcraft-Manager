@@ -2093,6 +2093,15 @@ function renderPermissionHistory() {
                 ].includes(filter)
             );
 
+    const bypassFilters =
+    [...permissionHistoryFilters]
+        .filter(filter =>
+            [
+                "bypass_true",
+                "bypass_false",
+            ].includes(filter)
+        );
+
     if (actionFilters.length > 0) {
         rows = rows.filter(item => {
             const action =
@@ -2163,6 +2172,30 @@ function renderPermissionHistory() {
 
             return levelFilters.includes(
                 `level_${level}`
+            );
+        });
+    }
+
+    if (bypassFilters.length > 0) {
+        rows = rows.filter(item => {
+            const detail = getPermissionHistoryDetail(item);
+
+            if (
+                typeof detail.op_bypasses_player_limit !== "boolean"
+            ) {
+                return false;
+            }
+
+            return (
+                (
+                    bypassFilters.includes("bypass_true") &&
+                    detail.op_bypasses_player_limit === true
+                )
+                ||
+                (
+                    bypassFilters.includes("bypass_false") &&
+                    detail.op_bypasses_player_limit === false
+                )
             );
         });
     }

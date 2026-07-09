@@ -29,6 +29,11 @@ import {
     initMinecraftTooltip,
 } from "./common/mc_tooltip.js";
 
+import {
+    initFilterMenu,
+    isFilterMenuOpen,
+    closeFilterMenu,
+} from "./common/filter_menu.js";
 
 
 let currentFilter = "op";
@@ -52,6 +57,7 @@ let permissionHistoryEndPicker = null;
 let permissionHistoryFlatpickrWasOpenOnPointerDown = false;
 
 
+const permissionFilters = new Set();
 const permissionHistoryFilters = new Set();
 const OXOCRAFT_OPERATOR_ICON = "/static/icons/player_ban/OxOcraft_origin.png";
 const UNKNOWN_OPERATOR_ICON = "/static/icons/general_icon/unknown.png";
@@ -155,6 +161,8 @@ export function initPlayerPermissions() {
     const historyEndTimeInput = document.getElementById("playerPermissionHistoryEndTime");
     const historyApplyTimeBtn = document.getElementById("playerPermissionHistoryApplyTimeBtn");
     const historyClearTimeBtn = document.getElementById("playerPermissionHistoryClearTimeBtn");
+    const permissionFilterBtn = document.getElementById("playerPermissionFilterBtn");
+    const permissionFilterMenu = document.getElementById("playerPermissionFilterMenu");
 
 
     if (!window.McDateTimePicker) {
@@ -207,13 +215,6 @@ export function initPlayerPermissions() {
         applyPermissionHistorySearch();
     });
 
-    historyFilterBtn?.addEventListener("click", (event) => {
-        event.stopPropagation();
-
-        historyFilterMenu?.classList.toggle("hidden");
-        historyTimeMenu?.classList.add("hidden");
-    });
-
     historyTimeBtn?.addEventListener("click", (event) => {
         event.stopPropagation();
 
@@ -234,91 +235,15 @@ export function initPlayerPermissions() {
         clearPermissionHistoryTimeFilter();
     });
 
-    historyTimeMenu
-        ?.querySelectorAll("button[data-time-range]")
-        .forEach((button) => {
-            button.addEventListener("click", () => {
-                applyPermissionHistoryQuickTimeRange(
-                    button.dataset.timeRange || "all"
-                );
-            });
-        });
-
-    historyFilterMenu?.querySelectorAll("button[data-filter]").forEach((button) => {
-            button.addEventListener("click", () => {
-                const filter = button.dataset.filter || "";
-
-                if (!filter) return;
-
-                if (filter === "clear") {
-                    permissionHistoryFilters.clear();
-
-                    historyFilterMenu
-                        .querySelectorAll("button[data-filter]")
-                        .forEach(btn => {
-                            btn.classList.remove("active");
-                        });
-
-                    renderPermissionHistory();
-                    return;
-                }
-
-                if (permissionHistoryFilters.has(filter)) {
-                    permissionHistoryFilters.delete(filter);
-                    button.classList.remove("active");
-                } else {
-                    permissionHistoryFilters.add(filter);
-                    button.classList.add("active");
-                }
-
-                renderPermissionHistory();
-            });
-        });
-
-    historyFilterMenu?.addEventListener("click", (event) => {
-        event.stopPropagation();
+    initFilterMenu({
+        button: historyFilterBtn,
+        menu: historyFilterMenu,
+        filters: permissionHistoryFilters,
+        onToggle: () => {
+            historyTimeMenu?.classList.add("hidden");
+        },
+        onChange: renderPermissionHistory,
     });
-
-    // document.addEventListener("click", (event) => {
-    //     if (event.target === modal) {
-    //         return;
-    //     }
-
-    //     const clickedInsideTimeMenu =
-    //         historyTimeMenu?.contains(event.target);
-
-    //     const clickedTimeButton =
-    //         historyTimeBtn?.contains(event.target);
-
-    //     const clickedInsideFlatpickr =
-    //         event.target.closest(".flatpickr-calendar");
-
-    //     if (
-    //         clickedInsideTimeMenu ||
-    //         clickedTimeButton ||
-    //         clickedInsideFlatpickr
-    //     ) {
-    //         return;
-    //     }
-
-    //     if (isFlatpickrOpen()) {
-    //         closeOpenFlatpickr();
-    //         event.stopPropagation();
-    //         return;
-    //     }
-
-    //     if (!historyTimeMenu?.classList.contains("hidden")) {
-    //         historyTimeMenu.classList.add("hidden");
-    //         event.stopPropagation();
-    //         return;
-    //     }
-
-    //     if (!historyFilterMenu?.classList.contains("hidden")) {
-    //         historyFilterMenu.classList.add("hidden");
-    //         event.stopPropagation();
-    //         return;
-    //     }
-    // });
 
     document.querySelectorAll(".player-permission-tab").forEach((button) => {
         button.addEventListener("click", async () => {
@@ -375,12 +300,16 @@ export function initPlayerPermissions() {
         const clickedInsideFilterMenu = historyFilterMenu?.contains(event.target);
         const clickedFilterButton = historyFilterBtn?.contains(event.target);
         const clickedInsideFlatpickr = event.target.closest(".flatpickr-calendar");
+        const clickedInsidePermissionFilterMenu = permissionFilterMenu?.contains(event.target);
+        const clickedPermissionFilterButton = permissionFilterBtn?.contains(event.target);
 
         if (
             clickedInsideTimeMenu ||
             clickedTimeButton ||
             clickedInsideFilterMenu ||
             clickedFilterButton ||
+            clickedInsidePermissionFilterMenu ||
+            clickedPermissionFilterButton ||
             clickedInsideFlatpickr
         ) {
             return;
@@ -404,6 +333,10 @@ export function initPlayerPermissions() {
                 },
             },
             {
+                isOpen: () => isFilterMenuOpen(permissionFilterMenu),
+                close: () => closeFilterMenu(permissionFilterMenu),
+            },
+            {
                 isOpen: () =>
                     historyTimeMenu &&
                     !historyTimeMenu.classList.contains("hidden"),
@@ -412,12 +345,8 @@ export function initPlayerPermissions() {
                 },
             },
             {
-                isOpen: () =>
-                    historyFilterMenu &&
-                    !historyFilterMenu.classList.contains("hidden"),
-                close: () => {
-                    historyFilterMenu.classList.add("hidden");
-                },
+                isOpen: () => isFilterMenuOpen(historyFilterMenu),
+                close: () => closeFilterMenu(historyFilterMenu),
             },
             {
                 isOpen: () =>
@@ -435,6 +364,12 @@ export function initPlayerPermissions() {
         await loadPlayerPermissions();
     });
 
+    initFilterMenu({
+        button: permissionFilterBtn,
+        menu: permissionFilterMenu,
+        filters: permissionFilters,
+        onChange: renderPlayerPermissionList,
+    });
 
     permissionSearchBtn?.addEventListener("click", () => {
         applyPlayerPermissionSearch();
@@ -830,6 +765,81 @@ function renderPlayerPermissionList() {
                 .includes(keyword);
         });
     }
+
+    const stateFilters =
+            [...permissionFilters].filter(filter =>
+                [
+                    "online",
+                    "offline",
+                    "offline_only",
+                ].includes(filter)
+            );
+
+        const levelFilters =
+            [...permissionFilters].filter(filter =>
+                [
+                    "level_1",
+                    "level_2",
+                    "level_3",
+                    "level_4",
+                ].includes(filter)
+            );
+
+        const bypassFilters =
+            [...permissionFilters].filter(filter =>
+                [
+                    "bypass_true",
+                    "bypass_false",
+                ].includes(filter)
+            );
+
+        if (stateFilters.length > 0) {
+            players = players.filter(player => {
+                return (
+                    (
+                        stateFilters.includes("online") &&
+                        player.permission_state === "online"
+                    )
+                    ||
+                    (
+                        stateFilters.includes("offline") &&
+                        (
+                            player.permission_state === "offline" ||
+                            player.permission_state === "offline_usercache"
+                        )
+                    )
+                    ||
+                    (
+                        stateFilters.includes("offline_only") &&
+                        player.permission_state === "offline_only"
+                    )
+                );
+            });
+        }
+
+        if (levelFilters.length > 0) {
+            players = players.filter(player =>
+                levelFilters.includes(
+                    `level_${getOpLevel(player)}`
+                )
+            );
+        }
+
+        if (bypassFilters.length > 0) {
+            players = players.filter(player => {
+                return (
+                    (
+                        bypassFilters.includes("bypass_true") &&
+                        player.op_bypasses_player_limit === true
+                    )
+                    ||
+                    (
+                        bypassFilters.includes("bypass_false") &&
+                        player.op_bypasses_player_limit === false
+                    )
+                );
+            });
+        }
 
     const playerCount =
         document.getElementById(

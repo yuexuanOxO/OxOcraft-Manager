@@ -1,3 +1,5 @@
+// minecraft風格的提示小視窗，黑紫配色
+
 let tooltip = null;
 let showTimer = null;
 let initialized = false;

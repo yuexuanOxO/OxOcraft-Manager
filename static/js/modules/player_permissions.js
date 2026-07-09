@@ -2738,10 +2738,12 @@ function applyPermissionHistoryQuickTimeRange(range) {
 
     if (range === "7d") {
         start.setDate(now.getDate() - 7);
+        start.setHours(0, 0, 0, 0);
     }
 
     if (range === "30d") {
         start.setDate(now.getDate() - 30);
+        start.setHours(0, 0, 0, 0);
     }
 
     permissionHistoryStartPicker?.setDate(start, true);

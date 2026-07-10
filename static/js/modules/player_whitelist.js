@@ -188,10 +188,6 @@ export function initPlayerWhitelist() {
     });
 
     addInput?.addEventListener("input", () => {
-        if (!selectedWhitelistCandidate) {
-            return;
-        }
-
         selectedWhitelistCandidate = null;
         renderWhitelistCandidates();
     });
@@ -1511,20 +1507,48 @@ async function loadWhitelistCandidates() {
 
 function renderWhitelistCandidates() {
     const list =
-        document.getElementById("whitelistCandidateList");
+        document.getElementById(
+            "whitelistCandidateList"
+        );
 
     if (!list) return;
 
-    const players = [...candidatePlayers];
+    const input =
+        document.getElementById(
+            "addWhitelistPlayerInput"
+        );
+
+    const keyword =
+        String(input?.value || "")
+            .trim()
+            .toLowerCase();
+
+    let players = [...candidatePlayers];
+
+    if (keyword) {
+        players = players.filter(player => {
+            const playerName =
+                String(
+                    player.player_name || ""
+                ).toLowerCase();
+
+            return playerName.includes(keyword);
+        });
+    }
 
     list.innerHTML = "";
 
     if (players.length === 0) {
         list.innerHTML = `
             <div class="player-whitelist-empty">
-                尚未有玩家紀錄
+                ${
+                    keyword
+                        ? "找不到符合的玩家"
+                        : "尚未有玩家紀錄"
+                }
             </div>
         `;
+
         return;
     }
 

@@ -314,6 +314,59 @@ def api_player_whitelist_candidates():
     })
 
 
+@player_bp.route(
+    "/api/player/whitelist/resolve-candidate",
+    methods=["POST"]
+)
+def api_player_whitelist_resolve_candidate():
+    data = request.get_json(silent=True) or {}
+
+    player_name = str(
+        data.get("name", "")
+    ).strip()
+
+    if not player_name:
+        return jsonify({
+            "success": False,
+            "message": "請輸入玩家名稱",
+        }), 400
+
+    try:
+        identity = resolve_player_identity_by_name(
+            player_name
+        )
+
+        if not identity.get("success"):
+            return jsonify({
+                "success": False,
+                "message": (
+                    identity.get("message")
+                    or "玩家解析失敗"
+                ),
+            }), 400
+
+        return jsonify({
+            "success": True,
+            "player": {
+                "player_uuid": identity.get(
+                    "player_uuid"
+                ),
+                "player_name": identity.get(
+                    "player_name"
+                ),
+                "account_type": identity.get(
+                    "account_type"
+                ),
+            },
+        })
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error),
+        }), 500
+
+
 @player_bp.route("/api/player/whitelist/add", methods=["POST"])
 def api_player_whitelist_add():
     data = request.get_json(silent=True) or {}

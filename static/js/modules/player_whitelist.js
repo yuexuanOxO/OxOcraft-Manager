@@ -1264,7 +1264,9 @@ async function removePlayerWhitelist(player) {
 
 async function handleAddWhitelistPlayer() {
     const input =
-        document.getElementById("addWhitelistPlayerInput");
+        document.getElementById(
+            "addWhitelistPlayerInput"
+        );
 
     const playerName =
         (input?.value || "").trim();
@@ -1285,19 +1287,43 @@ async function handleAddWhitelistPlayer() {
         return;
     }
 
-
-    confirmBtn.disabled = true;
-    confirmBtn.textContent = "…";
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "…";
+    }
 
     if (input) {
         input.disabled = true;
     }
 
     try {
-        const data =
-            await addWhitelistPlayerByName(playerName);
+        const player =
+            await resolveWhitelistCandidateByName(
+                playerName
+            );
 
-        input.value = "";
+        const confirmed = await showConfirm({
+            title: "搜尋結果",
+            message:
+                `請問是否為這位玩家？\n\n` +
+                `玩家 ID：${player.player_name}\n` +
+                `UUID：${player.player_uuid}`,
+            icon: getPlayerAvatarUrl(player),
+            confirmText: "是",
+            cancelText: "不是",
+            variant: "info",
+        });
+
+        if (!confirmed) {
+            return;
+        }
+
+        const data =
+            await addWhitelistCandidate(player);
+
+        if (input) {
+            input.value = "";
+        }
 
         await showInfo({
             title: "玩家白名單",
@@ -1307,33 +1333,38 @@ async function handleAddWhitelistPlayer() {
         });
 
     } catch (error) {
-        console.error("加入白名單失敗:", error);
+        console.error(
+            "加入白名單失敗:",
+            error
+        );
 
         await showInfo({
             title: "錯誤",
-            message: error.message || "加入白名單失敗",
+            message:
+                error.message
+                || "加入白名單失敗",
             confirmText: "關閉",
             variant: "error"
         });
-    }finally {
 
+    } finally {
         if (confirmBtn) {
             confirmBtn.disabled = false;
-            confirmBtn.textContent = "新增";
+            confirmBtn.textContent = "加入";
         }
 
         if (input) {
             input.disabled = false;
         }
     }
-
-
 }
 
 
-async function addWhitelistPlayerByName(playerName) {
+async function resolveWhitelistCandidateByName(
+    playerName
+) {
     const response = await fetch(
-        "/api/player/whitelist/add",
+        "/api/player/whitelist/resolve-candidate",
         {
             method: "POST",
             headers: {
@@ -1347,16 +1378,17 @@ async function addWhitelistPlayerByName(playerName) {
 
     const data = await response.json();
 
-    if (!data.success) {
+    if (!response.ok || !data.success) {
         throw new Error(
-            data.message || "加入白名單失敗"
+            data.message || "搜尋玩家失敗"
         );
     }
 
-    await loadPlayerWhitelist();
-    await loadWhitelistCandidates();
+    if (!data.player) {
+        throw new Error("搜尋玩家失敗");
+    }
 
-    return data;
+    return data.player;
 }
 
 

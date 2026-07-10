@@ -106,13 +106,11 @@ def sync_whitelist_json_to_players(
     )
 
 
-def sync_whitelist_reload_from_log(
+def sync_whitelist_json_to_players_with_history(
     operator_name: str,
     source: str,
     detail: str = "",
 ) -> dict:
-    before_uuid_set = load_whitelist_uuid_set()
-
     # 目前 DB 狀態
     db_players = get_whitelisted_players_from_db()
     db_uuid_set = {

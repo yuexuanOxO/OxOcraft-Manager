@@ -342,7 +342,7 @@ def maybe_refresh_player_whitelist_from_log(line: str) -> None:
         try:
             from backend.player_permissions.player_whitelist_service import (
                 pop_recent_ui_whitelist_reload_if_match,
-                sync_whitelist_reload_from_log,
+                sync_whitelist_json_to_players_with_history,
             )
 
             is_ui_reload = (
@@ -361,7 +361,7 @@ def maybe_refresh_player_whitelist_from_log(line: str) -> None:
                 operator_name = log_operator
 
             if not is_ui_reload:
-                result = sync_whitelist_reload_from_log(
+                result = sync_whitelist_json_to_players_with_history(
                     operator_name=operator_name,
                     source=source,
                     detail=line,

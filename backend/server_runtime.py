@@ -99,6 +99,45 @@ def handle_server_output() -> None:
                 print("[PlayerPermission] server ready OP sync failed:", error)
 
             try:
+                from backend.player_permissions.player_whitelist_service import (
+                    sync_whitelist_json_to_players_with_history,
+                )
+
+                whitelist_sync_result = (
+                    sync_whitelist_json_to_players_with_history(
+                        operator_name="Unknown",
+                        source="minecraft_json",
+                        detail="server ready whitelist.json sync",
+                    )
+                )
+
+                from backend.server_monitor import publish_event
+
+                publish_event(
+                    "player_whitelist_should_refresh",
+                    {
+                        "reason":
+                            "server_ready_sync_whitelist_json",
+                        "added_count":
+                            whitelist_sync_result["added_count"],
+                        "removed_count":
+                            whitelist_sync_result["removed_count"],
+                    }
+                )
+
+                print(
+                    "[PlayerWhitelist] server ready sync completed:",
+                    f"added={whitelist_sync_result['added_count']},",
+                    f"removed={whitelist_sync_result['removed_count']}",
+                )
+
+            except Exception as error:
+                print(
+                    "[PlayerWhitelist] server ready sync failed:",
+                    error,
+                )
+
+            try:
                 from backend.player_ban.player_ban_service import (
                     sync_banned_json_to_db,
                     sync_removed_bans_from_json,

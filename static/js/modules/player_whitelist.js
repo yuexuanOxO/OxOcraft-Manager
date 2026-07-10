@@ -59,6 +59,7 @@ let whitelistSettings = {
 const whitelistHistoryFilters = new Set();
 const OFFLINE_WHITELIST_HELP_DISABLED_KEY = "oxo_offline_whitelist_help_disabled";
 const OXOCRAFT_OPERATOR_ICON = "/static/icons/player_ban/OxOcraft_origin.png";
+const UNKNOWN_OPERATOR_ICON = "/static/icons/general_icon/unknown.png";
 
 
 
@@ -1366,7 +1367,15 @@ function createWhitelistHistoryCard(item) {
 
                 <img
                     class="player-whitelist-history-operator-avatar
-                        ${operator === "OxOcraft" ? "oxocraft" : "player"}"
+                        ${
+                            operator === "OxOcraft"
+                                ? "oxocraft"
+                                : (
+                                    operator.toLowerCase() === "unknown"
+                                        ? "unknown"
+                                        : "player"
+                                )
+                        }"
                     src="${getWhitelistOperatorAvatarUrl(item)}"
                     alt="${escapeHtml(operator)}"
                 >
@@ -1399,19 +1408,26 @@ function getWhitelistHistoryActionText(action) {
 
 function getDisplayWhitelistOperator(item) {
     const operator =
-        String(item.operator_name || "OxOcraft").trim();
+        String(
+            item.operator_name || "OxOcraft"
+        ).trim();
 
     const source =
         String(item.source || "").trim();
 
     if (
+        source === "minecraft_json" ||
+        operator === "whitelist.json 同步"
+    ) {
+        return "Unknown";
+    }
+
+    if (
         source === "ui" ||
         source === "offline_ui_edit" ||
-        source === "minecraft_json" ||
         source === "rcon" ||
         source === "console_rcon" ||
-        operator === "Rcon" ||
-        operator === "whitelist.json 同步"
+        operator === "Rcon"
     ) {
         return "OxOcraft";
     }
@@ -1426,6 +1442,10 @@ function getWhitelistOperatorAvatarUrl(item) {
 
     if (operator === "OxOcraft") {
         return OXOCRAFT_OPERATOR_ICON;
+    }
+
+    if (operator.toLowerCase() === "unknown") {
+        return UNKNOWN_OPERATOR_ICON;
     }
 
     return getPlayerAvatarUrl({

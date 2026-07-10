@@ -18,6 +18,7 @@ import {
 
 let allPlayers = [];
 let candidatePlayers = [];
+let selectedWhitelistCandidate = null;
 let currentWhitelistTab = "whitelist";
 let whitelistHistory = [];
 const whitelistHistoryFilters = new Set();
@@ -159,7 +160,10 @@ export function initPlayerWhitelist() {
 
     openAddBtn?.addEventListener("click", async () => {
         addModal?.classList.remove("hidden");
+
+        selectedWhitelistCandidate = null;
         addInput.value = "";
+
         await loadWhitelistCandidates();
     });
 
@@ -181,6 +185,15 @@ export function initPlayerWhitelist() {
         if (event.key === "Enter") {
             await handleAddWhitelistPlayer();
         }
+    });
+
+    addInput?.addEventListener("input", () => {
+        if (!selectedWhitelistCandidate) {
+            return;
+        }
+
+        selectedWhitelistCandidate = null;
+        renderWhitelistCandidates();
     });
 
     whiteListToggleBtn?.addEventListener("click", async () => {
@@ -1262,6 +1275,56 @@ async function removePlayerWhitelist(player) {
 }
 
 
+function findWhitelistCandidateByName(playerName) {
+    const keyword =
+        String(playerName || "").trim();
+
+    if (!keyword) {
+        return null;
+    }
+
+    return candidatePlayers.find(player => {
+        const name =
+            String(
+                player.player_name || ""
+            ).trim();
+
+        const accountType =
+            String(
+                player.account_type || ""
+            ).toLowerCase();
+
+        if (accountType === "premium") {
+            return (
+                name.toLowerCase()
+                === keyword.toLowerCase()
+            );
+        }
+
+        return name === keyword;
+    }) || null;
+}
+
+
+function scrollSelectedWhitelistCandidateIntoView() {
+    window.setTimeout(() => {
+        const selectedCard =
+            document.querySelector(
+                ".whitelist-candidate-card.selected"
+            );
+
+        if (!selectedCard) {
+            return;
+        }
+
+        selectedCard.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+        });
+    }, 0);
+}
+
+
 async function handleAddWhitelistPlayer() {
     const input =
         document.getElementById(
@@ -1283,6 +1346,18 @@ async function handleAddWhitelistPlayer() {
             confirmText: "關閉",
             variant: "warning"
         });
+
+        return;
+    }
+
+    const existingPlayer = findWhitelistCandidateByName(playerName);
+
+    if (existingPlayer) {
+        selectedWhitelistCandidate =
+            existingPlayer;
+
+        renderWhitelistCandidates();
+        scrollSelectedWhitelistCandidateIntoView();
 
         return;
     }
@@ -1466,6 +1541,19 @@ function createWhitelistCandidateCard(player) {
 
     card.className = "whitelist-candidate-card";
 
+    if (
+        selectedWhitelistCandidate &&
+        String(
+            selectedWhitelistCandidate.player_uuid || ""
+        ).toLowerCase()
+        ===
+        String(
+            player.player_uuid || ""
+        ).toLowerCase()
+    ) {
+        card.classList.add("selected");
+    }
+
     const avatarUrl = getPlayerAvatarUrl(player);
 
     card.innerHTML = `
@@ -1615,6 +1703,19 @@ async function deleteWhitelistCandidate(player) {
             );
         }
 
+        if (
+            selectedWhitelistCandidate &&
+            String(
+                selectedWhitelistCandidate.player_uuid || ""
+            ).toLowerCase()
+            ===
+            String(
+                player.player_uuid || ""
+            ).toLowerCase()
+        ) {
+            selectedWhitelistCandidate = null;
+        }
+
         await loadWhitelistCandidates();
 
         await showInfo({
@@ -1671,6 +1772,8 @@ async function addWhitelistCandidate(player) {
             data.message || "加入白名單失敗"
         );
     }
+
+    selectedWhitelistCandidate = null;
 
     await loadPlayerWhitelist();
     await loadWhitelistCandidates();

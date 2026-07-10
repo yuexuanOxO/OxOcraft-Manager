@@ -399,10 +399,20 @@
     gap: 8px;
     overflow-y: auto;
     max-height: 340px;
-    padding-right: 4px;
+
+    padding: 4px 8px 4px 4px;
+    box-sizing: border-box;
 }
 
 .whitelist-candidate-card {
+
+    position: relative;
+    overflow: hidden;
+
+    min-height: 64px;
+    box-sizing: border-box;
+    flex: 0 0 64px;
+
     display: flex;
     align-items: center;
     gap: 12px;
@@ -410,6 +420,52 @@
     border: 1px solid #444;
     border-radius: 8px;
     background: #262626;
+
+}
+
+.whitelist-candidate-card.selected {
+
+    border-color: rgba(174, 92, 255, 0.65);
+
+    box-shadow:
+        0 0 0 1px rgba(174, 92, 255, 0.65),
+        0 0 16px rgba(174, 92, 255, 0.65);
+
+}
+
+.whitelist-candidate-card.selected::after {
+
+    content: "";
+
+    position: absolute;
+    inset: 0;
+
+    pointer-events: none;
+
+    background-image:
+        url("/static/img/ui/enchanted_glint_item.png");
+
+    background-size: 160px 160px;
+    opacity: 0.28;
+
+    mix-blend-mode: screen;
+
+    animation:
+        whitelist-selected-glint
+        8s linear infinite;
+
+}
+
+@keyframes whitelist-selected-glint {
+
+    from {
+        background-position: 0 0;
+    }
+
+    to {
+        background-position: 0 -96px;
+    }
+
 }
 
 .whitelist-candidate-add-btn {

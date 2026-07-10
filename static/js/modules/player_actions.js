@@ -1,7 +1,14 @@
 import { showConfirm, showInfo } from "./system_dialog.js";
+
+import {
+    getPlayerAvatarUrl
+} from "./player_avatar.js";
+
 import {
     openAddOpPlayerModalWithLockedPlayer
 } from "./player_permissions.js";
+
+
 
 
 function closeAllPlayerMenus() {
@@ -99,6 +106,26 @@ async function handlePlayerMenuClick(event) {
                     online: true,
                 });
 
+                return;
+            }
+
+            const playerData = {
+                player_uuid: playerUuid,
+                player_name: playerName,
+                name: playerName,
+                account_type: menuItem.dataset.accountType || "unknown",
+            };
+
+            const confirmed = await showConfirm({
+                title: "移除管理員",
+                message: `是否要移除「${playerName}」的管理員權限？`,
+                icon: getPlayerAvatarUrl(playerData),
+                confirmText: "移除",
+                cancelText: "取消",
+                variant: "warning",
+            });
+
+            if (!confirmed) {
                 return;
             }
 

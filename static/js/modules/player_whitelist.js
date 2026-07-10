@@ -1289,7 +1289,6 @@ async function handleAddWhitelistPlayer() {
 
     if (confirmBtn) {
         confirmBtn.disabled = true;
-        confirmBtn.textContent = "…";
     }
 
     if (input) {
@@ -1350,7 +1349,6 @@ async function handleAddWhitelistPlayer() {
     } finally {
         if (confirmBtn) {
             confirmBtn.disabled = false;
-            confirmBtn.textContent = "加入";
         }
 
         if (input) {

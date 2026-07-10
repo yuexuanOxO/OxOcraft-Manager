@@ -1173,22 +1173,13 @@ function renderWhitelistHistory() {
 
     if (whitelistHistorySearchKeyword) {
         rows = rows.filter(item => {
-            return (
+            const playerName =
                 String(
                     item.target_name || ""
-                )
-                    .toLowerCase()
-                    .includes(
-                        whitelistHistorySearchKeyword
-                    )
-                ||
-                String(
-                    item.target_uuid || ""
-                )
-                    .toLowerCase()
-                    .includes(
-                        whitelistHistorySearchKeyword
-                    )
+                ).toLowerCase();
+
+            return playerName.includes(
+                whitelistHistorySearchKeyword
             );
         });
     }

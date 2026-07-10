@@ -644,10 +644,27 @@
     gap: 1px;
 }
 
-#playerWhitelistHistoryPage
-.player-permission-search-input {
+.player-whitelist-history-toolbar
+.player-whitelist-history-icon-btn {
 
-    padding-right: 130px;
+    border-radius: 0;
+
+}
+
+.player-whitelist-history-toolbar
+.player-whitelist-history-icon-btn {
+
+    box-sizing: border-box;
+
+    border-left: 1px solid #555;
+    border-right: 0;
+    border-radius: 0;
+
+}
+
+#playerWhitelistHistorySearchBtn {
+
+    border-right: 1px solid #555;
 
 }
 

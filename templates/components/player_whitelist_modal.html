@@ -136,12 +136,28 @@
                         ＋ 新增玩家到白名單
                     </button>
 
-                    <input
-                        id="playerWhitelistSearchInput"
-                        class="player-whitelist-search"
-                        type="text"
-                        placeholder="搜尋白名單玩家名稱或 UUID"
-                    >
+                    <div class="player-permission-search-wrap">
+
+                        <input
+                            id="playerWhitelistSearchInput"
+                            class="player-whitelist-search player-permission-search-input"
+                            type="text"
+                            placeholder="搜尋玩家名稱"
+                        >
+
+                        <button
+                            id="playerWhitelistSearchBtn"
+                            class="player-permission-search-btn"
+                            type="button"
+                            title="搜尋玩家"
+                        >
+                            <img
+                                src="/static/icons/server_settings/spyglass.png"
+                                alt="搜尋"
+                            >
+                        </button>
+
+                    </div>
 
                 </div>
 

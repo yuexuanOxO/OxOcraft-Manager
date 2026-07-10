@@ -19,6 +19,7 @@ import {
 let allPlayers = [];
 let candidatePlayers = [];
 let selectedWhitelistCandidate = null;
+let whitelistSearchKeyword = "";
 let currentWhitelistTab = "whitelist";
 let whitelistHistory = [];
 const whitelistHistoryFilters = new Set();
@@ -41,6 +42,7 @@ export function initPlayerWhitelist() {
     const closeBtn = document.getElementById("closePlayerWhitelistBtn");
     const refreshBtn = document.getElementById("refreshPlayerWhitelistBtn");
     const searchInput = document.getElementById("playerWhitelistSearchInput");
+    const searchBtn = document.getElementById("playerWhitelistSearchBtn");
     const openAddBtn = document.getElementById("openAddWhitelistPlayerBtn");
     const addModal = document.getElementById("addWhitelistPlayerModal");
     const closeAddBtn = document.getElementById("closeAddWhitelistPlayerBtn");
@@ -73,8 +75,14 @@ export function initPlayerWhitelist() {
         });
     });
 
-    historySearchInput?.addEventListener("input", () => {
-        renderWhitelistHistory();
+    searchBtn?.addEventListener("click", () => {
+        applyPlayerWhitelistSearch();
+    });
+
+    searchInput?.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+            applyPlayerWhitelistSearch();
+        }
     });
 
     historyFilterBtn?.addEventListener("click", (event) => {
@@ -704,32 +712,37 @@ function updateWhitelistModeSummary(onlineMode) {
 }
 
 
-function renderPlayerWhitelistList() {
-    const list =
-        document.getElementById("playerWhitelistList");
-
+function applyPlayerWhitelistSearch() {
     const searchInput =
-        document.getElementById("playerWhitelistSearchInput");
+        document.getElementById(
+            "playerWhitelistSearchInput"
+        );
 
-    if (!list) return;
-
-    const keyword =
-        (searchInput?.value || "")
+    whitelistSearchKeyword =
+        String(searchInput?.value || "")
             .trim()
             .toLowerCase();
 
+    renderPlayerWhitelistList();
+}
+
+
+function renderPlayerWhitelistList() {
+    const list = document.getElementById("playerWhitelistList");
+
+    if (!list) return;
+
     let players = [...allPlayers];
 
-    if (keyword) {
+    if (whitelistSearchKeyword) {
         players = players.filter(player => {
-            return (
-                String(player.player_name || "")
-                    .toLowerCase()
-                    .includes(keyword)
-                ||
-                String(player.player_uuid || "")
-                    .toLowerCase()
-                    .includes(keyword)
+            const playerName =
+                String(
+                    player.player_name || ""
+                ).toLowerCase();
+
+            return playerName.includes(
+                whitelistSearchKeyword
             );
         });
     }

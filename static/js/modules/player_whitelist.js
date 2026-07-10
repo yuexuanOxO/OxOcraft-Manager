@@ -15,6 +15,10 @@ import {
     isUiServerTransitionState
 } from "./server_ui_state.js";
 
+import {
+    initMinecraftTooltip,
+} from "./common/mc_tooltip.js";
+
 
 let allPlayers = [];
 let candidatePlayers = [];
@@ -58,6 +62,8 @@ export function initPlayerWhitelist() {
     if (!openBtn || !modal) {
         return;
     }
+
+    initMinecraftTooltip();
 
     document.querySelectorAll(".player-whitelist-tab").forEach((button) => {
         button.addEventListener("click", async () => {

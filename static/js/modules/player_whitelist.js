@@ -19,6 +19,22 @@ import {
     initMinecraftTooltip,
 } from "./common/mc_tooltip.js";
 
+import {
+    filterRowsByDateRange,
+} from "./history_filter.js";
+
+import {
+    closeFirstAvailableLayer,
+    isFlatpickrOpen,
+    closeFlatpickr,
+} from "./ui_close_stack.js";
+
+import {
+    initFilterMenu,
+    isFilterMenuOpen,
+    closeFilterMenu,
+} from "./common/filter_menu.js";
+
 
 let allPlayers = [];
 let candidatePlayers = [];
@@ -26,7 +42,12 @@ let selectedWhitelistCandidate = null;
 let whitelistSearchKeyword = "";
 let currentWhitelistTab = "whitelist";
 let whitelistHistory = [];
-const whitelistHistoryFilters = new Set();
+let whitelistHistorySearchKeyword = "";
+let whitelistHistoryStartTime = "";
+let whitelistHistoryEndTime = "";
+let whitelistHistoryStartPicker = null;
+let whitelistHistoryEndPicker = null;
+let whitelistHistoryFlatpickrWasOpenOnPointerDown = false;
 let whitelistSettingsTimer = null;
 let whitelistSettings = {
     white_list: false,
@@ -35,6 +56,7 @@ let whitelistSettings = {
     server_state: "offline",
 };
 
+const whitelistHistoryFilters = new Set();
 const OFFLINE_WHITELIST_HELP_DISABLED_KEY = "oxo_offline_whitelist_help_disabled";
 const OXOCRAFT_OPERATOR_ICON = "/static/icons/player_ban/OxOcraft_origin.png";
 
@@ -55,8 +77,48 @@ export function initPlayerWhitelist() {
     const whiteListToggleBtn = document.getElementById("whiteListToggleBtn");
     const enforceWhitelistToggleBtn = document.getElementById("enforceWhitelistToggleBtn");
     const historySearchInput = document.getElementById("playerWhitelistHistorySearchInput");
-    const historyFilterBtn = document.getElementById("playerWhitelistHistoryFilterBtn");
-    const historyFilterMenu = document.getElementById("playerWhitelistHistoryFilterMenu");
+
+    const historySearchBtn = document.getElementById("playerWhitelistHistorySearchBtn");
+
+    const historyFilterBtn =
+        document.getElementById(
+            "playerWhitelistHistoryFilterBtn"
+        );
+
+    const historyFilterMenu =
+        document.getElementById(
+            "playerWhitelistHistoryFilterMenu"
+        );
+
+    const historyTimeBtn =
+        document.getElementById(
+            "playerWhitelistHistoryTimeBtn"
+        );
+
+    const historyTimeMenu =
+        document.getElementById(
+            "playerWhitelistHistoryTimeMenu"
+        );
+
+    const historyStartTimeInput =
+        document.getElementById(
+            "playerWhitelistHistoryStartTime"
+        );
+
+    const historyEndTimeInput =
+        document.getElementById(
+            "playerWhitelistHistoryEndTime"
+        );
+
+    const historyApplyTimeBtn =
+        document.getElementById(
+            "playerWhitelistHistoryApplyTimeBtn"
+        );
+
+    const historyClearTimeBtn =
+        document.getElementById(
+            "playerWhitelistHistoryClearTimeBtn"
+        );
 
 
     if (!openBtn || !modal) {
@@ -64,6 +126,40 @@ export function initPlayerWhitelist() {
     }
 
     initMinecraftTooltip();
+
+    if (!window.McDateTimePicker) {
+        console.warn(
+            "McDateTimePicker 尚未載入，時間篩選器不會初始化。"
+        );
+    } else {
+        if (
+            historyStartTimeInput &&
+            !whitelistHistoryStartPicker
+        ) {
+            whitelistHistoryStartPicker =
+                window.McDateTimePicker.create({
+                    selector:
+                        "#playerWhitelistHistoryStartTime",
+                    defaultDate: null,
+                    enableTime: true,
+                    minuteIncrement: 5,
+                }).instance;
+        }
+
+        if (
+            historyEndTimeInput &&
+            !whitelistHistoryEndPicker
+        ) {
+            whitelistHistoryEndPicker =
+                window.McDateTimePicker.create({
+                    selector:
+                        "#playerWhitelistHistoryEndTime",
+                    defaultDate: null,
+                    enableTime: true,
+                    minuteIncrement: 5,
+                }).instance;
+        }
+    }
 
     document.querySelectorAll(".player-whitelist-tab").forEach((button) => {
         button.addEventListener("click", async () => {
@@ -91,50 +187,79 @@ export function initPlayerWhitelist() {
         }
     });
 
-    historyFilterBtn?.addEventListener("click", (event) => {
-        event.stopPropagation();
-        historyFilterMenu?.classList.toggle("hidden");
-    });
+    historySearchInput?.addEventListener(
+        "keydown",
+        event => {
+            if (event.key === "Enter") {
+                applyWhitelistHistorySearch();
+            }
+        }
+    );
 
-    historyFilterMenu
-        ?.querySelectorAll("button[data-filter]")
-        .forEach((button) => {
+    historySearchBtn?.addEventListener(
+        "click",
+        () => {
+            applyWhitelistHistorySearch();
+        }
+    );
+
+    historyTimeBtn?.addEventListener(
+        "click",
+        event => {
+            event.stopPropagation();
+
+            historyTimeMenu?.classList.toggle(
+                "hidden"
+            );
+
+            closeFilterMenu(historyFilterMenu);
+        }
+    );
+
+    historyTimeMenu?.addEventListener(
+        "click",
+        event => {
+            event.stopPropagation();
+        }
+    );
+
+    historyApplyTimeBtn?.addEventListener(
+        "click",
+        () => {
+            applyWhitelistHistoryTimeFilter();
+            historyTimeMenu?.classList.add("hidden");
+        }
+    );
+
+    historyClearTimeBtn?.addEventListener(
+        "click",
+        () => {
+            clearWhitelistHistoryTimeFilter();
+        }
+    );
+
+    historyTimeMenu
+        ?.querySelectorAll(
+            "button[data-time-range]"
+        )
+        .forEach(button => {
             button.addEventListener("click", () => {
-                const filter = button.dataset.filter || "";
-
-                if (!filter) return;
-
-                if (filter === "clear") {
-                    whitelistHistoryFilters.clear();
-
-                    historyFilterMenu
-                        .querySelectorAll("button[data-filter]")
-                        .forEach(btn => {
-                            btn.classList.remove("active");
-                        });
-
-                    renderWhitelistHistory();
-                    return;
-                }
-
-                if (whitelistHistoryFilters.has(filter)) {
-                    whitelistHistoryFilters.delete(filter);
-                    button.classList.remove("active");
-                } else {
-                    whitelistHistoryFilters.add(filter);
-                    button.classList.add("active");
-                }
-
-                renderWhitelistHistory();
+                applyWhitelistHistoryQuickTimeRange(
+                    button.dataset.timeRange
+                );
             });
         });
 
-    historyFilterMenu?.addEventListener("click", (event) => {
-        event.stopPropagation();
-    });
+    initFilterMenu({
+        button: historyFilterBtn,
+        menu: historyFilterMenu,
+        filters: whitelistHistoryFilters,
 
-    document.addEventListener("click", () => {
-        historyFilterMenu?.classList.add("hidden");
+        onToggle: () => {
+            historyTimeMenu?.classList.add("hidden");
+        },
+
+        onChange: renderWhitelistHistory,
     });
 
     openBtn.addEventListener("click", async () => {
@@ -156,11 +281,111 @@ export function initPlayerWhitelist() {
         stopWhitelistSettingsWatcher();
     });
 
-    modal.addEventListener("click", (event) => {
-        if (event.target === modal) {
-            modal.classList.add("hidden");
-            stopWhitelistSettingsWatcher();
+    modal.addEventListener("pointerdown",event => {
+            const clickedInsideFlatpickr =
+                event.target.closest(
+                    ".flatpickr-calendar"
+                );
+
+            const clickedInsideTimeMenu =
+                historyTimeMenu?.contains(
+                    event.target
+                );
+
+            whitelistHistoryFlatpickrWasOpenOnPointerDown =
+                isFlatpickrOpen(
+                    whitelistHistoryStartPicker,
+                    whitelistHistoryEndPicker
+                )
+                && !clickedInsideFlatpickr
+                && !clickedInsideTimeMenu;
+        },
+        true
+    );
+
+    modal.addEventListener("click", event => {
+        const clickedInsideTimeMenu =
+            historyTimeMenu?.contains(event.target);
+
+        const clickedTimeButton =
+            historyTimeBtn?.contains(event.target);
+
+        const clickedInsideFilterMenu =
+            historyFilterMenu?.contains(event.target);
+
+        const clickedFilterButton =
+            historyFilterBtn?.contains(event.target);
+
+        const clickedInsideFlatpickr =
+            event.target.closest(
+                ".flatpickr-calendar"
+            );
+
+        if (
+            clickedInsideTimeMenu ||
+            clickedTimeButton ||
+            clickedInsideFilterMenu ||
+            clickedFilterButton ||
+            clickedInsideFlatpickr
+        ) {
+            return;
         }
+
+        closeFirstAvailableLayer([
+            {
+                isOpen: () =>
+                    whitelistHistoryFlatpickrWasOpenOnPointerDown
+                    ||
+                    isFlatpickrOpen(
+                        whitelistHistoryStartPicker,
+                        whitelistHistoryEndPicker
+                    ),
+
+                close: () => {
+                    closeFlatpickr(
+                        whitelistHistoryStartPicker,
+                        whitelistHistoryEndPicker
+                    );
+
+                    whitelistHistoryFlatpickrWasOpenOnPointerDown =
+                        false;
+                },
+            },
+            {
+                isOpen: () =>
+                    historyTimeMenu &&
+                    !historyTimeMenu.classList.contains(
+                        "hidden"
+                    ),
+
+                close: () => {
+                    historyTimeMenu.classList.add(
+                        "hidden"
+                    );
+                },
+            },
+            {
+                isOpen: () =>
+                    isFilterMenuOpen(
+                        historyFilterMenu
+                    ),
+
+                close: () =>
+                    closeFilterMenu(
+                        historyFilterMenu
+                    ),
+            },
+            {
+                isOpen: () =>
+                    event.target === modal &&
+                    !modal.classList.contains("hidden"),
+
+                close: () => {
+                    modal.classList.add("hidden");
+                    stopWhitelistSettingsWatcher();
+                },
+            },
+        ]);
     });
 
     refreshBtn?.addEventListener("click", async () => {
@@ -828,32 +1053,72 @@ async function loadWhitelistHistory() {
 
 
 function renderWhitelistHistory() {
-    const list = document.getElementById("playerWhitelistHistoryList");
-    const searchInput = document.getElementById("playerWhitelistHistorySearchInput");
+    const list =
+        document.getElementById(
+            "playerWhitelistHistoryList"
+        );
 
     if (!list) return;
 
-    const keyword =
-        (searchInput?.value || "")
-            .trim()
-            .toLowerCase();
-
     let rows = [...whitelistHistory];
 
-    const actionFilters = [...whitelistHistoryFilters].filter(filter => filter === "add" || filter === "remove");
-    const sourceFilters = [...whitelistHistoryFilters].filter(filter =>
-        [
-            "oxocraft",
-            "minecraft_sync",
-            "rcon",
-            "command",
-            "system",
-        ].includes(filter)
-    );
+    rows = filterRowsByDateRange(rows, {
+        getDate: item => item.created_at,
+        start: whitelistHistoryStartTime,
+        end: whitelistHistoryEndTime,
+    });
+
+    const actionFilters =
+        [...whitelistHistoryFilters]
+            .filter(filter =>
+                filter === "add" ||
+                filter === "remove"
+            );
+
+    const sourceFilters =
+        [...whitelistHistoryFilters]
+            .filter(filter =>
+                [
+                    "oxocraft",
+                    "minecraft_sync",
+                    "rcon",
+                    "command",
+                    "system",
+                ].includes(filter)
+            );
+
+    if (actionFilters.length > 0) {
+        rows = rows.filter(item => {
+            const action =
+                String(
+                    item.action || ""
+                ).toLowerCase();
+
+            const isRemove =
+                action.includes("remove");
+
+            const isAdd =
+                !isRemove &&
+                action.includes("add");
+
+            return (
+                (
+                    actionFilters.includes("add")
+                    && isAdd
+                )
+                ||
+                (
+                    actionFilters.includes("remove")
+                    && isRemove
+                )
+            );
+        });
+    }
 
     if (sourceFilters.length > 0) {
         rows = rows.filter(item => {
-            const source = String(item.source || "");
+            const source =
+                String(item.source || "");
 
             const isOxocraft =
                 source === "ui" ||
@@ -876,26 +1141,54 @@ function renderWhitelistHistory() {
                 source === "system";
 
             return (
-                (sourceFilters.includes("oxocraft") && isOxocraft) ||
-                (sourceFilters.includes("minecraft_sync") && isMinecraftSync) ||
-                (sourceFilters.includes("rcon") && isRcon) ||
-                (sourceFilters.includes("command") && isCommand) ||
-                (sourceFilters.includes("system") && isSystem)
+                (
+                    sourceFilters.includes("oxocraft")
+                    && isOxocraft
+                )
+                ||
+                (
+                    sourceFilters.includes(
+                        "minecraft_sync"
+                    )
+                    && isMinecraftSync
+                )
+                ||
+                (
+                    sourceFilters.includes("rcon")
+                    && isRcon
+                )
+                ||
+                (
+                    sourceFilters.includes("command")
+                    && isCommand
+                )
+                ||
+                (
+                    sourceFilters.includes("system")
+                    && isSystem
+                )
             );
         });
     }
 
-
-    if (keyword) {
+    if (whitelistHistorySearchKeyword) {
         rows = rows.filter(item => {
             return (
-                String(item.target_name || "")
+                String(
+                    item.target_name || ""
+                )
                     .toLowerCase()
-                    .includes(keyword)
+                    .includes(
+                        whitelistHistorySearchKeyword
+                    )
                 ||
-                String(item.target_uuid || "")
+                String(
+                    item.target_uuid || ""
+                )
                     .toLowerCase()
-                    .includes(keyword)
+                    .includes(
+                        whitelistHistorySearchKeyword
+                    )
             );
         });
     }
@@ -908,6 +1201,7 @@ function renderWhitelistHistory() {
                 目前沒有符合條件的白名單紀錄
             </div>
         `;
+
         return;
     }
 
@@ -916,6 +1210,105 @@ function renderWhitelistHistory() {
             createWhitelistHistoryCard(item)
         );
     });
+}
+
+
+function applyWhitelistHistorySearch() {
+    const searchInput =
+        document.getElementById(
+            "playerWhitelistHistorySearchInput"
+        );
+
+    whitelistHistorySearchKeyword =
+        String(searchInput?.value || "")
+            .trim()
+            .toLowerCase();
+
+    renderWhitelistHistory();
+}
+
+
+function applyWhitelistHistoryTimeFilter() {
+    const startInput =
+        document.getElementById(
+            "playerWhitelistHistoryStartTime"
+        );
+
+    const endInput =
+        document.getElementById(
+            "playerWhitelistHistoryEndTime"
+        );
+
+    whitelistHistoryStartTime =
+        String(startInput?.value || "").trim();
+
+    whitelistHistoryEndTime =
+        String(endInput?.value || "").trim();
+
+    renderWhitelistHistory();
+}
+
+
+function clearWhitelistHistoryTimeFilter() {
+    whitelistHistoryStartTime = "";
+    whitelistHistoryEndTime = "";
+
+    whitelistHistoryStartPicker?.clear();
+    whitelistHistoryEndPicker?.clear();
+
+    const startInput =
+        document.getElementById(
+            "playerWhitelistHistoryStartTime"
+        );
+
+    const endInput =
+        document.getElementById(
+            "playerWhitelistHistoryEndTime"
+        );
+
+    if (startInput) {
+        startInput.value = "";
+    }
+
+    if (endInput) {
+        endInput.value = "";
+    }
+
+    renderWhitelistHistory();
+}
+
+
+function applyWhitelistHistoryQuickTimeRange(
+    range
+) {
+    const now = new Date();
+    const start = new Date(now);
+
+    if (range === "today") {
+        start.setHours(0, 0, 0, 0);
+    }
+
+    if (range === "7d") {
+        start.setDate(now.getDate() - 7);
+        start.setHours(0, 0, 0, 0);
+    }
+
+    if (range === "30d") {
+        start.setDate(now.getDate() - 30);
+        start.setHours(0, 0, 0, 0);
+    }
+
+    whitelistHistoryStartPicker?.setDate(
+        start,
+        true
+    );
+
+    whitelistHistoryEndPicker?.setDate(
+        now,
+        true
+    );
+
+    applyWhitelistHistoryTimeFilter();
 }
 
 

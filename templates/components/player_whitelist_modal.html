@@ -187,19 +187,120 @@
 
                 <div class="player-whitelist-history-toolbar">
 
-                    <input
-                        id="playerWhitelistHistorySearchInput"
-                        class="player-whitelist-search"
-                        type="text"
-                        placeholder="搜尋白名單紀錄"
-                    >
+                    <div class="player-permission-search-wrap">
 
-                    <div class="filter-wrap">
+                        <input
+                            id="playerWhitelistHistorySearchInput"
+                            class="player-whitelist-search player-permission-search-input"
+                            type="text"
+                            placeholder="搜尋白名單紀錄"
+                        >
+
+                        <button
+                            id="playerWhitelistHistoryTimeBtn"
+                            class="filter-btn player-permission-history-time-btn"
+                            type="button"
+                            data-mc-tooltip="時間篩選"
+                        >
+                            <img
+                                src="/static/icons/general_icon/clock.gif"
+                                alt="時間篩選"
+                            >
+                        </button>
+
+                        <div
+                            id="playerWhitelistHistoryTimeMenu"
+                            class="filter-menu player-permission-history-time-menu hidden"
+                        >
+                            <div class="filter-title">
+                                時間篩選
+                            </div>
+
+                            <div class="permission-time-filter-row">
+                                <label>開始時間</label>
+
+                                <input
+                                    id="playerWhitelistHistoryStartTime"
+                                    class="permission-time-filter-input mc-input"
+                                    type="text"
+                                    placeholder="開始時間"
+                                >
+                            </div>
+
+                            <div class="permission-time-filter-row">
+                                <label>結束時間</label>
+
+                                <input
+                                    id="playerWhitelistHistoryEndTime"
+                                    class="permission-time-filter-input mc-input"
+                                    type="text"
+                                    placeholder="結束時間"
+                                >
+                            </div>
+
+                            <div class="permission-time-apply-row">
+                                <button
+                                    id="playerWhitelistHistoryApplyTimeBtn"
+                                    type="button"
+                                    class="filter-clear-btn permission-time-apply-btn"
+                                >
+                                    <img
+                                        src="/static/icons/general_icon/clock.gif"
+                                        alt=""
+                                    >
+
+                                    <span>套用篩選</span>
+                                </button>
+                            </div>
+
+                            <div class="filter-title">
+                                快速選擇
+                            </div>
+
+                            <div class="filter-tags">
+                                <button
+                                    type="button"
+                                    data-time-range="today"
+                                >
+                                    今天
+                                </button>
+
+                                <button
+                                    type="button"
+                                    data-time-range="7d"
+                                >
+                                    近7天
+                                </button>
+
+                                <button
+                                    type="button"
+                                    data-time-range="30d"
+                                >
+                                    近30天
+                                </button>
+                            </div>
+
+                            <div class="filter-actions">
+                                <button
+                                    id="playerWhitelistHistoryClearTimeBtn"
+                                    type="button"
+                                    class="filter-clear-btn"
+                                >
+                                    <img
+                                        src="/static/icons/general_icon/brush.png"
+                                        alt="清除篩選"
+                                    >
+
+                                    <span>清除篩選</span>
+                                </button>
+                            </div>
+                        </div>
+
                         <button
                             id="playerWhitelistHistoryFilterBtn"
-                            class="filter-btn"
+                            class="filter-btn player-permission-history-filter-btn"
                             type="button"
-                            title="篩選紀錄"
+                            data-mc-tooltip="篩選紀錄"
                         >
                             <img
                                 src="/static/icons/general_icon/hopper.png"
@@ -216,11 +317,17 @@
                             </div>
 
                             <div class="filter-tags">
-                                <button type="button" data-filter="add">
+                                <button
+                                    type="button"
+                                    data-filter="add"
+                                >
                                     加入白名單
                                 </button>
 
-                                <button type="button" data-filter="remove">
+                                <button
+                                    type="button"
+                                    data-filter="remove"
+                                >
                                     移出白名單
                                 </button>
                             </div>
@@ -230,11 +337,25 @@
                             </div>
 
                             <div class="filter-tags">
-                                <button type="button" data-filter="oxocraft">OxOcraft</button>
-                                <button type="button" data-filter="minecraft_sync">Minecraft資料同步</button>
-                                <button type="button" data-filter="rcon">UI輸入指令</button>
-                                <button type="button" data-filter="command">遊戲內指令</button>
-                                <button type="button" data-filter="system">系統</button>
+                                <button type="button" data-filter="oxocraft">
+                                    OxOcraft
+                                </button>
+
+                                <button type="button" data-filter="minecraft_sync">
+                                    Minecraft資料同步
+                                </button>
+
+                                <button type="button" data-filter="system">
+                                    系統
+                                </button>
+
+                                <button type="button" data-filter="rcon">
+                                    UI輸入指令
+                                </button>
+
+                                <button type="button" data-filter="command">
+                                    遊戲內指令
+                                </button>
                             </div>
 
                             <div class="filter-actions">
@@ -252,6 +373,19 @@
                                 </button>
                             </div>
                         </div>
+
+                        <button
+                            id="playerWhitelistHistorySearchBtn"
+                            class="player-permission-search-btn player-permission-history-search-btn"
+                            type="button"
+                            data-mc-tooltip="搜尋紀錄"
+                        >
+                            <img
+                                src="/static/icons/server_settings/spyglass.png"
+                                alt="搜尋"
+                            >
+                        </button>
+
                     </div>
 
                 </div>

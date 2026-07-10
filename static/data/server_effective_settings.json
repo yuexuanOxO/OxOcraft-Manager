@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-07-10T18:54:58",
-    "properties_modified_comment": "Fri Jul 10 18:54:53 CST 2026",
+    "captured_at": "2026-07-10T20:48:43",
+    "properties_modified_comment": "Fri Jul 10 20:38:31 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -66,7 +66,15 @@
         "management-server-tls-enabled": "false",
         "management-server-tls-keystore": "",
         "management-server-tls-keystore-password": "",
-        "management-server-allowed-origins": ""
+        "management-server-allowed-origins": "",
+        "accepts-transfers": "false",
+        "bug-report-link": "",
+        "enable-code-of-conduct": "false",
+        "pause-when-empty-seconds": "60",
+        "region-file-compression": "deflate",
+        "resource-pack-id": "",
+        "status-heartbeat-interval": "0",
+        "text-filtering-version": "0"
     },
     "runtime_config": {
         "java_xms": "1G",

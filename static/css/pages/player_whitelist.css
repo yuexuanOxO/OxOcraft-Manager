@@ -644,6 +644,62 @@
     gap: 1px;
 }
 
+#playerWhitelistHistoryPage
+.player-permission-search-input {
+
+    padding-right: 130px;
+
+}
+
+#playerWhitelistHistoryFilterMenu {
+
+    position: absolute;
+
+    top: calc(100% + 2px);
+    right: 42px;
+
+    width: 300px;
+    max-width: calc(100vw - 80px);
+
+    z-index: 20;
+
+}
+
+#playerWhitelistHistoryApplyTimeBtn.permission-time-apply-btn {
+
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    background: #3d8f2f !important;
+    border-color: #24561d !important;
+    color: #ffffff !important;
+
+    font-weight: bold;
+
+}
+
+#playerWhitelistHistoryApplyTimeBtn.permission-time-apply-btn:hover {
+
+    background: #4ca83b !important;
+
+}
+
+#playerWhitelistHistoryApplyTimeBtn.permission-time-apply-btn:active {
+
+    background: #327826 !important;
+
+}
+
+#playerWhitelistHistoryApplyTimeBtn.permission-time-apply-btn img {
+
+    width: 16px;
+    height: 16px;
+
+    image-rendering: pixelated;
+
+}
+
 .player-whitelist-history-list {
     flex: 1;
     min-height: 0;

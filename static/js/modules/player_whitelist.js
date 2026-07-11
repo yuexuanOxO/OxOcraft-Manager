@@ -1615,10 +1615,15 @@ function createPlayerWhitelistCard(player) {
         </div>
 
         <button
-            class="player-whitelist-action whitelisted"
+            class="
+                player-whitelist-action
+                whitelisted
+                mc-danger-icon-btn
+            "
             type="button"
+            data-mc-tooltip="移出白名單"
         >
-            移出白名單
+            ✕
         </button>
     `;
 

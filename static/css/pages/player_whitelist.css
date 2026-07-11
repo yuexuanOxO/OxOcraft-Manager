@@ -289,8 +289,18 @@
 }
 
 .player-whitelist-action.whitelisted {
+
+    padding: 0;
+
     border-color: #b85c5c;
     color: #ff9c9c;
+
+}
+
+.player-whitelist-action.whitelisted:hover {
+
+    background: #422e2e;
+
 }
 
 .player-whitelist-action.normal {

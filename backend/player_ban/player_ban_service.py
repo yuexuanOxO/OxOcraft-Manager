@@ -261,6 +261,19 @@ def get_current_account_type() -> str:
     return "premium" if is_online_mode() else "offline"
 
 
+def is_same_player_name(
+    first_name: str,
+    second_name: str,
+) -> bool:
+    first_name = str(first_name or "").strip()
+    second_name = str(second_name or "").strip()
+
+    if is_online_mode():
+        return first_name.lower() == second_name.lower()
+
+    return first_name == second_name
+
+
 def get_active_banned_players() -> list[dict]:
     current_account_type = get_current_account_type()
     players = get_banned_players_from_db()
@@ -486,19 +499,28 @@ def write_player_to_banned_json(
 ) -> None:
     data = read_json_list(BANNED_PLAYERS_FILE)
 
+    normalized_uuid = str(player_uuid or "").strip().lower()
+
     data = [
-        item for item in data
-        if str(item.get("uuid", "")).lower() != player_uuid.lower()
-        and str(item.get("name", "")).lower() != player_name.lower()
+        item
+        for item in data
+        if str(
+            item.get("uuid", "")
+        ).strip().lower() != normalized_uuid
     ]
 
     data.append({
         "uuid": player_uuid,
         "name": player_name,
-        "created": datetime.now().strftime("%Y-%m-%d %H:%M:%S +0800"),
+        "created": datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S +0800"
+        ),
         "source": operator or "OxOcraft-Manager",
         "expires": "forever",
-        "reason": reason or "Banned by OxOcraft-Manager",
+        "reason": (
+            reason
+            or "Banned by OxOcraft-Manager"
+        ),
     })
 
     write_json_list(BANNED_PLAYERS_FILE, data)
@@ -628,19 +650,31 @@ def remove_player_from_banned_json(
 
     original_count = len(data)
 
-    data = [
-        item for item in data
-        if not (
-            (
-                player_uuid
-                and str(item.get("uuid", "")).lower()
-                == player_uuid.lower()
-            )
-            or (
-                str(item.get("name", "")).lower()
-                == player_name.lower()
-            )
+    normalized_uuid = str(
+        player_uuid or ""
+    ).strip().lower()
+
+    def should_remove(item: dict) -> bool:
+        item_uuid = str(
+            item.get("uuid", "")
+        ).strip().lower()
+
+        item_name = str(
+            item.get("name", "")
+        ).strip()
+
+        if normalized_uuid:
+            return item_uuid == normalized_uuid
+
+        return is_same_player_name(
+            item_name,
+            player_name,
         )
+
+    data = [
+        item
+        for item in data
+        if not should_remove(item)
     ]
 
     if len(data) == original_count:
@@ -732,9 +766,14 @@ def sync_ban_player_from_log(
     reason = ""
 
     for item in read_json_list(BANNED_PLAYERS_FILE):
-        json_name = str(item.get("name", "")).strip()
+        json_name = str(
+            item.get("name", "")
+        ).strip()
 
-        if json_name.lower() != player_name.lower():
+        if not is_same_player_name(
+            json_name,
+            player_name,
+        ):
             continue
 
         player_uuid = str(item.get("uuid", "")).strip()

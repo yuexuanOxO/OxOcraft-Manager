@@ -1010,17 +1010,25 @@ function renderBanCandidateSection() {
 
 function findBanCandidateByName(playerName) {
     const keyword =
-        String(playerName || "").trim().toLowerCase();
+        String(playerName || "").trim();
 
     if (!keyword) {
         return null;
     }
 
-    return banCandidatePlayers.find(player =>
-        String(player.player_name || "")
-            .trim()
-            .toLowerCase() === keyword
-    ) || null;
+    return banCandidatePlayers.find(player => {
+        const name =
+            String(player.player_name || "").trim();
+
+        if (banOnlineMode) {
+            return (
+                name.toLowerCase()
+                === keyword.toLowerCase()
+            );
+        }
+
+        return name === keyword;
+    }) || null;
 }
 
 

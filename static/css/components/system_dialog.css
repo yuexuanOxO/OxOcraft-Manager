@@ -63,31 +63,63 @@
     gap: 14px;
 }
 
-.system-dialog-btn{
+.system-dialog-btn {
     min-width: 120px;
     height: 48px;
 
-    border: 2px solid #5c5c5c;
+    box-sizing: border-box;
 
-    background: #2b2b2b;
+    border: 4px solid #0b0b0b;
 
-    color: white;
+    color: #ffffff;
 
     font-size: 20px;
+    font-weight: bold;
+
+    text-shadow:
+        2px 2px 0 rgba(0, 0, 0, 0.65);
+
+    box-shadow:
+        inset 2px 2px 0 rgba(255, 255, 255, 0.2),
+        inset -2px -2px 0 rgba(0, 0, 0, 0.35),
+        0 4px 0 #000000;
 
     cursor: pointer;
 }
 
-.system-dialog-btn:hover{
-    border-color: white;
+.system-dialog-btn.confirm {
+    background: #a83b32;
 }
 
-.system-dialog-btn.confirm{
-    background: #3b3b3b;
+.system-dialog-btn.confirm:hover {
+    background: #c34a3f;
 }
 
-.system-dialog-btn.cancel{
-    background: #252525;
+.system-dialog-btn.cancel {
+    background: #3f912b;
+}
+
+.system-dialog-btn.cancel:hover {
+    background: #4ca936;
+}
+
+.system-dialog.single-action
+.system-dialog-btn.confirm {
+    background: #3f912b;
+}
+
+.system-dialog.single-action
+.system-dialog-btn.confirm:hover {
+    background: #4ca936;
+}
+
+.system-dialog-btn:active {
+    transform: translateY(2px);
+
+    box-shadow:
+        inset 2px 2px 0 rgba(0, 0, 0, 0.25),
+        inset -2px -2px 0 rgba(255, 255, 255, 0.12),
+        0 2px 0 #000000;
 }
 
 .system-dialog-title.success{

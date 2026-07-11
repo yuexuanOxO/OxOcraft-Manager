@@ -49,15 +49,11 @@ function closeDialog(result) {
     if (!dialog) return;
 
     dialog.classList.add("hidden");
+    dialog.classList.remove("single-action");
 
-    const panel =
-        dialog.querySelector(".system-dialog-panel");
-
-    const messageBox =
-        document.getElementById("systemDialogMessage");
-
-    const helpSections =
-        document.getElementById("systemDialogHelpSections");
+    const panel = dialog.querySelector(".system-dialog-panel");
+    const messageBox = document.getElementById("systemDialogMessage");
+    const helpSections = document.getElementById("systemDialogHelpSections");
 
     panel?.classList.remove("help-mode");
 
@@ -65,8 +61,7 @@ function closeDialog(result) {
 
     helpSections?.classList.add("hidden");
 
-    const confirmBtn =
-        document.getElementById("systemDialogConfirmBtn");
+    const confirmBtn = document.getElementById("systemDialogConfirmBtn");
 
     confirmBtn?.classList.remove("hidden");
 
@@ -130,6 +125,11 @@ export function showConfirm({
 
         cancelBtn.classList.toggle(
             "hidden",
+            !showCancel
+        );
+
+        dialog.classList.toggle(
+            "single-action",
             !showCancel
         );
 

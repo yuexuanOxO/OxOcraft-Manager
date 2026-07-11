@@ -39,3 +39,75 @@ img {
     user-select: none;
     -webkit-user-select: none;
 }
+
+
+/* Minecraft 風格全域捲軸 */
+
+*::-webkit-scrollbar {
+    width: 22px;
+    height: 22px;
+
+    -webkit-appearance: none;
+}
+
+*::-webkit-scrollbar-track {
+    background: #050505;
+    border: 0;
+    border-radius: 0;
+
+    box-shadow: none;
+}
+
+*::-webkit-scrollbar-thumb {
+    min-height: 40px;
+
+    -webkit-appearance: none;
+
+    background: #c2c2c2;
+
+    border: 0;
+    border-radius: 0 !important;
+
+    box-shadow:
+        inset -4px 0 0 #8c8c8c,
+        inset 0 -4px 0 #8c8c8c;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: #d2d2d2;
+
+    box-shadow:
+        inset -4px 0 0 #999999,
+        inset 0 -4px 0 #999999;
+}
+
+*::-webkit-scrollbar-thumb:active {
+    background: #a8a8a8;
+
+    box-shadow:
+        inset -4px 0 0 #707070,
+        inset 0 -4px 0 #707070;
+}
+
+/* 移除上下與左右箭頭 */
+
+*::-webkit-scrollbar-button,
+*::-webkit-scrollbar-button:single-button,
+*::-webkit-scrollbar-button:vertical,
+*::-webkit-scrollbar-button:horizontal,
+*::-webkit-scrollbar-button:start,
+*::-webkit-scrollbar-button:end,
+*::-webkit-scrollbar-button:decrement,
+*::-webkit-scrollbar-button:increment {
+    display: none;
+
+    width: 0;
+    height: 0;
+
+    -webkit-appearance: none;
+}
+
+*::-webkit-scrollbar-corner {
+    background: #050505;
+    border: 0;
+}

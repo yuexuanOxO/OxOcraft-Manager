@@ -1083,7 +1083,7 @@ function createPlayerPermissionCard(player) {
         )
     ) {
         actionBtn.disabled = true;
-        actionBtn.title = "未開啟正版驗證時，此玩家必須加入過伺服器，或關閉伺服器後才能修改 OP";
+        // actionBtn.title = "未開啟正版驗證時，此玩家必須加入過伺服器，或關閉伺服器後才能修改 OP";
     }
 
     actionBtn?.addEventListener("click", async () => {
@@ -1302,11 +1302,17 @@ async function resolveOpCandidateByInput(playerName) {
 
 
 async function handleSearchOpPlayer() {
-    const input =
-        document.getElementById("addOpPlayerInput");
 
-    const playerName =
-        (input?.value || "").trim();
+    if (
+        permissionServerReady &&
+        !permissionOnlineMode
+    ) {
+        return;
+    }
+
+    const input = document.getElementById("addOpPlayerInput");
+
+    const playerName = (input?.value || "").trim();
 
     if (!playerName) {
         await showInfo({
@@ -1331,11 +1337,11 @@ async function handleSearchOpPlayer() {
             await showInfo({
                 title: "玩家權限",
                 message: !permissionServerReady
-                    ? "離線設定模式可直接輸入玩家名稱後加入"
+                    ? "離線設定模式可直接輸入玩家名稱後加入。"
                     : (
                         permissionOnlineMode
-                            ? "找不到符合的正版玩家"
-                            : "請從清單選擇可在線編輯的玩家"
+                            ? "找不到符合的正版玩家。"
+                            : "離線模式僅能從清單選擇可編輯的玩家。"
                     ),
                 confirmText: "關閉",
                 variant: "warning"
@@ -1742,22 +1748,46 @@ function renderAddOpLevelDescription(level) {
 
 
 function renderAddOpInputState() {
-    const input = document.getElementById("addOpPlayerInput");
-    const confirmBtn = document.getElementById("confirmAddOpPlayerBtn");
-    const searchBtn = document.getElementById("searchOpPlayerBtn");
-    const locked = isPermissionActionLocked();
+    const input =
+        document.getElementById(
+            "addOpPlayerInput"
+        );
+
+    const confirmBtn =
+        document.getElementById(
+            "confirmAddOpPlayerBtn"
+        );
+
+    const searchBtn =
+        document.getElementById(
+            "searchOpPlayerBtn"
+        );
+
+    const locked =
+        isPermissionActionLocked();
+
+    const offlineOnlineSearchDisabled =
+        permissionServerReady &&
+        !permissionOnlineMode;
 
     if (input) {
-        input.disabled = locked || !!lockedOpCandidate;
+        input.disabled =
+            locked ||
+            !!lockedOpCandidate;
+
         input.placeholder = locked
             ? "伺服器狀態切換中，請稍後再操作"
             : (
                 lockedOpCandidate
                     ? "已從玩家列表選擇玩家"
                     : (
-                        permissionServerReady
-                            ? "搜尋在線玩家"
-                            : "請輸入玩家名稱"
+                        offlineOnlineSearchDisabled
+                            ? "篩選下方已存在的玩家"
+                            : (
+                                permissionServerReady
+                                    ? "搜尋在線玩家"
+                                    : "請輸入玩家名稱"
+                            )
                     )
             );
     }
@@ -1767,15 +1797,32 @@ function renderAddOpInputState() {
     }
 
     if (searchBtn) {
-        searchBtn.disabled = locked || !!lockedOpCandidate;
+        searchBtn.disabled =
+            locked ||
+            !!lockedOpCandidate ||
+            offlineOnlineSearchDisabled;
+
+        if (offlineOnlineSearchDisabled) {
+            searchBtn.dataset.mcTooltip =
+                "離線版伺服器在線時，無法搜尋新增尚未進入過伺服器的玩家，請從下方清單選擇玩家。";
+        } else if (locked) {
+            searchBtn.dataset.mcTooltip =
+                "伺服器狀態切換中，請稍後再操作。";
+        } else {
+            searchBtn.dataset.mcTooltip =
+                "搜尋玩家";
+        }
     }
 
-    const subtitle = document.getElementById("addOpPlayerSubtitle");
+    const subtitle =
+        document.getElementById(
+            "addOpPlayerSubtitle"
+        );
 
     if (subtitle) {
-        subtitle.textContent = "之前加入過 / 已新增的玩家";
+        subtitle.textContent =
+            "之前加入過 / 已新增的玩家";
     }
-
 }
 
 

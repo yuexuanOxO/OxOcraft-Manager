@@ -169,12 +169,19 @@ export function initPlayerBan() {
 
     addTargetInput?.addEventListener("keydown", async (event) => {
         if (
-            event.key === "Enter"
-            && currentBanTab === "players"
+            event.key !== "Enter"
+            || currentBanTab !== "players"
         ) {
-            event.preventDefault();
-            await handleSearchBanPlayer();
+            return;
         }
+
+        event.preventDefault();
+
+        if (!canAddBanPlayerByName) {
+            return;
+        }
+
+        await handleSearchBanPlayer();
     });
 
     addTargetInput?.addEventListener("input", () => {
@@ -985,19 +992,13 @@ async function openAddBanModal() {
 
 
 function renderBanCandidateSection() {
-    const section =
-        document.getElementById("playerBanCandidateSection");
-
-    const input =
-        document.getElementById("addPlayerBanTargetInput");
-
-    const label =
-        document.getElementById("addPlayerBanTargetLabel");
+    const section = document.getElementById("playerBanCandidateSection");
+    const input = document.getElementById("addPlayerBanTargetInput");
+    const label = document.getElementById("addPlayerBanTargetLabel");
 
     if (!section) return;
 
-    const isPlayerTab =
-        currentBanTab === "players";
+    const isPlayerTab = currentBanTab === "players";
 
     section.classList.toggle(
         "hidden",
@@ -1006,24 +1007,43 @@ function renderBanCandidateSection() {
 
     if (!input) return;
 
+    const searchBtn =document.getElementById("searchPlayerBanBtn");
+
     if (!isPlayerTab) {
         input.disabled = false;
-        return;
+
+        if (searchBtn) {
+            searchBtn.disabled = false;
+            searchBtn.title = "搜尋玩家";
+        }
+
     }
 
-    input.disabled =
-        !canAddBanPlayerByName;
+    const offlineOnlineSearchDisabled = !canAddBanPlayerByName;
+
+    input.disabled = false;
 
     input.placeholder =
-        canAddBanPlayerByName
-            ? "請輸入玩家名稱"
-            : "離線模式且伺服器在線時，請從下方玩家清單選擇";
+        offlineOnlineSearchDisabled
+            ? "篩選下方已存在的玩家"
+            : "請輸入玩家名稱";
+
+    if (searchBtn) {
+        searchBtn.disabled =
+            offlineOnlineSearchDisabled;
+
+        searchBtn.title =
+            offlineOnlineSearchDisabled
+                ? (
+                    "離線版伺服器在線時，"
+                    + "無法搜尋新增尚未進入過伺服器的玩家，"
+                    + "請從下方清單選擇玩家。"
+                )
+                : "搜尋玩家";
+    }
 
     if (label) {
-        label.textContent =
-            canAddBanPlayerByName
-                ? "玩家名稱"
-                : "玩家名稱（請從下方選擇）";
+        label.textContent = "玩家名稱";
     }
 }
 
@@ -1144,6 +1164,10 @@ async function resolveBanCandidateByInput(playerName) {
 
 async function handleSearchBanPlayer() {
     if (currentBanTab !== "players") {
+        return;
+    }
+
+    if (!canAddBanPlayerByName) {
         return;
     }
 

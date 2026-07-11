@@ -505,6 +505,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    flex: 0 0 auto;
 
     padding: 10px;
 
@@ -512,6 +513,9 @@
     border-radius: 8px;
 
     background: #262626;
+
+    position: relative;
+    overflow: hidden;
 }
 
 .player-ban-candidate-avatar {
@@ -1167,10 +1171,7 @@
 .player-ban-candidate-delete-btn:hover {
     background: #422e2e;
 }
-.player-ban-candidate-card {
-    position: relative;
-    overflow: hidden;
-}
+
 
 .player-ban-candidate-card > * {
     position: relative;

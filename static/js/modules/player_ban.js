@@ -1314,14 +1314,6 @@ function createBanCandidateCard(player) {
 
     const selectCandidate = () => {
         selectedBanCandidatePlayer = player;
-
-        const input =
-            document.getElementById("addPlayerBanTargetInput");
-
-        if (input) {
-            input.value = player.player_name;
-        }
-
         renderBanCandidates();
     };
 
@@ -1515,37 +1507,31 @@ function buildExpirePayload() {
 
 
 async function submitAddBan() {
-    const targetInput =
-        document.getElementById("addPlayerBanTargetInput");
-
-    const reasonInput =
-        document.getElementById("addPlayerBanReasonInput");
-
-    const confirmBtn =
-        document.getElementById("confirmAddPlayerBanBtn");
-
-    const target = (targetInput?.value || "").trim();
+    const targetInput = document.getElementById("addPlayerBanTargetInput");
+    const reasonInput = document.getElementById("addPlayerBanReasonInput");
+    const confirmBtn = document.getElementById("confirmAddPlayerBanBtn");
+    const inputValue = (targetInput?.value || "").trim();
     const reason = (reasonInput?.value || "").trim();
 
     if (
         currentBanTab === "players"
-        && !canAddBanPlayerByName
         && !selectedBanCandidatePlayer
     ) {
         await showInfo({
             title: "黑名單管理",
-            message: "離線模式且伺服器在線時，請從下方玩家清單選擇玩家",
+            message: "請先從下方清單選擇玩家，或使用搜尋按鈕搜尋玩家",
             variant: "warning"
         });
         return;
     }
 
-    if (!target) {
+    if (
+        currentBanTab === "ips"
+        && !inputValue
+    ) {
         await showInfo({
             title: "黑名單管理",
-            message: currentBanTab === "ips"
-                ? "請輸入 IP"
-                : "請輸入玩家名稱",
+            message: "請輸入 IP",
             variant: "warning"
         });
         return;
@@ -1569,17 +1555,18 @@ async function submitAddBan() {
 
         if (currentBanTab === "ips") {
             url = "/api/player/ban/ip";
-            payload.ip = target;
+            payload.ip = inputValue;
         } else {
             url = "/api/player/ban/player";
-            payload.name = target;
 
-            if (selectedBanCandidatePlayer) {
-                payload.uuid =
-                    selectedBanCandidatePlayer.player_uuid;
+            payload.name =
+                selectedBanCandidatePlayer.player_name;
 
-                payload.account_type = selectedBanCandidatePlayer.account_type
-            }
+            payload.uuid =
+                selectedBanCandidatePlayer.player_uuid;
+
+            payload.account_type =
+                selectedBanCandidatePlayer.account_type;
         }
 
         const response = await fetch(

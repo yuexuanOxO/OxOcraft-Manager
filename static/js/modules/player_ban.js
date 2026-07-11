@@ -283,8 +283,8 @@ function updateBanTabs() {
     if (addBtn) {
         addBtn.textContent =
             currentBanTab === "ips"
-                ? "+ 新增IP黑名單"
-                : "+ 新增玩家黑名單";
+                ? "+ 新增IP到黑名單"
+                : "+ 新增玩家到黑名單";
     }
 }
 
@@ -937,7 +937,7 @@ async function openAddBanModal() {
         title.textContent =
             currentBanTab === "ips"
                 ? "新增 IP 黑名單"
-                : "新增玩家黑名單";
+                : "新增玩家到黑名單";
     }
 
     if (label) {

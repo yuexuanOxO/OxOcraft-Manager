@@ -63,7 +63,7 @@
                         >
                     </button>
                 </div>
-                
+
             </div>
 
 
@@ -127,35 +127,38 @@
 
         <div class="player-ban-add-header">
             <div id="addPlayerBanTitle" class="player-ban-add-title">
-                新增玩家黑名單
+                封鎖玩家
             </div>
         </div>
 
         <div class="player-ban-add-body">
             <div class="player-ban-candidate-title">玩家名稱</div>
-            <div class="player-ban-input-row">
-                <input
-                    id="addPlayerBanTargetInput"
-                    class="player-ban-add-input"
-                    type="text"
-                    autocomplete="off"
-                    autocorrect="off"
-                    autocapitalize="off"
-                    spellcheck="false"
-                    placeholder="請輸入玩家名稱"
-                >
 
-                <button
-                    id="searchPlayerBanBtn"
-                    class="player-ban-search-player-btn"
-                    type="button"
-                    title="搜尋玩家"
-                >
-                    <img
-                        src="/static/icons/server_settings/spyglass.png"
-                        alt="搜尋"
+            <div class="player-ban-input-row">
+                <div class="add-op-player-search-wrap">
+                    <input
+                        id="addPlayerBanTargetInput"
+                        class="player-ban-add-input add-op-player-search-input"
+                        type="text"
+                        autocomplete="off"
+                        autocorrect="off"
+                        autocapitalize="off"
+                        spellcheck="false"
+                        placeholder="請輸入玩家名稱"
                     >
-                </button>
+
+                    <button
+                        id="searchPlayerBanBtn"
+                        class="add-op-search-btn"
+                        type="button"
+                        title="搜尋玩家"
+                    >
+                        <img
+                            src="/static/icons/server_settings/spyglass.png"
+                            alt="搜尋"
+                        >
+                    </button>
+                </div>
             </div>
 
             <div id="playerBanCandidateSection" class="player-ban-candidate-section hidden">

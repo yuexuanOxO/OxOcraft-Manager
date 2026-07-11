@@ -1032,9 +1032,54 @@
     flex-wrap: wrap;
 }
 
-.player-ban-input-row{
-    display:flex;
-    align-items:center;
+.player-ban-input-row {
+    display: flex;
+    align-items: stretch;
+}
+
+.player-ban-input-row .player-ban-add-input {
+    flex: 1;
+    min-width: 0;
+    border-radius: 6px 0 0 6px;
+}
+
+.player-ban-search-player-btn {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-left: -1px;
+    padding: 0;
+
+    border: 1px solid #555;
+    border-radius: 0 6px 6px 0;
+
+    background: #222;
+    cursor: pointer;
+}
+
+.player-ban-search-player-btn:hover {
+    background: #303030;
+}
+
+.player-ban-search-player-btn img {
+    width: 28px;
+    height: 28px;
+    image-rendering: pixelated;
+}
+
+#addPlayerBanModal.ip-mode
+.player-ban-search-player-btn {
+    display: none;
+}
+
+#addPlayerBanModal.ip-mode
+.player-ban-input-row .player-ban-add-input {
+    border-radius: 6px;
 }
 
 .player-ban-expire-fields-slot {
@@ -1121,4 +1166,47 @@
 
 .player-ban-candidate-delete-btn:hover {
     background: #422e2e;
+}
+.player-ban-candidate-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.player-ban-candidate-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+.player-ban-candidate-card.selected {
+    border-color: rgba(174, 92, 255, 0.65);
+    box-shadow:
+        0 0 0 1px rgba(174, 92, 255, 0.65),
+        0 0 16px rgba(174, 92, 255, 0.65);
+}
+
+.player-ban-candidate-card.selected::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+
+    pointer-events: none;
+
+    background-image:
+        url("/static/img/ui/enchanted_glint_item.png");
+    background-size: 160px 160px;
+    opacity: 0.28;
+    mix-blend-mode: screen;
+
+    animation:
+        player-ban-selected-glint 8s linear infinite;
+}
+
+@keyframes player-ban-selected-glint {
+    from {
+        background-position: 0 0;
+    }
+
+    to {
+        background-position: 0 -96px;
+    }
 }

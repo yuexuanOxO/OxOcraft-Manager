@@ -6,6 +6,7 @@ import {
 
 let autoBackupMissedPromptOpen = false;
 let isCloudConnected = false;
+let autoBackupStartPicker = null;
 
 let autoBackupState = {
     enabled: false,
@@ -18,7 +19,48 @@ let autoBackupState = {
 
 export function initAutoBackup() {
     setupAutoBackupSettings();
+    initAutoBackupStartPicker();
     loadAutoBackupConfig();
+}
+
+
+function initAutoBackupStartPicker() {
+    const startAtInput =
+        document.getElementById(
+            "autoBackupStartAt"
+        );
+
+    if (
+        !startAtInput ||
+        autoBackupStartPicker
+    ) {
+        return;
+    }
+
+    if (!window.McDateTimePicker) {
+        console.warn(
+            "McDateTimePicker 尚未載入，" +
+            "自動備份時間選擇器不會初始化。"
+        );
+
+        return;
+    }
+
+    autoBackupStartPicker =
+        window.McDateTimePicker.create({
+            selector: "#autoBackupStartAt",
+
+            defaultDate: null,
+            enableTime: true,
+            time24hr: true,
+            minuteIncrement: 5,
+
+            dateFormat: "Y-m-d\\TH:i",
+            altInput: true,
+            altFormat: "Y/m/d H:i",
+
+            allowInput: true,
+        }).instance;
 }
 
 
@@ -64,7 +106,7 @@ function updateAutoBackupAdvancedVisible() {
 
 
 function formatAutoBackupTime(value) {
-    if (!value) return "尚未設定";
+    if (!value) return "尚未套用設定";
 
     return value.replace("T", " ");
 }
@@ -98,9 +140,32 @@ export async function loadAutoBackupConfig() {
         setBoolButton(uploadBtn, autoBackupState.uploadCloud);
         updateAutoBackupAdvancedVisible();
 
-        if (frequency) frequency.value = autoBackupState.frequency;
-        if (startAt) startAt.value = autoBackupState.startAt;
-        if (nextText) nextText.textContent = formatAutoBackupTime(autoBackupState.nextRunAt);
+        if (frequency) {
+            frequency.value =
+                autoBackupState.frequency;
+        }
+
+        if (autoBackupStartPicker) {
+            if (autoBackupState.startAt) {
+                autoBackupStartPicker.setDate(
+                    autoBackupState.startAt,
+                    false,
+                    "Y-m-d\\TH:i"
+                );
+            } else {
+                autoBackupStartPicker.clear(false);
+            }
+        } else if (startAt) {
+            startAt.value =
+                autoBackupState.startAt;
+        }
+
+        if (nextText) {
+            nextText.textContent =
+                formatAutoBackupTime(
+                    autoBackupState.nextRunAt
+                );
+        }
         updateAutoBackupTaskButton();
 
         if (config.auto_backup_missed_pending) {

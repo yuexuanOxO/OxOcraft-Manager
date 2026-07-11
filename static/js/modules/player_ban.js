@@ -23,6 +23,7 @@ let banCandidatePlayers = [];
 let canAddBanPlayerByName = true;
 let selectedBanCandidatePlayer = null;
 let banOnlineMode = true;
+let banSearchKeyword = "";
 
 const banHistoryFilters = new Set();
 
@@ -34,12 +35,16 @@ export function initPlayerBan() {
     const modal = document.getElementById("playerBanModal");
     const closeBtn = document.getElementById("closePlayerBanBtn");
     const searchInput = document.getElementById("playerBanSearchInput");
+    const searchBtn = document.getElementById("playerBanSearchBtn");
     const openAddBtn = document.getElementById("openAddBanBtn");
     const addModal = document.getElementById("addPlayerBanModal");
     const closeAddBtn = document.getElementById("closeAddPlayerBanBtn");
     const confirmAddBtn = document.getElementById("confirmAddPlayerBanBtn");
     const addTargetInput = document.getElementById("addPlayerBanTargetInput");
     const searchPlayerBtn = document.getElementById("searchPlayerBanBtn");
+    const historySearchInput = document.getElementById("playerBanHistorySearchInput");
+    const historyFilterBtn = document.getElementById("playerBanHistoryFilterBtn");
+    const historyFilterMenu = document.getElementById("playerBanHistoryFilterMenu");
 
     if (!openBtn || !modal) return;
 
@@ -75,18 +80,16 @@ export function initPlayerBan() {
             });
         });
 
-    searchInput?.addEventListener("input", () => {
-        renderCurrentBanTab();
+    searchBtn?.addEventListener("click", () => {
+        applyBanSearch();
     });
 
-    const historySearchInput =
-        document.getElementById("playerBanHistorySearchInput");
+    searchInput?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            applyBanSearch();
+        }
+    });
 
-    const historyFilterBtn =
-        document.getElementById("playerBanHistoryFilterBtn");
-
-    const historyFilterMenu =
-        document.getElementById("playerBanHistoryFilterMenu");
 
     historySearchInput?.addEventListener("input", () => {
         renderBanHistory();
@@ -266,6 +269,8 @@ function updateBanTabs() {
             currentBanTab !== "history"
         );
     }
+
+    banSearchKeyword = "";
 
     if (searchInput) {
         searchInput.value = "";
@@ -817,9 +822,24 @@ function renderBanActionButtons() {
 }
 
 function getSearchKeyword() {
-    const input = document.getElementById("playerBanSearchInput");
-    return (input?.value || "").trim().toLowerCase();
+    return banSearchKeyword;
 }
+
+
+function applyBanSearch() {
+    const searchInput =
+        document.getElementById(
+            "playerBanSearchInput"
+        );
+
+    banSearchKeyword =
+        (searchInput?.value || "")
+            .trim()
+            .toLowerCase();
+
+    renderCurrentBanTab();
+}
+
 
 function formatDateTime(text) {
     if (!text) {

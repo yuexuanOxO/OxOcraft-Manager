@@ -4,6 +4,7 @@ import {
 } from "./system_dialog.js";
 
 import {
+    getUiServerState,
     isUiServerTransitionState
 } from "./server_ui_state.js";
 
@@ -143,6 +144,22 @@ export function initPlayerBan() {
 
     window.addEventListener("server-ui-state-changed", () => {
         renderBanActionButtons();
+
+        const addModal =
+            document.getElementById(
+                "addPlayerBanModal"
+            );
+
+        const isAddModalOpen =
+            addModal
+            && !addModal.classList.contains("hidden");
+
+        if (
+            isAddModalOpen
+            && currentBanTab === "players"
+        ) {
+            renderBanCandidates();
+        }
     });
 
     openAddBtn?.addEventListener("click", async () => {
@@ -1303,11 +1320,9 @@ function renderBanCandidates() {
 
 
 function createBanCandidateCard(player) {
-    const card =
-        document.createElement("div");
+    const card = document.createElement("div");
 
-    card.className =
-        "player-ban-candidate-card";
+    card.className = "player-ban-candidate-card";
 
     if (
         selectedBanCandidatePlayer &&
@@ -1318,6 +1333,8 @@ function createBanCandidateCard(player) {
     }
 
     const avatarUrl = getPlayerAvatarUrl(player);
+
+    const canDeleteCandidate = getUiServerState() === "offline";
 
     card.innerHTML = `
         <img
@@ -1350,13 +1367,19 @@ function createBanCandidateCard(player) {
                 ＋
             </button>
 
-            <button
-                class="player-ban-candidate-delete-btn"
-                type="button"
-                title="刪除玩家紀錄"
-            >
-                ✕
-            </button>
+            ${
+                canDeleteCandidate
+                    ? `
+                        <button
+                            class="player-ban-candidate-delete-btn"
+                            type="button"
+                            title="刪除玩家紀錄"
+                        >
+                            ✕
+                        </button>
+                    `
+                    : ""
+            }
 
         </div>
     `;

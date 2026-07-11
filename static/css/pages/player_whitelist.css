@@ -368,7 +368,7 @@
 }
 
 .add-whitelist-player-panel {
-    width: min(680px, calc(100vw - 64px));
+    width: min(580px, calc(100vw - 64px));
     max-height: calc(100vh - 120px);
     display: flex;
     flex-direction: column;

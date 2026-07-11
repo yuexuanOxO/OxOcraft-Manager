@@ -719,7 +719,7 @@
 }
 
 .player-ban-datetime-fields input {
-    width: auto;
+    width: 100%;
 }
 
 .player-ban-add-actions {

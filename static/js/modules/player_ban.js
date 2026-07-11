@@ -25,6 +25,7 @@ let canAddBanPlayerByName = true;
 let selectedBanCandidatePlayer = null;
 let banOnlineMode = true;
 let banSearchKeyword = "";
+let playerBanDateTimePicker = null;
 
 const banHistoryFilters = new Set();
 
@@ -46,6 +47,25 @@ export function initPlayerBan() {
     const historySearchInput = document.getElementById("playerBanHistorySearchInput");
     const historyFilterBtn = document.getElementById("playerBanHistoryFilterBtn");
     const historyFilterMenu = document.getElementById("playerBanHistoryFilterMenu");
+    const banDateTimeInput = document.getElementById("playerBanDateTimeInput");
+
+    if (!window.McDateTimePicker) {
+        console.warn(
+            "McDateTimePicker 尚未載入，"
+            + "封鎖解除時間選擇器不會初始化。"
+        );
+    } else if (
+        banDateTimeInput
+        && !playerBanDateTimePicker
+    ) {
+        playerBanDateTimePicker =
+            window.McDateTimePicker.create({
+                selector: "#playerBanDateTimeInput",
+                defaultDate: null,
+                enableTime: true,
+                minuteIncrement: 5,
+            }).instance;
+    }
 
     if (!openBtn || !modal) return;
 
@@ -983,6 +1003,8 @@ async function openAddBanModal() {
         reason.value = "";
     }
 
+    playerBanDateTimePicker?.clear();
+
     const foreverRadio =
         document.querySelector(
             'input[name="playerBanExpireType"][value="forever"]'
@@ -1568,15 +1590,18 @@ function buildExpirePayload() {
         };
     }
 
-    const date =
-        document.getElementById("playerBanDateInput")?.value || "";
-
-    const time =
-        document.getElementById("playerBanTimeInput")?.value || "";
+    const expiresAt =
+        document
+            .getElementById(
+                "playerBanDateTimeInput"
+            )
+            ?.value
+            .trim()
+        || "";
 
     return {
         expire_type: "datetime",
-        expires_at: `${date} ${time}:00`
+        expires_at: expiresAt
     };
 }
 

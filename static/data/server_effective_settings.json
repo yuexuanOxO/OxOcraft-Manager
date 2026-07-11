@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-07-11T17:12:28",
-    "properties_modified_comment": "Sat Jul 11 17:12:18 CST 2026",
+    "captured_at": "2026-07-11T17:31:45",
+    "properties_modified_comment": "Sat Jul 11 17:28:30 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",

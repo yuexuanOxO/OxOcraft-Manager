@@ -321,7 +321,7 @@ function updateBanTabs() {
         searchInput.placeholder =
             currentBanTab === "ips"
                 ? "搜尋IP"
-                : "搜尋玩家名稱或 UUID";
+                : "搜尋玩家名稱";
     }
 
     if (addBtn) {
@@ -422,10 +422,11 @@ function renderBanPlayers() {
 
     if (keyword) {
         rows = rows.filter(item => {
-            return (
-                String(item.target_name || "").toLowerCase().includes(keyword) ||
-                String(item.target_uuid || "").toLowerCase().includes(keyword)
-            );
+            return String(
+                item.target_name || ""
+            )
+                .toLowerCase()
+                .includes(keyword);
         });
     }
     

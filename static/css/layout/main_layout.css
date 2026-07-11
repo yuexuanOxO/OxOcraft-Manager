@@ -33,13 +33,18 @@
     z-index: 1;
 }
 
-.side-panel{
-    width: 320px;
-    height: 760px;
-    padding: 10px;
+.side-panel {
+    width: 346px;
+    height: 786px;
+
+    padding: 0;
+    border: 2px solid #2f2f2f;
+    border-radius: 8px;
+    box-sizing: border-box;
+
     overflow: hidden;
-    background: rgba(20,20,20,.88);
-    border: 3px solid #2d2d2d;
+    background: transparent;
+
     position: relative;
     z-index: 50;
 

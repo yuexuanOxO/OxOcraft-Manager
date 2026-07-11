@@ -661,12 +661,7 @@
     gap: 1px;
 }
 
-.player-whitelist-history-toolbar
-.player-whitelist-history-icon-btn {
 
-    border-radius: 0;
-
-}
 
 .player-whitelist-history-toolbar
 .player-whitelist-history-icon-btn {
@@ -682,6 +677,7 @@
 #playerWhitelistHistorySearchBtn {
 
     border-right: 1px solid #555;
+    border-radius: 0 6px 6px 0;
 
 }
 

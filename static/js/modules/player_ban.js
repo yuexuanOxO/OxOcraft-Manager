@@ -38,6 +38,8 @@ export function initPlayerBan() {
     const addModal = document.getElementById("addPlayerBanModal");
     const closeAddBtn = document.getElementById("closeAddPlayerBanBtn");
     const confirmAddBtn = document.getElementById("confirmAddPlayerBanBtn");
+    const addTargetInput = document.getElementById("addPlayerBanTargetInput");
+    const searchPlayerBtn = document.getElementById("searchPlayerBanBtn");
 
     if (!openBtn || !modal) return;
 
@@ -156,6 +158,29 @@ export function initPlayerBan() {
 
     confirmAddBtn?.addEventListener("click", async () => {
         await submitAddBan();
+    });
+
+    searchPlayerBtn?.addEventListener("click", async () => {
+        await handleSearchBanPlayer();
+    });
+
+    addTargetInput?.addEventListener("keydown", async (event) => {
+        if (
+            event.key === "Enter"
+            && currentBanTab === "players"
+        ) {
+            event.preventDefault();
+            await handleSearchBanPlayer();
+        }
+    });
+
+    addTargetInput?.addEventListener("input", () => {
+        if (currentBanTab !== "players") {
+            return;
+        }
+
+        selectedBanCandidatePlayer = null;
+        renderBanCandidates();
     });
 
     document
@@ -983,6 +1008,160 @@ function renderBanCandidateSection() {
 }
 
 
+function findBanCandidateByName(playerName) {
+    const keyword =
+        String(playerName || "").trim().toLowerCase();
+
+    if (!keyword) {
+        return null;
+    }
+
+    return banCandidatePlayers.find(player =>
+        String(player.player_name || "")
+            .trim()
+            .toLowerCase() === keyword
+    ) || null;
+}
+
+
+function scrollSelectedBanCandidateIntoView() {
+    window.setTimeout(() => {
+        const selectedCard =
+            document.querySelector(
+                ".player-ban-candidate-card.selected"
+            );
+
+        selectedCard?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+        });
+    }, 0);
+}
+
+
+async function resolveBanCandidateByInput(playerName) {
+    const existingPlayer =
+        findBanCandidateByName(playerName);
+
+    if (existingPlayer) {
+        selectedBanCandidatePlayer = existingPlayer;
+        renderBanCandidates();
+        scrollSelectedBanCandidateIntoView();
+        return true;
+    }
+
+    if (!canAddBanPlayerByName) {
+        return false;
+    }
+
+    const response = await fetch(
+        "/api/player/whitelist/resolve-candidate",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                name: playerName,
+            })
+        }
+    );
+
+    const data = await response.json();
+
+    if (!data.success) {
+        throw new Error(
+            data.message || "搜尋玩家失敗"
+        );
+    }
+
+    const player = data.player;
+
+    if (!player) {
+        throw new Error("搜尋玩家失敗");
+    }
+
+    const confirmed = await showConfirm({
+        title: "搜尋結果",
+        message:
+            `請問是否為這位玩家？\n\n` +
+            `玩家 ID：${player.player_name}\n` +
+            `UUID：${player.player_uuid}`,
+        icon: getPlayerAvatarUrl(player),
+        confirmText: "是",
+        cancelText: "不是",
+        variant: "info",
+    });
+
+    if (!confirmed) {
+        return "cancelled";
+    }
+
+    const exists = banCandidatePlayers.some(item =>
+        String(item.player_uuid || "").toLowerCase()
+        === String(player.player_uuid || "").toLowerCase()
+    );
+
+    if (!exists) {
+        banCandidatePlayers.unshift(player);
+    }
+
+    selectedBanCandidatePlayer = player;
+    renderBanCandidates();
+    scrollSelectedBanCandidateIntoView();
+
+    return true;
+}
+
+
+async function handleSearchBanPlayer() {
+    if (currentBanTab !== "players") {
+        return;
+    }
+
+    const input =
+        document.getElementById("addPlayerBanTargetInput");
+
+    const playerName = (input?.value || "").trim();
+
+    if (!playerName) {
+        await showInfo({
+            title: "黑名單管理",
+            message: "請輸入玩家名稱",
+            confirmText: "關閉",
+            variant: "warning"
+        });
+        return;
+    }
+
+    try {
+        const resolved =
+            await resolveBanCandidateByInput(playerName);
+
+        if (resolved === "cancelled") {
+            return;
+        }
+
+        if (!resolved) {
+            await showInfo({
+                title: "黑名單管理",
+                message:
+                    "離線模式且伺服器在線時，只能從下方玩家清單選擇玩家。",
+                confirmText: "關閉",
+                variant: "warning"
+            });
+        }
+    } catch (error) {
+        await showInfo({
+            title: "錯誤",
+            message: error.message || "搜尋玩家失敗",
+            confirmText: "關閉",
+            variant: "error"
+        });
+    }
+}
+
+
 async function loadBanCandidates() {
     const list =
         document.getElementById("playerBanCandidateList");
@@ -1036,18 +1215,34 @@ function renderBanCandidates() {
 
     if (!list) return;
 
+    const input =
+        document.getElementById("addPlayerBanTargetInput");
+
+    const keyword =
+        (input?.value || "").trim().toLowerCase();
+
+    let players = [...banCandidatePlayers];
+
+    if (keyword) {
+        players = players.filter(player =>
+            String(player.player_name || "")
+                .toLowerCase()
+                .includes(keyword)
+        );
+    }
+
     list.innerHTML = "";
 
-    if (banCandidatePlayers.length === 0) {
+    if (players.length === 0) {
         list.innerHTML = `
             <div class="player-ban-empty">
-                尚未有可加入的玩家紀錄
+                尚未有符合條件的玩家紀錄
             </div>
         `;
         return;
     }
 
-    banCandidatePlayers.forEach(player => {
+    players.forEach(player => {
         list.appendChild(
             createBanCandidateCard(player)
         );
@@ -1061,6 +1256,14 @@ function createBanCandidateCard(player) {
 
     card.className =
         "player-ban-candidate-card";
+
+    if (
+        selectedBanCandidatePlayer &&
+        String(selectedBanCandidatePlayer.player_uuid || "").toLowerCase()
+        === String(player.player_uuid || "").toLowerCase()
+    ) {
+        card.classList.add("selected");
+    }
 
     const avatarUrl = getPlayerAvatarUrl(player);
 
@@ -1109,14 +1312,34 @@ function createBanCandidateCard(player) {
     const selectBtn = card.querySelector(".player-ban-candidate-select-btn");
     const deleteBtn = card.querySelector(".player-ban-candidate-delete-btn");
 
-    selectBtn?.addEventListener("click", () => {
+    const selectCandidate = () => {
         selectedBanCandidatePlayer = player;
 
-        const input = document.getElementById("addPlayerBanTargetInput");
+        const input =
+            document.getElementById("addPlayerBanTargetInput");
 
         if (input) {
             input.value = player.player_name;
         }
+
+        renderBanCandidates();
+    };
+
+    card.addEventListener("click", (event) => {
+        if (
+            event.target.closest(
+                ".player-ban-candidate-delete-btn"
+            )
+        ) {
+            return;
+        }
+
+        selectCandidate();
+    });
+
+    selectBtn?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        selectCandidate();
     });
 
     deleteBtn?.addEventListener("click", async () => {

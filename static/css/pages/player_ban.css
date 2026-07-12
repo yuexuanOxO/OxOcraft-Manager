@@ -881,6 +881,17 @@
     background: transparent;
 }
 
+.player-ban-history-operator-avatar.unknown {
+    width: 32px;
+    height: 32px;
+
+    border: 0;
+    border-radius: 0;
+
+    image-rendering: pixelated;
+    background: transparent;
+}
+
 .player-ban-history-right {
     display: flex;
     flex-direction: column;

@@ -30,9 +30,9 @@ let banSearchKeyword = "";
 let playerBanDateTimePicker = null;
 
 const banHistoryFilters = new Set();
+const OXOCRAFT_OPERATOR_ICON = "/static/icons/player_ban/OxOcraft_origin.png";
+const UNKNOWN_OPERATOR_ICON = "/static/icons/general_icon/unknown.png";
 
-const OXOCRAFT_OPERATOR_ICON =
-    "/static/icons/player_ban/OxOcraft_origin.png";
 
 export function initPlayerBan() {
     const openBtn = document.getElementById("playerBanBtn");
@@ -2034,7 +2034,15 @@ function createBanHistoryCard(item) {
 
                 <img
                     class="player-ban-history-operator-avatar
-                        ${operator === "OxOcraft" ? "oxocraft" : "player"}"
+                        ${
+                            operator === "OxOcraft"
+                                ? "oxocraft"
+                                : (
+                                    operator.toLowerCase() === "unknown"
+                                        ? "unknown"
+                                        : "player"
+                                )
+                        }"
                     src="${getBanHistoryOperatorAvatarUrl(item)}"
                     alt="${escapeHtml(operator)}"
                 >
@@ -2086,20 +2094,27 @@ function getBanSourceText(source) {
     return sourceMap[source] || source || "未知";
 }
 
+
 function getDisplayBanHistoryOperator(item) {
-    const operator = String(item.operator || "OxOcraft").trim();
-    const source = String(item.source || "").trim();
+    const operator =
+        String(item.operator || "").trim();
+
+    const source =
+        String(item.source || "").trim();
 
     if (
         source === "minecraft_json" ||
-        source === "console_rcon" ||
-        source === "rcon" ||
-
-        operator === "Rcon" ||
-        operator === "rcon" ||
-
         operator === "banned-players.json 同步" ||
         operator === "banned-ips.json 同步"
+    ) {
+        return "Unknown";
+    }
+
+    if (
+        source === "console_rcon" ||
+        source === "rcon" ||
+        operator === "Rcon" ||
+        operator === "rcon"
     ) {
         return "OxOcraft";
     }
@@ -2107,11 +2122,16 @@ function getDisplayBanHistoryOperator(item) {
     return operator || "OxOcraft";
 }
 
+
 function getBanHistoryOperatorAvatarUrl(item) {
     const operator = getDisplayBanHistoryOperator(item);
 
     if (operator === "OxOcraft") {
         return OXOCRAFT_OPERATOR_ICON;
+    }
+
+    if (operator.toLowerCase() === "unknown") {
+        return UNKNOWN_OPERATOR_ICON;
     }
 
     return getPlayerAvatarUrl({

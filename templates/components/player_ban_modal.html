@@ -67,37 +67,56 @@
             </div>
 
 
-            <div id="playerBanHistoryToolbar" class="player-ban-history-toolbar hidden">
-                <input
-                    id="playerBanHistorySearchInput"
-                    class="player-ban-history-search"
-                    type="text"
-                    placeholder="搜尋封鎖紀錄"
-                >
+            <div
+                id="playerBanHistoryToolbar"
+                class="player-ban-history-toolbar hidden"
+            >
+                <div class="player-ban-history-search-wrap">
+                    <input
+                        id="playerBanHistorySearchInput"
+                        class="player-ban-history-search"
+                        type="text"
+                        placeholder="搜尋封鎖紀錄"
+                    >
 
-                <div class="filter-wrap">
                     <button
                         id="playerBanHistoryFilterBtn"
-                        class="filter-btn"
+                        class="filter-btn player-ban-history-filter-btn"
                         type="button"
-                        title="篩選封鎖紀錄"
+                        data-mc-tooltip="篩選紀錄"
                     >
-                        <img src="/static/icons/general_icon/hopper.png" alt="">
+                        <img
+                            src="/static/icons/general_icon/hopper.png"
+                            alt="篩選"
+                        >
                     </button>
 
-                    <div id="playerBanHistoryFilterMenu" class="filter-menu hidden">
+                    <div
+                        id="playerBanHistoryFilterMenu"
+                        class="filter-menu player-ban-history-filter-menu hidden"
+                    >
                         <div class="filter-title">類型</div>
 
                         <div class="filter-tags">
-                            <button type="button" data-filter="player">封鎖玩家</button>
-                            <button type="button" data-filter="ip">封鎖IP</button>
+                            <button type="button" data-filter="player">
+                                封鎖玩家
+                            </button>
+
+                            <button type="button" data-filter="ip">
+                                封鎖IP
+                            </button>
                         </div>
 
                         <div class="filter-title">操作</div>
 
                         <div class="filter-tags">
-                            <button type="button" data-filter="add">封鎖</button>
-                            <button type="button" data-filter="remove">解除封鎖</button>
+                            <button type="button" data-filter="add">
+                                封鎖
+                            </button>
+
+                            <button type="button" data-filter="remove">
+                                解除封鎖
+                            </button>
                         </div>
 
                         <div class="filter-actions">
@@ -106,15 +125,28 @@
                                 data-filter="clear"
                                 class="filter-clear-btn"
                             >
-                                <img src="/static/icons/general_icon/brush.png" alt="">
+                                <img
+                                    src="/static/icons/general_icon/brush.png"
+                                    alt=""
+                                >
                                 <span>清除篩選</span>
                             </button>
                         </div>
                     </div>
+
+                    <button
+                        id="playerBanHistorySearchBtn"
+                        class="player-ban-search-btn player-ban-history-search-btn"
+                        type="button"
+                        data-mc-tooltip="搜尋紀錄"
+                    >
+                        <img
+                            src="/static/icons/server_settings/spyglass.png"
+                            alt="搜尋"
+                        >
+                    </button>
                 </div>
-
             </div>
-
 
             <div id="playerBanContent" class="player-ban-content"></div>
         </div>

@@ -28,6 +28,7 @@ let selectedBanCandidatePlayer = null;
 let banOnlineMode = true;
 let banSearchKeyword = "";
 let playerBanDateTimePicker = null;
+let banHistorySearchKeyword = "";
 
 const banHistoryFilters = new Set();
 const OXOCRAFT_OPERATOR_ICON = "/static/icons/player_ban/OxOcraft_origin.png";
@@ -47,6 +48,7 @@ export function initPlayerBan() {
     const addTargetInput = document.getElementById("addPlayerBanTargetInput");
     const searchPlayerBtn = document.getElementById("searchPlayerBanBtn");
     const historySearchInput = document.getElementById("playerBanHistorySearchInput");
+    const historySearchBtn = document.getElementById("playerBanHistorySearchBtn");
     const historyFilterBtn = document.getElementById("playerBanHistoryFilterBtn");
     const historyFilterMenu = document.getElementById("playerBanHistoryFilterMenu");
     const banDateTimeInput = document.getElementById("playerBanDateTimeInput");
@@ -114,8 +116,14 @@ export function initPlayerBan() {
     });
 
 
-    historySearchInput?.addEventListener("input", () => {
-        renderBanHistory();
+    historySearchInput?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            applyBanHistorySearch();
+        }
+    });
+
+    historySearchBtn?.addEventListener("click", () => {
+        applyBanHistorySearch();
     });
 
     historyFilterBtn?.addEventListener("click", (event) => {
@@ -756,18 +764,27 @@ async function unbanIp(item) {
 }
 
 
+function applyBanHistorySearch() {
+    const searchInput =
+        document.getElementById(
+            "playerBanHistorySearchInput"
+        );
+
+    banHistorySearchKeyword =
+        (searchInput?.value || "")
+            .trim()
+            .toLowerCase();
+
+    renderBanHistory();
+}
+
+
 function renderBanHistory() {
     const content = document.getElementById("playerBanContent");
     const summary = document.getElementById("playerBanSummary");
     const playerCount = document.getElementById("playerBanPlayerCount");
 
-    const historySearchInput =
-        document.getElementById("playerBanHistorySearchInput");
-
-    const keyword =
-        (historySearchInput?.value || "")
-            .trim()
-            .toLowerCase();
+    const keyword = banHistorySearchKeyword;
 
     if (!content) return;
 

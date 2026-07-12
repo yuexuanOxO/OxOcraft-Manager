@@ -1,6 +1,145 @@
 import re
 from backend.notification_service import create_notification
 
+_pending_login_uuids: dict[str, str] = {}
+
+
+def maybe_record_player_ip_from_log(
+    line: str,
+) -> None:
+    uuid_match = re.search(
+        (
+            r"UUID of player\s+"
+            r"(?P<player_name>.+?)\s+is\s+"
+            r"(?P<player_uuid>[0-9a-fA-F-]{36})"
+        ),
+        line,
+    )
+
+    if uuid_match:
+        player_name = (
+            uuid_match
+            .group("player_name")
+            .strip()
+        )
+
+        player_uuid = (
+            uuid_match
+            .group("player_uuid")
+            .strip()
+        )
+
+        if player_name and player_uuid:
+            _pending_login_uuids[
+                player_name
+            ] = player_uuid
+
+            print(
+                "[PlayerIP] UUID cached:",
+                player_name,
+                player_uuid,
+            )
+
+        return
+
+    login_match = re.search(
+        (
+            r"\]:\s*"
+            r"(?P<player_name>.+?)"
+            r"\[/"
+            r"(?P<address>"
+            r"\[[0-9a-fA-F:]+\]"
+            r"|"
+            r"[0-9a-fA-F:.]+"
+            r")"
+            r":(?P<port>\d+)"
+            r"\]\s+logged in with entity id"
+        ),
+        line,
+    )
+
+    if not login_match:
+        return
+
+    player_name = (
+        login_match
+        .group("player_name")
+        .strip()
+    )
+
+    ip = (
+        login_match
+        .group("address")
+        .strip()
+        .strip("[]")
+    )
+
+    port = (
+        login_match
+        .group("port")
+        .strip()
+    )
+
+    player_uuid = _pending_login_uuids.pop(
+        player_name,
+        "",
+    )
+
+    if not player_uuid:
+        try:
+            from backend.player_permissions.player_identity_service import (
+                resolve_player_identity,
+            )
+
+            identity = resolve_player_identity(
+                player_name
+            )
+
+            player_uuid = str(
+                identity.get("player_uuid")
+                or ""
+            ).strip()
+
+            print(
+                "[PlayerIP] UUID resolved:",
+                player_name,
+                player_uuid,
+            )
+
+        except Exception as error:
+            print(
+                "[PlayerIP] UUID resolve failed:",
+                player_name,
+                error,
+            )
+            return
+
+    if not player_uuid or not ip:
+        return
+
+    try:
+        from backend.player_permissions.player_identity_service import (
+            record_player_login_from_log,
+        )
+
+        identity = record_player_login_from_log(
+            player_name=player_name,
+            player_uuid=player_uuid,
+            ip=ip,
+            port=port,
+        )
+
+        print(
+            "[PlayerIP] login recorded:",
+            identity,
+        )
+
+    except Exception as error:
+        print(
+            "[PlayerIP] login record failed:",
+            error,
+        )
+
 
 def maybe_refresh_player_ban_from_log(line: str) -> None:
     ban_player_match = re.search(
@@ -456,9 +595,14 @@ def maybe_refresh_player_whitelist_from_log(line: str) -> None:
         print("[PlayerWhitelist] refresh from log failed:", error)
 
 
-def handle_player_log(line: str, publish_event_func) -> None:
+def handle_player_log(
+    line: str,
+    publish_event_func,
+) -> None:
     global publish_event
     publish_event = publish_event_func
+
+    maybe_record_player_ip_from_log(line)
 
     maybe_refresh_ip_ban_from_log(line)
     maybe_refresh_player_ban_from_log(line)

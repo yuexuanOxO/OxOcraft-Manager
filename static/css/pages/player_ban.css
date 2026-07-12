@@ -325,19 +325,28 @@
     line-height:1.35;
 }
 
-.player-ban-unban-btn{
+.player-ban-unban-btn {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
 
-    padding:9px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-    border:1px solid #b85c5c;
+    padding: 0;
 
-    border-radius:6px;
+    border: 1px solid #b85c5c;
+    border-radius: 6px;
 
-    background:#303030;
+    background: #303030;
+    color: #ff9c9c;
 
-    color:#ff9c9c;
+    font-size: 22px;
+    font-weight: bold;
+    line-height: 1;
 
-    cursor:pointer;
+    cursor: pointer;
 }
 
 .player-ban-unban-btn:hover{

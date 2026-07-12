@@ -525,8 +525,13 @@ function createBanPlayerCard(item) {
             </div>
         </div>
 
-        <button class="player-ban-unban-btn" type="button">
-            解除封鎖
+        <button
+            class="player-ban-unban-btn"
+            type="button"
+            title="解除封鎖"
+            aria-label="解除封鎖"
+        >
+            ✕
         </button>
     `;
 
@@ -612,8 +617,13 @@ function createBanIpCard(item) {
             </div>
         </div>
 
-        <button class="player-ban-unban-btn" type="button">
-            解除封鎖
+        <button
+            class="player-ban-unban-btn"
+            type="button"
+            title="解除封鎖"
+            aria-label="解除封鎖"
+        >
+            ✕
         </button>
     `;
 

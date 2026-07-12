@@ -412,14 +412,14 @@
 
 .player-ban-add-panel {
     width: min(560px, calc(100vw - 64px));
-    height: min(760px, calc(100vh - 80px));
+    height: auto;
     max-height: calc(100vh - 120px);
 
     display: flex;
     flex-direction: column;
     gap: 14px;
 
-    padding: 20px;
+    padding: 20px 20px 10px;
 
     background: #1f1f1f;
     border: 2px solid #555;
@@ -719,7 +719,7 @@
 .player-ban-add-actions {
     display: flex;
     justify-content: center;
-    margin-top: -4px;
+    margin-top: 0;
 }
 
 .player-ban-confirm-add-btn {
@@ -1087,12 +1087,6 @@
     margin-top: 14px;
 
     position: relative;
-}
-
-#addPlayerBanModal.ip-mode .player-ban-add-panel {
-    height: auto;
-    min-height: 0;
-    max-height: calc(100vh - 120px);
 }
 
 .player-ban-summary {

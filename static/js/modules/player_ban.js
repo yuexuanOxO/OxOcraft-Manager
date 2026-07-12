@@ -528,7 +528,7 @@ function createBanPlayerCard(item) {
         <button
             class="player-ban-unban-btn"
             type="button"
-            title="解除封鎖"
+            data-mc-tooltip="解除封鎖"
             aria-label="解除封鎖"
         >
             ✕
@@ -620,7 +620,7 @@ function createBanIpCard(item) {
         <button
             class="player-ban-unban-btn"
             type="button"
-            title="解除封鎖"
+            data-mc-tooltip="解除封鎖"
             aria-label="解除封鎖"
         >
             ✕

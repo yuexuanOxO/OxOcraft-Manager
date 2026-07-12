@@ -257,11 +257,6 @@
         border-color .15s;
 }
 
-.player-ban-card:hover{
-    border-color:#5b5b5b;
-    background:#2a2a2a;
-}
-
 .player-ban-time-info {
     grid-area: time;
     width: 210px;

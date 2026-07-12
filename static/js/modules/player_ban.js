@@ -1052,11 +1052,11 @@ function renderBanCandidateSection() {
     if (!isPlayerTab) {
         input.disabled = false;
 
-        if (searchBtn) {
-            searchBtn.disabled = false;
-            searchBtn.title = "搜尋玩家";
+        if (label) {
+            label.textContent = "封鎖IP";
         }
 
+        return;
     }
 
     const offlineOnlineSearchDisabled = !canAddBanPlayerByName;

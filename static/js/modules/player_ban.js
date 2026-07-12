@@ -502,8 +502,8 @@ function createBanPlayerCard(item) {
                 <div class="player-ban-badge">已封鎖</div>
             </div>
 
-            <div class="player-ban-meta">UUID：${escapeHtml(item.target_uuid || "未知")}</div>
-            <div class="player-ban-meta">封鎖原因：${escapeHtml(item.reason || "已被管理員封鎖。")}</div>
+            <div class="player-ban-history-meta">UUID：${escapeHtml(item.target_uuid || "未知")}</div>
+            <div class="player-ban-history-meta">封鎖原因：${escapeHtml(item.reason || "已被管理員封鎖。")}</div>
             ${
                 isInvalidMode
                     ? `
@@ -516,11 +516,11 @@ function createBanPlayerCard(item) {
         </div>
 
         <div class="player-ban-time-info">
-            <div class="player-ban-meta">
+            <div class="player-ban-history-meta">
                 封鎖時間：${escapeHtml(formatDateTime(item.created_at))}
             </div>
 
-            <div class="player-ban-meta">
+            <div class="player-ban-history-meta">
                 解除時間：${formatExpireText(item)}
             </div>
         </div>
@@ -597,17 +597,17 @@ function createBanIpCard(item) {
                 <div class="player-ban-badge">已封鎖</div>
             </div>
 
-            <div class="player-ban-meta">
+            <div class="player-ban-history-meta">
                 封鎖原因：${escapeHtml(item.reason || "已被管理員封鎖。")}
             </div>
         </div>
 
         <div class="player-ban-time-info">
-            <div class="player-ban-meta">
+            <div class="player-ban-history-meta">
                 封鎖時間：${escapeHtml(formatDateTime(item.created_at))}
             </div>
 
-            <div class="player-ban-meta">
+            <div class="player-ban-history-meta">
                 解除時間：${formatExpireText(item)}
             </div>
         </div>
@@ -1967,69 +1967,57 @@ function createBanHistoryCard(item) {
     const sourceText = getBanSourceText(item.source);
     const operator = getDisplayBanHistoryOperator(item);
 
-    const targetAvatarHtml = isPlayer
-        ? `
-            <img
-                class="player-ban-history-target-avatar"
-                src="${getPlayerAvatarUrl({
-                    player_uuid: item.target_uuid,
-                    player_name: item.target_name,
-                    account_type: item.account_type
-                })}"
-                alt="${escapeHtml(item.target_name)}"
-            >
-        `
-        : "";
-
-        
-    const titleHtml = isPlayer
-    ? `
-        <span class="player-ban-history-title">
-            ${actionText}
-        </span>
-
-        <span class="player-ban-history-separator">|</span>
-
-        ${targetAvatarHtml}
-
-        <span class="player-ban-history-target">
-            ${escapeHtml(item.target_name || "未知")}
-        </span>
-    `
-    : `
-        <span class="player-ban-history-title">
-            ${actionText}:
-        </span>
-
-        <span class="player-ban-history-target">
-            ${escapeHtml(item.target_name || "未知")}
-        </span>
-    `;
-
+    const targetAvatarUrl = isPlayer
+        ? getPlayerAvatarUrl({
+            player_uuid: item.target_uuid,
+            player_name: item.target_name,
+            account_type: item.account_type
+        })
+        : "/static/icons/player_ban/barrier.png";
 
     card.innerHTML = `
-        <div class="player-ban-history-left">
+        <img
+            class="player-ban-history-target-avatar"
+            src="${targetAvatarUrl}"
+            alt="${escapeHtml(
+                isPlayer
+                    ? item.target_name || "玩家"
+                    : "IP"
+            )}"
+        >
+
+        <div class="player-ban-history-main">
             <div class="player-ban-history-title-row">
-                ${titleHtml}
+                <span class="player-ban-history-title">
+                    ${escapeHtml(actionText)}
+                </span>
+
+                <span class="player-ban-history-target">
+                    ${escapeHtml(item.target_name || "未知")}
+                </span>
             </div>
 
-            <div class="player-ban-meta">
-                封鎖原因：${escapeHtml(item.reason || "已被管理員封鎖。")}
+            <div class="player-ban-history-meta">
+                封鎖原因：${escapeHtml(
+                    item.reason || "已被管理員封鎖。"
+                )}
             </div>
 
-            <div class="player-ban-meta">
-                封鎖時間：${escapeHtml(formatDateTime(item.created_at))}
+            <div class="player-ban-history-meta">
+                封鎖時間：${escapeHtml(
+                    formatDateTime(item.created_at)
+                )}
             </div>
 
-            <div class="player-ban-meta">
-                預計解除：${escapeHtml(formatHistoryExpireText(item))}
+            <div class="player-ban-history-meta">
+                預計解除：${escapeHtml(
+                    formatHistoryExpireText(item)
+                )}
             </div>
         </div>
 
         <div class="player-ban-history-right">
-
             <div class="player-ban-history-source">
-
                 <span class="player-ban-history-source-label">
                     操作來源：
                 </span>
@@ -2037,11 +2025,9 @@ function createBanHistoryCard(item) {
                 <span class="player-ban-history-source-value">
                     ${escapeHtml(sourceText)}
                 </span>
-
             </div>
 
             <div class="player-ban-history-operator">
-
                 <span class="player-ban-history-operator-label">
                     操作人：
                 </span>
@@ -2056,9 +2042,7 @@ function createBanHistoryCard(item) {
                 <span class="player-ban-history-operator-name">
                     ${escapeHtml(operator)}
                 </span>
-
             </div>
-
         </div>
     `;
 

@@ -1635,11 +1635,34 @@ function createIpBanCandidateCard(record) {
                 使用 IP：${escapeHtml(record.ip)}
             </div>
         </div>
+
+        <div class="player-ban-candidate-actions">
+            <button
+                class="player-ban-candidate-select-btn"
+                type="button"
+                title="選擇此 IP"
+            >
+                ＋
+            </button>
+        </div>
     `;
 
-    card.addEventListener("click", () => {
+    const selectBtn = card.querySelector(
+        ".player-ban-candidate-select-btn"
+    );
+
+    const selectCandidate = () => {
         selectedBanIpCandidate = record;
         renderIpBanCandidates();
+    };
+
+    card.addEventListener("click", () => {
+        selectCandidate();
+    });
+
+    selectBtn?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        selectCandidate();
     });
 
     return card;

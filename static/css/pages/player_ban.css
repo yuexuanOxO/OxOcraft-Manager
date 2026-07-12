@@ -976,7 +976,7 @@
 .player-ban-history-search {
     width: 100%;
     height: 42px;
-    padding: 10px 96px 10px 12px;
+    padding: 10px 138px 10px 12px;
 
     border: 1px solid #555;
     border-radius: 6px;
@@ -987,13 +987,17 @@
     box-sizing: border-box;
 }
 
-.player-ban-history-filter-btn {
+.player-ban-history-time-btn {
     position: absolute;
     top: 0;
-    right: 42px;
+    right: 84px;
 
     width: 42px;
     height: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     padding: 0;
 
@@ -1005,44 +1009,53 @@
     cursor: pointer;
 }
 
-.player-ban-history-search-btn {
-    right: 0;
-    border-radius: 0 6px 6px 0;
-}
+.player-ban-history-time-btn img {
+    width: 32px;
+    height: 32px;
 
-.player-ban-history-filter-wrap {
-    position: relative;
+    object-fit: contain;
+    image-rendering: pixelated;
 }
 
 .player-ban-history-filter-btn {
-    width: 40px;
-    height: 40px;
+    position: absolute;
+    top: 0;
+    right: 42px;
+
+    width: 42px;
+    height: 100%;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
+    padding: 0;
+
     border: 1px solid #555;
-    border-radius: 6px;
+    border-right: 0;
+    border-radius: 0;
 
     background: #2b2b2b;
     cursor: pointer;
 }
 
-.player-ban-history-filter-btn:hover {
-    background: #3a3a3a;
+.player-ban-history-filter-btn img {
+    width: 32px;
+    height: 32px;
+
+    object-fit: contain;
+    image-rendering: pixelated;
 }
 
-.player-ban-history-filter-btn img {
-    width: 24px;
-    height: 24px;
-    image-rendering: pixelated;
+.player-ban-history-search-btn {
+    right: 0;
+    border-radius: 0 6px 6px 0;
 }
 
 .player-ban-history-filter-menu {
     position: absolute;
-    top: 48px;
-    right: 0;
+    top: calc(100% + 2px);
+    right: 42px;
     z-index: 50;
 
     min-width: 260px;
@@ -1051,6 +1064,18 @@
     background: #161616;
     border: 2px solid #555;
     box-shadow: 0 0 0 2px #0a0a0a;
+}
+
+.player-ban-history-time-menu {
+    position: absolute;
+
+    top: calc(100% + 2px);
+    right: 84px;
+
+    width: 280px;
+    max-width: calc(100vw - 80px);
+
+    z-index: 51;
 }
 
 .player-ban-history-filter-menu.hidden {
@@ -1264,16 +1289,4 @@
     to {
         background-position: 0 -96px;
     }
-}
-
-.player-ban-history-filter-menu {
-    position: absolute;
-
-    top: calc(100% + 2px);
-    right: 42px;
-
-    width: 300px;
-    max-width: calc(100vw - 80px);
-
-    z-index: 20;
 }

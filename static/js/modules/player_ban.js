@@ -16,6 +16,10 @@ import {
 
 import { PLAYER_BAN_HELP } from "./help/player_ban_help.js";
 
+import {
+    filterRowsByDateRange,
+} from "./history_filter.js";
+
 let currentBanTab = "players";
 let banPlayers = [];
 let banIps = [];
@@ -29,6 +33,10 @@ let banOnlineMode = true;
 let banSearchKeyword = "";
 let playerBanDateTimePicker = null;
 let banHistorySearchKeyword = "";
+let banHistoryStartTime = "";
+let banHistoryEndTime = "";
+let banHistoryStartPicker = null;
+let banHistoryEndPicker = null;
 
 const banHistoryFilters = new Set();
 const OXOCRAFT_OPERATOR_ICON = "/static/icons/player_ban/OxOcraft_origin.png";
@@ -52,6 +60,23 @@ export function initPlayerBan() {
     const historyFilterBtn = document.getElementById("playerBanHistoryFilterBtn");
     const historyFilterMenu = document.getElementById("playerBanHistoryFilterMenu");
     const banDateTimeInput = document.getElementById("playerBanDateTimeInput");
+    const historyTimeBtn =
+        document.getElementById("playerBanHistoryTimeBtn");
+
+    const historyTimeMenu =
+        document.getElementById("playerBanHistoryTimeMenu");
+
+    const historyStartTimeInput =
+        document.getElementById("playerBanHistoryStartTime");
+
+    const historyEndTimeInput =
+        document.getElementById("playerBanHistoryEndTime");
+
+    const historyApplyTimeBtn =
+        document.getElementById("playerBanHistoryApplyTimeBtn");
+
+    const historyClearTimeBtn =
+        document.getElementById("playerBanHistoryClearTimeBtn");
 
     if (!window.McDateTimePicker) {
         console.warn(
@@ -65,6 +90,34 @@ export function initPlayerBan() {
         playerBanDateTimePicker =
             window.McDateTimePicker.create({
                 selector: "#playerBanDateTimeInput",
+                defaultDate: null,
+                enableTime: true,
+                minuteIncrement: 5,
+            }).instance;
+    }
+
+    if (
+        window.McDateTimePicker
+        && historyStartTimeInput
+        && !banHistoryStartPicker
+    ) {
+        banHistoryStartPicker =
+            window.McDateTimePicker.create({
+                selector: "#playerBanHistoryStartTime",
+                defaultDate: null,
+                enableTime: true,
+                minuteIncrement: 5,
+            }).instance;
+    }
+
+    if (
+        window.McDateTimePicker
+        && historyEndTimeInput
+        && !banHistoryEndPicker
+    ) {
+        banHistoryEndPicker =
+            window.McDateTimePicker.create({
+                selector: "#playerBanHistoryEndTime",
                 defaultDate: null,
                 enableTime: true,
                 minuteIncrement: 5,
@@ -128,7 +181,9 @@ export function initPlayerBan() {
 
     historyFilterBtn?.addEventListener("click", (event) => {
         event.stopPropagation();
+
         historyFilterMenu?.classList.toggle("hidden");
+        historyTimeMenu?.classList.add("hidden");
     });
 
     historyFilterMenu
@@ -170,6 +225,7 @@ export function initPlayerBan() {
 
     document.addEventListener("click", () => {
         historyFilterMenu?.classList.add("hidden");
+        historyTimeMenu?.classList.add("hidden");
     });
 
     window.addEventListener("server-ui-state-changed", () => {
@@ -270,6 +326,40 @@ export function initPlayerBan() {
             await loadCurrentBanTab();
         }
     );
+
+    historyTimeBtn?.addEventListener("click", (event) => {
+        event.stopPropagation();
+
+        historyTimeMenu?.classList.toggle("hidden");
+        historyFilterMenu?.classList.add("hidden");
+    });
+
+    historyTimeMenu?.addEventListener("click", (event) => {
+        event.stopPropagation();
+    });
+
+    historyApplyTimeBtn?.addEventListener("click", () => {
+        applyBanHistoryTimeFilter();
+        historyTimeMenu?.classList.add("hidden");
+    });
+
+    historyClearTimeBtn?.addEventListener("click", () => {
+        clearBanHistoryTimeFilter();
+    });
+
+    historyTimeMenu
+        ?.querySelectorAll("button[data-time-range]")
+        .forEach((button) => {
+            button.addEventListener("click", () => {
+                applyBanHistoryQuickTimeRange(
+                    button.dataset.timeRange || ""
+                );
+
+                historyTimeMenu.classList.add("hidden");
+            });
+        });
+
+
 }
 
 function updateBanTabs() {
@@ -779,6 +869,79 @@ function applyBanHistorySearch() {
 }
 
 
+function applyBanHistoryTimeFilter() {
+    const startInput =
+        document.getElementById(
+            "playerBanHistoryStartTime"
+        );
+
+    const endInput =
+        document.getElementById(
+            "playerBanHistoryEndTime"
+        );
+
+    banHistoryStartTime =
+        (startInput?.value || "").trim();
+
+    banHistoryEndTime =
+        (endInput?.value || "").trim();
+
+    renderBanHistory();
+}
+
+function clearBanHistoryTimeFilter() {
+    banHistoryStartTime = "";
+    banHistoryEndTime = "";
+
+    banHistoryStartPicker?.clear();
+    banHistoryEndPicker?.clear();
+
+    const startInput =
+        document.getElementById(
+            "playerBanHistoryStartTime"
+        );
+
+    const endInput =
+        document.getElementById(
+            "playerBanHistoryEndTime"
+        );
+
+    if (startInput) startInput.value = "";
+    if (endInput) endInput.value = "";
+
+    renderBanHistory();
+}
+
+function applyBanHistoryQuickTimeRange(range) {
+    if (range === "all") {
+        clearBanHistoryTimeFilter();
+        return;
+    }
+
+    const now = new Date();
+    const start = new Date(now);
+
+    if (range === "today") {
+        start.setHours(0, 0, 0, 0);
+    }
+
+    if (range === "7d") {
+        start.setDate(now.getDate() - 7);
+        start.setHours(0, 0, 0, 0);
+    }
+
+    if (range === "30d") {
+        start.setDate(now.getDate() - 30);
+        start.setHours(0, 0, 0, 0);
+    }
+
+    banHistoryStartPicker?.setDate(start, true);
+    banHistoryEndPicker?.setDate(now, true);
+
+    applyBanHistoryTimeFilter();
+}
+
+
 function renderBanHistory() {
     const content = document.getElementById("playerBanContent");
     const summary = document.getElementById("playerBanSummary");
@@ -789,6 +952,12 @@ function renderBanHistory() {
     if (!content) return;
 
     let rows = [...banHistory];
+
+    rows = filterRowsByDateRange(rows, {
+        getDate: item => item.created_at,
+        start: banHistoryStartTime,
+        end: banHistoryEndTime,
+    });
 
     const typeFilters = [...banHistoryFilters]
         .filter(filter => filter === "player" || filter === "ip");

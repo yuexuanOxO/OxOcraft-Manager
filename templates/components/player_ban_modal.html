@@ -80,6 +80,91 @@
                     >
 
                     <button
+                        id="playerBanHistoryTimeBtn"
+                        class="filter-btn player-ban-history-time-btn"
+                        type="button"
+                        data-mc-tooltip="時間篩選"
+                    >
+                        <img
+                            src="/static/icons/general_icon/clock.gif"
+                            alt="時間篩選"
+                        >
+                    </button>
+
+                    <div
+                        id="playerBanHistoryTimeMenu"
+                        class="filter-menu player-ban-history-time-menu hidden"
+                    >
+                        <div class="filter-title">時間篩選</div>
+
+                        <div class="permission-time-filter-row">
+                            <label>開始時間</label>
+
+                            <input
+                                id="playerBanHistoryStartTime"
+                                class="permission-time-filter-input mc-input"
+                                type="text"
+                                placeholder="開始時間"
+                            >
+                        </div>
+
+                        <div class="permission-time-filter-row">
+                            <label>結束時間</label>
+
+                            <input
+                                id="playerBanHistoryEndTime"
+                                class="permission-time-filter-input mc-input"
+                                type="text"
+                                placeholder="結束時間"
+                            >
+                        </div>
+
+                        <div class="permission-time-apply-row">
+                            <button
+                                id="playerBanHistoryApplyTimeBtn"
+                                type="button"
+                                class="filter-clear-btn permission-time-apply-btn"
+                            >
+                                <img
+                                    src="/static/icons/general_icon/clock.gif"
+                                    alt=""
+                                >
+                                <span>套用篩選</span>
+                            </button>
+                        </div>
+
+                        <div class="filter-title">快速選擇</div>
+
+                        <div class="filter-tags">
+                            <button type="button" data-time-range="today">
+                                今天
+                            </button>
+
+                            <button type="button" data-time-range="7d">
+                                最近 7 天
+                            </button>
+
+                            <button type="button" data-time-range="30d">
+                                最近 30 天
+                            </button>
+                        </div>
+
+                        <div class="filter-actions">
+                            <button
+                                id="playerBanHistoryClearTimeBtn"
+                                type="button"
+                                class="filter-clear-btn"
+                            >
+                                <img
+                                    src="/static/icons/general_icon/brush.png"
+                                    alt="清除篩選"
+                                >
+                                <span>清除篩選</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button
                         id="playerBanHistoryFilterBtn"
                         class="filter-btn player-ban-history-filter-btn"
                         type="button"

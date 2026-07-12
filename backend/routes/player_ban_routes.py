@@ -16,6 +16,7 @@ from backend.player_ban.player_ban_service import (
     process_expired_bans,
     sync_banned_json_to_db,
     get_player_ban_candidate_list,
+    get_ip_ban_candidate_list,
 )
 
 player_ban_bp = Blueprint("player_ban", __name__)
@@ -168,4 +169,14 @@ def api_player_ban_candidates():
         "success": True,
         "players": get_player_ban_candidate_list(),
         "can_add_by_name": can_add_ban_player_by_name(),
+    })
+
+
+@player_ban_bp.route(
+    "/api/player/ban/ip-candidates"
+)
+def api_player_ban_ip_candidates():
+    return jsonify({
+        "success": True,
+        "records": get_ip_ban_candidate_list(),
     })

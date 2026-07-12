@@ -28,6 +28,7 @@ from backend.db import (
     get_banned_ips_from_db,
     get_banned_ip_from_db,
     record_ip_ban_history,
+    get_ip_player_history,
 )
 
 from backend.player_permissions.player_access_history_service import (
@@ -1710,6 +1711,40 @@ def get_player_ban_candidate_list() -> list[dict]:
 
         result.append({
             **player,
+            "banned": False,
+        })
+
+    return result
+
+
+def get_ip_ban_candidate_list() -> list[dict]:
+    active_bans = get_active_bans("ip")
+
+    banned_ip_set = {
+        str(
+            item.get("target_name", "")
+        ).strip()
+        for item in active_bans
+        if item.get("target_name")
+    }
+
+    records = get_ip_player_history()
+
+    result = []
+
+    for record in records:
+        ip = str(
+            record.get("ip", "")
+        ).strip()
+
+        if not ip:
+            continue
+
+        if ip in banned_ip_set:
+            continue
+
+        result.append({
+            **record,
             "banned": False,
         })
 

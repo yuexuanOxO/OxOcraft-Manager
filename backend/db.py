@@ -711,6 +711,31 @@ def upsert_ip_player_login(
         conn.commit()
 
 
+def get_ip_player_history() -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute("""
+            SELECT
+                id,
+                ip,
+                player_uuid,
+                player_name,
+                account_type,
+                first_seen,
+                last_seen,
+                seen_count
+            FROM ip_player_history
+            WHERE trim(ip) != ''
+              AND trim(player_uuid) != ''
+              AND trim(player_name) != ''
+            ORDER BY
+                last_seen DESC,
+                player_name COLLATE NOCASE ASC,
+                ip ASC
+        """).fetchall()
+
+    return [dict(row) for row in rows]
+
+
 def get_all_players() -> list[dict]:
     with get_connection() as conn:
         rows = conn.execute("""

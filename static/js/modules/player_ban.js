@@ -21,6 +21,8 @@ let banPlayers = [];
 let banIps = [];
 let banHistory = [];
 let banCandidatePlayers = [];
+let banIpCandidateRecords = [];
+let selectedBanIpCandidate = null;
 let canAddBanPlayerByName = true;
 let selectedBanCandidatePlayer = null;
 let banOnlineMode = true;
@@ -222,12 +224,16 @@ export function initPlayerBan() {
     });
 
     addTargetInput?.addEventListener("input", () => {
-        if (currentBanTab !== "players") {
+        if (currentBanTab === "players") {
+            selectedBanCandidatePlayer = null;
+            renderBanCandidates();
             return;
         }
 
-        selectedBanCandidatePlayer = null;
-        renderBanCandidates();
+        if (currentBanTab === "ips") {
+            selectedBanIpCandidate = null;
+            renderIpBanCandidates();
+        }
     });
 
     document
@@ -969,6 +975,7 @@ function escapeHtml(text) {
 
 async function openAddBanModal() {
     selectedBanCandidatePlayer = null;
+    selectedBanIpCandidate = null;
 
     const modal = document.getElementById("addPlayerBanModal");
     const title = document.getElementById("addPlayerBanTitle");
@@ -981,7 +988,7 @@ async function openAddBanModal() {
     if (title) {
         title.textContent =
             currentBanTab === "ips"
-                ? "新增 IP 黑名單"
+                ? "新增IP到黑名單"
                 : "新增玩家到黑名單";
     }
 
@@ -1027,27 +1034,53 @@ async function openAddBanModal() {
 
     if (currentBanTab === "players") {
         await loadBanCandidates();
+    } else if (currentBanTab === "ips") {
+        await loadIpBanCandidates();
     }
+
 }
 
 
 function renderBanCandidateSection() {
-    const section = document.getElementById("playerBanCandidateSection");
-    const input = document.getElementById("addPlayerBanTargetInput");
-    const label = document.getElementById("addPlayerBanTargetLabel");
+    const playerSection =
+        document.getElementById(
+            "playerBanCandidateSection"
+        );
 
-    if (!section) return;
+    const ipSection =
+        document.getElementById(
+            "playerBanIpCandidateSection"
+        );
 
-    const isPlayerTab = currentBanTab === "players";
+    const input =
+        document.getElementById(
+            "addPlayerBanTargetInput"
+        );
 
-    section.classList.toggle(
+    const label =
+        document.getElementById(
+            "addPlayerBanTargetLabel"
+        );
+
+    const searchBtn =
+        document.getElementById(
+            "searchPlayerBanBtn"
+        );
+
+    const isPlayerTab =
+        currentBanTab === "players";
+
+    playerSection?.classList.toggle(
         "hidden",
         !isPlayerTab
     );
 
-    if (!input) return;
+    ipSection?.classList.toggle(
+        "hidden",
+        isPlayerTab
+    );
 
-    const searchBtn =document.getElementById("searchPlayerBanBtn");
+    if (!input) return;
 
     if (!isPlayerTab) {
         input.disabled = false;
@@ -1059,7 +1092,8 @@ function renderBanCandidateSection() {
         return;
     }
 
-    const offlineOnlineSearchDisabled = !canAddBanPlayerByName;
+    const offlineOnlineSearchDisabled =
+        !canAddBanPlayerByName;
 
     input.disabled = false;
 
@@ -1301,6 +1335,117 @@ async function loadBanCandidates() {
 }
 
 
+async function loadIpBanCandidates() {
+    const list =
+        document.getElementById(
+            "playerBanIpCandidateList"
+        );
+
+    if (!list) return;
+
+    list.innerHTML = `
+        <div class="player-ban-empty">
+            載入玩家 IP 紀錄中...
+        </div>
+    `;
+
+    try {
+        const response = await fetch(
+            "/api/player/ban/ip-candidates",
+            {
+                cache: "no-store"
+            }
+        );
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(
+                data.message
+                || "玩家 IP 紀錄載入失敗"
+            );
+        }
+
+        banIpCandidateRecords =
+            data.records || [];
+
+        renderIpBanCandidates();
+
+    } catch (error) {
+        console.error(
+            "玩家 IP 紀錄載入失敗:",
+            error
+        );
+
+        list.innerHTML = `
+            <div class="player-ban-empty">
+                玩家 IP 紀錄載入失敗
+            </div>
+        `;
+    }
+}
+
+
+function renderIpBanCandidates() {
+    const list =
+        document.getElementById(
+            "playerBanIpCandidateList"
+        );
+
+    const input =
+        document.getElementById(
+            "addPlayerBanTargetInput"
+        );
+
+    if (!list) return;
+
+    const keyword =
+        (input?.value || "")
+            .trim()
+            .toLowerCase();
+
+    let records = [
+        ...banIpCandidateRecords
+    ];
+
+    if (keyword) {
+        records = records.filter(record => {
+            const playerName =
+                String(
+                    record.player_name || ""
+                ).toLowerCase();
+
+            const ip =
+                String(
+                    record.ip || ""
+                ).toLowerCase();
+
+            return (
+                playerName.includes(keyword)
+                || ip.includes(keyword)
+            );
+        });
+    }
+
+    list.innerHTML = "";
+
+    if (records.length === 0) {
+        list.innerHTML = `
+            <div class="player-ban-empty">
+                尚未有符合條件的玩家 IP 紀錄
+            </div>
+        `;
+        return;
+    }
+
+    records.forEach(record => {
+        list.appendChild(
+            createIpBanCandidateCard(record)
+        );
+    });
+}
+
+
 function renderBanCandidates() {
     const list =
         document.getElementById("playerBanCandidateList");
@@ -1434,6 +1579,78 @@ function createBanCandidateCard(player) {
 
     deleteBtn?.addEventListener("click", async () => {
         await deleteBanCandidate(player);
+    });
+
+    return card;
+}
+
+
+function createIpBanCandidateCard(record) {
+    const card =
+        document.createElement("div");
+
+    card.className =
+        "player-ban-candidate-card";
+
+    if (
+        selectedBanIpCandidate
+        && Number(selectedBanIpCandidate.id)
+            === Number(record.id)
+    ) {
+        card.classList.add("selected");
+    }
+
+    const avatarUrl =
+        getPlayerAvatarUrl({
+            player_uuid:
+                record.player_uuid,
+            player_name:
+                record.player_name,
+            account_type:
+                record.account_type,
+        });
+
+    card.innerHTML = `
+        <img
+            class="player-ban-candidate-avatar"
+            src="${avatarUrl}"
+            alt="${escapeHtml(record.player_name)}"
+        >
+
+        <div class="player-ban-candidate-info">
+            <div class="player-ban-candidate-name-row">
+                <div class="player-ban-candidate-name">
+                    ${escapeHtml(record.player_name)}
+                </div>
+
+                <div class="
+                    player-ban-candidate-type
+                    ${getAccountTypeClass(record)}
+                ">
+                    ${getAccountTypeLabel(record)}
+                </div>
+            </div>
+
+            <div class="player-ban-candidate-uuid">
+                使用 IP：${escapeHtml(record.ip)}
+            </div>
+        </div>
+    `;
+
+    card.addEventListener("click", () => {
+        selectedBanIpCandidate = record;
+
+        const input =
+            document.getElementById(
+                "addPlayerBanTargetInput"
+            );
+
+        if (input) {
+            input.value =
+                record.ip || "";
+        }
+
+        renderIpBanCandidates();
     });
 
     return card;

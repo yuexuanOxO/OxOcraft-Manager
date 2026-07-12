@@ -1639,17 +1639,6 @@ function createIpBanCandidateCard(record) {
 
     card.addEventListener("click", () => {
         selectedBanIpCandidate = record;
-
-        const input =
-            document.getElementById(
-                "addPlayerBanTargetInput"
-            );
-
-        if (input) {
-            input.value =
-                record.ip || "";
-        }
-
         renderIpBanCandidates();
     });
 
@@ -1831,6 +1820,14 @@ async function submitAddBan() {
     const inputValue = (targetInput?.value || "").trim();
     const reason = (reasonInput?.value || "").trim();
 
+    const selectedIp =
+        String(
+            selectedBanIpCandidate?.ip || ""
+        ).trim();
+
+    const effectiveIp =
+        selectedIp || inputValue;
+
     if (
         currentBanTab === "players"
         && !selectedBanCandidatePlayer
@@ -1845,11 +1842,11 @@ async function submitAddBan() {
 
     if (
         currentBanTab === "ips"
-        && !inputValue
+        && !effectiveIp
     ) {
         await showInfo({
             title: "黑名單管理",
-            message: "請輸入 IP",
+            message: "請輸入 IP 或從下方選擇一筆玩家 IP 紀錄",
             variant: "warning"
         });
         return;
@@ -1873,7 +1870,7 @@ async function submitAddBan() {
 
         if (currentBanTab === "ips") {
             url = "/api/player/ban/ip";
-            payload.ip = inputValue;
+            payload.ip = effectiveIp;
         } else {
             url = "/api/player/ban/player";
 

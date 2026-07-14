@@ -348,16 +348,16 @@ export function initPlayerBan() {
     });
 
     historyTimeMenu
-        ?.querySelectorAll("button[data-time-range]")
-        .forEach((button) => {
-            button.addEventListener("click", () => {
-                applyBanHistoryQuickTimeRange(
-                    button.dataset.timeRange || ""
-                );
-
-                historyTimeMenu.classList.add("hidden");
-            });
+    ?.querySelectorAll(
+        "button[data-time-range]"
+    )
+    .forEach((button) => {
+        button.addEventListener("click", () => {
+            applyBanHistoryQuickTimeRange(
+                button.dataset.timeRange || ""
+            );
         });
+    });
 
 
 }

@@ -965,6 +965,18 @@ function renderBanHistory() {
     const actionFilters = [...banHistoryFilters]
         .filter(filter => filter === "add" || filter === "remove");
 
+    const sourceFilters =
+    [...banHistoryFilters]
+        .filter(filter =>
+            [
+                "oxocraft",
+                "minecraft_sync",
+                "system",
+                "rcon",
+                "command",
+            ].includes(filter)
+        );
+
     if (typeFilters.length > 0) {
         rows = rows.filter(item => {
             return typeFilters.includes(item.target_type);
@@ -984,6 +996,65 @@ function renderBanHistory() {
             return (
                 (actionFilters.includes("add") && isAdd) ||
                 (actionFilters.includes("remove") && isRemove)
+            );
+        });
+    }
+
+    if (sourceFilters.length > 0) {
+        rows = rows.filter(item => {
+            const source =
+                String(item.source || "")
+                    .trim()
+                    .toLowerCase();
+
+            const isOxocraft =
+                source === "ui" ||
+                source === "offline_ui_edit" ||
+                source === "online_ui_manage" ||
+                source === "ui_reload";
+
+            const isMinecraftSync =
+                source === "minecraft_json";
+
+            const isSystem =
+                source === "system" ||
+                source === "scheduler" ||
+                source === "player_ban_scheduler";
+
+            const isRcon =
+                source === "rcon" ||
+                source === "console_rcon" ||
+                source === "console_rcon_reload";
+
+            const isCommand =
+                source === "player_command" ||
+                source === "player_command_reload";
+
+            return (
+                (
+                    sourceFilters.includes("oxocraft")
+                    && isOxocraft
+                )
+                ||
+                (
+                    sourceFilters.includes("minecraft_sync")
+                    && isMinecraftSync
+                )
+                ||
+                (
+                    sourceFilters.includes("system")
+                    && isSystem
+                )
+                ||
+                (
+                    sourceFilters.includes("rcon")
+                    && isRcon
+                )
+                ||
+                (
+                    sourceFilters.includes("command")
+                    && isCommand
+                )
             );
         });
     }

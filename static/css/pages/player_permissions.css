@@ -1627,7 +1627,7 @@
     margin: 10px 0 12px;
 }
 
-#playerPermissionHistoryApplyTimeBtn.permission-time-apply-btn {
+.permission-time-apply-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -1639,17 +1639,18 @@
     font-weight: bold;
 }
 
-#playerPermissionHistoryApplyTimeBtn.permission-time-apply-btn:hover {
+.permission-time-apply-btn:hover {
     background: #4ca83b !important;
 }
 
-#playerPermissionHistoryApplyTimeBtn.permission-time-apply-btn:active {
+.permission-time-apply-btn:active {
     background: #327826 !important;
 }
 
-#playerPermissionHistoryApplyTimeBtn.permission-time-apply-btn img {
+.permission-time-apply-btn img {
     width: 16px;
     height: 16px;
+
     image-rendering: pixelated;
 }
 

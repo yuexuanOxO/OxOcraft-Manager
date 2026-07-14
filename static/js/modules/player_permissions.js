@@ -235,6 +235,18 @@ export function initPlayerPermissions() {
         clearPermissionHistoryTimeFilter();
     });
 
+    historyTimeMenu
+    ?.querySelectorAll(
+        "button[data-time-range]"
+    )
+    .forEach((button) => {
+        button.addEventListener("click", () => {
+            applyPermissionHistoryQuickTimeRange(
+                button.dataset.timeRange || ""
+            );
+        });
+    });
+
     initFilterMenu({
         button: historyFilterBtn,
         menu: historyFilterMenu,

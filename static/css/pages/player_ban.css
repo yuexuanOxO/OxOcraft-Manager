@@ -1058,12 +1058,15 @@
     right: 42px;
     z-index: 50;
 
-    min-width: 260px;
+    width: 300px;
+    max-width: calc(100vw - 80px);
     padding: 14px;
 
     background: #161616;
     border: 2px solid #555;
     box-shadow: 0 0 0 2px #0a0a0a;
+
+    box-sizing: border-box;
 }
 
 .player-ban-history-time-menu {

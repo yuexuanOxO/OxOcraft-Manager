@@ -18,8 +18,6 @@ def build_effective_settings_snapshot() -> dict:
     properties["enable-rcon"] = "true"
     properties["rcon.port"] = str(config.get("rcon_port", 25575))
     properties["rcon.password"] = str(config.get("rcon_password", ""))
-    properties["enable-query"] = "true"
-    properties["query.port"] = str(config.get("query_port", 25565))
 
     return {
         "captured_at": datetime.now().isoformat(timespec="seconds"),

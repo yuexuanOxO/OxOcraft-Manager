@@ -139,9 +139,7 @@ def api_get_runtime_config():
 
                 "rcon.password": config.get("rcon_password", ""),
                 "rcon.port": str(config.get("rcon_port", 25575)),
-                "query.port": str(config.get("query_port", 25565)),
                 "enable-rcon": "true",
-                "enable-query": "true",
             }
         })
 

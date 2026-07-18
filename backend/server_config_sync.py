@@ -30,10 +30,6 @@ def sync_rcon_to_server_properties(config: Dict) -> None:
         "enable-rcon": "true",
         "rcon.port": str(config["rcon_port"]),
         "rcon.password": str(config["rcon_password"]),
-        "query.port": str(
-            config.get("query_port", 25565)
-        ),
-        "enable-query": "true",
 
         "management-server-enabled": "true",
         "management-server-host": "localhost",

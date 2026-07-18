@@ -7,6 +7,7 @@ backend/credentials/
 build/
 dist/
 *.spec
+!OxOcraft-Manager.spec
 backend/instance/*.db
 backend/credentials/google_token*
 Test_tools

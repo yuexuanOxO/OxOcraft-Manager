@@ -118,6 +118,7 @@ def init_db() -> None:
                 player_name TEXT NOT NULL,
 
                 account_type TEXT NOT NULL DEFAULT 'unknown',
+                is_online INTEGER NOT NULL DEFAULT 0,
                 in_usercache INTEGER NOT NULL DEFAULT 0,
 
                 first_seen_at DATETIME,

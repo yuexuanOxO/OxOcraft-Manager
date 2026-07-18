@@ -34,6 +34,7 @@ def sync_rcon_to_server_properties(config: Dict) -> None:
         "management-server-enabled": "true",
         "management-server-host": "localhost",
         "management-server-port": "25585",
+        "management-server-tls-enabled": "false",
     }
 
     server_properties.update(updates)

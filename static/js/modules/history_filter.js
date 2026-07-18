@@ -31,3 +31,24 @@ export function filterRowsByDateRange(rows, options = {}) {
         return true;
     });
 }
+
+export function setActiveHistoryTimeRange(
+    menu,
+    range = ""
+) {
+    if (!menu) return;
+
+    const activeRange =
+        String(range || "").trim();
+
+    menu
+        .querySelectorAll(
+            "button[data-time-range]"
+        )
+        .forEach((button) => {
+            button.classList.toggle(
+                "active",
+                button.dataset.timeRange === activeRange
+            );
+        });
+}

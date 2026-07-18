@@ -21,6 +21,7 @@ import {
 
 import {
     filterRowsByDateRange,
+    setActiveHistoryTimeRange,
 } from "./history_filter.js";
 
 import {
@@ -224,29 +225,40 @@ export function initPlayerWhitelist() {
         }
     );
 
-    historyApplyTimeBtn?.addEventListener(
-        "click",
-        () => {
+    historyApplyTimeBtn?.addEventListener("click",() => {
             applyWhitelistHistoryTimeFilter();
+
+            setActiveHistoryTimeRange(
+                historyTimeMenu,
+                ""
+            );
+
             historyTimeMenu?.classList.add("hidden");
         }
     );
 
-    historyClearTimeBtn?.addEventListener(
-        "click",
-        () => {
+    historyClearTimeBtn?.addEventListener("click",() => {
             clearWhitelistHistoryTimeFilter();
+
+            setActiveHistoryTimeRange(
+                historyTimeMenu,
+                ""
+            );
         }
     );
 
-    historyTimeMenu
-        ?.querySelectorAll(
-            "button[data-time-range]"
-        )
-        .forEach(button => {
+    historyTimeMenu?.querySelectorAll("button[data-time-range]").forEach((button) => {
             button.addEventListener("click", () => {
+                const range =
+                    button.dataset.timeRange || "";
+
                 applyWhitelistHistoryQuickTimeRange(
-                    button.dataset.timeRange
+                    range
+                );
+
+                setActiveHistoryTimeRange(
+                    historyTimeMenu,
+                    range
                 );
             });
         });

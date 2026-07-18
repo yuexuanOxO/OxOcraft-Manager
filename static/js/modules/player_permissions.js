@@ -17,6 +17,7 @@ import {
 
 import {
     filterRowsByDateRange,
+    setActiveHistoryTimeRange,
 } from "./history_filter.js";
 
 import {
@@ -228,21 +229,36 @@ export function initPlayerPermissions() {
 
     historyApplyTimeBtn?.addEventListener("click", () => {
         applyPermissionHistoryTimeFilter();
+
+        setActiveHistoryTimeRange(
+            historyTimeMenu,
+            ""
+        );
+
         historyTimeMenu?.classList.add("hidden");
     });
 
     historyClearTimeBtn?.addEventListener("click", () => {
         clearPermissionHistoryTimeFilter();
+
+        setActiveHistoryTimeRange(
+            historyTimeMenu,
+            ""
+        );
     });
 
-    historyTimeMenu
-    ?.querySelectorAll(
-        "button[data-time-range]"
-    )
-    .forEach((button) => {
+    historyTimeMenu?.querySelectorAll("button[data-time-range]").forEach((button) => {
         button.addEventListener("click", () => {
+            const range =
+                button.dataset.timeRange || "";
+
             applyPermissionHistoryQuickTimeRange(
-                button.dataset.timeRange || ""
+                range
+            );
+
+            setActiveHistoryTimeRange(
+                historyTimeMenu,
+                range
             );
         });
     });

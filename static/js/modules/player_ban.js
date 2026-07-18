@@ -18,6 +18,7 @@ import { PLAYER_BAN_HELP } from "./help/player_ban_help.js";
 
 import {
     filterRowsByDateRange,
+    setActiveHistoryTimeRange,
 } from "./history_filter.js";
 
 let currentBanTab = "players";
@@ -340,21 +341,34 @@ export function initPlayerBan() {
 
     historyApplyTimeBtn?.addEventListener("click", () => {
         applyBanHistoryTimeFilter();
+
+        setActiveHistoryTimeRange(
+            historyTimeMenu,
+            ""
+        );
+
         historyTimeMenu?.classList.add("hidden");
     });
 
     historyClearTimeBtn?.addEventListener("click", () => {
         clearBanHistoryTimeFilter();
+
+        setActiveHistoryTimeRange(
+            historyTimeMenu,
+            ""
+        );
     });
 
-    historyTimeMenu
-    ?.querySelectorAll(
-        "button[data-time-range]"
-    )
-    .forEach((button) => {
+    historyTimeMenu?.querySelectorAll("button[data-time-range]").forEach((button) => {
         button.addEventListener("click", () => {
-            applyBanHistoryQuickTimeRange(
-                button.dataset.timeRange || ""
+            const range =
+                button.dataset.timeRange || "";
+
+            applyBanHistoryQuickTimeRange(range);
+
+            setActiveHistoryTimeRange(
+                historyTimeMenu,
+                range
             );
         });
     });

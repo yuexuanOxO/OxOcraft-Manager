@@ -18,6 +18,17 @@ from backend.server_status import (
     lock_current_rcon_settings,
 )
 
+from backend.server_config_sync import init_rcon_config
+
+from backend.management_api.config import (
+    load_management_config,
+)
+
+from backend.management_api.monitor import (
+    start_management_api_monitor,
+)
+
+
 SERVER_ROOT = MC_ROOT
 
 server_process: subprocess.Popen | None = None
@@ -269,7 +280,42 @@ def start_server() -> tuple[bool, str]:
 
     if not SERVER_JAR_PATH.exists():
         return False, f"找不到 server.jar：{SERVER_JAR_PATH}"
-    
+
+    if SERVER_PROPERTIES_PATH.exists():
+        try:
+            # 正式啟動 Server 前確認管理設定已同步。
+            init_rcon_config()
+
+            management_config = load_management_config()
+
+            start_management_api_monitor(
+                host=management_config["host"],
+                port=management_config["port"],
+                secret=management_config["secret"],
+                tls_enabled=management_config["tls_enabled"],
+            )
+
+            print(
+                "[ManagementAPI] monitor ensured before server start:",
+                f"host={management_config['host']}",
+                f"port={management_config['port']}",
+                f"tls={management_config['tls_enabled']}",
+            )
+
+        except Exception as error:
+            return False, (
+                "Management API 初始化失敗："
+                f"{type(error).__name__}: {error}"
+            )
+
+    else:
+        # Minecraft 第一次啟動時，server.properties 尚未生成。
+        # 這次只啟動 server.jar，讓 Minecraft 產生必要檔案。
+        print(
+            "[ManagementAPI] server.properties 尚未生成，"
+            "略過 Management API 初始化"
+        )
+
     props = {}
 
     if SERVER_PROPERTIES_PATH.exists():

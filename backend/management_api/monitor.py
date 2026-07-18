@@ -36,7 +36,18 @@ def start_management_api_monitor(
 
     with _monitor_lock:
         if _monitor_started:
+            print(
+                "[ManagementAPI] monitor already started"
+            )
             return
+
+        print(
+            "[ManagementAPI] starting monitor:",
+            f"host={host}",
+            f"port={port}",
+            f"tls={tls_enabled}",
+            f"secret={'set' if secret else 'empty'}",
+        )
 
         _monitor_started = True
 
@@ -51,9 +62,12 @@ def start_management_api_monitor(
             target=_run_client_thread,
             args=(_current_client,),
             daemon=True,
+            name="ManagementAPI-Monitor",
         )
 
         _monitor_thread.start()
+
+        print("[ManagementAPI] monitor thread started")
 
 
 def update_management_secret(secret: str) -> None:

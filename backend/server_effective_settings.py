@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from backend.config_files import load_or_create_config
 from backend.server_settings.server_properties import (
+    DEFAULT_SERVER_PROPERTIES,
     get_effective_server_properties,
     read_properties_modified_comment,
 )
@@ -15,15 +16,37 @@ from backend.paths import (
 def build_effective_settings_snapshot() -> dict:
     config = load_or_create_config()
 
-    properties = get_effective_server_properties(SERVER_PROPERTIES_PATH)
-    
+    if SERVER_PROPERTIES_PATH.exists():
+        properties = get_effective_server_properties(
+            SERVER_PROPERTIES_PATH
+        )
+
+        properties_modified_comment = (
+            read_properties_modified_comment(
+                SERVER_PROPERTIES_PATH
+            )
+        )
+
+    else:
+        # Minecraft 第一次啟動前尚無 server.properties，
+        # 暫時使用程式內建預設值。
+        properties = DEFAULT_SERVER_PROPERTIES.copy()
+        properties_modified_comment = ""
+
     properties["enable-rcon"] = "true"
-    properties["rcon.port"] = str(config.get("rcon_port", 25575))
-    properties["rcon.password"] = str(config.get("rcon_password", ""))
+    properties["rcon.port"] = str(
+        config.get("rcon_port", 25575)
+    )
+    properties["rcon.password"] = str(
+        config.get("rcon_password", "")
+    )
 
     return {
-        "captured_at": datetime.now().isoformat(timespec="seconds"),
-        "properties_modified_comment": read_properties_modified_comment(SERVER_PROPERTIES_PATH),
+        "captured_at": datetime.now().isoformat(
+            timespec="seconds"
+        ),
+        "properties_modified_comment":
+            properties_modified_comment,
 
         "properties": properties,
 

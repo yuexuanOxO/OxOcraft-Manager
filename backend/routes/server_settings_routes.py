@@ -24,11 +24,6 @@ from backend.server_settings.server_properties import (
 
 from backend.management_api.monitor import (
     update_management_secret,
-    start_management_api_monitor,
-)
-
-from backend.management_api.config import (
-    load_management_config,
 )
 
 
@@ -256,15 +251,6 @@ def api_regenerate_management_secret():
 def api_sync_rcon_config():
     try:
         init_rcon_config()
-
-        management_config = load_management_config()
-
-        start_management_api_monitor(
-            host=management_config["host"],
-            port=management_config["port"],
-            secret=management_config["secret"],
-            tls_enabled=management_config["tls_enabled"],
-        )
 
         return jsonify({
             "success": True,

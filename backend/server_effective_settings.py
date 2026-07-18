@@ -1,13 +1,15 @@
 import json
 from datetime import datetime
-from backend.paths import DATA_DIR, SERVER_PROPERTIES_PATH
 from backend.config_files import load_or_create_config
 from backend.server_settings.server_properties import (
     get_effective_server_properties,
     read_properties_modified_comment,
 )
 
-EFFECTIVE_SETTINGS_PATH = DATA_DIR / "server_effective_settings.json"
+from backend.paths import (
+    EFFECTIVE_SETTINGS_PATH,
+    SERVER_PROPERTIES_PATH,
+)
 
 
 def build_effective_settings_snapshot() -> dict:

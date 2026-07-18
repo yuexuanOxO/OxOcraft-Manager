@@ -8,6 +8,13 @@ from backend.db import (
     mark_interrupted_cloud_uploads_failed,
     mark_interrupted_local_backups_failed,
 )
+
+from backend.paths import (
+    SERVER_PROPERTIES_PATH,
+    CONFIG_PATH,
+)
+
+from backend.config_files import load_or_create_config
 from backend.server_config_sync import init_rcon_config
 from backend.response_headers import register_no_cache_headers
 from backend.player_ban.player_ban_scheduler import start_player_ban_scheduler
@@ -58,33 +65,70 @@ def open_browser():
 
 
 if __name__ == "__main__":
+    # 1. 初始化資料庫
     try:
         init_db()
         mark_interrupted_cloud_uploads_failed()
         mark_interrupted_local_backups_failed()
+
         print("SQLite 資料庫初始化完成")
-        
-        init_rcon_config()
-        print("RCON 設定已同步到 server.properties")
-        print("請確認 Minecraft server 已重啟，否則新的 RCON 設定不會生效。")
+
+    except Exception as error:
+        print(f"資料庫初始化失敗：{error}")
+
+    # 2. 建立或讀取 OxOcraft-Manager 設定
+    try:
+        load_or_create_config()
+
+        print(
+            "OxOcraft-Manager 設定檔初始化完成：",
+            CONFIG_PATH,
+        )
+
+    except Exception as error:
+        print(f"設定檔初始化失敗：{error}")
+
+    # 3. 啟動不依賴 server.properties 的背景服務
+    try:
         start_server_monitor()
         start_auto_backup_scheduler()
         start_player_ban_scheduler()
-        
 
-        management_config = load_management_config()
-
-        start_management_api_monitor(
-            host=management_config["host"],
-            port=management_config["port"],
-            secret=management_config["secret"],
-            tls_enabled=management_config["tls_enabled"],
-        )
-        print("Management API 監聽已啟動")
-
+        print("背景監控服務已啟動")
 
     except Exception as error:
-        print(f"初始化失敗：{error}")
+        print(f"背景監控服務啟動失敗：{error}")
+
+    # 4. server.properties 已存在時才同步並啟動 SMP
+    try:
+        if SERVER_PROPERTIES_PATH.exists():
+            init_rcon_config()
+
+            print("RCON 設定已同步到 server.properties")
+            print(
+                "請確認 Minecraft server 已重啟，"
+                "否則新的 RCON 設定不會生效。"
+            )
+
+            management_config = load_management_config()
+
+            start_management_api_monitor(
+                host=management_config["host"],
+                port=management_config["port"],
+                secret=management_config["secret"],
+                tls_enabled=management_config["tls_enabled"],
+            )
+
+            print("Management API 監聽已啟動")
+
+        else:
+            print(
+                "尚未產生 server.properties，"
+                "等待 Minecraft 第一次啟動完成"
+            )
+
+    except Exception as error:
+        print(f"Minecraft 管理設定初始化失敗：{error}")
 
     threading.Timer(1, open_browser).start()
     try:

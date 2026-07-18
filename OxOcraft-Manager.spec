@@ -18,13 +18,21 @@ from pathlib import Path
 block_cipher = None
 static_datas = []
 
+legacy_runtime_files = {
+    "static/data/config.json",
+    "static/data/server_effective_settings.json",
+}
 
 for path in Path("static").rglob("*"):
-    if path.is_file():
-        if path.as_posix() == "static/data/config.json":
-            continue
+    if not path.is_file():
+        continue
 
-        static_datas.append((str(path), str(path.parent)))
+    if path.as_posix() in legacy_runtime_files:
+        continue
+
+    static_datas.append(
+        (str(path), str(path.parent))
+    )
 
 
 datas = [

@@ -54,8 +54,18 @@ def load_or_create_config() -> Dict:
 
 def save_config(config: Dict) -> None:
     """儲存 config.json。"""
+    CONFIG_PATH.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
     with CONFIG_PATH.open("w", encoding="utf-8") as file:
-        json.dump(config, file, ensure_ascii=False, indent=4)
+        json.dump(
+            config,
+            file,
+            ensure_ascii=False,
+            indent=4,
+        )
 
 
 

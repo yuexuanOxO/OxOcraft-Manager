@@ -8,7 +8,7 @@ from calendar import monthrange
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from backend.paths import MC_ROOT
+from backend.paths import MC_ROOT, CONFIG_PATH
 from backend.backup_service import start_backup, is_backup_running, get_backup_status
 from backend.server_monitor import (
     get_cached_server_status,
@@ -16,10 +16,9 @@ from backend.server_monitor import (
     register_event_handler,
     unregister_event_handler,
 )
+
 from backend.server_runtime import start_server, stop_server
 
-
-CONFIG_PATH = Path("static/data/config.json")
 
 _scheduler_started = False
 _scheduler_thread = None

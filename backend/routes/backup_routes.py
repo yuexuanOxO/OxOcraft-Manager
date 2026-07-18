@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from backend.paths import MC_ROOT
+from backend.paths import MC_ROOT, CONFIG_PATH
 from backend.server_runtime import get_current_level_name, get_current_world_path, start_server, stop_server, is_server_running
 from backend.server_monitor import get_cached_server_status
 from backend.db import get_backup_records
@@ -27,7 +27,6 @@ from backend.auto_backup_service import (
     start_auto_backup_scheduler,
 )
 
-CONFIG_PATH = Path("static/data/config.json")
 
 backup_bp = Blueprint("backup", __name__)
 _manual_safe_backup_running = False

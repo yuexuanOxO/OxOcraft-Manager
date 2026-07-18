@@ -23,10 +23,18 @@ EULA_PATH = MC_ROOT / "eula.txt"
 LOG_FILE_PATH = MC_ROOT / "logs" / "latest.log"
 
 STATIC_DIR = PROJECT_ROOT / "static"
-DATA_DIR = STATIC_DIR / "data"
+STATIC_DATA_DIR = STATIC_DIR / "data"
 
-CONFIG_PATH = DATA_DIR / "config.json"
-SERVER_PROPERTIES_FIELDS_PATH = DATA_DIR / "server_properties_fields.json"
+APP_DATA_DIR = MC_ROOT / "data"
+
+CONFIG_PATH = APP_DATA_DIR / "config.json"
+EFFECTIVE_SETTINGS_PATH = (
+    APP_DATA_DIR / "server_effective_settings.json"
+)
+
+SERVER_PROPERTIES_FIELDS_PATH = (
+    STATIC_DATA_DIR / "server_properties_fields.json"
+)
 
 DB_PATH = BACKEND_DIR / "instance" / "oxocraft.db"
 

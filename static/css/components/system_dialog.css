@@ -95,19 +95,15 @@
     background: #c34a3f;
 }
 
-.system-dialog-btn.cancel {
-    background: #3f912b;
-}
-
-.system-dialog-btn.cancel:hover {
-    background: #4ca936;
-}
-
+.system-dialog-btn.primary,
+.system-dialog-btn.cancel,
 .system-dialog.single-action
 .system-dialog-btn.confirm {
     background: #3f912b;
 }
 
+.system-dialog-btn.primary:hover,
+.system-dialog-btn.cancel:hover,
 .system-dialog.single-action
 .system-dialog-btn.confirm:hover {
     background: #4ca936;

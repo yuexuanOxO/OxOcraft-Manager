@@ -512,6 +512,7 @@
     font-size: 30px;
     color: white;
     font-weight: bold;
+    text-align: center;
     margin-bottom: 18px;
 }
 
@@ -528,9 +529,6 @@
 
 #serverInitBtn{
     min-width: 220px;
-    height: 48px;
-    font-size: 22px;
-    cursor: pointer;
 }
 
 .setting-password-wrap {

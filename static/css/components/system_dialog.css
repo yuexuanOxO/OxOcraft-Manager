@@ -87,11 +87,13 @@
     cursor: pointer;
 }
 
-.system-dialog-btn.confirm {
+.system-dialog-btn.confirm,
+.system-dialog-btn.danger {
     background: #a83b32;
 }
 
-.system-dialog-btn.confirm:hover {
+.system-dialog-btn.confirm:hover,
+.system-dialog-btn.danger:hover {
     background: #c34a3f;
 }
 

@@ -1068,6 +1068,11 @@ export function updateServerSettingsFooterModeByState(data) {
 
     updateServerSettingsStatusState(displayState);
 
+    const isKeepOnlyMode = displayState === "ready";
+
+    applyBtn.classList.toggle("primary", isKeepOnlyMode);
+    applyBtn.classList.toggle("danger", !isKeepOnlyMode);
+
     if (displayState === "ready") {
         applyBtn.textContent = "僅保留變更";
         applyBtn.disabled = false;

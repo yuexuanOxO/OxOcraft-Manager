@@ -380,9 +380,6 @@
 #serverSettingsApplyBtn,
 #serverSettingsRestartBtn{
     min-width: 180px;
-    height: 52px;
-    font-size: 24px;
-    cursor: pointer;
 }
 
 #serverSettingsApplyBtn:disabled,

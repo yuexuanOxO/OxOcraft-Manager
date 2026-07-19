@@ -16,6 +16,7 @@ let serverSettingKeyword = "";
 let serverSettingsServerState = "offline";
 let serverSettingFields = [];
 let serverSettingsState = {};
+let serverSettingsSavedState = {};
 let serverSettingsEffectiveState = {};
 let serverSettingsBusyMode = null;
 let serverSettingsBusyUnlockAt = 0;
@@ -285,7 +286,6 @@ function setupServerSettingsModal() {
             }
 
             pendingServerIconFile = file;
-            serverIconNeedsRestart = true;
 
             if (pendingServerIconPreviewUrl) {
                 URL.revokeObjectURL(pendingServerIconPreviewUrl);
@@ -400,6 +400,8 @@ export async function loadServerSettings() {
             };
         }
 
+        serverSettingsSavedState = structuredClone(serverSettingsState);
+
         const effectiveResponse = await fetch("/api/server/effective-settings", { cache: "no-store" });
         const effectiveData = await effectiveResponse.json();
 
@@ -445,7 +447,7 @@ function renderServerSettings() {
     function syncDirtyBadge(container, key) {
         let badge = container.querySelector(".setting-dirty-badge");
 
-        if (isFieldDirty(key)) {
+        if (isFieldModified(key)) {
             if (!badge) {
                 badge = document.createElement("div");
                 badge.className = "setting-dirty-badge";
@@ -858,7 +860,9 @@ function setupServerSettingSearch(){
 
 
 export async function saveServerSettings(showAlert = true) {
-    const applyBtn = document.getElementById("serverSettingsApplyBtn");
+    const applyBtn =
+        document.getElementById("serverSettingsApplyBtn");
+
     const propertiesPayload = {};
     const runtimeConfigPayload = {};
 
@@ -877,29 +881,37 @@ export async function saveServerSettings(showAlert = true) {
     }
 
     try {
-        const response = await fetch("/api/server/properties", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                properties: propertiesPayload
-            })
-        });
+        /*
+         * 儲存 server.properties
+         */
+        const response = await fetch(
+            "/api/server/properties",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    properties: propertiesPayload
+                })
+            }
+        );
 
         const data = await response.json();
 
-        if (!data.success) {
+        if (!response.ok || !data.success) {
             if (data.fallback) {
-                Object.entries(data.fallback).forEach(([key, value]) => {
-                    serverSettingsState[key] = value;
-                });
+                Object.entries(data.fallback).forEach(
+                    ([key, value]) => {
+                        serverSettingsState[key] = value;
+                    }
+                );
 
                 renderServerSettings();
                 updateServerSettingsStatusCard();
             }
 
-            showInfo({
+            await showInfo({
                 title: "儲存失敗!",
                 message: data.message || "未知錯誤",
                 variant: "error"
@@ -908,80 +920,173 @@ export async function saveServerSettings(showAlert = true) {
             return false;
         }
 
-        const runtimeResponse = await fetch("/api/server/runtime-config", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                config: runtimeConfigPayload
-            })
-        });
+        /*
+         * 儲存 config.json 中的執行參數
+         */
+        const runtimeResponse = await fetch(
+            "/api/server/runtime-config",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    config: runtimeConfigPayload
+                })
+            }
+        );
 
-        const runtimeData = await runtimeResponse.json();
+        const runtimeData =
+            await runtimeResponse.json();
 
-        if (!runtimeData.success) {
-            showInfo({
+        if (
+            !runtimeResponse.ok ||
+            !runtimeData.success
+        ) {
+            await showInfo({
                 title: "記憶體設定儲存失敗",
-                message: runtimeData.message || "未知錯誤"
+                message:
+                    runtimeData.message ||
+                    "未知錯誤",
+                variant: "error"
             });
+
             return false;
         }
 
+        /*
+         * 儲存伺服器圖示
+         */
         if (pendingServerIconFile) {
             const iconForm = new FormData();
-            iconForm.append("icon", pendingServerIconFile);
 
-            const iconResponse = await fetch("/api/server/icon", {
-                method: "POST",
-                body: iconForm
-            });
+            iconForm.append(
+                "icon",
+                pendingServerIconFile
+            );
 
-            const iconData = await iconResponse.json();
+            const iconResponse = await fetch(
+                "/api/server/icon",
+                {
+                    method: "POST",
+                    body: iconForm
+                }
+            );
 
-            if (!iconData.success) {
-                showInfo({
+            const iconData =
+                await iconResponse.json();
+
+            if (
+                !iconResponse.ok ||
+                !iconData.success
+            ) {
+                await showInfo({
                     title: "伺服器圖示儲存失敗",
-                    message: iconData.message || "未知錯誤"
+                    message:
+                        iconData.message ||
+                        "未知錯誤",
+                    variant: "error"
                 });
+
                 return false;
             }
 
             pendingServerIconFile = null;
 
-            if (serverSettingsServerState !== "ready") {
-                serverIconNeedsRestart = false;
-            }
+            /*
+             * 執行中更換圖示，需要重啟才會生效。
+             * 離線更換則不需要等待重啟。
+             */
+            serverIconNeedsRestart =
+                serverSettingsServerState === "ready";
 
             if (pendingServerIconPreviewUrl) {
-                URL.revokeObjectURL(pendingServerIconPreviewUrl);
+                URL.revokeObjectURL(
+                    pendingServerIconPreviewUrl
+                );
+
                 pendingServerIconPreviewUrl = null;
             }
-
-            updateServerSettingsStatusCard();
-            
         }
 
+        /*
+         * 伺服器離線時，寫入檔案後直接同步
+         * server_effective_settings.json。
+         */
+        if (
+            serverSettingsServerState === "offline"
+        ) {
+            const syncResponse = await fetch(
+                "/api/server/effective-settings/sync",
+                {
+                    method: "POST"
+                }
+            );
+
+            const syncData =
+                await syncResponse.json();
+
+            if (
+                !syncResponse.ok ||
+                !syncData.success
+            ) {
+                await showInfo({
+                    title: "生效狀態同步失敗",
+                    message:
+                        syncData.message ||
+                        "未知錯誤",
+                    variant: "error"
+                });
+
+                return false;
+            }
+
+            /*
+             * 直接更新前端生效狀態。
+             * 後面的 loadServerSettings() 也會再次讀取。
+             */
+            const snapshot =
+                syncData.snapshot || {};
+
+            serverSettingsEffectiveState = {
+                ...(snapshot.properties || {}),
+                ...(snapshot.runtime_config || {})
+            };
+
+            serverIconNeedsRestart = false;
+        }
+
+        /*
+         * 所有儲存步驟都成功後，才更新已儲存基準。
+         */
+        serverSettingsSavedState =
+            structuredClone(serverSettingsState);
+
         if (showAlert) {
-            if (serverSettingsServerState === "ready") {
+            if (
+                serverSettingsServerState === "ready"
+            ) {
                 await showInfo({
                     title: "設定已保留",
                     message:
-                `請注意：若設定值不符合格式，伺服器重啟後將自動修正或恢復預設值。`,
-                variant: "success"
+                        "設定已儲存，重新啟動伺服器後才會正式生效。",
+                    variant: "success"
                 });
             } else {
                 await showInfo({
-                    title: "參數已修改",
+                    title: "設定已套用",
                     message:
-                `請注意：若設定值不符合格式，伺服器重啟後將自動修正或恢復預設值。`,
-                variant: "success"
+                        "伺服器目前未啟動，設定將於下次啟動時直接使用。",
+                    variant: "success"
                 });
             }
         }
 
-        if (serverSettingsServerState === "ready") {
+        if (
+            serverSettingsServerState === "ready"
+        ) {
             renderServerSettings();
+            updateServerSettingsStatusCard();
         } else {
             await loadServerSettings();
         }
@@ -989,11 +1094,17 @@ export async function saveServerSettings(showAlert = true) {
         return true;
 
     } catch (error) {
-        console.error("儲存 server.properties 失敗:", error);
-        showInfo({
+        console.error(
+            "儲存伺服器設定失敗:",
+            error
+        );
+
+        await showInfo({
             title: "儲存失敗",
-            message: "請查看 console。"
+            message: "請查看 console。",
+            variant: "error"
         });
+
         return false;
 
     } finally {
@@ -1020,28 +1131,42 @@ export function updateServerSettingsFooterMode() {
 
 
 export function updateServerSettingsFooterModeByState(data) {
-    const applyBtn = document.getElementById("serverSettingsApplyBtn");
-    const restartBtn = document.getElementById("serverSettingsRestartBtn");
-    const resetBtn = document.getElementById("serverSettingsResetBtn");
-    
+    const applyBtn =
+        document.getElementById(
+            "serverSettingsApplyBtn"
+        );
 
-    if (resetBtn) {
-        resetBtn.disabled = false;
+    const restartBtn =
+        document.getElementById(
+            "serverSettingsRestartBtn"
+        );
+
+    const resetBtn =
+        document.getElementById(
+            "serverSettingsResetBtn"
+        );
+
+    if (!applyBtn || !restartBtn) {
+        return;
     }
-
-    if (!applyBtn || !restartBtn) return;
 
     const state = data?.state || "offline";
     const online = !!data?.online;
     const now = Date.now();
 
-    if (state === "starting" || state === "stopping") {
+    if (
+        state === "starting" ||
+        state === "stopping"
+    ) {
         serverSettingsBusyMode = state;
-        serverSettingsBusyUnlockAt = now + SERVER_SETTINGS_BUSY_MIN_MS;
+
+        serverSettingsBusyUnlockAt =
+            now + SERVER_SETTINGS_BUSY_MIN_MS;
     }
 
     if (serverSettingsBusyMode) {
-        const canUnlock = now >= serverSettingsBusyUnlockAt;
+        const canUnlock =
+            now >= serverSettingsBusyUnlockAt;
 
         if (
             serverSettingsBusyMode === "starting" &&
@@ -1063,27 +1188,61 @@ export function updateServerSettingsFooterModeByState(data) {
         }
     }
 
-    const displayState = serverSettingsBusyMode || state;
+    const displayState =
+        serverSettingsBusyMode || state;
+
     serverSettingsServerState = displayState;
 
-    updateServerSettingsStatusState(displayState);
+    updateServerSettingsStatusState(
+        displayState
+    );
 
-    const isKeepOnlyMode = displayState === "ready";
+    const hasUnsaved =
+        hasUnsavedChanges();
 
-    applyBtn.classList.toggle("primary", isKeepOnlyMode);
-    applyBtn.classList.toggle("danger", !isKeepOnlyMode);
+    const hasPendingEffective =
+        hasPendingEffectiveChanges();
 
-    const hasPendingChanges =
-        getDirtySettingKeys().length > 0 ||
-        serverIconNeedsRestart;
+    const isKeepOnlyMode =
+        displayState === "ready";
 
+    applyBtn.classList.toggle(
+        "primary",
+        isKeepOnlyMode
+    );
+
+    applyBtn.classList.toggle(
+        "danger",
+        !isKeepOnlyMode
+    );
+
+    /*
+     * 伺服器執行中
+     */
     if (displayState === "ready") {
-        applyBtn.textContent = "僅保留變更";
-        applyBtn.disabled = !hasPendingChanges;
+        applyBtn.textContent =
+            "僅保留變更";
 
-        restartBtn.textContent = "套用後並重啟";
-        restartBtn.classList.remove("hidden");
-        restartBtn.disabled = !hasPendingChanges;
+        /*
+         * 僅保留變更只在畫面有尚未儲存內容時啟用。
+         */
+        applyBtn.disabled =
+            !hasUnsaved;
+
+        restartBtn.textContent =
+            "套用後並重啟";
+
+        restartBtn.classList.remove(
+            "hidden"
+        );
+
+        /*
+         * 有尚未儲存的內容，或有已儲存但尚未
+         * 生效的內容，都可以重新啟動。
+         */
+        restartBtn.disabled =
+            !hasUnsaved &&
+            !hasPendingEffective;
 
         if (resetBtn) {
             resetBtn.disabled = false;
@@ -1092,16 +1251,27 @@ export function updateServerSettingsFooterModeByState(data) {
         return;
     }
 
-    if (displayState === "starting" || displayState === "stopping") {
+    /*
+     * 伺服器正在啟動或關閉
+     */
+    if (
+        displayState === "starting" ||
+        displayState === "stopping"
+    ) {
         applyBtn.textContent =
-        displayState === "starting"
-            ? "伺服器啟動中..."
-            : "伺服器關閉中...";
+            displayState === "starting"
+                ? "伺服器啟動中..."
+                : "伺服器關閉中...";
 
         applyBtn.disabled = true;
 
-        restartBtn.textContent = "套用後並重啟";
-        restartBtn.classList.remove("hidden");
+        restartBtn.textContent =
+            "套用後並重啟";
+
+        restartBtn.classList.remove(
+            "hidden"
+        );
+
         restartBtn.disabled = true;
 
         if (resetBtn) {
@@ -1111,11 +1281,22 @@ export function updateServerSettingsFooterModeByState(data) {
         return;
     }
 
-    if (displayState === "disconnected" || displayState === "unknown") {
-        applyBtn.textContent = "無法確認狀態";
+    /*
+     * 無法確認伺服器狀態
+     */
+    if (
+        displayState === "disconnected" ||
+        displayState === "unknown"
+    ) {
+        applyBtn.textContent =
+            "無法確認狀態";
+
         applyBtn.disabled = true;
 
-        restartBtn.classList.add("hidden");
+        restartBtn.classList.add(
+            "hidden"
+        );
+
         restartBtn.disabled = true;
 
         if (resetBtn) {
@@ -1125,16 +1306,24 @@ export function updateServerSettingsFooterModeByState(data) {
         return;
     }
 
-    applyBtn.textContent = "確定套用";
-    applyBtn.disabled = !hasPendingChanges;
+    /*
+     * 伺服器離線
+     */
+    applyBtn.textContent =
+        "確定套用";
 
-    restartBtn.classList.add("hidden");
+    applyBtn.disabled =
+        !hasUnsaved;
+
+    restartBtn.classList.add(
+        "hidden"
+    );
+
     restartBtn.disabled = true;
 
     if (resetBtn) {
         resetBtn.disabled = false;
     }
-
 }
 
 
@@ -1277,7 +1466,7 @@ function updateServerSettingsDirtyList() {
                 `▸ ${field?.label || key} (${key})：密碼已變更`;
         } else {
             const oldValue = serverSettingsEffectiveState[key] ?? "無";
-            const newValue = serverSettingsState[key] ?? "無";
+            const newValue = serverSettingsSavedState[key] ?? "無";
 
             div.textContent =
                 `▸ ${field?.label || key} (${key})：${oldValue} > ${newValue}`;
@@ -1289,8 +1478,29 @@ function updateServerSettingsDirtyList() {
 }
 
 
-function getDirtySettingKeys() {
+// 畫面中尚未儲存的修改
+function getUnsavedSettingKeys() {
+    return serverSettingFields
+        .map(field => field.key)
+        .filter(key => isFieldModified(key));
+}
 
+
+function isFieldModified(key) {
+    const current = String(
+        serverSettingsState[key] ?? ""
+    );
+
+    const saved = String(
+        serverSettingsSavedState[key] ?? ""
+    );
+
+    return current !== saved;
+}
+
+
+// 已儲存但尚未套用至執行中伺服器的修改
+function getDirtySettingKeys() {
     return serverSettingFields
         .map(field => field.key)
         .filter(key => isFieldDirty(key));
@@ -1298,10 +1508,31 @@ function getDirtySettingKeys() {
 
 
 function isFieldDirty(key) {
-    const current = String(serverSettingsState[key] ?? "");
-    const effective = String(serverSettingsEffectiveState[key] ?? "");
+    const saved = String(
+        serverSettingsSavedState[key] ?? ""
+    );
 
-    return current !== effective;
+    const effective = String(
+        serverSettingsEffectiveState[key] ?? ""
+    );
+
+    return saved !== effective;
+}
+
+
+function hasUnsavedChanges() {
+    return (
+        getUnsavedSettingKeys().length > 0 ||
+        pendingServerIconFile !== null
+    );
+}
+
+
+function hasPendingEffectiveChanges() {
+    return (
+        getDirtySettingKeys().length > 0 ||
+        serverIconNeedsRestart
+    );
 }
 
 

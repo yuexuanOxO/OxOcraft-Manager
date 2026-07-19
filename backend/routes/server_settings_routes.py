@@ -2,7 +2,6 @@ from flask import Blueprint, jsonify, request, send_file
 from PIL import Image
 from werkzeug.utils import secure_filename
 from backend.server_config_sync import init_rcon_config
-from backend.server_effective_settings import load_effective_settings_snapshot
 from backend.server_runtime import validate_server_bind_ip
 from backend.paths import SERVER_PROPERTIES_PATH,MC_ROOT,STATIC_DIR
 
@@ -24,6 +23,15 @@ from backend.server_settings.server_properties import (
 
 from backend.management_api.monitor import (
     update_management_secret,
+)
+
+from backend.server_effective_settings import (
+    load_effective_settings_snapshot,
+    save_effective_settings_snapshot,
+)
+
+from backend.server_monitor import (
+    refresh_server_status_now,
 )
 
 
@@ -363,4 +371,38 @@ def api_upload_server_icon():
         return jsonify({
             "success": False,
             "message": str(error)
+        }), 500
+    
+
+@settings_bp.route(
+    "/api/server/effective-settings/sync",
+    methods=["POST"],
+)
+def api_sync_effective_settings():
+    try:
+        status = refresh_server_status_now()
+        state = status.get("state", "unknown")
+        online = bool(status.get("online"))
+
+        if online or state in {
+            "ready",
+            "starting",
+            "stopping",
+        }:
+            return jsonify({
+                "success": False,
+                "message": "伺服器執行期間不能同步生效設定",
+            }), 409
+
+        snapshot = save_effective_settings_snapshot()
+
+        return jsonify({
+            "success": True,
+            "snapshot": snapshot,
+        })
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error),
         }), 500

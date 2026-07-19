@@ -1073,13 +1073,17 @@ export function updateServerSettingsFooterModeByState(data) {
     applyBtn.classList.toggle("primary", isKeepOnlyMode);
     applyBtn.classList.toggle("danger", !isKeepOnlyMode);
 
+    const hasPendingChanges =
+        getDirtySettingKeys().length > 0 ||
+        serverIconNeedsRestart;
+
     if (displayState === "ready") {
         applyBtn.textContent = "僅保留變更";
-        applyBtn.disabled = false;
+        applyBtn.disabled = !hasPendingChanges;
 
         restartBtn.textContent = "套用後並重啟";
         restartBtn.classList.remove("hidden");
-        restartBtn.disabled = false;
+        restartBtn.disabled = !hasPendingChanges;
 
         if (resetBtn) {
             resetBtn.disabled = false;
@@ -1122,7 +1126,7 @@ export function updateServerSettingsFooterModeByState(data) {
     }
 
     applyBtn.textContent = "確定套用";
-    applyBtn.disabled = false;
+    applyBtn.disabled = !hasPendingChanges;
 
     restartBtn.classList.add("hidden");
     restartBtn.disabled = true;
@@ -1214,6 +1218,7 @@ function updateServerSettingsStatusCard() {
     updateServerSettingsStatusSummary();
     updateServerSettingsDirtyList();
     updateServerPreviewCard();
+    updateServerSettingsFooterMode();
 }
 
 

@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-07-19T11:32:11",
-    "properties_modified_comment": "Sun Jul 19 11:32:11 CST 2026",
+    "captured_at": "2026-07-19T11:41:28",
+    "properties_modified_comment": "Sun Jul 19 11:41:28 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -36,7 +36,7 @@
         "sync-chunk-writes": "true",
         "op-permission-level": "4",
         "prevent-proxy-connections": "false",
-        "hide-online-players": "false",
+        "hide-online-players": "true",
         "resource-pack": "",
         "entity-broadcast-range-percentage": "100",
         "simulation-distance": "10",

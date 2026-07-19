@@ -120,6 +120,23 @@
         0 2px 0 #000000;
 }
 
+.system-dialog-btn:disabled,
+.system-dialog-btn:disabled:hover {
+    background: #555555;
+    color: #aaaaaa;
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.system-dialog-btn:disabled:active {
+    transform: none;
+
+    box-shadow:
+        inset 2px 2px 0 rgba(255, 255, 255, 0.12),
+        inset -2px -2px 0 rgba(0, 0, 0, 0.35),
+        0 4px 0 #000000;
+}
+
 .system-dialog-title.success{
     color: #55ff55;
 }

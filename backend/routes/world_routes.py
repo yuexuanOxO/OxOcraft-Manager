@@ -13,6 +13,10 @@ from backend.server_settings.server_properties import (
     read_properties_file,
 )
 
+from backend.world_service import (
+    read_world_metadata,
+)
+
 
 world_bp = Blueprint("world", __name__)
 
@@ -62,6 +66,12 @@ def api_current_world():
             else None
         )
 
+        world_metadata = (
+            read_world_metadata(world_path)
+            if is_valid_world
+            else None
+        )
+
         display_path = (
             "/".join(path_parts)
             if is_all_save
@@ -78,6 +88,7 @@ def api_current_world():
                 "folder_exists": folder_exists,
                 "is_valid_world": is_valid_world,
                 "size_bytes": world_size_bytes,
+                "metadata": world_metadata,
             },
         })
 

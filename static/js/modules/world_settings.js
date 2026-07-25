@@ -111,6 +111,77 @@ function formatFileSize(bytes) {
 }
 
 
+function formatLastSaved(timestamp) {
+    if (
+        typeof timestamp !== "number" ||
+        !Number.isFinite(timestamp) ||
+        timestamp <= 0
+    ) {
+        return null;
+    }
+
+    const date = new Date(timestamp);
+
+    if (Number.isNaN(date.getTime())) {
+        return null;
+    }
+
+    return new Intl.DateTimeFormat(
+        "zh-TW",
+        {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hourCycle: "h23",
+        }
+    ).format(date);
+}
+
+
+function getGameModeLabel(
+    gameMode,
+    isHardcore
+) {
+    if (isHardcore) {
+        return "極限模式";
+    }
+
+    const labels = {
+        survival: "生存模式",
+        creative: "創造模式",
+        adventure: "冒險模式",
+        spectator: "旁觀者模式",
+        unknown: "未知模式",
+    };
+
+    return labels[gameMode] || null;
+}
+
+
+function appendWorldInfo(
+    container,
+    label,
+    value
+) {
+    if (
+        typeof value !== "string" ||
+        value.length === 0
+    ) {
+        return;
+    }
+
+    const item =
+        document.createElement("div");
+
+    item.className = "world-settings-path";
+    item.textContent = `${label}：${value}`;
+
+    container.appendChild(item);
+}
+
+
 function renderCurrentWorld(world) {
     const list =
         document.getElementById("worldSettingsList");
@@ -121,13 +192,17 @@ function renderCurrentWorld(world) {
 
     list.innerHTML = "";
 
-    const card =
-        document.createElement("div");
+    const metadata =
+        world.metadata &&
+        typeof world.metadata === "object"
+            ? world.metadata
+            : {};
+
+    const card = document.createElement("div");
 
     card.className = "world-settings-card";
 
-    const icon =
-        document.createElement("img");
+    const icon = document.createElement("img");
 
     icon.className = "world-settings-icon";
     icon.src =
@@ -178,9 +253,56 @@ function renderCurrentWorld(world) {
     }
 
     nameRow.append(name, badge);
+
+    if (metadata.is_hardcore) {
+        const hardcoreBadge =
+            document.createElement("div");
+
+        hardcoreBadge.className =
+            "world-settings-badge hardcore";
+        hardcoreBadge.textContent = "極限模式";
+
+        nameRow.appendChild(hardcoreBadge);
+    }
+
     info.append(nameRow, status);
 
-    const formattedSize = formatFileSize(world.size_bytes);
+    const versionName =
+        typeof metadata.version_name === "string"
+            ? metadata.version_name.trim()
+            : "";
+
+    const gameModeLabel =
+        getGameModeLabel(
+            metadata.game_mode,
+            metadata.is_hardcore
+        );
+
+    const formattedLastSaved =
+        formatLastSaved(
+            metadata.last_saved_at
+        );
+
+    appendWorldInfo(
+        info,
+        "版本",
+        versionName
+    );
+
+    appendWorldInfo(
+        info,
+        "遊戲模式",
+        gameModeLabel
+    );
+
+    appendWorldInfo(
+        info,
+        "最後儲存",
+        formattedLastSaved
+    );
+
+    const formattedSize =
+        formatFileSize(world.size_bytes);
 
     if (formattedSize !== null) {
         const size =

@@ -71,6 +71,46 @@ async function loadCurrentWorld() {
 }
 
 
+function formatFileSize(bytes) {
+    if (
+        typeof bytes !== "number" ||
+        !Number.isFinite(bytes) ||
+        bytes < 0
+    ) {
+        return null;
+    }
+
+    if (bytes === 0) {
+        return "0 B";
+    }
+
+    const units = [
+        "B",
+        "KB",
+        "MB",
+        "GB",
+        "TB",
+    ];
+
+    const unitIndex = Math.min(
+        Math.floor(Math.log(bytes) / Math.log(1024)),
+        units.length - 1
+    );
+
+    const value =
+        bytes / Math.pow(1024, unitIndex);
+
+    const decimals =
+        unitIndex === 0 || value >= 100
+            ? 0
+            : value >= 10
+                ? 1
+                : 2;
+
+    return `${value.toFixed(decimals)} ${units[unitIndex]}`;
+}
+
+
 function renderCurrentWorld(world) {
     const list =
         document.getElementById("worldSettingsList");
@@ -139,6 +179,19 @@ function renderCurrentWorld(world) {
 
     nameRow.append(name, badge);
     info.append(nameRow, status);
+
+    const formattedSize = formatFileSize(world.size_bytes);
+
+    if (formattedSize !== null) {
+        const size =
+            document.createElement("div");
+
+        size.className = "world-settings-path";
+        size.textContent =
+            `存檔容量：${formattedSize}`;
+
+        info.appendChild(size);
+    }
 
     if (world.is_all_save && world.display_path) {
         const path =

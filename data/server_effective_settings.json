@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-07-25T14:01:36",
-    "properties_modified_comment": "Sat Jul 25 14:01:36 CST 2026",
+    "captured_at": "2026-07-25T14:33:46",
+    "properties_modified_comment": "Sat Jul 25 14:33:45 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -10,7 +10,7 @@
         "enable-query": "false",
         "generator-settings": "{}",
         "enforce-secure-profile": "true",
-        "level-name": "All_Save//survival_4",
+        "level-name": "All_Save//survival_3",
         "motd": "A Minecraft Server",
         "query.port": "25565",
         "pvp": "true",

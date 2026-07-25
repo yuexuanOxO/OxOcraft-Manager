@@ -3,7 +3,12 @@ from pathlib import PurePosixPath
 from flask import Blueprint, jsonify
 
 from backend.paths import MC_ROOT, SERVER_PROPERTIES_PATH
-from backend.backup_service import is_world_folder
+
+from backend.backup_service import (
+    get_folder_size,
+    is_world_folder,
+)
+
 from backend.server_settings.server_properties import (
     read_properties_file,
 )
@@ -41,14 +46,20 @@ def api_current_world():
             normalized_level_name
         ).parts
 
+        is_all_save = (
+            len(path_parts) >= 2
+            and path_parts[0].lower() == "all_save"
+        )
+
         world_path = MC_ROOT.joinpath(*path_parts)
 
         folder_exists = world_path.is_dir()
         is_valid_world = is_world_folder(world_path)
 
-        is_all_save = (
-            len(path_parts) >= 2
-            and path_parts[0].lower() == "all_save"
+        world_size_bytes = (
+            get_folder_size(world_path)
+            if folder_exists
+            else None
         )
 
         display_path = (
@@ -66,6 +77,7 @@ def api_current_world():
                 "display_path": display_path,
                 "folder_exists": folder_exists,
                 "is_valid_world": is_valid_world,
+                "size_bytes": world_size_bytes,
             },
         })
 

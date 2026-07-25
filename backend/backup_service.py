@@ -44,6 +44,24 @@ def is_world_folder(path: Path) -> bool:
     return any((path / marker).exists() for marker in markers)
 
 
+def get_folder_size(path: Path) -> int:
+    if not path.is_dir():
+        return 0
+
+    total_bytes = 0
+
+    for file_path in path.rglob("*"):
+        if not file_path.is_file():
+            continue
+
+        try:
+            total_bytes += file_path.stat().st_size
+        except OSError:
+            continue
+
+    return total_bytes
+
+
 def get_backup_status() -> dict:
     return dict(_backup_status)
 

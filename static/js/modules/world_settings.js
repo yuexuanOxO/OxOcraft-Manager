@@ -115,10 +115,23 @@ function renderCurrentWorld(world) {
         document.createElement("div");
 
     badge.className = "world-settings-badge";
-    badge.textContent = "目前使用中";
+    badge.textContent = world.folder_exists
+        ? "目前使用中"
+        : "目前設定";
+
+    const status =
+        document.createElement("div");
+
+    status.className = world.folder_exists
+        ? "world-settings-status exists"
+        : "world-settings-status missing";
+
+    status.textContent = world.folder_exists
+        ? "已找到世界存檔"
+        : "找不到世界存檔";
 
     nameRow.append(name, badge);
-    info.appendChild(nameRow);
+    info.append(nameRow, status);
 
     if (world.is_all_save && world.display_path) {
         const path =

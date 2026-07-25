@@ -186,6 +186,20 @@
     word-break: break-word;
 }
 
+.world-settings-status {
+    margin-top: 5px;
+
+    font-size: 13px;
+}
+
+.world-settings-status.exists {
+    color: #8fcf70;
+}
+
+.world-settings-status.missing {
+    color: #e06c6c;
+}
+
 .world-settings-path {
     margin-top: 5px;
 

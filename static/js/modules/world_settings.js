@@ -115,20 +115,27 @@ function renderCurrentWorld(world) {
         document.createElement("div");
 
     badge.className = "world-settings-badge";
-    badge.textContent = world.folder_exists
+    badge.textContent = world.is_valid_world
         ? "目前使用中"
         : "目前設定";
 
     const status =
         document.createElement("div");
 
-    status.className = world.folder_exists
+    status.className = world.is_valid_world
         ? "world-settings-status exists"
         : "world-settings-status missing";
 
-    status.textContent = world.folder_exists
-        ? "已找到世界存檔"
-        : "找不到世界存檔";
+    if (world.is_valid_world) {
+        status.textContent = "已找到世界存檔";
+
+    } else if (world.folder_exists) {
+        status.textContent =
+            "找到資料夾，但無法辨識為世界存檔";
+
+    } else {
+        status.textContent = "找不到世界存檔";
+    }
 
     nameRow.append(name, badge);
     info.append(nameRow, status);

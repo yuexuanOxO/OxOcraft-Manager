@@ -72,6 +72,26 @@ def api_current_world():
             else None
         )
 
+        configured_hardcore = (
+            str(
+                properties.get(
+                    "hardcore",
+                    "false",
+                )
+            ).strip().lower()
+            == "true"
+        )
+
+        if world_metadata is not None:
+            world_metadata["is_hardcore"] = (
+                bool(
+                    world_metadata.get(
+                        "is_hardcore"
+                    )
+                )
+                or configured_hardcore
+            )
+
         display_path = (
             "/".join(path_parts)
             if is_all_save

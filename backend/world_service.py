@@ -63,7 +63,19 @@ def read_world_metadata(
                 )
             )
 
-        hardcore_tag = data.get("hardcore")
+        difficulty_settings_tag = data.get(
+            "difficulty_settings"
+        )
+
+        hardcore_tag = (
+            difficulty_settings_tag.get("hardcore")
+            if difficulty_settings_tag is not None
+            else None
+        )
+
+        # 相容 26.1 以前的舊世界格式
+        if hardcore_tag is None:
+            hardcore_tag = data.get("hardcore")
 
         if hardcore_tag is not None:
             metadata["is_hardcore"] = bool(

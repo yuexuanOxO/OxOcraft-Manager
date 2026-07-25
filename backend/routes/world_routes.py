@@ -46,7 +46,7 @@ def api_current_world():
         )
 
         display_path = (
-            level_name
+            "/".join(path_parts)
             if is_all_save
             else None
         )

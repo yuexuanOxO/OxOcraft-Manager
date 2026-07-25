@@ -36,11 +36,28 @@ def api_current_world():
             normalized_level_name
         ).name or "world"
 
+        path_parts = PurePosixPath(
+            normalized_level_name
+        ).parts
+
+        is_all_save = (
+            len(path_parts) >= 2
+            and path_parts[0].lower() == "all_save"
+        )
+
+        display_path = (
+            level_name
+            if is_all_save
+            else None
+        )
+
         return jsonify({
             "success": True,
             "world": {
                 "folder_name": folder_name,
                 "level_name": level_name,
+                "is_all_save": is_all_save,
+                "display_path": display_path,
             },
         })
 

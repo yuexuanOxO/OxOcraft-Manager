@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-07-25T11:54:15",
-    "properties_modified_comment": "Sat Jul 25 11:54:15 CST 2026",
+    "captured_at": "2026-07-25T12:21:49",
+    "properties_modified_comment": "Sat Jul 25 12:21:49 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -10,7 +10,7 @@
         "enable-query": "false",
         "generator-settings": "{}",
         "enforce-secure-profile": "true",
-        "level-name": "world2",
+        "level-name": "world",
         "motd": "A Minecraft Server",
         "query.port": "25565",
         "pvp": "true",
@@ -45,7 +45,7 @@
         "force-gamemode": "false",
         "rate-limit": "0",
         "hardcore": "false",
-        "white-list": "true",
+        "white-list": "false",
         "broadcast-console-to-ops": "true",
         "spawn-npcs": "true",
         "spawn-animals": "true",

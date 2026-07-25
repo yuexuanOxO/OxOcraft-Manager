@@ -119,6 +119,18 @@ function renderCurrentWorld(world) {
 
     nameRow.append(name, badge);
     info.appendChild(nameRow);
+
+    if (world.is_all_save && world.display_path) {
+        const path =
+            document.createElement("div");
+
+        path.className = "world-settings-path";
+        path.textContent =
+            `存檔路徑：${world.display_path}`;
+
+        info.appendChild(path);
+    }
+
     card.append(icon, info);
     list.appendChild(card);
 }

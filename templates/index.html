@@ -69,9 +69,7 @@
     {% include "components/player_permissions_modal.html" %}
     {% include "components/player_whitelist_modal.html" %}
     {% include "components/player_ban_modal.html" %}
-
-
-    
+    {% include "components/world_settings_modal.html" %}
 
 
     <div class="container">
@@ -586,7 +584,7 @@
 
                        
                         <div class="feature-item">
-                            <button id="serverSettingBtn" class="feature-btn" type="button">
+                            <button id="worldSettingsBtn" class="feature-btn" type="button">
                                 <img src="{{ url_for('static', filename='icons/feature_button/grass_block _btn.png') }}" alt="世界設定">
                             </button>
 
@@ -597,7 +595,7 @@
                                     <div class="feature-title-left"></div>
                                     <div class="feature-title-center"></div>
                                     <div class="feature-title-right"></div>
-                                    <div class="feature-title-text">世界設定(開發中)</div>
+                                    <div class="feature-title-text">世界設定</div>
                                 </div>
 
                                 <div class="feature-desc-box">
@@ -606,7 +604,7 @@
                                     <div class="feature-desc-right"></div>
 
                                     <div class="feature-desc-text">
-                                        更改伺服器生成世界的設定，種子碼、生成設置等...。
+                                        查看目前使用的世界，並管理伺服器世界存檔。
                                     </div>
                                 </div>
                             </div>

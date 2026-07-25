@@ -15,6 +15,7 @@ import { initNotificationUI } from "./modules/notification.js";
 import { initPlayerPermissions } from "./modules/player_permissions.js";
 import { initPlayerWhitelist } from "./modules/player_whitelist.js";
 import { initPlayerBan } from "./modules/player_ban.js";
+import {initWorldSettings} from "./modules/world_settings.js";
 
 
 function setupGlobalImageDragBlocker() {
@@ -45,6 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initPlayerPermissions();
     initPlayerWhitelist();
     initPlayerBan();
+    initWorldSettings();
     setupGlobalImageDragBlocker();
     
 });

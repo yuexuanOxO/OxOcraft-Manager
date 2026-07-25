@@ -32,6 +32,7 @@ from backend.routes.backup_routes import backup_bp
 from backend.routes.cloud_routes import cloud_bp
 from backend.routes.notification_routes import notification_bp
 from backend.routes.player_ban_routes import player_ban_bp
+from backend.routes.world_routes import world_bp
 
 from backend.management_api.monitor import start_management_api_monitor
 from backend.management_api.config import load_management_config
@@ -56,6 +57,7 @@ app.register_blueprint(eula_bp)
 app.register_blueprint(backup_bp)
 app.register_blueprint(cloud_bp)
 app.register_blueprint(notification_bp)
+app.register_blueprint(world_bp)
 
 
 

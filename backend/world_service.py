@@ -1,4 +1,5 @@
 from pathlib import Path
+from uuid import UUID
 
 from nbt import nbt
 
@@ -38,7 +39,6 @@ def _empty_world_metadata() -> dict:
         "seed": None,
         "world_type": None,
         "generate_structures": None,
-        "spawn_point": None,
         "last_saved_at": None,
     }
 
@@ -278,43 +278,53 @@ def _detect_world_type(
     )
 
 
-def _read_spawn_point(
-    level_data,
-) -> dict | None:
-    spawn_x = _tag_value(
-        level_data,
-        "SpawnX",
+def count_world_players(
+    world_path: Path,
+) -> int | None:
+    playerdata_paths = (
+        # Minecraft 26.1 以後
+        world_path
+        / "players"
+        / "data",
+
+        # Minecraft 26.1 以前
+        world_path
+        / "playerdata",
     )
 
-    spawn_y = _tag_value(
-        level_data,
-        "SpawnY",
-    )
+    player_ids = set()
 
-    spawn_z = _tag_value(
-        level_data,
-        "SpawnZ",
-    )
+    for playerdata_path in playerdata_paths:
+        if not playerdata_path.is_dir():
+            continue
 
-    if (
-        spawn_x is None
-        or spawn_y is None
-        or spawn_z is None
-    ):
-        return None
+        try:
+            for player_file in (
+                playerdata_path.iterdir()
+            ):
+                if (
+                    not player_file.is_file()
+                    or player_file.suffix.casefold()
+                    != ".dat"
+                ):
+                    continue
 
-    try:
-        return {
-            "x": int(spawn_x),
-            "y": int(spawn_y),
-            "z": int(spawn_z),
-        }
+                try:
+                    player_uuid = UUID(
+                        player_file.stem
+                    )
 
-    except (
-        TypeError,
-        ValueError,
-    ):
-        return None
+                except ValueError:
+                    continue
+
+                player_ids.add(
+                    player_uuid
+                )
+
+        except OSError:
+            return None
+
+    return len(player_ids)
 
 
 def read_world_metadata(
@@ -432,9 +442,6 @@ def read_world_metadata(
             hardcore
         )
 
-    metadata["spawn_point"] = (
-        _read_spawn_point(data)
-    )
 
     last_played = _tag_value(
         data,

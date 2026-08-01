@@ -12,6 +12,7 @@ from backend.server_settings.server_properties import (
 )
 
 from backend.world_service import (
+    count_world_players,
     read_world_metadata,
 )
 
@@ -149,6 +150,11 @@ def api_current_world():
                 "folder_exists": folder_exists,
                 "is_valid_world": is_valid_world,
                 "size_bytes": world_size_bytes,
+                "player_count": (
+                    count_world_players(world_path)
+                    if is_valid_world
+                    else None
+                ),
                 "has_icon": icon_path.is_file(),
                 "metadata": world_metadata,
             },
@@ -208,6 +214,9 @@ def api_world_list():
                 "folder_exists": True,
                 "is_valid_world": True,
                 "size_bytes": get_folder_size(
+                    world_path
+                ),
+                "player_count": count_world_players(
                     world_path
                 ),
                 "has_icon": icon_path.is_file(),

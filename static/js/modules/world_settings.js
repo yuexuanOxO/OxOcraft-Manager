@@ -563,9 +563,9 @@ function renderSelectedWorldPreview(world) {
 
     appendWorldDetail(
         info,
-        "世界出生點",
-        formatSpawnPoint(
-            metadata.spawn_point
+        "玩家數",
+        formatPlayerCount(
+            world.player_count
         ) || "無法讀取"
     );
 
@@ -942,6 +942,20 @@ function normalizeText(value) {
 }
 
 
+function formatPlayerCount(
+    playerCount
+) {
+    if (
+        !Number.isInteger(playerCount)
+        || playerCount < 0
+    ) {
+        return null;
+    }
+
+    return `${playerCount} 位`;
+}
+
+
 function formatFileSize(bytes) {
     if (
         typeof bytes !== "number" ||
@@ -1056,27 +1070,6 @@ function getWorldTypeLabel(
     };
 
     return labels[worldType] || null;
-}
-
-
-function formatSpawnPoint(
-    spawnPoint
-) {
-    if (
-        !spawnPoint ||
-        typeof spawnPoint !== "object" ||
-        !Number.isInteger(spawnPoint.x) ||
-        !Number.isInteger(spawnPoint.y) ||
-        !Number.isInteger(spawnPoint.z)
-    ) {
-        return null;
-    }
-
-    return (
-        `X: ${spawnPoint.x}　`
-        + `Y: ${spawnPoint.y}　`
-        + `Z: ${spawnPoint.z}`
-    );
 }
 
 

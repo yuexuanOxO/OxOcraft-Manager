@@ -137,9 +137,14 @@ def api_current_world():
             "success": True,
             "world": {
                 "folder_name": (
-                    folder_name or level_name
-                ),
-                "level_name": level_name,
+                folder_name or level_name
+            ),
+            "folder_path": (
+                str(world_path)
+                if world_path is not None
+                else level_name
+            ),
+            "level_name": level_name,
                 "is_current": True,
                 "folder_exists": folder_exists,
                 "is_valid_world": is_valid_world,
@@ -195,6 +200,9 @@ def api_world_list():
 
             worlds.append({
                 "folder_name": world_path.name,
+                "folder_path": str(
+                    world_path.resolve()
+                ),
                 "level_name": world_path.name,
                 "is_current": is_current,
                 "folder_exists": True,

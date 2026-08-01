@@ -492,8 +492,10 @@ function renderSelectedWorldPreview(world) {
 
     appendWorldDetail(
         info,
-        "存檔資料夾",
-        world.folder_name,
+        "存檔路徑",
+        normalizeText(
+            world.folder_path
+        ) || world.folder_name,
         true
     );
 
@@ -515,6 +517,14 @@ function renderSelectedWorldPreview(world) {
 
     appendWorldDetail(
         info,
+        "遊戲難度",
+        getDifficultyLabel(
+            metadata.difficulty
+        ) || "無法讀取"
+    );
+
+    appendWorldDetail(
+        info,
         "極限模式",
         metadata.metadata_readable
             ? (
@@ -523,6 +533,40 @@ function renderSelectedWorldPreview(world) {
                     : "關閉"
             )
             : "無法讀取"
+    );
+
+    appendWorldDetail(
+        info,
+        "世界生成類型",
+        getWorldTypeLabel(
+            metadata.world_type
+        ) || "無法讀取"
+    );
+
+    appendWorldDetail(
+        info,
+        "生成結構",
+        typeof metadata.generate_structures
+            === "boolean"
+            ? (
+                metadata.generate_structures
+                    ? "開啟"
+                    : "關閉"
+            )
+            : "無法讀取"
+    );
+
+    appendSeedDetail(
+        info,
+        metadata.seed
+    );
+
+    appendWorldDetail(
+        info,
+        "世界出生點",
+        formatSpawnPoint(
+            metadata.spawn_point
+        ) || "無法讀取"
     );
 
     appendWorldDetail(
@@ -615,6 +659,216 @@ function appendWorldDetail(
     );
 
     container.appendChild(item);
+}
+
+
+function appendSeedDetail(
+    container,
+    seed
+) {
+    const seedValue =
+        typeof seed === "string"
+            ? seed
+            : "";
+
+    const item =
+        document.createElement("div");
+
+    item.className =
+        "world-settings-detail-info-item "
+        + "is-full-width";
+
+    const label =
+        document.createElement("div");
+
+    label.className =
+        "world-settings-detail-info-label";
+
+    label.textContent = "種子碼";
+
+    const row =
+        document.createElement("div");
+
+    row.className =
+        "world-settings-seed-row";
+
+    const value =
+        document.createElement("div");
+
+    value.className =
+        "world-settings-seed-value";
+
+    const toggleButton =
+        document.createElement("button");
+
+    toggleButton.type = "button";
+    toggleButton.className =
+        "world-settings-seed-action "
+        + "world-settings-seed-toggle";
+
+    toggleButton.innerHTML =
+        `<img
+            src="/static/icons/server_settings/eye_16.png"
+            alt=""
+        >`;
+
+    toggleButton.title = "顯示種子碼";
+    toggleButton.setAttribute(
+        "aria-label",
+        "顯示種子碼"
+    );
+
+    const copyButton =
+        document.createElement("button");
+
+    copyButton.type = "button";
+    copyButton.className =
+        "world-settings-seed-action "
+        + "world-settings-seed-copy";
+
+    copyButton.textContent = "複製";
+    copyButton.title = "複製種子碼";
+
+    if (!seedValue) {
+        value.textContent = "無法讀取";
+        toggleButton.disabled = true;
+        copyButton.disabled = true;
+
+    } else {
+        let isRevealed = false;
+
+        const updateSeedDisplay = () => {
+            value.textContent =
+                isRevealed
+                    ? seedValue
+                    : "*******************";
+
+            toggleButton.classList.toggle(
+                "is-active",
+                isRevealed
+            );
+
+            toggleButton.title =
+                isRevealed
+                    ? "隱藏種子碼"
+                    : "顯示種子碼";
+
+            toggleButton.setAttribute(
+                "aria-label",
+                toggleButton.title
+            );
+        };
+
+        updateSeedDisplay();
+
+        toggleButton.addEventListener(
+            "click",
+            () => {
+                isRevealed = !isRevealed;
+                updateSeedDisplay();
+            }
+        );
+
+        copyButton.addEventListener(
+            "click",
+            async () => {
+                try {
+                    await copyTextToClipboard(
+                        seedValue
+                    );
+
+                    copyButton.textContent =
+                        "已複製";
+
+                    window.setTimeout(
+                        () => {
+                            copyButton.textContent =
+                                "複製";
+                        },
+                        1200
+                    );
+
+                } catch (error) {
+                    console.error(
+                        "複製種子碼失敗：",
+                        error
+                    );
+
+                    copyButton.textContent =
+                        "失敗";
+
+                    window.setTimeout(
+                        () => {
+                            copyButton.textContent =
+                                "複製";
+                        },
+                        1200
+                    );
+                }
+            }
+        );
+    }
+
+    row.append(
+        value,
+        toggleButton,
+        copyButton
+    );
+
+    item.append(
+        label,
+        row
+    );
+
+    container.appendChild(item);
+}
+
+
+async function copyTextToClipboard(
+    text
+) {
+    if (
+        navigator.clipboard &&
+        window.isSecureContext
+    ) {
+        await navigator.clipboard.writeText(
+            text
+        );
+
+        return;
+    }
+
+    const textArea =
+        document.createElement("textarea");
+
+    textArea.value = text;
+    textArea.setAttribute(
+        "readonly",
+        ""
+    );
+
+    textArea.style.position = "fixed";
+    textArea.style.opacity = "0";
+
+    document.body.appendChild(
+        textArea
+    );
+
+    textArea.select();
+
+    try {
+        const copied =
+            document.execCommand("copy");
+
+        if (!copied) {
+            throw new Error(
+                "瀏覽器拒絕複製"
+            );
+        }
+
+    } finally {
+        textArea.remove();
+    }
 }
 
 
@@ -772,6 +1026,57 @@ function getGameModeLabel(gameMode) {
     };
 
     return labels[gameMode] || null;
+}
+
+
+function getDifficultyLabel(
+    difficulty
+) {
+    const labels = {
+        peaceful: "和平",
+        easy: "簡單",
+        normal: "普通",
+        hard: "困難",
+    };
+
+    return labels[difficulty] || null;
+}
+
+
+function getWorldTypeLabel(
+    worldType
+) {
+    const labels = {
+        default: "預設",
+        flat: "超平坦",
+        large_biomes: "大型生態域",
+        amplified: "放大化",
+        debug: "除錯模式",
+        custom: "自訂世界生成",
+    };
+
+    return labels[worldType] || null;
+}
+
+
+function formatSpawnPoint(
+    spawnPoint
+) {
+    if (
+        !spawnPoint ||
+        typeof spawnPoint !== "object" ||
+        !Number.isInteger(spawnPoint.x) ||
+        !Number.isInteger(spawnPoint.y) ||
+        !Number.isInteger(spawnPoint.z)
+    ) {
+        return null;
+    }
+
+    return (
+        `X: ${spawnPoint.x}　`
+        + `Y: ${spawnPoint.y}　`
+        + `Z: ${spawnPoint.z}`
+    );
 }
 
 

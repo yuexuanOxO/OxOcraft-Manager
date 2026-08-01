@@ -688,3 +688,76 @@
 
     box-sizing: border-box;
 }
+
+.world-settings-seed-row {
+    min-width: 0;
+
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.world-settings-seed-value {
+    min-width: 0;
+    flex: 1;
+
+    overflow: hidden;
+
+    color: #ddd;
+    font-family:
+        Consolas,
+        "Courier New",
+        monospace;
+    font-size: 13px;
+    line-height: 28px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.world-settings-seed-action {
+    height: 28px;
+    flex-shrink: 0;
+
+    padding: 0 8px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 4px;
+
+    color: #ccc;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.world-settings-seed-action:hover:not(:disabled) {
+    background: #3b3b3b;
+    color: #fff;
+}
+
+.world-settings-seed-action:disabled {
+    color: #777;
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.world-settings-seed-toggle {
+    width: 30px;
+
+    padding: 0;
+}
+
+.world-settings-seed-toggle img {
+    width: 16px;
+    height: 16px;
+
+    image-rendering: pixelated;
+}
+
+.world-settings-seed-toggle.is-active {
+    background: #454545;
+    border-color: #777;
+}

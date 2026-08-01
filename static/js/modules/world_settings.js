@@ -9,6 +9,8 @@ export function initWorldSettings() {
         return;
     }
 
+    setupWorldListSelection();
+
     openBtn.addEventListener("click", async () => {
         modal.classList.remove("hidden");
         await loadCurrentWorld();
@@ -18,6 +20,50 @@ export function initWorldSettings() {
         if (event.target === modal) {
             modal.classList.add("hidden");
         }
+    });
+}
+
+
+function setupWorldListSelection() {
+    const archiveList =
+        document.getElementById("worldSettingsArchiveList");
+
+    if (!archiveList) {
+        return;
+    }
+
+    archiveList.addEventListener("click", event => {
+        const selectedItem =
+            event.target.closest(
+                ".world-settings-world-item"
+            );
+
+        if (
+            !selectedItem ||
+            !archiveList.contains(selectedItem)
+        ) {
+            return;
+        }
+
+        const worldItems =
+            archiveList.querySelectorAll(
+                ".world-settings-world-item"
+            );
+
+        worldItems.forEach(item => {
+            const isSelected =
+                item === selectedItem;
+
+            item.classList.toggle(
+                "is-selected",
+                isSelected
+            );
+
+            item.setAttribute(
+                "aria-pressed",
+                String(isSelected)
+            );
+        });
     });
 }
 

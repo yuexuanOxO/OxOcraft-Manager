@@ -33,6 +33,11 @@ from backend.server_runtime import (
     lock_current_world_path,
 )
 
+from backend.world_settings_service import (
+    apply_world_properties,
+    load_or_create_world_properties,
+)
+
 
 world_bp = Blueprint("world", __name__)
 _world_switch_lock = Lock()
@@ -294,17 +299,13 @@ def api_switch_world(
 
             if (
                 online
-                or state in {
-                    "ready",
-                    "starting",
-                    "stopping",
-                }
+                or state != "offline"
             ):
                 return jsonify({
                     "success": False,
                     "message": (
-                        "伺服器執行期間"
-                        "不能切換世界"
+                        "只有伺服器完全離線時"
+                        "才能切換世界"
                     ),
                 }), 409
 
@@ -378,8 +379,28 @@ def api_switch_world(
                 )
             )
 
+            # 目前世界沒有 JSON 時，
+            # 使用目前 server.properties 與 level.dat 補建。
+            load_or_create_world_properties(
+                current_world_path,
+                current_server_properties=(
+                    current_properties
+                ),
+            )
+
+            # 目標世界沒有 JSON 時，
+            # 使用該世界的 level.dat 與安全預設值補建。
+            target_world_properties = (
+                load_or_create_world_properties(
+                    target_world_path
+                )
+            )
+
             next_properties = (
-                current_properties.copy()
+                apply_world_properties(
+                    current_properties,
+                    target_world_properties,
+                )
             )
 
             next_properties[

@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-08-01T21:45:55",
-    "properties_modified_comment": "Sat Aug 01 21:45:55 CST 2026",
+    "captured_at": "2026-08-01T21:50:49",
+    "properties_modified_comment": "Sat Aug 01 21:50:49 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -10,7 +10,7 @@
         "enable-query": "false",
         "generator-settings": "{}",
         "enforce-secure-profile": "true",
-        "level-name": "world5",
+        "level-name": "world7",
         "motd": "A Minecraft Server",
         "query.port": "25565",
         "pvp": "true",

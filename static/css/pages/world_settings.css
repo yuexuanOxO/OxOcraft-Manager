@@ -207,6 +207,8 @@
 }
 
 .world-settings-world-item {
+    position: relative;
+
     width: 100%;
     min-width: 0;
 
@@ -224,6 +226,7 @@
     text-align: left;
     cursor: pointer;
 
+    overflow: hidden;
     box-sizing: border-box;
 }
 
@@ -232,10 +235,43 @@
 }
 
 .world-settings-world-item.is-selected {
-    background: #35301f;
-    border-color: #c69b32;
+    border-color: rgba(174, 92, 255, 0.65);
 
-    box-shadow: inset 3px 0 0 #f1c232;
+    box-shadow:
+        0 0 0 1px rgba(174, 92, 255, 0.65),
+        0 0 16px rgba(174, 92, 255, 0.65);
+}
+
+.world-settings-world-item.is-selected::after {
+    content: "";
+
+    position: absolute;
+    inset: 0;
+
+    pointer-events: none;
+
+    background-image:
+        url("/static/img/ui/enchanted_glint_item.png");
+    background-size: 160px 160px;
+
+    opacity: 0.28;
+    mix-blend-mode: screen;
+
+    animation:
+        world-settings-selected-glint
+        8s
+        linear
+        infinite;
+}
+
+@keyframes world-settings-selected-glint {
+    from {
+        background-position: 0 0;
+    }
+
+    to {
+        background-position: 0 -96px;
+    }
 }
 
 .world-settings-world-item-icon {

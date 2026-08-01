@@ -1,3 +1,10 @@
+const DEFAULT_WORLD_ICON_URL =
+    "/static/icons/server_settings/default_server_icon.png";
+
+let loadedWorlds = [];
+let worldIconCacheKey = Date.now();
+
+
 export function initWorldSettings() {
     const openBtn =
         document.getElementById("worldSettingsBtn");
@@ -13,7 +20,7 @@ export function initWorldSettings() {
 
     openBtn.addEventListener("click", async () => {
         modal.classList.remove("hidden");
-        await loadCurrentWorld();
+        await loadWorlds();
     });
 
     modal.addEventListener("click", event => {
@@ -34,44 +41,6 @@ function setupWorldListSelection() {
         return;
     }
 
-    const selectWorldItem = selectedItem => {
-        const worldItems =
-            archiveList.querySelectorAll(
-                ".world-settings-world-item"
-            );
-
-        worldItems.forEach(item => {
-            const isSelected =
-                item === selectedItem;
-
-            item.classList.toggle(
-                "is-selected",
-                isSelected
-            );
-
-            item.setAttribute(
-                "aria-pressed",
-                String(isSelected)
-            );
-        });
-
-        renderSelectedWorldPreview(
-            selectedItem
-        );
-    };
-
-    const initialItem =
-        archiveList.querySelector(
-            ".world-settings-world-item.is-selected"
-        ) ||
-        archiveList.querySelector(
-            ".world-settings-world-item"
-        );
-
-    if (initialItem) {
-        selectWorldItem(initialItem);
-    }
-
     archiveList.addEventListener(
         "click",
         event => {
@@ -87,42 +56,338 @@ function setupWorldListSelection() {
                 return;
             }
 
-            selectWorldItem(selectedItem);
+            selectWorld(
+                selectedItem.dataset.worldFolderName
+            );
         }
     );
 }
 
 
-function renderSelectedWorldPreview(
-    selectedItem
-) {
+async function loadWorlds() {
+    const currentList =
+        document.getElementById(
+            "worldSettingsList"
+        );
+
+    const archiveList =
+        document.getElementById(
+            "worldSettingsArchiveList"
+        );
+
     const detail =
         document.getElementById(
             "worldSettingsDetail"
         );
 
-    if (!detail || !selectedItem) {
+    if (
+        !currentList ||
+        !archiveList ||
+        !detail
+    ) {
         return;
     }
 
-    const nameElement =
-        selectedItem.querySelector(
-            ".world-settings-world-item-name"
+    showContainerMessage(
+        currentList,
+        "載入中..."
+    );
+
+    showContainerMessage(
+        archiveList,
+        "載入中..."
+    );
+
+    showContainerMessage(
+        detail,
+        "載入中..."
+    );
+
+    try {
+        const response = await fetch(
+            "/api/worlds",
+            {
+                cache: "no-store",
+            }
         );
 
-    const iconElement =
-        selectedItem.querySelector(
-            ".world-settings-world-item-icon"
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(
+                data.message || "讀取世界清單失敗"
+            );
+        }
+
+        loadedWorlds = Array.isArray(data.worlds)
+            ? data.worlds.filter(world => (
+                world &&
+                typeof world.folder_name === "string"
+            ))
+            : [];
+
+        worldIconCacheKey = Date.now();
+
+        const currentWorld =
+            loadedWorlds.find(
+                world => world.is_current
+            ) || null;
+
+        renderCurrentWorld(
+            currentWorld,
+            data.current_level_name
         );
 
-    const worldName =
-        nameElement?.textContent.trim() ||
-        "未命名世界";
-
-    const isCurrent =
-        selectedItem.classList.contains(
-            "is-current"
+        renderWorldArchiveList(
+            loadedWorlds
         );
+
+        const initialWorld =
+            currentWorld || loadedWorlds[0];
+
+        if (initialWorld) {
+            selectWorld(
+                initialWorld.folder_name
+            );
+        } else {
+            showContainerMessage(
+                detail,
+                "找不到可顯示的世界存檔"
+            );
+        }
+
+    } catch (error) {
+        console.error(
+            "讀取世界清單失敗：",
+            error
+        );
+
+        loadedWorlds = [];
+
+        const message =
+            error.message || "讀取世界清單失敗";
+
+        showContainerMessage(
+            currentList,
+            message
+        );
+
+        showContainerMessage(
+            archiveList,
+            message
+        );
+
+        showContainerMessage(
+            detail,
+            message
+        );
+    }
+}
+
+
+function showContainerMessage(
+    container,
+    message
+) {
+    container.innerHTML = "";
+
+    const empty =
+        document.createElement("div");
+
+    empty.className = "world-settings-empty";
+    empty.textContent = message;
+
+    container.appendChild(empty);
+}
+
+
+function renderWorldArchiveList(worlds) {
+    const archiveList =
+        document.getElementById(
+            "worldSettingsArchiveList"
+        );
+
+    if (!archiveList) {
+        return;
+    }
+
+    archiveList.innerHTML = "";
+
+    if (worlds.length === 0) {
+        showContainerMessage(
+            archiveList,
+            "找不到世界存檔"
+        );
+
+        return;
+    }
+
+    worlds.forEach(world => {
+        const metadata =
+            getWorldMetadata(world);
+
+        const item =
+            document.createElement("button");
+
+        item.className =
+            "world-settings-world-item";
+
+        item.type = "button";
+
+        item.dataset.worldFolderName =
+            world.folder_name;
+
+        item.setAttribute(
+            "aria-pressed",
+            "false"
+        );
+
+        if (world.is_current) {
+            item.classList.add("is-current");
+        }
+
+        const icon =
+            createWorldIcon(
+                "world-settings-world-item-icon",
+                world
+            );
+
+        const content =
+            document.createElement("span");
+
+        content.className =
+            "world-settings-world-item-content";
+
+        const nameRow =
+            document.createElement("span");
+
+        nameRow.className =
+            "world-settings-world-item-name-row";
+
+        const name =
+            document.createElement("span");
+
+        name.className =
+            "world-settings-world-item-name";
+
+        name.textContent =
+            world.folder_name || "未命名世界";
+
+        nameRow.appendChild(name);
+
+        if (world.is_current) {
+            const badge =
+                document.createElement("span");
+
+            badge.className =
+                "world-settings-world-current-badge";
+
+            badge.textContent = "使用中";
+
+            nameRow.appendChild(badge);
+        }
+
+        const meta =
+            document.createElement("span");
+
+        meta.className =
+            "world-settings-world-item-meta";
+
+        const versionName =
+            normalizeText(
+                metadata.version_name
+            ) || "未知版本";
+
+        const gameMode =
+            getWorldModeSummary(
+                metadata
+            ) || "未知模式";
+
+        const fileSize =
+            formatFileSize(
+                world.size_bytes
+            ) || "容量未知";
+
+        meta.textContent = [
+            versionName,
+            gameMode,
+            fileSize,
+        ].join("・");
+
+        content.append(
+            nameRow,
+            meta
+        );
+
+        item.append(
+            icon,
+            content
+        );
+
+        archiveList.appendChild(item);
+    });
+}
+
+
+function selectWorld(folderName) {
+    const archiveList =
+        document.getElementById(
+            "worldSettingsArchiveList"
+        );
+
+    if (!archiveList) {
+        return;
+    }
+
+    const selectedWorld =
+        loadedWorlds.find(
+            world =>
+                world.folder_name === folderName
+        );
+
+    if (!selectedWorld) {
+        return;
+    }
+
+    const worldItems =
+        archiveList.querySelectorAll(
+            ".world-settings-world-item"
+        );
+
+    worldItems.forEach(item => {
+        const isSelected =
+            item.dataset.worldFolderName
+            === folderName;
+
+        item.classList.toggle(
+            "is-selected",
+            isSelected
+        );
+
+        item.setAttribute(
+            "aria-pressed",
+            String(isSelected)
+        );
+    });
+
+    renderSelectedWorldPreview(
+        selectedWorld
+    );
+}
+
+
+function renderSelectedWorldPreview(world) {
+    const detail =
+        document.getElementById(
+            "worldSettingsDetail"
+        );
+
+    if (!detail || !world) {
+        return;
+    }
+
+    const metadata =
+        getWorldMetadata(world);
 
     detail.innerHTML = "";
 
@@ -139,16 +404,10 @@ function renderSelectedWorldPreview(
         "world-settings-detail-identity";
 
     const icon =
-        document.createElement("img");
-
-    icon.className =
-        "world-settings-detail-icon";
-
-    icon.src =
-        iconElement?.getAttribute("src") ||
-        "/static/icons/feature_button/grass_block _btn.png";
-
-    icon.alt = "";
+        createWorldIcon(
+            "world-settings-detail-icon",
+            world
+        );
 
     const identityContent =
         document.createElement("div");
@@ -168,11 +427,12 @@ function renderSelectedWorldPreview(
     name.className =
         "world-settings-detail-preview-name";
 
-    name.textContent = worldName;
+    name.textContent =
+        world.folder_name || "未命名世界";
 
     titleRow.appendChild(name);
 
-    if (isCurrent) {
+    if (world.is_current) {
         const badge =
             document.createElement("span");
 
@@ -191,7 +451,7 @@ function renderSelectedWorldPreview(
         "world-settings-detail-subtitle";
 
     subtitle.textContent =
-        isCurrent
+        world.is_current
             ? "伺服器目前使用的世界"
             : "已選取的世界存檔";
 
@@ -211,36 +471,78 @@ function renderSelectedWorldPreview(
     content.className =
         "world-settings-detail-content";
 
-    const placeholder =
+    const info =
         document.createElement("div");
 
-    placeholder.className =
-        "world-settings-detail-placeholder";
+    info.className =
+        "world-settings-detail-info";
 
-    const placeholderTitle =
-        document.createElement("div");
+    if (!metadata.metadata_readable) {
+        const warning =
+            document.createElement("div");
 
-    placeholderTitle.className =
-        "world-settings-detail-placeholder-title";
+        warning.className =
+            "world-settings-detail-warning";
 
-    placeholderTitle.textContent =
-        "世界詳細資料";
+        warning.textContent =
+            "level.dat 存在，但詳細資料無法解析";
 
-    const placeholderHint =
-        document.createElement("div");
+        info.appendChild(warning);
+    }
 
-    placeholderHint.className =
-        "world-settings-detail-preview-hint";
-
-    placeholderHint.textContent =
-        "詳細資料欄位將顯示於此";
-
-    placeholder.append(
-        placeholderTitle,
-        placeholderHint
+    appendWorldDetail(
+        info,
+        "存檔資料夾",
+        world.folder_name,
+        true
     );
 
-    content.appendChild(placeholder);
+    appendWorldDetail(
+        info,
+        "遊戲版本",
+        normalizeText(
+            metadata.version_name
+        ) || "無法讀取"
+    );
+
+    appendWorldDetail(
+        info,
+        "遊戲模式",
+        getGameModeLabel(
+            metadata.game_mode
+        ) || "無法讀取"
+    );
+
+    appendWorldDetail(
+        info,
+        "極限模式",
+        metadata.metadata_readable
+            ? (
+                metadata.is_hardcore
+                    ? "開啟"
+                    : "關閉"
+            )
+            : "無法讀取"
+    );
+
+    appendWorldDetail(
+        info,
+        "存檔容量",
+        formatFileSize(
+            world.size_bytes
+        ) || "無法讀取"
+    );
+
+    appendWorldDetail(
+        info,
+        "最後儲存",
+        formatLastSaved(
+            metadata.last_saved_at
+        ) || "無法讀取",
+        true
+    );
+
+    content.appendChild(info);
 
     const actions =
         document.createElement("div");
@@ -258,7 +560,7 @@ function renderSelectedWorldPreview(
     switchButton.disabled = true;
 
     switchButton.textContent =
-        isCurrent
+        world.is_current
             ? "目前使用中"
             : "切換至此世界";
 
@@ -274,52 +576,115 @@ function renderSelectedWorldPreview(
 }
 
 
-async function loadCurrentWorld() {
-    const list =
-        document.getElementById("worldSettingsList");
+function appendWorldDetail(
+    container,
+    label,
+    value,
+    fullWidth = false
+) {
+    const item =
+        document.createElement("div");
 
-    if (!list) {
-        return;
+    item.className =
+        "world-settings-detail-info-item";
+
+    if (fullWidth) {
+        item.classList.add("is-full-width");
     }
 
-    list.innerHTML = `
-        <div class="world-settings-empty">
-            載入中...
-        </div>
-    `;
+    const labelElement =
+        document.createElement("div");
 
-    try {
-        const response = await fetch(
-            "/api/worlds/current",
-            {
-                cache: "no-store",
-            }
+    labelElement.className =
+        "world-settings-detail-info-label";
+
+    labelElement.textContent = label;
+
+    const valueElement =
+        document.createElement("div");
+
+    valueElement.className =
+        "world-settings-detail-info-value";
+
+    valueElement.textContent =
+        value || "無法讀取";
+
+    item.append(
+        labelElement,
+        valueElement
+    );
+
+    container.appendChild(item);
+}
+
+
+function createWorldIcon(
+    className,
+    world
+) {
+    const icon =
+        document.createElement("img");
+
+    icon.className = className;
+    icon.alt = "";
+
+    icon.src = getWorldIconUrl(world);
+
+    icon.addEventListener(
+        "error",
+        () => {
+            icon.src =
+                DEFAULT_WORLD_ICON_URL;
+        },
+        {
+            once: true,
+        }
+    );
+
+    return icon;
+}
+
+
+function getWorldIconUrl(world) {
+    if (
+        !world ||
+        !world.has_icon ||
+        typeof world.folder_name !== "string"
+    ) {
+        return DEFAULT_WORLD_ICON_URL;
+    }
+
+    const folderName =
+        encodeURIComponent(
+            world.folder_name
         );
 
-        const data = await response.json();
+    return (
+        `/api/worlds/${folderName}/icon`
+        + `?v=${worldIconCacheKey}`
+    );
+}
 
-        if (!response.ok || !data.success) {
-            throw new Error(
-                data.message || "讀取目前世界失敗"
-            );
-        }
 
-        renderCurrentWorld(data.world);
-
-    } catch (error) {
-        console.error("讀取目前世界失敗：", error);
-
-        list.innerHTML = "";
-
-        const empty =
-            document.createElement("div");
-
-        empty.className = "world-settings-empty";
-        empty.textContent =
-            error.message || "讀取目前世界失敗";
-
-        list.appendChild(empty);
+function getWorldMetadata(world) {
+    if (
+        world &&
+        world.metadata &&
+        typeof world.metadata === "object"
+    ) {
+        return world.metadata;
     }
+
+    return {};
+}
+
+
+function normalizeText(value) {
+    if (typeof value !== "string") {
+        return "";
+    }
+
+    return value.trim();
 }
 
 
@@ -345,7 +710,9 @@ function formatFileSize(bytes) {
     ];
 
     const unitIndex = Math.min(
-        Math.floor(Math.log(bytes) / Math.log(1024)),
+        Math.floor(
+            Math.log(bytes) / Math.log(1024)
+        ),
         units.length - 1
     );
 
@@ -359,7 +726,10 @@ function formatFileSize(bytes) {
                 ? 1
                 : 2;
 
-    return `${value.toFixed(decimals)} ${units[unitIndex]}`;
+    return (
+        `${value.toFixed(decimals)} `
+        + units[unitIndex]
+    );
 }
 
 
@@ -392,14 +762,7 @@ function formatLastSaved(timestamp) {
 }
 
 
-function getGameModeLabel(
-    gameMode,
-    isHardcore
-) {
-    if (isHardcore) {
-        return "極限模式";
-    }
-
+function getGameModeLabel(gameMode) {
     const labels = {
         survival: "生存模式",
         creative: "創造模式",
@@ -409,6 +772,17 @@ function getGameModeLabel(
     };
 
     return labels[gameMode] || null;
+}
+
+
+function getWorldModeSummary(metadata) {
+    if (metadata.is_hardcore) {
+        return "極限模式";
+    }
+
+    return getGameModeLabel(
+        metadata.game_mode
+    );
 }
 
 
@@ -434,9 +808,14 @@ function appendWorldInfo(
 }
 
 
-function renderCurrentWorld(world) {
+function renderCurrentWorld(
+    currentWorld,
+    configuredLevelName
+) {
     const list =
-        document.getElementById("worldSettingsList");
+        document.getElementById(
+            "worldSettingsList"
+        );
 
     if (!list) {
         return;
@@ -444,22 +823,30 @@ function renderCurrentWorld(world) {
 
     list.innerHTML = "";
 
-    const metadata =
-        world.metadata &&
-        typeof world.metadata === "object"
-            ? world.metadata
-            : {};
+    const world = currentWorld || {
+        folder_name:
+            configuredLevelName || "world",
+        is_current: true,
+        folder_exists: false,
+        is_valid_world: false,
+        size_bytes: null,
+        has_icon: false,
+        metadata: null,
+    };
 
-    const card = document.createElement("div");
+    const metadata =
+        getWorldMetadata(world);
+
+    const card =
+        document.createElement("div");
 
     card.className = "world-settings-card";
 
-    const icon = document.createElement("img");
-
-    icon.className = "world-settings-icon";
-    icon.src =
-        "/static/icons/feature_button/grass_block _btn.png";
-    icon.alt = "";
+    const icon =
+        createWorldIcon(
+            "world-settings-icon",
+            world
+        );
 
     const info =
         document.createElement("div");
@@ -469,12 +856,14 @@ function renderCurrentWorld(world) {
     const nameRow =
         document.createElement("div");
 
-    nameRow.className = "world-settings-name-row";
+    nameRow.className =
+        "world-settings-name-row";
 
     const name =
         document.createElement("div");
 
     name.className = "world-settings-name";
+
     name.textContent =
         world.folder_name || "world";
 
@@ -482,29 +871,37 @@ function renderCurrentWorld(world) {
         document.createElement("div");
 
     badge.className = "world-settings-badge";
-    badge.textContent = world.is_valid_world
-        ? "目前使用中"
-        : "目前設定";
+
+    badge.textContent =
+        world.is_valid_world
+            ? "目前使用中"
+            : "目前設定";
 
     const status =
         document.createElement("div");
 
-    status.className = world.is_valid_world
-        ? "world-settings-status exists"
-        : "world-settings-status missing";
+    status.className =
+        world.is_valid_world
+            ? "world-settings-status exists"
+            : "world-settings-status missing";
 
     if (world.is_valid_world) {
-        status.textContent = "已找到世界存檔";
+        status.textContent =
+            "已找到世界存檔";
 
     } else if (world.folder_exists) {
         status.textContent =
             "找到資料夾，但無法辨識為世界存檔";
 
     } else {
-        status.textContent = "找不到世界存檔";
+        status.textContent =
+            "找不到世界存檔";
     }
 
-    nameRow.append(name, badge);
+    nameRow.append(
+        name,
+        badge
+    );
 
     if (metadata.is_hardcore) {
         const hardcoreBadge =
@@ -512,72 +909,59 @@ function renderCurrentWorld(world) {
 
         hardcoreBadge.className =
             "world-settings-badge hardcore";
-        hardcoreBadge.textContent = "極限模式";
 
-        nameRow.appendChild(hardcoreBadge);
+        hardcoreBadge.textContent =
+            "極限模式";
+
+        nameRow.appendChild(
+            hardcoreBadge
+        );
     }
 
-    info.append(nameRow, status);
-
-    const versionName =
-        typeof metadata.version_name === "string"
-            ? metadata.version_name.trim()
-            : "";
-
-    const gameModeLabel =
-        getGameModeLabel(
-            metadata.game_mode,
-            metadata.is_hardcore
-        );
-
-    const formattedLastSaved =
-        formatLastSaved(
-            metadata.last_saved_at
-        );
+    info.append(
+        nameRow,
+        status
+    );
 
     appendWorldInfo(
         info,
         "版本",
-        versionName
+        normalizeText(
+            metadata.version_name
+        )
     );
 
     appendWorldInfo(
         info,
         "遊戲模式",
-        gameModeLabel
+        getWorldModeSummary(metadata)
     );
 
     appendWorldInfo(
         info,
         "最後儲存",
-        formattedLastSaved
+        formatLastSaved(
+            metadata.last_saved_at
+        )
     );
 
     const formattedSize =
-        formatFileSize(world.size_bytes);
+        formatFileSize(
+            world.size_bytes
+        );
 
-    if (formattedSize !== null) {
-        const size =
-            document.createElement("div");
-
-        size.className = "world-settings-path";
-        size.textContent =
-            `存檔容量：${formattedSize}`;
-
-        info.appendChild(size);
+    if (formattedSize) {
+        appendWorldInfo(
+            info,
+            "存檔容量",
+            formattedSize
+        );
     }
 
-    if (world.is_all_save && world.display_path) {
-        const path =
-            document.createElement("div");
+    card.append(
+        icon,
+        info
+    );
 
-        path.className = "world-settings-path";
-        path.textContent =
-            `存檔路徑：${world.display_path}`;
-
-        info.appendChild(path);
-    }
-
-    card.append(icon, info);
     list.appendChild(card);
 }

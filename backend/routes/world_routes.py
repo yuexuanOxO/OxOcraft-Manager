@@ -1,8 +1,6 @@
 from pathlib import Path, PurePosixPath
 
-from flask import Blueprint, jsonify
-
-from backend.paths import MC_ROOT, SERVER_PROPERTIES_PATH
+from flask import Blueprint, jsonify, send_file
 
 from backend.backup_service import (
     get_folder_size,
@@ -15,6 +13,12 @@ from backend.server_settings.server_properties import (
 
 from backend.world_service import (
     read_world_metadata,
+)
+
+from backend.paths import (
+    MC_ROOT,
+    SERVER_PROPERTIES_PATH,
+    STATIC_DIR,
 )
 
 
@@ -225,4 +229,69 @@ def api_world_list():
         return jsonify({
             "success": False,
             "message": f"讀取世界清單失敗：{error}",
+        }), 500
+
+
+@world_bp.route(
+    "/api/worlds/<string:folder_name>/icon"
+)
+def api_world_icon(folder_name: str):
+    world_path = MC_ROOT / folder_name
+
+    try:
+        if (
+            world_path.resolve().parent
+            != MC_ROOT.resolve()
+            or not is_world_folder(world_path)
+        ):
+            return jsonify({
+                "success": False,
+                "message": "找不到世界存檔",
+            }), 404
+
+        _, current_folder_name = (
+            _read_configured_level_name()
+        )
+
+        current_world_path = (
+            MC_ROOT / current_folder_name
+            if current_folder_name is not None
+            else None
+        )
+
+        is_current = _paths_are_same(
+            world_path,
+            current_world_path,
+        )
+
+        icon_path = (
+            MC_ROOT / "server-icon.png"
+            if is_current
+            else world_path / "server-icon.png"
+        )
+
+        default_icon_path = (
+            STATIC_DIR
+            / "icons"
+            / "server_settings"
+            / "default_server_icon.png"
+        )
+
+        if icon_path.is_file():
+            return send_file(
+                icon_path,
+                mimetype="image/png",
+                max_age=0,
+            )
+
+        return send_file(
+            default_icon_path,
+            mimetype="image/png",
+            max_age=0,
+        )
+
+    except OSError:
+        return jsonify({
+            "success": False,
+            "message": "讀取世界圖示失敗",
         }), 500

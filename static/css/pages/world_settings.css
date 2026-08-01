@@ -146,7 +146,14 @@
 .world-settings-current-section {
     flex-shrink: 0;
 
-    padding: 14px;
+    padding: 12px 14px;
+}
+
+.world-settings-current-section
+.world-settings-section-header {
+    min-height: 28px;
+
+    margin-bottom: 8px;
 }
 
 .world-settings-section-header {
@@ -168,7 +175,9 @@
 }
 
 .world-settings-current-content {
-    max-height: 210px;
+    max-height: none;
+
+    overflow: visible;
 }
 
 .world-settings-content-grid {
@@ -202,7 +211,7 @@
     min-height: 0;
     flex: 1;
 
-    overflow-y: auto;
+    overflow: hidden;
     box-sizing: border-box;
 }
 
@@ -277,6 +286,11 @@
     flex: 1;
 
     display: flex;
+
+    padding-right: 4px;
+
+    overflow-y: auto;
+    box-sizing: border-box;
 }
 
 .world-settings-detail-placeholder {
@@ -470,6 +484,8 @@
     gap: 8px;
 
     padding-right: 4px;
+
+    overflow-y: auto;
 }
 
 .world-settings-create-button {
@@ -530,12 +546,22 @@
     min-width: 0;
     flex: 1;
 
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    display: grid;
+    grid-template-columns:
+        minmax(150px, 1.15fr)
+        repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 16px;
+    row-gap: 6px;
 }
 
 .world-settings-name-row {
+    grid-column: 1;
+    grid-row: 1;
+
+    min-width: 0;
+
     display: flex;
     align-items: center;
     gap: 8px;
@@ -551,9 +577,12 @@
 }
 
 .world-settings-status {
-    margin-top: 5px;
+    grid-column: 1;
+    grid-row: 2;
 
-    font-size: 13px;
+    margin-top: 0;
+
+    font-size: 12px;
 }
 
 .world-settings-status.exists {
@@ -565,10 +594,16 @@
 }
 
 .world-settings-path {
-    margin-top: 5px;
+    min-width: 0;
 
-    color: #999;
-    font-size: 13px;
+    margin-top: 0;
+    padding-left: 14px;
+
+    border-left: 1px solid #444;
+
+    color: #aaa;
+    font-size: 12px;
+    line-height: 1.45;
 
     overflow-wrap: anywhere;
 }
@@ -594,4 +629,62 @@
 
     color: #aaa;
     text-align: center;
+}
+
+.world-settings-detail-info {
+    width: 100%;
+
+    display: grid;
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+    align-content: start;
+    gap: 10px;
+}
+
+.world-settings-detail-info-item {
+    min-width: 0;
+
+    padding: 10px 12px;
+
+    background: #272727;
+    border: 1px solid #424242;
+    border-radius: 6px;
+
+    box-sizing: border-box;
+}
+
+.world-settings-detail-info-item.is-full-width {
+    grid-column: 1 / -1;
+}
+
+.world-settings-detail-info-label {
+    margin-bottom: 5px;
+
+    color: #888;
+    font-size: 11px;
+}
+
+.world-settings-detail-info-value {
+    overflow: hidden;
+
+    color: #ddd;
+    font-size: 13px;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.world-settings-detail-warning {
+    grid-column: 1 / -1;
+
+    padding: 10px 12px;
+
+    background: rgba(150, 70, 35, 0.18);
+    border: 1px solid #865336;
+    border-radius: 6px;
+
+    color: #e2ad82;
+    font-size: 12px;
+
+    box-sizing: border-box;
 }

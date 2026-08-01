@@ -26,25 +26,15 @@ export function initWorldSettings() {
 
 function setupWorldListSelection() {
     const archiveList =
-        document.getElementById("worldSettingsArchiveList");
+        document.getElementById(
+            "worldSettingsArchiveList"
+        );
 
     if (!archiveList) {
         return;
     }
 
-    archiveList.addEventListener("click", event => {
-        const selectedItem =
-            event.target.closest(
-                ".world-settings-world-item"
-            );
-
-        if (
-            !selectedItem ||
-            !archiveList.contains(selectedItem)
-        ) {
-            return;
-        }
-
+    const selectWorldItem = selectedItem => {
         const worldItems =
             archiveList.querySelectorAll(
                 ".world-settings-world-item"
@@ -64,7 +54,223 @@ function setupWorldListSelection() {
                 String(isSelected)
             );
         });
-    });
+
+        renderSelectedWorldPreview(
+            selectedItem
+        );
+    };
+
+    const initialItem =
+        archiveList.querySelector(
+            ".world-settings-world-item.is-selected"
+        ) ||
+        archiveList.querySelector(
+            ".world-settings-world-item"
+        );
+
+    if (initialItem) {
+        selectWorldItem(initialItem);
+    }
+
+    archiveList.addEventListener(
+        "click",
+        event => {
+            const selectedItem =
+                event.target.closest(
+                    ".world-settings-world-item"
+                );
+
+            if (
+                !selectedItem ||
+                !archiveList.contains(selectedItem)
+            ) {
+                return;
+            }
+
+            selectWorldItem(selectedItem);
+        }
+    );
+}
+
+
+function renderSelectedWorldPreview(
+    selectedItem
+) {
+    const detail =
+        document.getElementById(
+            "worldSettingsDetail"
+        );
+
+    if (!detail || !selectedItem) {
+        return;
+    }
+
+    const nameElement =
+        selectedItem.querySelector(
+            ".world-settings-world-item-name"
+        );
+
+    const iconElement =
+        selectedItem.querySelector(
+            ".world-settings-world-item-icon"
+        );
+
+    const worldName =
+        nameElement?.textContent.trim() ||
+        "未命名世界";
+
+    const isCurrent =
+        selectedItem.classList.contains(
+            "is-current"
+        );
+
+    detail.innerHTML = "";
+
+    const preview =
+        document.createElement("div");
+
+    preview.className =
+        "world-settings-detail-preview";
+
+    const identity =
+        document.createElement("div");
+
+    identity.className =
+        "world-settings-detail-identity";
+
+    const icon =
+        document.createElement("img");
+
+    icon.className =
+        "world-settings-detail-icon";
+
+    icon.src =
+        iconElement?.getAttribute("src") ||
+        "/static/icons/feature_button/grass_block _btn.png";
+
+    icon.alt = "";
+
+    const identityContent =
+        document.createElement("div");
+
+    identityContent.className =
+        "world-settings-detail-identity-content";
+
+    const titleRow =
+        document.createElement("div");
+
+    titleRow.className =
+        "world-settings-detail-preview-title-row";
+
+    const name =
+        document.createElement("div");
+
+    name.className =
+        "world-settings-detail-preview-name";
+
+    name.textContent = worldName;
+
+    titleRow.appendChild(name);
+
+    if (isCurrent) {
+        const badge =
+            document.createElement("span");
+
+        badge.className =
+            "world-settings-world-current-badge";
+
+        badge.textContent = "使用中";
+
+        titleRow.appendChild(badge);
+    }
+
+    const subtitle =
+        document.createElement("div");
+
+    subtitle.className =
+        "world-settings-detail-subtitle";
+
+    subtitle.textContent =
+        isCurrent
+            ? "伺服器目前使用的世界"
+            : "已選取的世界存檔";
+
+    identityContent.append(
+        titleRow,
+        subtitle
+    );
+
+    identity.append(
+        icon,
+        identityContent
+    );
+
+    const content =
+        document.createElement("div");
+
+    content.className =
+        "world-settings-detail-content";
+
+    const placeholder =
+        document.createElement("div");
+
+    placeholder.className =
+        "world-settings-detail-placeholder";
+
+    const placeholderTitle =
+        document.createElement("div");
+
+    placeholderTitle.className =
+        "world-settings-detail-placeholder-title";
+
+    placeholderTitle.textContent =
+        "世界詳細資料";
+
+    const placeholderHint =
+        document.createElement("div");
+
+    placeholderHint.className =
+        "world-settings-detail-preview-hint";
+
+    placeholderHint.textContent =
+        "詳細資料欄位將顯示於此";
+
+    placeholder.append(
+        placeholderTitle,
+        placeholderHint
+    );
+
+    content.appendChild(placeholder);
+
+    const actions =
+        document.createElement("div");
+
+    actions.className =
+        "world-settings-detail-actions";
+
+    const switchButton =
+        document.createElement("button");
+
+    switchButton.className =
+        "world-settings-switch-button";
+
+    switchButton.type = "button";
+    switchButton.disabled = true;
+
+    switchButton.textContent =
+        isCurrent
+            ? "目前使用中"
+            : "切換至此世界";
+
+    actions.appendChild(switchButton);
+
+    preview.append(
+        identity,
+        content,
+        actions
+    );
+
+    detail.appendChild(preview);
 }
 
 

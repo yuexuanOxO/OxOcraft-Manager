@@ -13,6 +13,7 @@ GAME_MODE_NAMES = {
 
 def _empty_world_metadata() -> dict:
     return {
+        "metadata_readable": False,
         "version_name": None,
         "game_mode": None,
         "is_hardcore": False,
@@ -37,6 +38,8 @@ def read_world_metadata(
         )
 
         data = level_data["Data"]
+
+        metadata["metadata_readable"] = True
 
         version_tag = data.get("Version")
         version_name_tag = (

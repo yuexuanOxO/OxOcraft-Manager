@@ -1,7 +1,7 @@
 from pathlib import Path
 from uuid import UUID
-
 from nbt import nbt
+from tempfile import NamedTemporaryFile
 
 
 GAME_MODE_NAMES = {
@@ -276,6 +276,146 @@ def _detect_world_type(
         legacy_generator,
         "custom",
     )
+
+
+def _read_optional_file(
+    file_path: Path,
+) -> bytes | None:
+    if not file_path.exists():
+        return None
+
+    if not file_path.is_file():
+        raise OSError(
+            f"路徑不是檔案：{file_path}"
+        )
+
+    return file_path.read_bytes()
+
+
+def _write_optional_file(
+    file_path: Path,
+    content: bytes | None,
+) -> None:
+    if content is None:
+        try:
+            file_path.unlink()
+
+        except FileNotFoundError:
+            pass
+
+        return
+
+    temporary_path = None
+
+    try:
+        with NamedTemporaryFile(
+            mode="wb",
+            dir=file_path.parent,
+            prefix=f".{file_path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as temporary_file:
+            temporary_file.write(content)
+
+            temporary_path = Path(
+                temporary_file.name
+            )
+
+        temporary_path.replace(
+            file_path
+        )
+
+    finally:
+        if temporary_path is not None:
+            try:
+                temporary_path.unlink()
+
+            except FileNotFoundError:
+                pass
+
+
+def switch_world_icons(
+    current_world_path: Path,
+    target_world_path: Path,
+    server_icon_path: Path,
+) -> None:
+    if (
+        current_world_path.resolve()
+        == target_world_path.resolve()
+    ):
+        return
+
+    current_world_icon_path = (
+        current_world_path
+        / "server-icon.png"
+    )
+
+    target_world_icon_path = (
+        target_world_path
+        / "server-icon.png"
+    )
+
+    original_files = {
+        server_icon_path:
+            _read_optional_file(
+                server_icon_path
+            ),
+
+        current_world_icon_path:
+            _read_optional_file(
+                current_world_icon_path
+            ),
+
+        target_world_icon_path:
+            _read_optional_file(
+                target_world_icon_path
+            ),
+    }
+
+    try:
+        current_server_icon = (
+            original_files[
+                server_icon_path
+            ]
+        )
+
+        target_world_icon = (
+            original_files[
+                target_world_icon_path
+            ]
+        )
+
+        # 根目錄的 Icon 屬於目前世界。
+        if current_server_icon is not None:
+            _write_optional_file(
+                current_world_icon_path,
+                current_server_icon,
+            )
+
+        # 目標世界有 Icon，就移至根目錄；
+        # 沒有 Icon，就移除根目錄的舊 Icon。
+        _write_optional_file(
+            server_icon_path,
+            target_world_icon,
+        )
+
+        _write_optional_file(
+            target_world_icon_path,
+            None,
+        )
+
+    except OSError:
+        # 搬移途中失敗時，還原三個位置。
+        for (
+            file_path,
+            original_content,
+        ) in original_files.items():
+            _write_optional_file(
+                file_path,
+                original_content,
+            )
+
+        raise
 
 
 def count_world_players(

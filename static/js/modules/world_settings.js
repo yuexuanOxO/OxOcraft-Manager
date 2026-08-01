@@ -1,3 +1,9 @@
+import {
+    showConfirm,
+    showInfo,
+} from "./system_dialog.js";
+
+
 const DEFAULT_WORLD_ICON_URL =
     "/static/icons/server_settings/default_server_icon.png";
 
@@ -601,12 +607,26 @@ function renderSelectedWorldPreview(world) {
         "world-settings-switch-button";
 
     switchButton.type = "button";
-    switchButton.disabled = true;
+
+    switchButton.disabled =
+        world.is_current;
 
     switchButton.textContent =
         world.is_current
             ? "目前使用中"
             : "切換至此世界";
+
+    if (!world.is_current) {
+        switchButton.addEventListener(
+            "click",
+            () => {
+                switchWorld(
+                    world,
+                    switchButton
+                );
+            }
+        );
+    }
 
     actions.appendChild(switchButton);
 
@@ -617,6 +637,105 @@ function renderSelectedWorldPreview(world) {
     );
 
     detail.appendChild(preview);
+}
+
+
+async function switchWorld(
+    world,
+    switchButton
+) {
+    const folderName =
+        normalizeText(
+            world?.folder_name
+        );
+
+    if (!folderName) {
+        return;
+    }
+
+    const confirmed =
+        await showConfirm({
+            title: "切換世界",
+            message: (
+                `確定要將目前世界切換成`
+                + `「${folderName}」嗎？\n\n`
+                + "切換後會在下次啟動"
+                + " Minecraft Server 時生效。"
+            ),
+            confirmText: "切換",
+            cancelText: "取消",
+            variant: "warning",
+        });
+
+    if (!confirmed) {
+        return;
+    }
+
+    switchButton.disabled = true;
+    switchButton.textContent = "切換中...";
+
+    try {
+        const encodedFolderName =
+            encodeURIComponent(
+                folderName
+            );
+
+        const response = await fetch(
+            (
+                `/api/worlds/`
+                + `${encodedFolderName}/switch`
+            ),
+            {
+                method: "POST",
+                cache: "no-store",
+            }
+        );
+
+        const data =
+            await response.json();
+
+        if (
+            !response.ok
+            || !data.success
+        ) {
+            throw new Error(
+                data.message
+                || "切換世界失敗"
+            );
+        }
+
+        await loadWorlds();
+
+        await showInfo({
+            title: "世界切換完成",
+            message:
+                data.message
+                || `已切換至世界：${folderName}`,
+            variant: "success",
+            confirmText: "確定",
+        });
+
+    } catch (error) {
+        console.error(
+            "切換世界失敗：",
+            error
+        );
+
+        await showInfo({
+            title: "世界切換失敗",
+            message:
+                error.message
+                || "無法切換世界",
+            variant: "error",
+            confirmText: "確定",
+        });
+
+        if (switchButton.isConnected) {
+            switchButton.disabled = false;
+            switchButton.textContent =
+                "切換至此世界";
+        }
+    }
 }
 
 

@@ -1,5 +1,5 @@
 from pathlib import Path, PurePosixPath
-
+from threading import Lock
 from flask import Blueprint, jsonify, send_file
 
 from backend.backup_service import (
@@ -8,12 +8,15 @@ from backend.backup_service import (
 )
 
 from backend.server_settings.server_properties import (
+    format_properties_for_write,
     read_properties_file,
+    write_properties_file,
 )
 
 from backend.world_service import (
     count_world_players,
     read_world_metadata,
+    switch_world_icons,
 )
 
 from backend.paths import (
@@ -22,8 +25,17 @@ from backend.paths import (
     STATIC_DIR,
 )
 
+from backend.server_monitor import (
+    refresh_server_status_now,
+)
+
+from backend.server_runtime import (
+    lock_current_world_path,
+)
+
 
 world_bp = Blueprint("world", __name__)
+_world_switch_lock = Lock()
 
 
 def _read_configured_level_name() -> tuple[str, str | None]:
@@ -247,6 +259,190 @@ def api_world_list():
             "success": False,
             "message": f"讀取世界清單失敗：{error}",
         }), 500
+
+
+@world_bp.route(
+    "/api/worlds/<string:folder_name>/switch",
+    methods=["POST"],
+)
+def api_switch_world(
+    folder_name: str,
+):
+    if not SERVER_PROPERTIES_PATH.is_file():
+        return jsonify({
+            "success": False,
+            "message": "找不到 server.properties",
+        }), 404
+
+    with _world_switch_lock:
+        try:
+            status = refresh_server_status_now()
+
+            status_data = status.get(
+                "data",
+                status,
+            )
+
+            state = status_data.get(
+                "state",
+                "unknown",
+            )
+
+            online = bool(
+                status_data.get("online")
+            )
+
+            if (
+                online
+                or state in {
+                    "ready",
+                    "starting",
+                    "stopping",
+                }
+            ):
+                return jsonify({
+                    "success": False,
+                    "message": (
+                        "伺服器執行期間"
+                        "不能切換世界"
+                    ),
+                }), 409
+
+            target_world_path = (
+                MC_ROOT / folder_name
+            )
+
+            if (
+                target_world_path.resolve().parent
+                != MC_ROOT.resolve()
+                or not is_world_folder(
+                    target_world_path
+                )
+            ):
+                return jsonify({
+                    "success": False,
+                    "message": "找不到世界存檔",
+                }), 404
+
+            (
+                current_level_name,
+                current_folder_name,
+            ) = _read_configured_level_name()
+
+            if current_folder_name is None:
+                return jsonify({
+                    "success": False,
+                    "message": (
+                        "目前 server.properties "
+                        "的 level-name 格式無效"
+                    ),
+                }), 409
+
+            current_world_path = (
+                MC_ROOT / current_folder_name
+            )
+
+            if _paths_are_same(
+                current_world_path,
+                target_world_path,
+            ):
+                return jsonify({
+                    "success": True,
+                    "message": (
+                        f"{folder_name} 已經是"
+                        "目前使用中的世界"
+                    ),
+                    "level_name": folder_name,
+                })
+
+            if not is_world_folder(
+                current_world_path
+            ):
+                return jsonify({
+                    "success": False,
+                    "message": (
+                        "目前使用中的世界存檔"
+                        "不存在或無法辨識，"
+                        "因此無法保存目前 Icon"
+                    ),
+                }), 409
+
+            original_properties = (
+                SERVER_PROPERTIES_PATH
+                .read_bytes()
+            )
+
+            current_properties = (
+                read_properties_file(
+                    SERVER_PROPERTIES_PATH
+                )
+            )
+
+            next_properties = (
+                current_properties.copy()
+            )
+
+            next_properties[
+                "level-name"
+            ] = target_world_path.name
+
+            try:
+                properties_lines = (
+                    format_properties_for_write(
+                        next_properties
+                    )
+                )
+
+                write_properties_file(
+                    SERVER_PROPERTIES_PATH,
+                    properties_lines,
+                )
+
+                switch_world_icons(
+                    current_world_path=
+                        current_world_path,
+
+                    target_world_path=
+                        target_world_path,
+
+                    server_icon_path=(
+                        MC_ROOT
+                        / "server-icon.png"
+                    ),
+                )
+
+            except Exception:
+                # Icon 或 properties 任一項失敗，
+                # 都把 level-name 還原。
+                SERVER_PROPERTIES_PATH.write_bytes(
+                    original_properties
+                )
+
+                raise
+
+            # server_runtime 會快取目前世界路徑，
+            # 切換完成後必須同步更新。
+            lock_current_world_path()
+
+            return jsonify({
+                "success": True,
+                "message": (
+                    f"已切換至世界："
+                    f"{target_world_path.name}"
+                ),
+                "previous_level_name":
+                    current_level_name,
+                "level_name":
+                    target_world_path.name,
+            })
+
+        except Exception as error:
+            return jsonify({
+                "success": False,
+                "message": (
+                    f"切換世界失敗：{error}"
+                ),
+            }), 500
 
 
 @world_bp.route(

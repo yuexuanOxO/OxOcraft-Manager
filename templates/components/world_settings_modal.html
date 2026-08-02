@@ -145,4 +145,377 @@
         </div>
 
     </div>
+
+
+    <div
+        id="worldSettingsCreateModal"
+        class="world-settings-create-modal hidden"
+        aria-hidden="true"
+    >
+        <div
+            class="world-settings-create-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="worldSettingsCreateTitle"
+        >
+
+            <div class="world-settings-create-header">
+
+                <div>
+                    <div
+                        id="worldSettingsCreateTitle"
+                        class="world-settings-create-title"
+                    >
+                        建立新世界
+                    </div>
+
+                    <div class="world-settings-create-subtitle">
+                        設定 Minecraft 首次生成世界時使用的參數
+                    </div>
+                </div>
+
+                <button
+                    id="worldSettingsCreateCloseBtn"
+                    class="world-settings-create-close-button"
+                    type="button"
+                    aria-label="關閉建立世界視窗"
+                >
+                    ×
+                </button>
+
+            </div>
+
+            <form
+                id="worldSettingsCreateForm"
+                class="world-settings-create-form"
+                novalidate
+            >
+
+                <div class="world-settings-create-notice">
+
+                    <div class="world-settings-create-notice-title">
+                        建立後不會自動啟動伺服器
+                    </div>
+
+                    <div class="world-settings-create-notice-text">
+                        新世界會先成為「待生成」狀態。之後手動啟動
+                        Minecraft Server，才會建立完整世界存檔。
+                    </div>
+
+                </div>
+
+                <div class="world-settings-create-form-body">
+
+                    <section class="world-settings-create-section">
+
+                        <div class="world-settings-create-section-title">
+                            基本設定
+                        </div>
+
+                        <div class="world-settings-create-fields">
+
+                            <label
+                                class="world-settings-create-field is-full-width"
+                                for="worldSettingsCreateName"
+                            >
+                                <span class="world-settings-create-label">
+                                    世界名稱
+                                </span>
+
+                                <input
+                                    id="worldSettingsCreateName"
+                                    name="level-name"
+                                    class="world-settings-create-input"
+                                    type="text"
+                                    maxlength="128"
+                                    placeholder="例如：world_new"
+                                    autocomplete="off"
+                                    spellcheck="false"
+                                >
+
+                                <span class="world-settings-create-help">
+                                    同時作為世界資料夾名稱，不可與既有檔案或世界重複。
+                                </span>
+                            </label>
+
+                            <label
+                                class="world-settings-create-field is-full-width"
+                                for="worldSettingsCreateSeed"
+                            >
+                                <span class="world-settings-create-label">
+                                    種子碼
+                                </span>
+
+                                <input
+                                    id="worldSettingsCreateSeed"
+                                    name="level-seed"
+                                    class="world-settings-create-input"
+                                    type="text"
+                                    placeholder="留空時由 Minecraft 隨機產生"
+                                    autocomplete="off"
+                                    spellcheck="false"
+                                >
+                            </label>
+
+                        </div>
+
+                    </section>
+
+                    <section class="world-settings-create-section">
+
+                        <div class="world-settings-create-section-title">
+                            世界生成
+                        </div>
+
+                        <div class="world-settings-create-fields">
+
+                            <label
+                                class="world-settings-create-field is-full-width"
+                                for="worldSettingsCreateType"
+                            >
+                                <span class="world-settings-create-label">
+                                    世界類型
+                                </span>
+
+                                <select
+                                    id="worldSettingsCreateType"
+                                    name="level-type"
+                                    class="world-settings-create-select"
+                                >
+                                    <option value="minecraft:normal">
+                                        預設
+                                    </option>
+
+                                    <option value="minecraft:flat">
+                                        超平坦
+                                    </option>
+
+                                    <option value="minecraft:large_biomes">
+                                        巨型生態域
+                                    </option>
+
+                                    <option value="minecraft:amplified">
+                                        巨大化世界
+                                    </option>
+                                </select>
+                            </label>
+
+                            <div class="world-settings-create-switch-field">
+
+                                <div class="world-settings-create-switch-info">
+
+                                    <div class="world-settings-create-label">
+                                        生成結構
+                                    </div>
+
+                                    <div class="world-settings-create-help">
+                                        生成村莊、要塞等世界結構。
+                                    </div>
+
+                                </div>
+
+                                <input
+                                    id="worldSettingsCreateStructuresValue"
+                                    name="generate-structures"
+                                    type="hidden"
+                                    value="true"
+                                >
+
+                                <button
+                                    id="worldSettingsCreateStructuresSwitch"
+                                    class="setting-switch-btn on world-settings-create-switch"
+                                    type="button"
+                                    data-input-id="worldSettingsCreateStructuresValue"
+                                    data-on-label="開啟"
+                                    data-off-label="關閉"
+                                    aria-pressed="true"
+                                >
+                                    <span class="setting-switch-visual">
+                                        <span class="setting-switch-track"></span>
+                                        <span class="setting-switch-thumb"></span>
+                                    </span>
+
+                                    <span class="setting-switch-text">
+                                        開啟
+                                    </span>
+                                </button>
+
+                            </div>
+
+                            <div class="world-settings-create-switch-field">
+
+                                <div class="world-settings-create-switch-info">
+
+                                    <div class="world-settings-create-label">
+                                        極限模式
+                                    </div>
+
+                                    <div class="world-settings-create-help">
+                                        世界生成後便無法透過一般設定變更。
+                                    </div>
+
+                                </div>
+
+                                <input
+                                    id="worldSettingsCreateHardcoreValue"
+                                    name="hardcore"
+                                    type="hidden"
+                                    value="false"
+                                >
+
+                                <button
+                                    id="worldSettingsCreateHardcoreSwitch"
+                                    class="setting-switch-btn off world-settings-create-switch"
+                                    type="button"
+                                    data-input-id="worldSettingsCreateHardcoreValue"
+                                    data-on-label="開啟"
+                                    data-off-label="關閉"
+                                    aria-pressed="false"
+                                >
+                                    <span class="setting-switch-visual">
+                                        <span class="setting-switch-track"></span>
+                                        <span class="setting-switch-thumb"></span>
+                                    </span>
+
+                                    <span class="setting-switch-text">
+                                        關閉
+                                    </span>
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+                    <section class="world-settings-create-section">
+
+                        <button
+                            id="worldSettingsCreateAdvancedToggle"
+                            class="world-settings-create-advanced-toggle"
+                            type="button"
+                            aria-expanded="false"
+                            aria-controls="worldSettingsCreateAdvanced"
+                        >
+                            <span>進階設定</span>
+
+                            <span
+                                class="world-settings-create-advanced-arrow"
+                                aria-hidden="true"
+                            >
+                                ▾
+                            </span>
+                        </button>
+
+                        <div
+                            id="worldSettingsCreateAdvanced"
+                            class="world-settings-create-advanced hidden"
+                        >
+
+                            <label
+                                class="world-settings-create-field is-full-width"
+                                for="worldSettingsCreateGeneratorSettings"
+                            >
+                                <span class="world-settings-create-label">
+                                    世界生成設定 JSON
+                                </span>
+
+                                <textarea
+                                    id="worldSettingsCreateGeneratorSettings"
+                                    name="generator-settings"
+                                    class="world-settings-create-textarea"
+                                    rows="5"
+                                    spellcheck="false"
+                                >{}</textarea>
+
+                                <span class="world-settings-create-help">
+                                    一般世界請保留 {}，只有自訂生成器或特殊世界需要修改。
+                                </span>
+                            </label>
+
+                            <label
+                                class="world-settings-create-field is-full-width"
+                                for="worldSettingsCreateEnabledPacks"
+                            >
+                                <span class="world-settings-create-label">
+                                    預設啟用資料包
+                                </span>
+
+                                <input
+                                    id="worldSettingsCreateEnabledPacks"
+                                    name="initial-enabled-packs"
+                                    class="world-settings-create-input"
+                                    type="text"
+                                    value="vanilla"
+                                    autocomplete="off"
+                                    spellcheck="false"
+                                >
+
+                                <span class="world-settings-create-help">
+                                    只在世界首次生成時套用。
+                                </span>
+                            </label>
+
+                            <label
+                                class="world-settings-create-field is-full-width"
+                                for="worldSettingsCreateDisabledPacks"
+                            >
+                                <span class="world-settings-create-label">
+                                    預設停用資料包
+                                </span>
+
+                                <input
+                                    id="worldSettingsCreateDisabledPacks"
+                                    name="initial-disabled-packs"
+                                    class="world-settings-create-input"
+                                    type="text"
+                                    placeholder="沒有時保持空白"
+                                    autocomplete="off"
+                                    spellcheck="false"
+                                >
+
+                                <span class="world-settings-create-help">
+                                    多個資料包名稱依 Minecraft 支援的格式填寫。
+                                </span>
+                            </label>
+
+                        </div>
+
+                    </section>
+
+                    <div
+                        id="worldSettingsCreateError"
+                        class="world-settings-create-error hidden"
+                        role="alert"
+                    ></div>
+
+                </div>
+
+                <div class="world-settings-create-actions">
+
+                    <button
+                        id="worldSettingsCreateCancelBtn"
+                        class="world-settings-create-action-button secondary"
+                        type="button"
+                    >
+                        取消
+                    </button>
+
+                    <button
+                        id="worldSettingsCreateSubmitBtn"
+                        class="world-settings-create-action-button primary"
+                        type="submit"
+                        disabled
+                    >
+                        建立世界
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+
 </div>

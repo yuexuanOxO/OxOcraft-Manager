@@ -3,6 +3,10 @@ import {
     showInfo,
 } from "./system_dialog.js";
 
+import {
+    latestServerStatusData,
+} from "./server_status.js";
+
 
 const DEFAULT_WORLD_ICON_URL = "/static/icons/server_settings/default_server_icon.png";
 
@@ -10,13 +14,20 @@ let loadedWorlds = [];
 let selectedWorldFolderName = null;
 let worldIconCacheKey = Date.now();
 
+let worldListLoaded = false;
+let worldSettingsServerState = null;
+
 
 export function initWorldSettings() {
     const openBtn =
-        document.getElementById("worldSettingsBtn");
+        document.getElementById(
+            "worldSettingsBtn"
+        );
 
     const modal =
-        document.getElementById("worldSettingsModal");
+        document.getElementById(
+            "worldSettingsModal"
+        );
 
     if (!openBtn || !modal) {
         return;
@@ -24,17 +35,437 @@ export function initWorldSettings() {
 
     setupWorldListSelection();
     setupWorldArchiveSearch();
+    setupCreateWorldModal();
 
-    openBtn.addEventListener("click", async () => {
-        modal.classList.remove("hidden");
-        await loadWorlds();
-    });
+    window.addEventListener(
+        "server-status-changed",
+        handleWorldSettingsServerStateChanged
+    );
 
-    modal.addEventListener("click", event => {
-        if (event.target === modal) {
-            modal.classList.add("hidden");
+    window.addEventListener(
+        "server-ui-state-changed",
+        handleWorldSettingsServerStateChanged
+    );
+
+    if (latestServerStatusData?.state) {
+        worldSettingsServerState =
+            latestServerStatusData.state;
+    }
+
+    updateWorldCreateAvailability();
+
+    openBtn.addEventListener(
+        "click",
+        async () => {
+            modal.classList.remove(
+                "hidden"
+            );
+
+            if (
+                latestServerStatusData?.state
+            ) {
+                worldSettingsServerState =
+                    latestServerStatusData.state;
+            }
+
+            updateWorldCreateAvailability();
+
+            await loadWorlds();
         }
+    );
+
+    modal.addEventListener(
+        "click",
+        event => {
+            if (event.target !== modal) {
+                return;
+            }
+
+            closeCreateWorldModal();
+
+            modal.classList.add(
+                "hidden"
+            );
+        }
+    );
+}
+
+
+function handleWorldSettingsServerStateChanged(
+    event
+) {
+    const state =
+        typeof event.detail?.state === "string"
+            ? event.detail.state
+            : null;
+
+    if (!state) {
+        return;
+    }
+
+    worldSettingsServerState = state;
+
+    updateWorldCreateAvailability();
+}
+
+
+function updateWorldCreateAvailability() {
+    const createButton =
+        document.getElementById(
+            "worldSettingsCreateBtn"
+        );
+
+    if (!createButton) {
+        return;
+    }
+
+    const pendingWorld =
+        loadedWorlds.find(
+            world =>
+                world.is_pending_generation
+                === true
+        ) || null;
+
+    const isOffline =
+        worldSettingsServerState
+        === "offline";
+
+    const canCreate =
+        worldListLoaded
+        && isOffline
+        && !pendingWorld;
+
+    createButton.disabled = !canCreate;
+
+    if (!worldListLoaded) {
+        createButton.title =
+            "請等待世界清單載入完成";
+
+    } else if (!isOffline) {
+        createButton.title =
+            "只有伺服器完全離線時才能建立新世界";
+
+    } else if (pendingWorld) {
+        createButton.title =
+            `目前已有待生成世界：`
+            + `${pendingWorld.folder_name}`;
+
+    } else {
+        createButton.title =
+            "建立新的 Minecraft 世界";
+    }
+}
+
+
+function setupCreateWorldModal() {
+    const openButton =
+        document.getElementById(
+            "worldSettingsCreateBtn"
+        );
+
+    const createModal =
+        document.getElementById(
+            "worldSettingsCreateModal"
+        );
+
+    const closeButton =
+        document.getElementById(
+            "worldSettingsCreateCloseBtn"
+        );
+
+    const cancelButton =
+        document.getElementById(
+            "worldSettingsCreateCancelBtn"
+        );
+
+    const form =
+        document.getElementById(
+            "worldSettingsCreateForm"
+        );
+
+    const advancedToggle =
+        document.getElementById(
+            "worldSettingsCreateAdvancedToggle"
+        );
+
+    const advancedContent =
+        document.getElementById(
+            "worldSettingsCreateAdvanced"
+        );
+
+    if (
+        !openButton
+        || !createModal
+        || !closeButton
+        || !cancelButton
+        || !form
+        || !advancedToggle
+        || !advancedContent
+    ) {
+        return;
+    }
+
+    openButton.addEventListener(
+        "click",
+        () => {
+            if (openButton.disabled) {
+                return;
+            }
+
+            openCreateWorldModal();
+        }
+    );
+
+    closeButton.addEventListener(
+        "click",
+        closeCreateWorldModal
+    );
+
+    cancelButton.addEventListener(
+        "click",
+        closeCreateWorldModal
+    );
+
+    createModal.addEventListener(
+        "click",
+        event => {
+            if (event.target === createModal) {
+                closeCreateWorldModal();
+            }
+        }
+    );
+
+    advancedToggle.addEventListener(
+        "click",
+        () => {
+            const shouldOpen =
+                advancedContent.classList
+                    .contains("hidden");
+
+            advancedContent.classList.toggle(
+                "hidden",
+                !shouldOpen
+            );
+
+            advancedToggle.setAttribute(
+                "aria-expanded",
+                String(shouldOpen)
+            );
+        }
+    );
+
+    document
+        .querySelectorAll(
+            ".world-settings-create-switch"
+        )
+        .forEach(button => {
+            button.addEventListener(
+                "click",
+                () => {
+                    const nextValue =
+                        button.getAttribute(
+                            "aria-pressed"
+                        ) !== "true";
+
+                    setCreateWorldSwitch(
+                        button,
+                        nextValue
+                    );
+                }
+            );
+        });
+
+    form.addEventListener(
+        "submit",
+        event => {
+            // 下一階段接上表單驗證與 POST API。
+            event.preventDefault();
+        }
+    );
+
+    document.addEventListener(
+        "keydown",
+        event => {
+            if (
+                event.key !== "Escape"
+                || createModal.classList
+                    .contains("hidden")
+            ) {
+                return;
+            }
+
+            event.preventDefault();
+            closeCreateWorldModal();
+        }
+    );
+}
+
+
+function openCreateWorldModal() {
+    const createModal =
+        document.getElementById(
+            "worldSettingsCreateModal"
+        );
+
+    const nameInput =
+        document.getElementById(
+            "worldSettingsCreateName"
+        );
+
+    if (!createModal) {
+        return;
+    }
+
+    resetCreateWorldForm();
+
+    createModal.classList.remove(
+        "hidden"
+    );
+
+    createModal.setAttribute(
+        "aria-hidden",
+        "false"
+    );
+
+    window.requestAnimationFrame(() => {
+        nameInput?.focus();
     });
+}
+
+
+function closeCreateWorldModal() {
+    const createModal =
+        document.getElementById(
+            "worldSettingsCreateModal"
+        );
+
+    if (!createModal) {
+        return;
+    }
+
+    createModal.classList.add(
+        "hidden"
+    );
+
+    createModal.setAttribute(
+        "aria-hidden",
+        "true"
+    );
+}
+
+
+function resetCreateWorldForm() {
+    const form =
+        document.getElementById(
+            "worldSettingsCreateForm"
+        );
+
+    const structuresSwitch =
+        document.getElementById(
+            "worldSettingsCreateStructuresSwitch"
+        );
+
+    const hardcoreSwitch =
+        document.getElementById(
+            "worldSettingsCreateHardcoreSwitch"
+        );
+
+    const advancedToggle =
+        document.getElementById(
+            "worldSettingsCreateAdvancedToggle"
+        );
+
+    const advancedContent =
+        document.getElementById(
+            "worldSettingsCreateAdvanced"
+        );
+
+    const errorBox =
+        document.getElementById(
+            "worldSettingsCreateError"
+        );
+
+    form?.reset();
+
+    setCreateWorldSwitch(
+        structuresSwitch,
+        true
+    );
+
+    setCreateWorldSwitch(
+        hardcoreSwitch,
+        false
+    );
+
+    advancedContent?.classList.add(
+        "hidden"
+    );
+
+    advancedToggle?.setAttribute(
+        "aria-expanded",
+        "false"
+    );
+
+    if (errorBox) {
+        errorBox.textContent = "";
+        errorBox.classList.add(
+            "hidden"
+        );
+    }
+}
+
+
+function setCreateWorldSwitch(
+    button,
+    enabled
+) {
+    if (!button) {
+        return;
+    }
+
+    const inputId =
+        button.dataset.inputId;
+
+    const input =
+        inputId
+            ? document.getElementById(
+                inputId
+            )
+            : null;
+
+    const text =
+        button.querySelector(
+            ".setting-switch-text"
+        );
+
+    button.classList.toggle(
+        "on",
+        enabled
+    );
+
+    button.classList.toggle(
+        "off",
+        !enabled
+    );
+
+    button.setAttribute(
+        "aria-pressed",
+        String(enabled)
+    );
+
+    if (input) {
+        input.value =
+            enabled
+                ? "true"
+                : "false";
+    }
+
+    if (text) {
+        text.textContent =
+            enabled
+                ? button.dataset.onLabel
+                : button.dataset.offLabel;
+    }
 }
 
 
@@ -171,6 +602,9 @@ function filterWorldArchiveList(
 
 
 async function loadWorlds() {
+    worldListLoaded = false;
+    updateWorldCreateAvailability();
+
     const currentList =
         document.getElementById(
             "worldSettingsList"
@@ -240,6 +674,9 @@ async function loadWorlds() {
             ))
             : [];
 
+        worldListLoaded = true;
+        updateWorldCreateAvailability();
+
         worldIconCacheKey = Date.now();
 
         const currentWorld =
@@ -277,6 +714,9 @@ async function loadWorlds() {
         );
 
         loadedWorlds = [];
+        worldListLoaded = false;
+
+        updateWorldCreateAvailability();
 
         const message =
             error.message || "讀取世界清單失敗";

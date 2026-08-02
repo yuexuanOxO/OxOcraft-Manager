@@ -642,6 +642,13 @@
     font-size: 11px;
 }
 
+.world-settings-world-current-badge.is-pending {
+    background: rgba(150, 100, 35, 0.18);
+    border-color: #865f36;
+
+    color: #e2ad82;
+}
+
 .world-settings-world-list {
     display: flex;
     flex-direction: column;
@@ -753,6 +760,10 @@
 
 .world-settings-status.exists {
     color: #8fcf70;
+}
+
+.world-settings-status.pending {
+    color: #e2ad82;
 }
 
 .world-settings-status.missing {

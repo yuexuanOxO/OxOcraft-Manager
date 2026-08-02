@@ -342,11 +342,9 @@ function renderWorldArchiveList(
     }
 
     worlds.forEach(world => {
-        const metadata =
-            getWorldMetadata(world);
-
-        const item =
-            document.createElement("button");
+        const metadata = getWorldMetadata(world);
+        const isPendingGeneration = world.is_pending_generation === true;
+        const item = document.createElement("button");
 
         item.className =
             "world-settings-world-item";
@@ -394,14 +392,26 @@ function renderWorldArchiveList(
 
         nameRow.appendChild(name);
 
-        if (world.is_current) {
+        if (
+            world.is_current ||
+            isPendingGeneration
+        ) {
             const badge =
                 document.createElement("span");
 
             badge.className =
                 "world-settings-world-current-badge";
 
-            badge.textContent = "使用中";
+            if (isPendingGeneration) {
+                badge.classList.add(
+                    "is-pending"
+                );
+            }
+
+            badge.textContent =
+                isPendingGeneration
+                    ? "待生成"
+                    : "使用中";
 
             nameRow.appendChild(badge);
         }
@@ -427,20 +437,36 @@ function renderWorldArchiveList(
                 metadata.last_saved_at
             ) || "時間未知";
 
-        const metaEntries = [
-            [
-                "版本",
-                versionName,
-            ],
-            [
-                "容量",
-                fileSize,
-            ],
-            [
-                "最後儲存",
-                lastSaved,
-            ],
-        ];
+        const metaEntries =
+            isPendingGeneration
+                ? [
+                    [
+                        "狀態",
+                        "待生成",
+                    ],
+                    [
+                        "容量",
+                        fileSize,
+                    ],
+                    [
+                        "最後儲存",
+                        "尚未生成",
+                    ],
+                ]
+                : [
+                    [
+                        "版本",
+                        versionName,
+                    ],
+                    [
+                        "容量",
+                        fileSize,
+                    ],
+                    [
+                        "最後儲存",
+                        lastSaved,
+                    ],
+                ];
 
         metaEntries.forEach(
             ([labelText, valueText]) => {
@@ -550,22 +576,18 @@ function renderSelectedWorldPreview(world) {
         return;
     }
 
-    const metadata =
-        getWorldMetadata(world);
+    const metadata = getWorldMetadata(world);
+    const isPendingGeneration = world.is_pending_generation === true;
 
     detail.innerHTML = "";
 
-    const preview =
-        document.createElement("div");
+    const preview = document.createElement("div");
 
-    preview.className =
-        "world-settings-detail-preview";
+    preview.className = "world-settings-detail-preview";
 
-    const identity =
-        document.createElement("div");
+    const identity = document.createElement("div");
 
-    identity.className =
-        "world-settings-detail-identity";
+    identity.className = "world-settings-detail-identity";
 
     const icon =
         createWorldIcon(
@@ -596,14 +618,26 @@ function renderSelectedWorldPreview(world) {
 
     titleRow.appendChild(name);
 
-    if (world.is_current) {
+    if (
+        world.is_current ||
+        isPendingGeneration
+    ) {
         const badge =
             document.createElement("span");
 
         badge.className =
             "world-settings-world-current-badge";
 
-        badge.textContent = "使用中";
+        if (isPendingGeneration) {
+            badge.classList.add(
+                "is-pending"
+            );
+        }
+
+        badge.textContent =
+            isPendingGeneration
+                ? "待生成"
+                : "使用中";
 
         titleRow.appendChild(badge);
     }
@@ -615,9 +649,11 @@ function renderSelectedWorldPreview(world) {
         "world-settings-detail-subtitle";
 
     subtitle.textContent =
-        world.is_current
-            ? "伺服器目前使用的世界"
-            : "已選取的世界存檔";
+        isPendingGeneration
+            ? "等待伺服器首次啟動生成"
+            : world.is_current
+                ? "伺服器目前使用的世界"
+                : "已選取的世界存檔";
 
     identityContent.append(
         titleRow,
@@ -641,7 +677,22 @@ function renderSelectedWorldPreview(world) {
     info.className =
         "world-settings-detail-info";
 
-    if (!metadata.metadata_readable) {
+    if (isPendingGeneration) {
+        const warning =
+            document.createElement("div");
+
+        warning.className =
+            "world-settings-detail-warning";
+
+        warning.textContent =
+            "此世界尚未生成，啟動 Minecraft Server 後才會建立 level.dat";
+
+        info.appendChild(warning);
+
+    } else if (
+        world.is_valid_world &&
+        metadata.metadata_readable === false
+    ) {
         const warning =
             document.createElement("div");
 
@@ -663,92 +714,115 @@ function renderSelectedWorldPreview(world) {
         true
     );
 
-    appendWorldDetail(
-        info,
-        "遊戲版本",
-        normalizeText(
-            metadata.version_name
-        ) || "無法讀取"
-    );
+    if (isPendingGeneration) {
+        appendWorldDetail(
+            info,
+            "世界狀態",
+            "待生成"
+        );
 
-    appendWorldDetail(
-        info,
-        "遊戲模式",
-        getGameModeLabel(
-            metadata.game_mode
-        ) || "無法讀取"
-    );
+        appendWorldDetail(
+            info,
+            "目前容量",
+            formatFileSize(
+                world.size_bytes
+            ) || "0 B"
+        );
 
-    appendWorldDetail(
-        info,
-        "遊戲難度",
-        getDifficultyLabel(
-            metadata.difficulty
-        ) || "無法讀取"
-    );
+    } else {
+        appendWorldDetail(
+            info,
+            "遊戲版本",
+            normalizeText(
+                metadata.version_name
+            ) || "無法讀取"
+        );
 
-    appendWorldDetail(
-        info,
-        "極限模式",
-        metadata.metadata_readable
-            ? (
-                metadata.is_hardcore
-                    ? "開啟"
-                    : "關閉"
-            )
-            : "無法讀取"
-    );
+        appendWorldDetail(
+            info,
+            "遊戲模式",
+            getGameModeLabel(
+                metadata.game_mode
+            ) || "無法讀取"
+        );
 
-    appendWorldDetail(
-        info,
-        "世界生成類型",
-        getWorldTypeLabel(
-            metadata.world_type
-        ) || "無法讀取"
-    );
+        appendWorldDetail(
+            info,
+            "遊戲難度",
+            getDifficultyLabel(
+                metadata.difficulty
+            ) || "無法讀取"
+        );
 
-    appendWorldDetail(
-        info,
-        "生成結構",
-        typeof metadata.generate_structures
-            === "boolean"
-            ? (
-                metadata.generate_structures
-                    ? "開啟"
-                    : "關閉"
-            )
-            : "無法讀取"
-    );
+        appendWorldDetail(
+            info,
+            "極限模式",
+            metadata.metadata_readable
+                ? (
+                    metadata.is_hardcore
+                        ? "開啟"
+                        : "關閉"
+                )
+                : "無法讀取"
+        );
+
+        appendWorldDetail(
+            info,
+            "世界生成類型",
+            getWorldTypeLabel(
+                metadata.world_type
+            ) || "無法讀取"
+        );
+
+        appendWorldDetail(
+            info,
+            "生成結構",
+            typeof metadata.generate_structures
+                === "boolean"
+                ? (
+                    metadata.generate_structures
+                        ? "開啟"
+                        : "關閉"
+                )
+                : "無法讀取"
+        );
+
+        appendSeedDetail(
+            info,
+            metadata.seed
+        );
+
+        appendWorldDetail(
+            info,
+            "玩家數",
+            formatPlayerCount(
+                world.player_count
+            ) || "無法讀取"
+        );
+
+        appendWorldDetail(
+            info,
+            "存檔容量",
+            formatFileSize(
+                world.size_bytes
+            ) || "無法讀取"
+        );
+
+        appendWorldDetail(
+            info,
+            "最後儲存",
+            formatLastSaved(
+                metadata.last_saved_at
+            ) || "無法讀取",
+            true
+        );
+    }
 
     appendSeedDetail(
         info,
         metadata.seed
     );
 
-    appendWorldDetail(
-        info,
-        "玩家數",
-        formatPlayerCount(
-            world.player_count
-        ) || "無法讀取"
-    );
-
-    appendWorldDetail(
-        info,
-        "存檔容量",
-        formatFileSize(
-            world.size_bytes
-        ) || "無法讀取"
-    );
-
-    appendWorldDetail(
-        info,
-        "最後儲存",
-        formatLastSaved(
-            metadata.last_saved_at
-        ) || "無法讀取",
-        true
-    );
 
     content.appendChild(info);
 
@@ -771,7 +845,11 @@ function renderSelectedWorldPreview(world) {
 
     switchButton.textContent =
         world.is_current
-            ? "目前使用中"
+            ? (
+                isPendingGeneration
+                    ? "待生成"
+                    : "目前使用中"
+            )
             : "切換至此世界";
 
     if (!world.is_current) {
@@ -1404,6 +1482,7 @@ function renderCurrentWorld(
         is_current: true,
         folder_exists: false,
         is_valid_world: false,
+        is_pending_generation: false,
         size_bytes: null,
         has_icon: false,
         metadata: null,
@@ -1458,11 +1537,17 @@ function renderCurrentWorld(
     status.className =
         world.is_valid_world
             ? "world-settings-status exists"
-            : "world-settings-status missing";
+            : world.is_pending_generation
+                ? "world-settings-status pending"
+                : "world-settings-status missing";
 
     if (world.is_valid_world) {
         status.textContent =
             "已找到世界存檔";
+
+    } else if (world.is_pending_generation) {
+        status.textContent =
+            "待生成";
 
     } else if (world.folder_exists) {
         status.textContent =

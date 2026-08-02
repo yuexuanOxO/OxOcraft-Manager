@@ -818,11 +818,6 @@ function renderSelectedWorldPreview(world) {
         );
     }
 
-    appendSeedDetail(
-        info,
-        metadata.seed
-    );
-
 
     content.appendChild(info);
 

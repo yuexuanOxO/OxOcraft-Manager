@@ -66,6 +66,30 @@
                             世界存檔
                         </div>
 
+                    </div>
+
+                    <div class="world-settings-world-toolbar">
+
+                        <div class="world-settings-world-search-wrap">
+
+                            <img
+                                class="world-settings-world-search-icon"
+                                src="/static/icons/server_settings/spyglass.png"
+                                alt=""
+                            >
+
+                            <input
+                                id="worldSettingsSearchInput"
+                                class="world-settings-world-search-input"
+                                type="text"
+                                placeholder="搜尋世界..."
+                                aria-label="搜尋世界存檔"
+                                autocomplete="off"
+                                spellcheck="false"
+                            >
+
+                        </div>
+
                         <button
                             id="worldSettingsCreateBtn"
                             class="world-settings-create-button"
@@ -77,7 +101,10 @@
 
                     </div>
 
-                    <div id="worldSettingsArchiveList" class="world-settings-world-list">
+                    <div
+                        id="worldSettingsArchiveList"
+                        class="world-settings-world-list"
+                    >
                         <div class="world-settings-empty">
                             尚未載入世界清單
                         </div>

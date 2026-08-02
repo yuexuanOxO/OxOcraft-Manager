@@ -4,10 +4,10 @@ import {
 } from "./system_dialog.js";
 
 
-const DEFAULT_WORLD_ICON_URL =
-    "/static/icons/server_settings/default_server_icon.png";
+const DEFAULT_WORLD_ICON_URL = "/static/icons/server_settings/default_server_icon.png";
 
 let loadedWorlds = [];
+let selectedWorldFolderName = null;
 let worldIconCacheKey = Date.now();
 
 
@@ -23,6 +23,7 @@ export function initWorldSettings() {
     }
 
     setupWorldListSelection();
+    setupWorldArchiveSearch();
 
     openBtn.addEventListener("click", async () => {
         modal.classList.remove("hidden");
@@ -70,6 +71,83 @@ function setupWorldListSelection() {
 }
 
 
+function setupWorldArchiveSearch() {
+    const searchInput =
+        document.getElementById(
+            "worldSettingsSearchInput"
+        );
+
+    if (!searchInput) {
+        return;
+    }
+
+    searchInput.addEventListener(
+        "input",
+        () => {
+            filterWorldArchiveList(
+                searchInput.value
+            );
+        }
+    );
+}
+
+
+function filterWorldArchiveList(
+    searchValue
+) {
+    const query =
+        normalizeText(
+            searchValue
+        ).toLocaleLowerCase();
+
+    const filteredWorlds = query
+        ? loadedWorlds.filter(world => {
+            const folderName =
+                normalizeText(
+                    world.folder_name
+                ).toLocaleLowerCase();
+
+            return folderName.includes(query);
+        })
+        : loadedWorlds;
+
+    renderWorldArchiveList(
+        filteredWorlds,
+        query.length > 0
+    );
+
+    if (filteredWorlds.length === 0) {
+        const detail =
+            document.getElementById(
+                "worldSettingsDetail"
+            );
+
+        if (detail) {
+            showContainerMessage(
+                detail,
+                "找不到符合搜尋條件的世界存檔"
+            );
+        }
+
+        return;
+    }
+
+    const selectedWorld =
+        filteredWorlds.find(
+            world =>
+                world.folder_name
+                === selectedWorldFolderName
+        );
+
+    selectWorld(
+        (
+            selectedWorld
+            || filteredWorlds[0]
+        ).folder_name
+    );
+}
+
+
 async function loadWorlds() {
     const currentList =
         document.getElementById(
@@ -93,6 +171,14 @@ async function loadWorlds() {
     ) {
         return;
     }
+
+    const searchInput = document.getElementById("worldSettingsSearchInput");
+
+    if (searchInput) {
+        searchInput.value = "";
+    }
+
+    selectedWorldFolderName = null;
 
     showContainerMessage(
         currentList,
@@ -207,7 +293,10 @@ function showContainerMessage(
 }
 
 
-function renderWorldArchiveList(worlds) {
+function renderWorldArchiveList(
+    worlds,
+    isSearchResult = false
+) {
     const archiveList =
         document.getElementById(
             "worldSettingsArchiveList"
@@ -222,7 +311,9 @@ function renderWorldArchiveList(worlds) {
     if (worlds.length === 0) {
         showContainerMessage(
             archiveList,
-            "找不到世界存檔"
+            isSearchResult
+                ? "找不到符合搜尋條件的世界存檔"
+                : "找不到世界存檔"
         );
 
         return;
@@ -304,21 +395,64 @@ function renderWorldArchiveList(worlds) {
                 metadata.version_name
             ) || "未知版本";
 
-        const gameMode =
-            getWorldModeSummary(
-                metadata
-            ) || "未知模式";
-
         const fileSize =
             formatFileSize(
                 world.size_bytes
             ) || "容量未知";
 
-        meta.textContent = [
-            versionName,
-            gameMode,
-            fileSize,
-        ].join("・");
+        const lastSaved =
+            formatLastSaved(
+                metadata.last_saved_at
+            ) || "時間未知";
+
+        const metaEntries = [
+            [
+                "版本",
+                versionName,
+            ],
+            [
+                "容量",
+                fileSize,
+            ],
+            [
+                "最後儲存",
+                lastSaved,
+            ],
+        ];
+
+        metaEntries.forEach(
+            ([labelText, valueText]) => {
+                const entry =
+                    document.createElement("span");
+
+                entry.className =
+                    "world-settings-world-item-meta-entry";
+
+                const label =
+                    document.createElement("span");
+
+                label.className =
+                    "world-settings-world-item-meta-label";
+
+                label.textContent =
+                    `${labelText}：`;
+
+                const value =
+                    document.createElement("span");
+
+                value.className =
+                    "world-settings-world-item-meta-value";
+
+                value.textContent = valueText;
+
+                entry.append(
+                    label,
+                    value
+                );
+
+                meta.appendChild(entry);
+            }
+        );
 
         content.append(
             nameRow,
@@ -354,6 +488,8 @@ function selectWorld(folderName) {
     if (!selectedWorld) {
         return;
     }
+
+    selectedWorldFolderName = selectedWorld.folder_name;
 
     const worldItems =
         archiveList.querySelectorAll(

@@ -151,8 +151,9 @@ function updateWorldCreateAvailability() {
             + `${pendingWorld.folder_name}`;
 
     } else {
-        createButton.title =
-            "建立新的 Minecraft 世界";
+        createButton.removeAttribute(
+            "title"
+        );
     }
 }
 
@@ -1854,7 +1855,7 @@ function getWorldTypeLabel(
         default: "預設",
         flat: "超平坦",
         large_biomes: "大型生態域",
-        amplified: "放大化",
+        amplified: "巨大化世界",
         debug: "除錯模式",
         custom: "自訂世界生成",
     };

@@ -660,7 +660,6 @@
 }
 
 .world-settings-create-button {
-    min-width: 112px;
     height: 36px;
     flex-shrink: 0;
 

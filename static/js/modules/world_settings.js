@@ -77,16 +77,38 @@ function setupWorldArchiveSearch() {
             "worldSettingsSearchInput"
         );
 
-    if (!searchInput) {
+    const searchButton =
+        document.getElementById(
+            "worldSettingsSearchBtn"
+        );
+
+    if (
+        !searchInput ||
+        !searchButton
+    ) {
         return;
     }
 
+    const executeSearch = () => {
+        filterWorldArchiveList(
+            searchInput.value
+        );
+    };
+
+    searchButton.addEventListener(
+        "click",
+        executeSearch
+    );
+
     searchInput.addEventListener(
-        "input",
-        () => {
-            filterWorldArchiveList(
-                searchInput.value
-            );
+        "keydown",
+        event => {
+            if (event.key !== "Enter") {
+                return;
+            }
+
+            event.preventDefault();
+            executeSearch();
         }
     );
 }

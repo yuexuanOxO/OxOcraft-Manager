@@ -757,9 +757,14 @@
     flex-direction: column;
     gap: 8px;
 
-    padding-right: 4px;
+    padding:
+        6px
+        10px
+        10px
+        6px;
 
     overflow-y: auto;
+    box-sizing: border-box;
 }
 
 .world-settings-create-button {

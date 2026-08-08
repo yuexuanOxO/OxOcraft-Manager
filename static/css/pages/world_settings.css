@@ -584,7 +584,7 @@
 
 .world-settings-world-item-name {
     min-width: 0;
-    flex: 1;
+    flex: 0 1 auto;
 
     overflow: hidden;
 

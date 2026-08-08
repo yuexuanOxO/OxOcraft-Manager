@@ -945,14 +945,14 @@
     margin-bottom: 5px;
 
     color: #888;
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .world-settings-detail-info-value {
     overflow: hidden;
 
     color: #ddd;
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.35;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -992,7 +992,7 @@
         Consolas,
         "Courier New",
         monospace;
-    font-size: 13px;
+    font-size: 14px;
     line-height: 28px;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1008,9 +1008,9 @@
     align-items: center;
     justify-content: center;
 
-    background: #333;
-    border: 1px solid #555;
-    border-radius: 4px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
 
     color: #ccc;
     font-size: 12px;
@@ -1018,10 +1018,9 @@
 }
 
 .world-settings-seed-action:hover:not(:disabled) {
-    background: #3b3b3b;
-    color: #fff;
+    background: transparent;
+    opacity: 0.8;
 }
-
 .world-settings-seed-action:disabled {
     color: #777;
     cursor: not-allowed;
@@ -1035,15 +1034,16 @@
 }
 
 .world-settings-seed-toggle img {
-    width: 16px;
-    height: 16px;
+    width: 32px;
+    height: 32px;
+
+    display: block;
 
     image-rendering: pixelated;
 }
 
 .world-settings-seed-toggle.is-active {
-    background: #454545;
-    border-color: #777;
+    background: transparent;
 }
 
 
@@ -1495,4 +1495,18 @@
         align-items: flex-start;
         flex-direction: column;
     }
+}
+
+.world-settings-seed-copy {
+    width: 30px;
+    padding: 0;
+}
+
+.world-settings-seed-copy img {
+    width: 32px;
+    height: 32px;
+
+    display: block;
+
+    image-rendering: pixelated;
 }

@@ -2475,7 +2475,12 @@ function appendSeedDetail(
         "world-settings-seed-action "
         + "world-settings-seed-copy";
 
-    copyButton.textContent = "複製";
+    copyButton.innerHTML = `
+        <img
+            src="/static/icons/general_icon/copy_btn.png"
+            alt=""
+        >
+    `;
     copyButton.title = "複製種子碼";
 
     if (!seedValue) {

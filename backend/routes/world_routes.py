@@ -843,6 +843,30 @@ def api_switch_world(
                     ),
                 }), 409
 
+            pending_world_paths = [
+                world_path
+                for world_path
+                in _list_world_paths()
+                if _is_pending_world_folder(
+                    world_path
+                )
+            ]
+
+            if pending_world_paths:
+                pending_world_name = (
+                    pending_world_paths[0].name
+                )
+
+                return jsonify({
+                    "success": False,
+                    "message": (
+                        "目前有待生成世界："
+                        f"{pending_world_name}。"
+                        "請先啟動伺服器完成生成，"
+                        "或刪除待生成世界後再切換"
+                    ),
+                }), 409
+
             target_world_path = (
                 MC_ROOT / folder_name
             )

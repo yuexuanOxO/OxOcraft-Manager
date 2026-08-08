@@ -1916,8 +1916,20 @@ function renderSelectedWorldPreview(world) {
 
     switchButton.type = "button";
 
+    const pendingWorld =
+        loadedWorlds.find(
+            item =>
+                item.is_pending_generation
+                === true
+        ) || null;
+
+    const isSwitchBlockedByPending =
+        Boolean(pendingWorld)
+        && !world.is_pending_generation;
+
     switchButton.disabled =
-        world.is_current;
+        world.is_current
+        || isSwitchBlockedByPending;
 
     switchButton.textContent =
         world.is_current
@@ -1926,9 +1938,14 @@ function renderSelectedWorldPreview(world) {
                     ? "待生成"
                     : "目前使用中"
             )
-            : "切換至此世界";
+            : isSwitchBlockedByPending
+                ? "有世界等待生成"
+                : "切換至此世界";
 
-    if (!world.is_current) {
+    if (
+        !world.is_current
+        && !isSwitchBlockedByPending
+    ) {
         switchButton.addEventListener(
             "click",
             () => {

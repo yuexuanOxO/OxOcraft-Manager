@@ -1,5 +1,6 @@
 from pathlib import Path, PurePosixPath
 from threading import Lock
+from send2trash import send2trash
 
 from backend.auto_backup_service import (
     disable_auto_backup_for_world_change,
@@ -1053,6 +1054,204 @@ def api_switch_world(
                 "success": False,
                 "message": (
                     f"切換世界失敗：{error}"
+                ),
+            }), 500
+
+
+@world_bp.route(
+    "/api/worlds/<string:folder_name>",
+    methods=["DELETE"],
+)
+def api_delete_world(
+    folder_name: str,
+):
+    if not SERVER_PROPERTIES_PATH.is_file():
+        return jsonify({
+            "success": False,
+            "message": "找不到 server.properties",
+        }), 404
+
+    with _world_operation_lock:
+        try:
+            status = (
+                refresh_server_status_now()
+            )
+
+            status_data = status.get(
+                "data",
+                status,
+            )
+
+            state = status_data.get(
+                "state",
+                "unknown",
+            )
+
+            online = bool(
+                status_data.get("online")
+            )
+
+            if (
+                online
+                or state != "offline"
+            ):
+                return jsonify({
+                    "success": False,
+                    "message": (
+                        "只有伺服器完全離線時"
+                        "才能刪除世界"
+                    ),
+                }), 409
+
+            world_path = (
+                MC_ROOT / folder_name
+            )
+
+            try:
+                resolved_world_path = (
+                    world_path.resolve()
+                )
+
+                resolved_mc_root = (
+                    MC_ROOT.resolve()
+                )
+
+            except OSError:
+                return jsonify({
+                    "success": False,
+                    "message": "世界路徑無效",
+                }), 400
+
+            if (
+                resolved_world_path.parent
+                != resolved_mc_root
+            ):
+                return jsonify({
+                    "success": False,
+                    "message": "世界路徑無效",
+                }), 400
+
+            if (
+                not is_world_folder(
+                    world_path
+                )
+                and not _is_pending_world_folder(
+                    world_path
+                )
+            ):
+                return jsonify({
+                    "success": False,
+                    "message": "找不到世界存檔",
+                }), 404
+
+            (
+                current_level_name,
+                current_folder_name,
+            ) = _read_configured_level_name()
+
+            current_world_path = (
+                MC_ROOT / current_folder_name
+                if current_folder_name
+                is not None
+                else None
+            )
+
+            is_current = (
+                _paths_are_same(
+                    world_path,
+                    current_world_path,
+                )
+            )
+
+            auto_backup_disabled = False
+
+            if is_current:
+                current_properties = (
+                    read_properties_file(
+                        SERVER_PROPERTIES_PATH
+                    )
+                )
+
+                current_properties[
+                    "level-name"
+                ] = ""
+
+                properties_lines = (
+                    format_properties_for_write(
+                        current_properties
+                    )
+                )
+
+                write_properties_file(
+                    SERVER_PROPERTIES_PATH,
+                    properties_lines,
+                )
+
+                # current 世界被刪除後，
+                # root server-icon.png
+                # 也不再屬於任何世界。
+                server_icon_path = (
+                    MC_ROOT
+                    / "server-icon.png"
+                )
+
+                try:
+                    server_icon_path.unlink()
+
+                except FileNotFoundError:
+                    pass
+
+                auto_backup_disabled = (
+                    disable_auto_backup_for_world_change()
+                )
+
+            send2trash(
+                str(
+                    resolved_world_path
+                )
+            )
+
+            if is_current:
+                lock_current_world_path()
+
+            if auto_backup_disabled:
+                create_notification(
+                    title="自動備份已關閉",
+                    message=(
+                        "因目前使用中的世界已刪除，"
+                        "自動備份已自動關閉。"
+                        "請選擇新的世界後"
+                        "重新設定自動備份。"
+                    ),
+                    type="warning",
+                    source="world_settings",
+                )
+
+            return jsonify({
+                "success": True,
+                "message": (
+                    f"世界「{folder_name}」"
+                    "已移至資源回收桶"
+                ),
+                "folder_name":
+                    folder_name,
+                "was_current":
+                    is_current,
+                "level_name": (
+                    ""
+                    if is_current
+                    else current_level_name
+                ),
+                "auto_backup_disabled":
+                    auto_backup_disabled,
+            })
+
+        except Exception as error:
+            return jsonify({
+                "success": False,
+                "message": (
+                    "刪除世界失敗："
+                    f"{error}"
                 ),
             }), 500
 

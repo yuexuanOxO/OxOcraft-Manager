@@ -44,6 +44,35 @@ def save_config(config: dict) -> None:
     )
 
 
+def disable_auto_backup_for_world_change() -> bool:
+    config = load_config()
+
+    if not config.get(
+        "auto_backup_enabled"
+    ):
+        return False
+
+    config[
+        "auto_backup_enabled"
+    ] = False
+
+    config[
+        "auto_backup_next_run_at"
+    ] = ""
+
+    save_config(config)
+
+    publish_event(
+        "auto_backup_config_updated",
+        {
+            "auto_backup_enabled": False,
+            "auto_backup_next_run_at": "",
+        }
+    )
+
+    return True
+
+
 def add_month_safe(dt: datetime) -> datetime:
     year = dt.year
     month = dt.month + 1

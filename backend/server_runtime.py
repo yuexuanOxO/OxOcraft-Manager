@@ -321,6 +321,21 @@ def start_server() -> tuple[bool, str]:
     if SERVER_PROPERTIES_PATH.exists():
         props = read_properties_file(SERVER_PROPERTIES_PATH)
 
+    if SERVER_PROPERTIES_PATH.exists():
+        level_name = str(
+            props.get(
+                "level-name",
+                "world",
+            )
+        ).strip()
+
+        if not level_name:
+            return False, (
+                "目前尚未選擇世界。"
+                "請先至世界管理建立新世界，"
+                "或切換至現有世界後再啟動伺服器。"
+            )
+
     server_ip = props.get("server-ip", "")
 
     bind_ip_ok, bind_ip_message = (
@@ -395,26 +410,43 @@ def load_runtime_config() -> dict:
         return json.load(file)
     
 
-def lock_current_world_path() -> Path:
+def lock_current_world_path() -> Path | None:
     global CURRENT_LEVEL_NAME, CURRENT_WORLD_PATH
 
     level_name = "world"
 
     try:
         if SERVER_PROPERTIES_PATH.exists():
-            props = read_properties_file(SERVER_PROPERTIES_PATH)
-            level_name = props.get("level-name", "world") or "world"
+            props = read_properties_file(
+                SERVER_PROPERTIES_PATH
+            )
+
+            level_name = str(
+                props.get(
+                    "level-name",
+                    "world",
+                )
+            ).strip()
+
     except Exception:
         level_name = "world"
 
     CURRENT_LEVEL_NAME = level_name
-    CURRENT_WORLD_PATH = MC_ROOT / level_name
+
+    CURRENT_WORLD_PATH = (
+        MC_ROOT / level_name
+        if level_name
+        else None
+    )
 
     return CURRENT_WORLD_PATH
 
 
-def get_current_world_path() -> Path:
-    if CURRENT_WORLD_PATH is not None:
+def get_current_world_path() -> Path | None:
+    # CURRENT_LEVEL_NAME 已初始化，
+    # 但 CURRENT_WORLD_PATH 為 None，
+    # 代表合法的「沒有選擇世界」狀態。
+    if CURRENT_LEVEL_NAME is not None:
         return CURRENT_WORLD_PATH
 
     return lock_current_world_path()
@@ -425,4 +457,5 @@ def get_current_level_name() -> str:
         return CURRENT_LEVEL_NAME
 
     lock_current_world_path()
-    return CURRENT_LEVEL_NAME or "world"
+
+    return CURRENT_LEVEL_NAME or ""

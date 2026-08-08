@@ -2035,11 +2035,24 @@ async function switchWorld(
 
         await loadWorlds();
 
+        let successMessage =
+            data.message
+            || `已切換至世界：${folderName}`;
+
+        if (
+            data.auto_backup_disabled
+            === true
+        ) {
+            successMessage += (
+                "\n\n因世界已變更，"
+                + "自動備份已關閉。"
+                + "請確認目前世界後重新設定自動備份。"
+            );
+        }
+
         await showInfo({
             title: "世界切換完成",
-            message:
-                data.message
-                || `已切換至世界：${folderName}`,
+            message: successMessage,
             variant: "success",
             confirmText: "確定",
         });

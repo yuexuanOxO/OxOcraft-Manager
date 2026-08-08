@@ -1,6 +1,14 @@
 from pathlib import Path, PurePosixPath
 from threading import Lock
 
+from backend.auto_backup_service import (
+    disable_auto_backup_for_world_change,
+)
+
+from backend.notification_service import (
+    create_notification,
+)
+
 from flask import (
     Blueprint,
     jsonify,
@@ -217,8 +225,16 @@ def _read_configured_level_name() -> tuple[str, str | None]:
     )
 
     level_name = str(
-        properties.get("level-name", "world")
-    ).strip() or "world"
+        properties.get(
+            "level-name",
+            "world",
+        )
+    ).strip()
+
+    # level-name 明確為空時，
+    # 代表目前尚未選擇任何世界。
+    if not level_name:
+        return "", None
 
     normalized_path = PurePosixPath(
         level_name.replace("\\", "/")
@@ -226,11 +242,15 @@ def _read_configured_level_name() -> tuple[str, str | None]:
 
     if (
         len(normalized_path.parts) != 1
-        or normalized_path.name in {"", ".", ".."}
+        or normalized_path.name
+            in {"", ".", ".."}
     ):
         return level_name, None
 
-    return level_name, normalized_path.name
+    return (
+        level_name,
+        normalized_path.name,
+    )
 
 
 def _paths_are_same(
@@ -1002,6 +1022,22 @@ def api_switch_world(
             # 切換完成後必須同步更新。
             lock_current_world_path()
 
+            auto_backup_disabled = (
+                disable_auto_backup_for_world_change()
+            )
+
+            if auto_backup_disabled:
+                create_notification(
+                    title="自動備份已關閉",
+                    message=(
+                        "因伺服器已切換世界，"
+                        "自動備份已自動關閉。"
+                        "請確認目前世界後重新設定自動備份。"
+                    ),
+                    type="warning",
+                    source="world_settings",
+                )
+
             return jsonify({
                 "success": True,
                 "message": (
@@ -1012,7 +1048,11 @@ def api_switch_world(
                     current_level_name,
                 "level_name":
                     target_world_path.name,
+                "auto_backup_disabled":
+                    auto_backup_disabled,
             })
+
+            
 
         except Exception as error:
             return jsonify({

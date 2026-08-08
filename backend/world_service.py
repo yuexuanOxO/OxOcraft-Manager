@@ -335,12 +335,13 @@ def _write_optional_file(
 
 
 def switch_world_icons(
-    current_world_path: Path,
+    current_world_path: Path | None,
     target_world_path: Path,
     server_icon_path: Path,
 ) -> None:
     if (
-        current_world_path.resolve()
+        current_world_path is not None
+        and current_world_path.resolve()
         == target_world_path.resolve()
     ):
         return
@@ -348,6 +349,11 @@ def switch_world_icons(
     current_world_icon_path = (
         current_world_path
         / "server-icon.png"
+        if (
+            current_world_path is not None
+            and current_world_path.is_dir()
+        )
+        else None
     )
 
     target_world_icon_path = (
@@ -361,16 +367,18 @@ def switch_world_icons(
                 server_icon_path
             ),
 
-        current_world_icon_path:
-            _read_optional_file(
-                current_world_icon_path
-            ),
-
         target_world_icon_path:
             _read_optional_file(
                 target_world_icon_path
             ),
     }
+
+    if current_world_icon_path is not None:
+        original_files[
+            current_world_icon_path
+        ] = _read_optional_file(
+            current_world_icon_path
+        )
 
     try:
         current_server_icon = (
@@ -385,15 +393,22 @@ def switch_world_icons(
             ]
         )
 
-        # 根目錄的 Icon 屬於目前世界。
-        if current_server_icon is not None:
+        # 目前世界仍存在時，
+        # 才將根目錄 Icon 保存回目前世界。
+        if (
+            current_server_icon is not None
+            and current_world_icon_path
+                is not None
+        ):
             _write_optional_file(
                 current_world_icon_path,
                 current_server_icon,
             )
 
-        # 目標世界有 Icon，就移至根目錄；
-        # 沒有 Icon，就移除根目錄的舊 Icon。
+        # 套用目標世界 Icon。
+        #
+        # 目標世界沒有保存 Icon 時，
+        # 會清除根目錄可能殘留的舊 Icon。
         _write_optional_file(
             server_icon_path,
             target_world_icon,
@@ -405,7 +420,8 @@ def switch_world_icons(
         )
 
     except OSError:
-        # 搬移途中失敗時，還原三個位置。
+        # 任一步驟失敗時，
+        # 還原所有有參與操作的位置。
         for (
             file_path,
             original_content,

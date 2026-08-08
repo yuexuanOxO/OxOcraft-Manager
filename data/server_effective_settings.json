@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-08-08T12:18:37",
-    "properties_modified_comment": "Sat Aug 08 12:18:37 CST 2026",
+    "captured_at": "2026-08-08T14:17:00",
+    "properties_modified_comment": "Sat Aug 08 14:17:00 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -10,7 +10,7 @@
         "enable-query": "false",
         "generator-settings": "{}",
         "enforce-secure-profile": "true",
-        "level-name": "world11111",
+        "level-name": "Test_67",
         "motd": "A Minecraft Server",
         "query.port": "25565",
         "pvp": "true",
@@ -52,7 +52,7 @@
         "log-ips": "true",
         "function-permission-level": "2",
         "initial-enabled-packs": "vanilla",
-        "level-type": "minecraft\\:flat",
+        "level-type": "minecraft\\:normal",
         "text-filtering-config": "",
         "spawn-monsters": "true",
         "enforce-whitelist": "false",

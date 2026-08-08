@@ -877,6 +877,12 @@ def api_switch_world(
                 MC_ROOT / current_folder_name
             )
 
+            current_world_is_valid = (
+                is_world_folder(
+                    current_world_path
+                )
+            )
+
             if _paths_are_same(
                 current_world_path,
                 target_world_path,
@@ -890,17 +896,6 @@ def api_switch_world(
                     "level_name": folder_name,
                 })
 
-            if not is_world_folder(
-                current_world_path
-            ):
-                return jsonify({
-                    "success": False,
-                    "message": (
-                        "目前使用中的世界存檔"
-                        "不存在或無法辨識，"
-                        "因此無法保存目前 Icon"
-                    ),
-                }), 409
 
             original_properties = (
                 SERVER_PROPERTIES_PATH
@@ -913,14 +908,18 @@ def api_switch_world(
                 )
             )
 
-            # 目前世界沒有 JSON 時，
-            # 使用目前 server.properties 與 level.dat 補建。
-            load_or_create_world_properties(
-                current_world_path,
-                current_server_properties=(
-                    current_properties
-                ),
-            )
+            # 目前世界仍然存在時，
+            # 才保存 / 補建目前世界的生成參數。
+            #
+            # 如果 level-name 指向的世界已消失，
+            # 則直接進入 recovery 切換流程。
+            if current_world_is_valid:
+                load_or_create_world_properties(
+                    current_world_path,
+                    current_server_properties=(
+                        current_properties
+                    ),
+                )
 
             # 目標世界沒有 JSON 時，
             # 使用該世界的 level.dat 與安全預設值補建。

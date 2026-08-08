@@ -844,10 +844,16 @@ async function submitCreateWorldForm() {
             error
         );
 
-        showCreateWorldError(
-            error.message
-            || "建立新世界失敗"
-        );
+        clearCreateWorldError();
+
+        await showInfo({
+            title: "建立世界失敗",
+            message:
+                error.message
+                || "無法建立新世界",
+            variant: "error",
+            confirmText: "確定",
+        });
 
     } finally {
         setCreateWorldSubmitting(

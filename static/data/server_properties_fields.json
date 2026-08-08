@@ -155,6 +155,8 @@
     "label": "世界名稱",
     "type": "text",
     "default": "world",
+    "locked": true,
+    "lockedReason": "僅能透過世界管理頁修改",
     "description": "「level-name」的值將作為世界名稱及其資料夾名。你也可以把你已生成的世界存檔複製過來，然後讓這個值與那個資料夾的名字保持一致，伺服器就可以載入該存檔。\n部分字元，例如 ' （單引號）可能需要在前面加反斜槓號 \\ 才能被正常應用。"
   },
   {
@@ -163,6 +165,8 @@
     "label": "世界種子碼",
     "type": "text",
     "default": "",
+    "locked": true,
+    "lockedReason": "僅能透過世界管理頁修改",
     "description": "這個世界生成時使用的種子碼。\n\n註：若要建立其他新世界記得把這裡清除，避免又生成到一樣的世界。"
   },
   {
@@ -171,6 +175,8 @@
     "label": "世界類型",
     "type": "text",
     "default": "minecraft\\:normal",
+    "locked": true,
+    "lockedReason": "僅能透過世界管理頁修改",
     "description": "使用世界預設ID，確定地圖所生成的類型。\n使用世界預設ID時，需要在其中的「:」前加「\\」轉義。原版世界預設ID可以省略其前面的「minecraft:」（即命名空間）。\nminecraft:normal：帶有丘陵、河谷、海洋等的標準的世界。\nminecraft:flat - 一個沒有特性的平坦世界，可用generator-settings修改。\nminecraft:large_biomes：如同預設的世界，但所有生態域都更大。\nminecraft:amplified：如同預設的世界，但世界生成高度提高。\nminecraft:single_biome_surface：單一生態域世界，可用generator-settings修改。"
   },
   {
@@ -179,6 +185,8 @@
     "label": "世界生成設定",
     "type": "text",
     "default": "{}",
+    "locked": true,
+    "lockedReason": "僅能透過世界管理頁修改",
     "description": "本屬性質用於自訂世界的生成。詳見超平坦世界和自訂了解正確的設定及例子。"
   },
   {

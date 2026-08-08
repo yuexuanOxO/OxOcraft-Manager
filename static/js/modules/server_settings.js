@@ -45,7 +45,7 @@ const SERVER_SETTING_GROUPS = [
     {
         key: "world",
         label: "世界",
-        description: "建立或載入世界時使用的設定，目前暫時保留在此頁。"
+        description: "建立或載入世界時使用的設定。"
     },
     {
         key: "network",
@@ -341,9 +341,15 @@ async function resetServerSettingsToDefault() {
 
     serverSettingFields.forEach((field) => {
 
-        if(field.default === undefined){
+        if (field.default === undefined) {
             return;
-        }else if(field.key === "rcon.password"){
+        }
+
+        if (field.locked) {
+            return;
+        }
+
+        if (field.key === "rcon.password") {
             return;
         }
 

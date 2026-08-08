@@ -654,7 +654,11 @@ function renderServerSettings() {
                 field.key === "rcon_password" ||
                 field.key === "management-server-secret";
 
-            input.type = isPasswordField
+            const isMaskedField =
+                isPasswordField ||
+                field.key === "level-seed";
+
+            input.type = isMaskedField
                 ? "password"
                 : field.type === "number"
                     ? "number"
@@ -669,7 +673,7 @@ function renderServerSettings() {
 
             input.placeholder = `預設值:${defaultValue}`;
 
-            if (isPasswordField) {
+            if (isMaskedField) {
                 const passwordWrap = document.createElement("div");
                 passwordWrap.className = "setting-password-wrap";
 
@@ -683,86 +687,132 @@ function renderServerSettings() {
                 toggleBtn.type = "button";
                 toggleBtn.className = "setting-password-toggle";
                 toggleBtn.innerHTML = `<img src="/static/icons/server_settings/eye_16.png" alt="toggle-password">`;
-                toggleBtn.title = "顯示/隱藏密碼";
+                toggleBtn.title =
+                    field.key === "level-seed"
+                        ? "顯示/隱藏種子碼"
+                        : "顯示/隱藏密碼";
 
-                const regenBtn = document.createElement("button");
-                regenBtn.type = "button";
-                regenBtn.className = "setting-password-regenerate";
-                regenBtn.innerHTML = `<img src="/static/icons/server_settings/refresh_16.png" alt="refresh">`;
-                regenBtn.title =
-                    field.key === "management-server-secret"
-                        ? "重新生成管理協定密鑰"
-                        : "重新生成 RCON 密碼";
-
-                toggleBtn.addEventListener("click", () => {
-                    const isHidden = input.type === "password";
-                    input.type = isHidden ? "text" : "password";
-                    toggleBtn.classList.toggle("showing", isHidden);
-                });
-
-                regenBtn.addEventListener("click", async () => {
-                    const isManagement =
-                        field.key === "management-server-secret";
-
-                    const title = isManagement
-                        ? "重新生成管理協定密鑰"
-                        : "重新生成 RCON 密碼";
-
-                    const message = isManagement
-                        ? "請問是否要重新生成管理協定密鑰？"
-                        : "請問是否要重新生成 RCON 密碼？";
-
-                    const confirmed = await showConfirm({
-                        title,
-                        message,
-                        confirmText: "確定",
-                        cancelText: "取消"
-                    });
-
-                    if (!confirmed) return;
-
-                    try {
-                        regenBtn.disabled = true;
-
-                        const api = isManagement
-                            ? "/api/server/regenerate-management-secret"
-                            : "/api/server/regenerate-rcon-password";
-
-                        const response = await fetch(api, {
-                            method: "POST"
-                        });
-
-                        const data = await response.json();
-
-                        if (!data.success) {
-                            showInfo({
-                                title: "重新生成失敗",
-                                message: data.message || "未知錯誤"
-                            });
-                            return;
-                        }
-
-                        input.value = data.password;
-                        serverSettingsState[field.key] = data.password;
-
-                        syncDirtyBadge(passwordWrap, field.key);
-                        updateServerSettingsStatusCard();
-
-                    } catch (error) {
-                        console.error(error);
-                        showInfo({
-                            title: "重新生成失敗",
-                            message: "請查看 console。"
-                        });
-
-                    } finally {
-                        regenBtn.disabled = false;
+                toggleBtn.addEventListener("click",() => {
+                    const isHidden =　input.type === "password";
+                    input.type =isHidden? "text": "password";
+                    toggleBtn.classList.toggle("showing",isHidden);
                     }
-                });
+                );
+
+                let regenBtn = null;
+
+                if (isPasswordField) {
+                    regenBtn =
+                        document.createElement("button");
+
+                    regenBtn.type = "button";
+
+                    regenBtn.className =
+                        "setting-password-regenerate";
+
+                    regenBtn.innerHTML =
+                        `<img src="/static/icons/server_settings/refresh_16.png" alt="refresh">`;
+
+                    regenBtn.title =
+                        field.key
+                            === "management-server-secret"
+                            ? "重新生成管理協定密鑰"
+                            : "重新生成 RCON 密碼";
+
+                    regenBtn.addEventListener(
+                        "click",
+                        async () => {
+                            const isManagement =
+                                field.key
+                                === "management-server-secret";
+
+                            const title =
+                                isManagement
+                                    ? "重新生成管理協定密鑰"
+                                    : "重新生成 RCON 密碼";
+
+                            const message =
+                                isManagement
+                                    ? "請問是否要重新生成管理協定密鑰？"
+                                    : "請問是否要重新生成 RCON 密碼？";
+
+                            const confirmed =
+                                await showConfirm({
+                                    title,
+                                    message,
+                                    confirmText: "確定",
+                                    cancelText: "取消"
+                                });
+
+                            if (!confirmed) return;
+
+                            try {
+                                regenBtn.disabled = true;
+
+                                const api =
+                                    isManagement
+                                        ? "/api/server/regenerate-management-secret"
+                                        : "/api/server/regenerate-rcon-password";
+
+                                const response =
+                                    await fetch(
+                                        api,
+                                        {
+                                            method: "POST"
+                                        }
+                                    );
+
+                                const data =
+                                    await response.json();
+
+                                if (!data.success) {
+                                    showInfo({
+                                        title: "重新生成失敗",
+                                        message:
+                                            data.message
+                                            || "未知錯誤"
+                                    });
+
+                                    return;
+                                }
+
+                                input.value =
+                                    data.password;
+
+                                serverSettingsState[
+                                    field.key
+                                ] = data.password;
+
+                                syncDirtyBadge(
+                                    passwordWrap,
+                                    field.key
+                                );
+
+                                updateServerSettingsStatusCard();
+
+                            } catch (error) {
+                                console.error(error);
+
+                                showInfo({
+                                    title: "重新生成失敗",
+                                    message: "請查看 console。"
+                                });
+
+                            } finally {
+                                regenBtn.disabled = false;
+                            }
+                        }
+                    );
+                }
 
                 passwordWrap.appendChild(input);
                 passwordWrap.appendChild(toggleBtn);
-                passwordWrap.appendChild(regenBtn);
+
+                if (regenBtn) {
+                    passwordWrap.appendChild(
+                        regenBtn
+                    );
+                }
                 syncDirtyBadge(passwordWrap, field.key);
 
                 valueWrap.appendChild(passwordWrap);

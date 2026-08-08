@@ -1870,9 +1870,17 @@ function renderSelectedWorldPreview(world) {
         appendWorldDetail(
             info,
             "遊戲模式",
-            getGameModeLabel(
-                metadata.game_mode
-            ) || "無法讀取"
+            metadata.metadata_readable
+                ? (
+                    metadata.is_hardcore
+                        ? "極限模式"
+                        : (
+                            getGameModeLabel(
+                                metadata.game_mode
+                            ) || "無法讀取"
+                        )
+                )
+                : "無法讀取"
         );
 
         appendWorldDetail(
@@ -1881,18 +1889,6 @@ function renderSelectedWorldPreview(world) {
             getDifficultyLabel(
                 metadata.difficulty
             ) || "無法讀取"
-        );
-
-        appendWorldDetail(
-            info,
-            "極限模式",
-            metadata.metadata_readable
-                ? (
-                    metadata.is_hardcore
-                        ? "開啟"
-                        : "關閉"
-                )
-                : "無法讀取"
         );
 
         appendWorldDetail(

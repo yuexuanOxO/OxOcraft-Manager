@@ -1,4 +1,6 @@
 import os
+import ctypes
+import time
 
 from pathlib import Path, PurePosixPath
 from threading import Lock
@@ -271,6 +273,171 @@ def _paths_are_same(
 
     except OSError:
         return False
+
+
+def _bring_explorer_folder_to_front(
+    folder_path: Path,
+) -> None:
+    user32 = ctypes.windll.user32
+
+    target_name = (
+        folder_path.name
+        .strip()
+        .casefold()
+    )
+
+    matching_windows = []
+
+    enum_windows_proc = ctypes.WINFUNCTYPE(
+        ctypes.c_bool,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+    )
+
+    def enum_window(
+        hwnd,
+        _lparam,
+    ):
+        if not user32.IsWindowVisible(
+            hwnd
+        ):
+            return True
+
+        class_name_buffer = (
+            ctypes.create_unicode_buffer(
+                256
+            )
+        )
+
+        user32.GetClassNameW(
+            hwnd,
+            class_name_buffer,
+            256,
+        )
+
+        if (
+            class_name_buffer.value
+            != "CabinetWClass"
+        ):
+            return True
+
+        title_length = (
+            user32.GetWindowTextLengthW(
+                hwnd
+            )
+        )
+
+        if title_length <= 0:
+            return True
+
+        title_buffer = (
+            ctypes.create_unicode_buffer(
+                title_length + 1
+            )
+        )
+
+        user32.GetWindowTextW(
+            hwnd,
+            title_buffer,
+            title_length + 1,
+        )
+
+        title = (
+            title_buffer.value
+            .strip()
+            .casefold()
+        )
+
+        if (
+            target_name
+            and target_name in title
+        ):
+            matching_windows.append(
+                hwnd
+            )
+
+        return True
+
+    callback = enum_windows_proc(
+        enum_window
+    )
+
+    # Explorer 建立視窗需要一點時間。
+    for _ in range(10):
+        matching_windows.clear()
+
+        user32.EnumWindows(
+            callback,
+            0,
+        )
+
+        if matching_windows:
+            break
+
+        time.sleep(0.05)
+
+    if not matching_windows:
+        return
+
+    hwnd = matching_windows[-1]
+
+    SW_RESTORE = 9
+
+    user32.ShowWindow(
+        hwnd,
+        SW_RESTORE,
+    )
+
+    foreground_hwnd = (
+        user32.GetForegroundWindow()
+    )
+
+    foreground_thread = (
+        user32.GetWindowThreadProcessId(
+            foreground_hwnd,
+            None,
+        )
+    )
+
+    target_thread = (
+        user32.GetWindowThreadProcessId(
+            hwnd,
+            None,
+        )
+    )
+
+    attached = False
+
+    try:
+        if (
+            foreground_thread
+            and target_thread
+            and foreground_thread
+                != target_thread
+        ):
+            attached = bool(
+                user32.AttachThreadInput(
+                    foreground_thread,
+                    target_thread,
+                    True,
+                )
+            )
+
+        user32.BringWindowToTop(
+            hwnd
+        )
+
+        user32.SetForegroundWindow(
+            hwnd
+        )
+
+    finally:
+        if attached:
+            user32.AttachThreadInput(
+                foreground_thread,
+                target_thread,
+                False,
+            )
 
 
 def _list_world_paths() -> list[Path]:
@@ -1290,6 +1457,10 @@ def api_open_world_folder(
             }), 404
 
         os.startfile(
+            resolved_world_path
+        )
+
+        _bring_explorer_folder_to_front(
             resolved_world_path
         )
 

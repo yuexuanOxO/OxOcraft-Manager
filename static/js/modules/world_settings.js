@@ -1565,12 +1565,21 @@ function renderWorldArchiveList(
 
         openFolderButton.addEventListener(
             "click",
-            event => {
+            async event => {
                 event.stopPropagation();
 
-                console.log(
-                    "開啟世界資料夾：",
-                    world.folder_name
+                menu.classList.add(
+                    "hidden"
+                );
+
+                moreButton.setAttribute(
+                    "aria-expanded",
+                    "false"
+                );
+
+                await openWorldFolder(
+                    world,
+                    openFolderButton
                 );
             }
         );
@@ -2118,6 +2127,89 @@ async function deleteWorld(
             deleteButton.disabled = false;
             deleteButton.textContent =
                 "刪除世界";
+        }
+    }
+}
+
+
+async function openWorldFolder(
+    world,
+    openFolderButton
+) {
+    const folderName =
+        normalizeText(
+            world?.folder_name
+        );
+
+    if (!folderName) {
+        return;
+    }
+
+    openFolderButton.disabled = true;
+    openFolderButton.textContent =
+        "開啟中...";
+
+    try {
+        const encodedFolderName =
+            encodeURIComponent(
+                folderName
+            );
+
+        const response =
+            await fetch(
+                (
+                    `/api/worlds/`
+                    + `${encodedFolderName}`
+                    + "/open-folder"
+                ),
+                {
+                    method: "POST",
+                    cache: "no-store",
+                }
+            );
+
+        let data = null;
+
+        try {
+            data =
+                await response.json();
+
+        } catch {
+            data = null;
+        }
+
+        if (
+            !response.ok
+            || !data?.success
+        ) {
+            throw new Error(
+                data?.message
+                || "開啟世界資料夾失敗"
+            );
+        }
+
+    } catch (error) {
+        console.error(
+            "開啟世界資料夾失敗：",
+            error
+        );
+
+        await showInfo({
+            title: "開啟資料夾失敗",
+            message:
+                error.message
+                || "無法開啟世界資料夾",
+            variant: "error",
+            confirmText: "確定",
+        });
+
+    } finally {
+        if (
+            openFolderButton.isConnected
+        ) {
+            openFolderButton.disabled = false;
+            openFolderButton.textContent =
+                "開啟世界資料夾";
         }
     }
 }

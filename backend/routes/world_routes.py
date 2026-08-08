@@ -1,3 +1,5 @@
+import os
+
 from pathlib import Path, PurePosixPath
 from threading import Lock
 from send2trash import send2trash
@@ -1243,6 +1245,70 @@ def api_delete_world(
                     f"{error}"
                 ),
             }), 500
+
+
+@world_bp.route(
+    "/api/worlds/<string:folder_name>/open-folder",
+    methods=["POST"],
+)
+def api_open_world_folder(
+    folder_name: str,
+):
+    try:
+        world_path = (
+            MC_ROOT / folder_name
+        )
+
+        resolved_world_path = (
+            world_path.resolve()
+        )
+
+        resolved_mc_root = (
+            MC_ROOT.resolve()
+        )
+
+        if (
+            resolved_world_path.parent
+            != resolved_mc_root
+        ):
+            return jsonify({
+                "success": False,
+                "message": "世界路徑無效",
+            }), 400
+
+        if (
+            not is_world_folder(
+                world_path
+            )
+            and not _is_pending_world_folder(
+                world_path
+            )
+        ):
+            return jsonify({
+                "success": False,
+                "message": "找不到世界存檔",
+            }), 404
+
+        os.startfile(
+            resolved_world_path
+        )
+
+        return jsonify({
+            "success": True,
+            "message": (
+                f"已開啟世界資料夾："
+                f"{folder_name}"
+            ),
+        })
+
+    except OSError as error:
+        return jsonify({
+            "success": False,
+            "message": (
+                "開啟世界資料夾失敗："
+                f"{error}"
+            ),
+        }), 500
 
 
 @world_bp.route(

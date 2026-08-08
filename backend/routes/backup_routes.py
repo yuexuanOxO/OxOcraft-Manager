@@ -267,23 +267,56 @@ def api_backup_status():
 @backup_bp.route("/api/backup/config")
 def api_backup_config():
     world_path = get_current_world_path()
+    level_name = get_current_level_name()
     config = load_app_config()
 
-    manual_scan_root = get_manual_backup_default_scan_root(world_path)
+    manual_scan_root = (
+        get_manual_backup_default_scan_root(
+            world_path
+        )
+    )
 
     return jsonify({
         "success": True,
 
-        "manual_scan_root": str(manual_scan_root),
-        "source_root": str(manual_scan_root),
+        "manual_scan_root":
+            str(manual_scan_root),
 
-        "backup_root": config.get("backup_root") or str(MC_ROOT / "world_backup"),
-        "manual_backup_root": config.get("manual_backup_root") or str(MC_ROOT / "world_backup"),
+        "source_root":
+            str(manual_scan_root),
 
-        # 實際目前 server.properties 指到的世界
-        "world_path": str(world_path),
-        "current_world_name": world_path.name,
-        "level_name": get_current_level_name(),
+        "backup_root":
+            config.get("backup_root")
+            or str(
+                MC_ROOT / "world_backup"
+            ),
+
+        "manual_backup_root":
+            config.get(
+                "manual_backup_root"
+            )
+            or str(
+                MC_ROOT / "world_backup"
+            ),
+
+        # 實際目前 server.properties
+        # 指到的世界。
+        # level-name 為空時，
+        # 目前沒有選擇任何世界。
+        "world_path": (
+            str(world_path)
+            if world_path is not None
+            else ""
+        ),
+
+        "current_world_name": (
+            world_path.name
+            if world_path is not None
+            else ""
+        ),
+
+        "level_name":
+            level_name,
     })
 
 

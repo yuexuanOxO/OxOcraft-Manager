@@ -508,7 +508,7 @@
     text-align: left;
     cursor: pointer;
 
-    overflow: hidden;
+    overflow: visible;
     box-sizing: border-box;
 }
 
@@ -572,6 +572,103 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+}
+
+.world-settings-world-item-actions {
+    position: relative;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 3;
+}
+
+.world-settings-world-item-more-button {
+    width: 36px;
+    height: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    background: #303030;
+    border: 1px solid #555;
+    border-radius: 6px;
+
+    color: #ccc;
+    font-family: inherit;
+    font-size: 24px;
+    line-height: 1;
+
+    cursor: pointer;
+}
+
+.world-settings-world-item-more-button:hover {
+    background: #3a3a3a;
+    border-color: #666;
+
+    color: #fff;
+}
+
+.world-settings-world-item-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 20;
+
+    min-width: 150px;
+
+    padding: 5px;
+
+    background: #202020;
+    border: 1px solid #555;
+    border-radius: 6px;
+
+    box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.45);
+
+    box-sizing: border-box;
+}
+
+.world-settings-world-item-menu.hidden {
+    display: none;
+}
+
+.world-settings-world-item-menu-button {
+    width: 100%;
+    height: 34px;
+
+    padding: 0 10px;
+
+    background: transparent;
+    border: 0;
+    border-radius: 4px;
+
+    color: #ddd;
+    font-family: inherit;
+    font-size: 12px;
+    text-align: left;
+
+    cursor: pointer;
+}
+
+.world-settings-world-item-menu-button:hover {
+    background: #333;
+}
+
+.world-settings-world-item-menu-button.danger {
+    color: #e58b8b;
+}
+
+.world-settings-world-item-menu-button.danger:hover {
+    background: rgba(140, 45, 45, 0.25);
+
+    color: #ff9d9d;
 }
 
 .world-settings-world-item-name-row {

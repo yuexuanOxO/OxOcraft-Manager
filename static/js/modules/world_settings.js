@@ -947,6 +947,42 @@ function setupWorldListSelection() {
             );
         }
     );
+
+    archiveList.addEventListener(
+        "keydown",
+        event => {
+            if (
+                event.key !== "Enter"
+                && event.key !== " "
+            ) {
+                return;
+            }
+
+            if (
+                event.target.closest(
+                    ".world-settings-world-item-actions"
+                )
+            ) {
+                return;
+            }
+
+            const selectedItem =
+                event.target.closest(
+                    ".world-settings-world-item"
+                );
+
+            if (!selectedItem) {
+                return;
+            }
+
+            event.preventDefault();
+
+            selectWorld(
+                selectedItem.dataset.worldFolderName
+            );
+        }
+    );
+
 }
 
 
@@ -1236,15 +1272,24 @@ function renderWorldArchiveList(
     worlds.forEach(world => {
         const metadata = getWorldMetadata(world);
         const isPendingGeneration = world.is_pending_generation === true;
-        const item = document.createElement("button");
+        const item =
+            document.createElement("div");
 
         item.className =
             "world-settings-world-item";
 
-        item.type = "button";
-
         item.dataset.worldFolderName =
             world.folder_name;
+
+        item.setAttribute(
+            "role",
+            "button"
+        );
+
+        item.setAttribute(
+            "tabindex",
+            "0"
+        );
 
         item.setAttribute(
             "aria-pressed",
@@ -1399,9 +1444,153 @@ function renderWorldArchiveList(
             meta
         );
 
+        const actions =
+            document.createElement("div");
+
+        actions.className =
+            "world-settings-world-item-actions";
+
+        const moreButton =
+            document.createElement("button");
+
+        moreButton.type = "button";
+
+        moreButton.className =
+            "world-settings-world-item-more-button";
+
+        moreButton.setAttribute(
+            "aria-label",
+            `更多世界操作：${world.folder_name}`
+        );
+
+        moreButton.setAttribute(
+            "aria-haspopup",
+            "menu"
+        );
+
+        moreButton.setAttribute(
+            "aria-expanded",
+            "false"
+        );
+
+        moreButton.textContent = "⋮";
+
+        const menu =
+            document.createElement("div");
+
+        menu.className =
+            "world-settings-world-item-menu hidden";
+
+        menu.setAttribute(
+            "role",
+            "menu"
+        );
+
+
+        const openFolderButton = document.createElement("button");
+
+        openFolderButton.type = "button";
+        openFolderButton.className = "world-settings-world-item-menu-button";
+
+        openFolderButton.textContent = "開啟世界資料夾";
+
+        const deleteButton = document.createElement("button");
+
+        deleteButton.type = "button";
+        deleteButton.className ="world-settings-world-item-menu-button danger";
+        deleteButton.textContent = "刪除世界";
+
+        menu.append(
+            openFolderButton,
+            deleteButton
+        );
+
+        actions.append(
+            moreButton,
+            menu
+        );
+
+        moreButton.addEventListener(
+            "click",
+            event => {
+                event.stopPropagation();
+
+                const shouldOpen =
+                    menu.classList.contains(
+                        "hidden"
+                    );
+
+                document
+                    .querySelectorAll(
+                        ".world-settings-world-item-menu"
+                    )
+                    .forEach(otherMenu => {
+                        if (
+                            otherMenu
+                            !== menu
+                        ) {
+                            otherMenu.classList.add(
+                                "hidden"
+                            );
+                        }
+                    });
+
+                document
+                    .querySelectorAll(
+                        ".world-settings-world-item-more-button"
+                    )
+                    .forEach(otherButton => {
+                        if (
+                            otherButton
+                            !== moreButton
+                        ) {
+                            otherButton.setAttribute(
+                                "aria-expanded",
+                                "false"
+                            );
+                        }
+                    });
+
+                menu.classList.toggle(
+                    "hidden",
+                    !shouldOpen
+                );
+
+                moreButton.setAttribute(
+                    "aria-expanded",
+                    String(shouldOpen)
+                );
+            }
+        );
+
+        openFolderButton.addEventListener(
+            "click",
+            event => {
+                event.stopPropagation();
+
+                console.log(
+                    "開啟世界資料夾：",
+                    world.folder_name
+                );
+            }
+        );
+
+        deleteButton.addEventListener(
+            "click",
+            event => {
+                event.stopPropagation();
+
+                console.log(
+                    "刪除世界：",
+                    world.folder_name
+                );
+            }
+        );
+
         item.append(
             icon,
-            content
+            content,
+            actions
         );
 
         archiveList.appendChild(item);

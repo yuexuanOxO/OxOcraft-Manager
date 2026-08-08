@@ -17,6 +17,8 @@ let worldIconCacheKey = Date.now();
 let worldListLoaded = false;
 let worldSettingsServerState = null;
 
+let createWorldSubmitting = false;
+
 
 export function initWorldSettings() {
     const openBtn =
@@ -106,6 +108,7 @@ function handleWorldSettingsServerStateChanged(
     worldSettingsServerState = state;
 
     updateWorldCreateAvailability();
+    updateCreateWorldSubmitAvailability();
 }
 
 
@@ -272,15 +275,34 @@ function setupCreateWorldModal() {
                         button,
                         nextValue
                     );
+
+                    updateCreateWorldSubmitAvailability();
                 }
             );
         });
 
     form.addEventListener(
+        "input",
+        () => {
+            clearCreateWorldError();
+            updateCreateWorldSubmitAvailability();
+        }
+    );
+
+    form.addEventListener(
+        "change",
+        () => {
+            clearCreateWorldError();
+            updateCreateWorldSubmitAvailability();
+        }
+    );
+
+    form.addEventListener(
         "submit",
-        event => {
-            // 下一階段接上表單驗證與 POST API。
+        async event => {
             event.preventDefault();
+
+            await submitCreateWorldForm();
         }
     );
 
@@ -318,6 +340,8 @@ function openCreateWorldModal() {
     }
 
     resetCreateWorldForm();
+
+    updateCreateWorldSubmitAvailability();
 
     createModal.classList.remove(
         "hidden"
@@ -386,6 +410,8 @@ function resetCreateWorldForm() {
             "worldSettingsCreateError"
         );
 
+    createWorldSubmitting = false;
+
     form?.reset();
 
     setCreateWorldSwitch(
@@ -411,6 +437,421 @@ function resetCreateWorldForm() {
         errorBox.textContent = "";
         errorBox.classList.add(
             "hidden"
+        );
+    }
+}
+
+
+function validateCreateWorldForm() {
+    const form =
+        document.getElementById(
+            "worldSettingsCreateForm"
+        );
+
+    if (!form) {
+        return {
+            valid: false,
+            message: "找不到建立世界表單",
+        };
+    }
+
+    if (!worldListLoaded) {
+        return {
+            valid: false,
+            message: "世界清單尚未載入完成",
+        };
+    }
+
+    if (
+        worldSettingsServerState
+        !== "offline"
+    ) {
+        return {
+            valid: false,
+            message:
+                "只有伺服器完全離線時"
+                + "才能建立新世界",
+        };
+    }
+
+    const pendingWorld =
+        loadedWorlds.find(
+            world =>
+                world.is_pending_generation
+                === true
+        );
+
+    if (pendingWorld) {
+        return {
+            valid: false,
+            message:
+                `目前已有待生成世界：`
+                + `${pendingWorld.folder_name}`,
+        };
+    }
+
+    const formData =
+        new FormData(form);
+
+    const worldName =
+        normalizeText(
+            String(
+                formData.get(
+                    "level-name"
+                ) || ""
+            )
+        );
+
+    if (!worldName) {
+        return {
+            valid: false,
+            message: "請輸入世界名稱",
+        };
+    }
+
+    if (worldName.length > 128) {
+        return {
+            valid: false,
+            message:
+                "世界名稱不能超過 "
+                + "128 個字元",
+        };
+    }
+
+    const seed =
+        String(
+            formData.get(
+                "level-seed"
+            ) || ""
+        );
+
+    if (seed.length > 128) {
+        return {
+            valid: false,
+            message:
+                "世界種子碼不能超過 "
+                + "128 個字元",
+        };
+    }
+
+    const generatorSettingsText =
+        String(
+            formData.get(
+                "generator-settings"
+            ) || ""
+        ).trim();
+
+    let generatorSettings;
+
+    try {
+        generatorSettings =
+            JSON.parse(
+                generatorSettingsText
+                || "{}"
+            );
+
+    } catch {
+        return {
+            valid: false,
+            message:
+                "世界生成設定不是合法 JSON",
+        };
+    }
+
+    if (
+        typeof generatorSettings
+            !== "object"
+        || generatorSettings === null
+        || Array.isArray(
+            generatorSettings
+        )
+    ) {
+        return {
+            valid: false,
+            message:
+                "世界生成設定必須是 JSON 物件",
+        };
+    }
+
+    return {
+        valid: true,
+        message: "",
+    };
+}
+
+
+function buildCreateWorldPayload() {
+    const form =
+        document.getElementById(
+            "worldSettingsCreateForm"
+        );
+
+    if (!form) {
+        return null;
+    }
+
+    const formData =
+        new FormData(form);
+
+    const generatorSettingsText =
+        String(
+            formData.get(
+                "generator-settings"
+            ) || ""
+        ).trim();
+
+    return {
+        "level-name":
+            normalizeText(
+                String(
+                    formData.get(
+                        "level-name"
+                    ) || ""
+                )
+            ),
+
+        "level-seed":
+            String(
+                formData.get(
+                    "level-seed"
+                ) || ""
+            ),
+
+        "level-type":
+            String(
+                formData.get(
+                    "level-type"
+                ) || "minecraft:normal"
+            ),
+
+        "generator-settings":
+            JSON.parse(
+                generatorSettingsText
+                || "{}"
+            ),
+
+        "generate-structures":
+            String(
+                formData.get(
+                    "generate-structures"
+                )
+            ) === "true",
+
+        "hardcore":
+            String(
+                formData.get(
+                    "hardcore"
+                )
+            ) === "true",
+
+        "initial-enabled-packs":
+            String(
+                formData.get(
+                    "initial-enabled-packs"
+                ) || ""
+            ).trim(),
+
+        "initial-disabled-packs":
+            String(
+                formData.get(
+                    "initial-disabled-packs"
+                ) || ""
+            ).trim(),
+    };
+}
+
+
+function updateCreateWorldSubmitAvailability() {
+    const submitButton =
+        document.getElementById(
+            "worldSettingsCreateSubmitBtn"
+        );
+
+    if (!submitButton) {
+        return;
+    }
+
+    if (createWorldSubmitting) {
+        submitButton.disabled = true;
+        return;
+    }
+
+    const validation =
+        validateCreateWorldForm();
+
+    submitButton.disabled =
+        !validation.valid;
+}
+
+
+function showCreateWorldError(
+    message
+) {
+    const errorBox =
+        document.getElementById(
+            "worldSettingsCreateError"
+        );
+
+    if (!errorBox) {
+        return;
+    }
+
+    errorBox.textContent =
+        message || "建立世界失敗";
+
+    errorBox.classList.remove(
+        "hidden"
+    );
+}
+
+
+function clearCreateWorldError() {
+    const errorBox =
+        document.getElementById(
+            "worldSettingsCreateError"
+        );
+
+    if (!errorBox) {
+        return;
+    }
+
+    errorBox.textContent = "";
+
+    errorBox.classList.add(
+        "hidden"
+    );
+}
+
+
+function setCreateWorldSubmitting(
+    submitting
+) {
+    createWorldSubmitting =
+        submitting;
+
+    const submitButton =
+        document.getElementById(
+            "worldSettingsCreateSubmitBtn"
+        );
+
+    if (!submitButton) {
+        return;
+    }
+
+    submitButton.textContent =
+        submitting
+            ? "建立中..."
+            : "建立世界";
+
+    updateCreateWorldSubmitAvailability();
+}
+
+
+async function submitCreateWorldForm() {
+    if (createWorldSubmitting) {
+        return;
+    }
+
+    clearCreateWorldError();
+
+    const validation =
+        validateCreateWorldForm();
+
+    if (!validation.valid) {
+        showCreateWorldError(
+            validation.message
+        );
+
+        updateCreateWorldSubmitAvailability();
+        return;
+    }
+
+    const payload =
+        buildCreateWorldPayload();
+
+    if (!payload) {
+        showCreateWorldError(
+            "無法讀取建立世界表單"
+        );
+
+        return;
+    }
+
+    setCreateWorldSubmitting(
+        true
+    );
+
+    try {
+        const response =
+            await fetch(
+                "/api/worlds",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json",
+                    },
+
+                    body:
+                        JSON.stringify(
+                            payload
+                        ),
+
+                    cache: "no-store",
+                }
+            );
+
+        let data = null;
+
+        try {
+            data =
+                await response.json();
+
+        } catch {
+            data = null;
+        }
+
+        if (
+            !response.ok
+            || !data?.success
+        ) {
+            throw new Error(
+                data?.message
+                || "建立新世界失敗"
+            );
+        }
+
+        closeCreateWorldModal();
+
+        await loadWorlds();
+
+        await showInfo({
+            title: "世界建立完成",
+            message:
+                data.message
+                || (
+                    `已建立待生成世界：`
+                    + `${payload["level-name"]}`
+                ),
+            variant: "success",
+            confirmText: "確定",
+        });
+
+    } catch (error) {
+        console.error(
+            "建立新世界失敗：",
+            error
+        );
+
+        showCreateWorldError(
+            error.message
+            || "建立新世界失敗"
+        );
+
+    } finally {
+        setCreateWorldSubmitting(
+            false
         );
     }
 }
@@ -676,7 +1117,9 @@ async function loadWorlds() {
             : [];
 
         worldListLoaded = true;
+
         updateWorldCreateAvailability();
+        updateCreateWorldSubmitAvailability();
 
         worldIconCacheKey = Date.now();
 
@@ -718,6 +1161,8 @@ async function loadWorlds() {
         worldListLoaded = false;
 
         updateWorldCreateAvailability();
+
+        updateCreateWorldSubmitAvailability();
 
         const message =
             error.message || "讀取世界清單失敗";

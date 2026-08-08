@@ -587,8 +587,8 @@
 }
 
 .world-settings-world-item-more-button {
-    width: 30px;
-    height: 40px;
+    width: 28px;
+    height: 34px;
 
     display: flex;
     align-items: center;
@@ -596,8 +596,9 @@
 
     padding: 0;
 
-    background: transparent;
-    border: 0;
+    background: #303030;
+    border: 1px solid #555;
+    border-radius: 5px;
 
     color: #bbb;
     font-family: inherit;
@@ -608,7 +609,8 @@
 }
 
 .world-settings-world-item-more-button:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: #3a3a3a;
+    border-color: #666;
 
     color: #fff;
 }

@@ -39,6 +39,7 @@ def _empty_world_metadata() -> dict:
         "seed": None,
         "world_type": None,
         "generate_structures": None,
+        "play_time_ticks": None,
         "last_saved_at": None,
     }
 
@@ -597,6 +598,29 @@ def read_world_metadata(
         metadata["is_hardcore"] = bool(
             hardcore
         )
+
+
+    play_time = _tag_value(
+        data,
+        "Time",
+    )
+
+    if play_time is not None:
+        try:
+            play_time_ticks = int(
+                play_time
+            )
+
+            if play_time_ticks >= 0:
+                metadata[
+                    "play_time_ticks"
+                ] = play_time_ticks
+
+        except (
+            TypeError,
+            ValueError,
+        ):
+            pass
 
 
     last_played = _tag_value(

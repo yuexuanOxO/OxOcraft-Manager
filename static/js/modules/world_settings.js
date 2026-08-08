@@ -1912,6 +1912,14 @@ function renderSelectedWorldPreview(world) {
                 : "無法讀取"
         );
 
+        appendWorldDetail(
+            info,
+            "世界累計遊玩時間",
+            formatPlayTime(
+                metadata.play_time_ticks
+            ) || "無法讀取"
+        );
+
         appendSeedDetail(
             info,
             metadata.seed
@@ -2768,6 +2776,67 @@ function formatLastSaved(timestamp) {
             hourCycle: "h23",
         }
     ).format(date);
+}
+
+
+function formatPlayTime(
+    ticks
+) {
+    const numericTicks =
+        Number(ticks);
+
+    if (
+        !Number.isFinite(
+            numericTicks
+        )
+        || numericTicks < 0
+    ) {
+        return "";
+    }
+
+    const totalSeconds =
+        Math.floor(
+            numericTicks / 20
+        );
+
+    const days =
+        Math.floor(
+            totalSeconds / 86400
+        );
+
+    const hours =
+        Math.floor(
+            (
+                totalSeconds
+                % 86400
+            )
+            / 3600
+        );
+
+    const minutes =
+        Math.floor(
+            (
+                totalSeconds
+                % 3600
+            )
+            / 60
+        );
+
+    if (days > 0) {
+        return (
+            `${days} 天 `
+            + `${hours} 小時`
+        );
+    }
+
+    if (hours > 0) {
+        return (
+            `${hours} 小時 `
+            + `${minutes} 分鐘`
+        );
+    }
+
+    return `${minutes} 分鐘`;
 }
 
 

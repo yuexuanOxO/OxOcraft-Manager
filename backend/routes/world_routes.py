@@ -908,21 +908,15 @@ def api_switch_world(
                 current_folder_name,
             ) = _read_configured_level_name()
 
-            if current_folder_name is None:
-                return jsonify({
-                    "success": False,
-                    "message": (
-                        "目前 server.properties "
-                        "的 level-name 格式無效"
-                    ),
-                }), 409
-
             current_world_path = (
                 MC_ROOT / current_folder_name
+                if current_folder_name is not None
+                else None
             )
 
             current_world_is_valid = (
-                is_world_folder(
+                current_world_path is not None
+                and is_world_folder(
                     current_world_path
                 )
             )

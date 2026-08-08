@@ -109,6 +109,22 @@ function handleWorldSettingsServerStateChanged(
 
     updateWorldCreateAvailability();
     updateCreateWorldSubmitAvailability();
+
+    if (selectedWorldFolderName) {
+        const selectedWorld =
+            loadedWorlds.find(
+                world =>
+                    world.folder_name
+                    === selectedWorldFolderName
+            );
+
+        if (selectedWorld) {
+            renderSelectedWorldPreview(
+                selectedWorld
+            );
+        }
+    }
+
 }
 
 
@@ -1959,9 +1975,14 @@ function renderSelectedWorldPreview(world) {
         Boolean(pendingWorld)
         && !world.is_pending_generation;
 
+    const isSwitchBlockedByServerState =
+        worldSettingsServerState
+        !== "offline";
+
     switchButton.disabled =
         world.is_current
-        || isSwitchBlockedByPending;
+        || isSwitchBlockedByPending
+        || isSwitchBlockedByServerState;
 
     switchButton.textContent =
         world.is_current
@@ -1972,11 +1993,14 @@ function renderSelectedWorldPreview(world) {
             )
             : isSwitchBlockedByPending
                 ? "有世界等待生成"
-                : "切換至此世界";
+                : isSwitchBlockedByServerState
+                    ? "需伺服器離線才可切換"
+                    : "切換至此世界";
 
     if (
         !world.is_current
         && !isSwitchBlockedByPending
+        && !isSwitchBlockedByServerState
     ) {
         switchButton.addEventListener(
             "click",

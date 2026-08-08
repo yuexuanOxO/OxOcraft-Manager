@@ -638,31 +638,18 @@ def api_create_world():
                 current_folder_name,
             ) = _read_configured_level_name()
 
-            if current_folder_name is None:
-                return jsonify({
-                    "success": False,
-                    "message": (
-                        "目前 server.properties "
-                        "的 level-name 格式無效"
-                    ),
-                }), 409
-
             current_world_path = (
-                MC_ROOT
-                / current_folder_name
+                MC_ROOT / current_folder_name
+                if current_folder_name is not None
+                else None
             )
 
-            if not is_world_folder(
-                current_world_path
-            ):
-                return jsonify({
-                    "success": False,
-                    "message": (
-                        "目前使用中的世界存檔"
-                        "不存在或無法辨識，"
-                        "因此無法建立新世界"
-                    ),
-                }), 409
+            current_world_is_valid = (
+                current_world_path is not None
+                and is_world_folder(
+                    current_world_path
+                )
+            )
 
             current_properties = (
                 read_properties_file(
@@ -675,13 +662,15 @@ def api_create_world():
                 .read_bytes()
             )
 
-            # 確保目前世界已保存自己的生成參數。
-            load_or_create_world_properties(
-                current_world_path,
-                current_server_properties=(
-                    current_properties
-                ),
-            )
+            # 目前世界仍存在時，
+            # 才保存目前世界自己的生成參數。
+            if current_world_is_valid:
+                load_or_create_world_properties(
+                    current_world_path,
+                    current_server_properties=(
+                        current_properties
+                    ),
+                )
 
             target_world_path = (
                 MC_ROOT / folder_name

@@ -1577,12 +1577,21 @@ function renderWorldArchiveList(
 
         deleteButton.addEventListener(
             "click",
-            event => {
+            async event => {
                 event.stopPropagation();
 
-                console.log(
-                    "刪除世界：",
-                    world.folder_name
+                menu.classList.add(
+                    "hidden"
+                );
+
+                moreButton.setAttribute(
+                    "aria-expanded",
+                    "false"
+                );
+
+                await deleteWorld(
+                    world,
+                    deleteButton
                 );
             }
         );
@@ -1966,6 +1975,151 @@ function renderSelectedWorldPreview(world) {
     );
 
     detail.appendChild(preview);
+}
+
+
+async function deleteWorld(
+    world,
+    deleteButton
+) {
+    const folderName =
+        normalizeText(
+            world?.folder_name
+        );
+
+    if (!folderName) {
+        return;
+    }
+
+    const firstConfirmed =
+        await showConfirm({
+            title: "刪除世界",
+            message: (
+                `確定要刪除世界`
+                + `「${folderName}」嗎？\n\n`
+                + "刪除後世界會移至資源回收桶。"
+            ),
+            confirmText: "刪除",
+            cancelText: "取消",
+            variant: "warning",
+        });
+
+    if (!firstConfirmed) {
+        return;
+    }
+
+    if (world.is_current === true) {
+        const secondConfirmed =
+            await showConfirm({
+                title: "刪除目前使用中的世界",
+                message: (
+                    "你確定要刪除目前正在使用中的世界"
+                    + `「${folderName}」嗎？\n\n`
+                    + "刪除後將不會自動選擇其他世界，"
+                    + "必須重新建立或切換世界"
+                    + "才能啟動伺服器。"
+                ),
+                confirmText: "確定刪除",
+                cancelText: "取消",
+                variant: "danger",
+            });
+
+        if (!secondConfirmed) {
+            return;
+        }
+    }
+
+    deleteButton.disabled = true;
+    deleteButton.textContent =
+        "刪除中...";
+
+    try {
+        const encodedFolderName =
+            encodeURIComponent(
+                folderName
+            );
+
+        const response =
+            await fetch(
+                (
+                    `/api/worlds/`
+                    + encodedFolderName
+                ),
+                {
+                    method: "DELETE",
+                    cache: "no-store",
+                }
+            );
+
+        let data = null;
+
+        try {
+            data =
+                await response.json();
+
+        } catch {
+            data = null;
+        }
+
+        if (
+            !response.ok
+            || !data?.success
+        ) {
+            throw new Error(
+                data?.message
+                || "刪除世界失敗"
+            );
+        }
+
+        await loadWorlds();
+
+        let successMessage =
+            data.message
+            || (
+                `世界「${folderName}」`
+                + "已移至資源回收桶"
+            );
+
+        if (
+            data.auto_backup_disabled
+            === true
+        ) {
+            successMessage += (
+                "\n\n因目前使用中的世界已刪除，"
+                + "自動備份已關閉。"
+            );
+        }
+
+        await showInfo({
+            title: "世界刪除完成",
+            message: successMessage,
+            variant: "success",
+            confirmText: "確定",
+        });
+
+    } catch (error) {
+        console.error(
+            "刪除世界失敗：",
+            error
+        );
+
+        await showInfo({
+            title: "刪除世界失敗",
+            message:
+                error.message
+                || "無法刪除世界",
+            variant: "error",
+            confirmText: "確定",
+        });
+
+        if (
+            deleteButton.isConnected
+        ) {
+            deleteButton.disabled = false;
+            deleteButton.textContent =
+                "刪除世界";
+        }
+    }
 }
 
 

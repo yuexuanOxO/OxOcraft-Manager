@@ -926,6 +926,23 @@ def api_create_world():
 
             lock_current_world_path()
 
+            auto_backup_disabled = (
+                disable_auto_backup_for_world_change()
+            )
+
+            if auto_backup_disabled:
+                create_notification(
+                    title="自動備份已關閉",
+                    message=(
+                        "因已建立新的待生成世界，"
+                        "自動備份已自動關閉。"
+                        "請待世界完成生成後"
+                        "重新設定自動備份。"
+                    ),
+                    type="warning",
+                    source="world_settings",
+                )
+
             return jsonify({
                 "success": True,
                 "message": (
@@ -938,6 +955,8 @@ def api_create_world():
                     current_level_name,
                 "level_name":
                     folder_name,
+                "auto_backup_disabled":
+                    auto_backup_disabled,
                 "world": {
                     "folder_name":
                         folder_name,

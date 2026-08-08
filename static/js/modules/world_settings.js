@@ -826,14 +826,28 @@ async function submitCreateWorldForm() {
 
         await loadWorlds();
 
+        let successMessage =
+            data.message
+            || (
+                `已建立待生成世界：`
+                + `${payload["level-name"]}`
+            );
+
+        if (
+            data.auto_backup_disabled
+            === true
+        ) {
+            successMessage += (
+                "\n\n因目前世界已變更，"
+                + "自動備份已關閉。"
+                + "請待世界完成生成後"
+                + "重新設定自動備份。"
+            );
+        }
+
         await showInfo({
             title: "世界建立完成",
-            message:
-                data.message
-                || (
-                    `已建立待生成世界：`
-                    + `${payload["level-name"]}`
-                ),
+            message: successMessage,
             variant: "success",
             confirmText: "確定",
         });

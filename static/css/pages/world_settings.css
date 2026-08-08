@@ -587,8 +587,8 @@
 }
 
 .world-settings-world-item-more-button {
-    width: 36px;
-    height: 44px;
+    width: 30px;
+    height: 40px;
 
     display: flex;
     align-items: center;
@@ -596,11 +596,10 @@
 
     padding: 0;
 
-    background: #303030;
-    border: 1px solid #555;
-    border-radius: 6px;
+    background: transparent;
+    border: 0;
 
-    color: #ccc;
+    color: #bbb;
     font-family: inherit;
     font-size: 24px;
     line-height: 1;
@@ -609,8 +608,7 @@
 }
 
 .world-settings-world-item-more-button:hover {
-    background: #3a3a3a;
-    border-color: #666;
+    background: rgba(255, 255, 255, 0.06);
 
     color: #fff;
 }
@@ -724,6 +722,12 @@
 
 .world-settings-world-item-meta-value {
     color: #aaa;
+}
+
+.world-settings-world-item:has(
+    .world-settings-world-item-menu:not(.hidden)
+) {
+    z-index: 50;
 }
 
 .world-settings-world-current-badge {

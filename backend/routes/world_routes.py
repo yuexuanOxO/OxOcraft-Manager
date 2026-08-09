@@ -1209,9 +1209,35 @@ def api_switch_world(
                 )
             )
 
-            next_properties[
-                "level-name"
-            ] = target_world_path.name
+            # difficulty 屬於世界實際狀態，
+            # 切換時直接從目標世界的 level.dat 取得。
+            target_metadata = (
+                read_world_metadata(
+                    target_world_path
+                )
+            )
+
+            target_difficulty = (
+                target_metadata.get(
+                    "difficulty"
+                )
+            )
+
+            target_is_hardcore = bool(
+                target_metadata.get(
+                    "is_hardcore",
+                    False,
+                )
+            )
+
+            if target_is_hardcore:
+                # 極限模式固定使用困難難度。
+                next_properties["difficulty"] = "hard"
+
+            elif target_difficulty:
+                next_properties["difficulty"] = target_difficulty
+
+            next_properties["level-name"] = target_world_path.name
 
             try:
                 properties_lines = (

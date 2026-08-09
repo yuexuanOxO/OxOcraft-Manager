@@ -614,7 +614,7 @@ function renderServerSettings() {
             if (isLocked) {
                 select.disabled = true;
                 select.classList.add("locked");
-                select.title = lockedReason;
+                selectWrap.dataset.mcTooltip = "極限模式已開啟，遊戲難度鎖定成困難";
             }
 
             const currentValue = serverSettingsState[field.key] || "";

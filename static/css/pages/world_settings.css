@@ -1510,3 +1510,10 @@
 
     image-rendering: pixelated;
 }
+
+.world-settings-create-textarea:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    background: #181818;
+    color: #777;
+}

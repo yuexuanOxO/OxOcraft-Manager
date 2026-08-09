@@ -273,30 +273,19 @@
                                 class="world-settings-create-field is-full-width"
                                 for="worldSettingsCreateType"
                             >
-                                <span class="world-settings-create-label">
-                                    世界類型
-                                </span>
+                                <span class="world-settings-create-label">世界類型</span>
 
                                 <select
                                     id="worldSettingsCreateType"
                                     name="level-type"
                                     class="world-settings-create-select"
                                 >
-                                    <option value="minecraft:normal">
-                                        預設
-                                    </option>
+                                    <option value="minecraft:normal">預設</option>
+                                    <option value="minecraft:flat">超平坦</option>
+                                    <option value="minecraft:large_biomes">大型生態域</option>
+                                    <option value="minecraft:amplified">巨大化世界</option>
+                                    <option value="minecraft:single_biome_surface">單一生態域</option>
 
-                                    <option value="minecraft:flat">
-                                        超平坦
-                                    </option>
-
-                                    <option value="minecraft:large_biomes">
-                                        巨型生態域
-                                    </option>
-
-                                    <option value="minecraft:amplified">
-                                        巨大化世界
-                                    </option>
                                 </select>
                             </label>
 
@@ -304,13 +293,8 @@
 
                                 <div class="world-settings-create-switch-info">
 
-                                    <div class="world-settings-create-label">
-                                        生成結構
-                                    </div>
-
-                                    <div class="world-settings-create-help">
-                                        生成村莊、要塞等世界結構。
-                                    </div>
+                                    <div class="world-settings-create-label">生成結構</div>
+                                    <div class="world-settings-create-help">生成村莊、要塞等世界結構。</div>
 
                                 </div>
 
@@ -335,9 +319,7 @@
                                         <span class="setting-switch-thumb"></span>
                                     </span>
 
-                                    <span class="setting-switch-text">
-                                        開啟
-                                    </span>
+                                    <span class="setting-switch-text">開啟</span>
                                 </button>
 
                             </div>
@@ -426,11 +408,11 @@
                                     class="world-settings-create-textarea"
                                     rows="5"
                                     spellcheck="false"
+                                    disabled
                                 >{}</textarea>
 
-                                <span class="world-settings-create-help">
-                                    一般世界請保留 {}，只有自訂生成器或特殊世界需要修改。
-                                </span>
+                                <span class="world-settings-create-help">僅超平坦與單一生態域世界可設定。</span>
+                                
                             </label>
 
                             <label

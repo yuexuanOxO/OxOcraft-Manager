@@ -208,10 +208,9 @@ function setupCreateWorldModal() {
             "worldSettingsCreateAdvancedToggle"
         );
 
-    const advancedContent =
-        document.getElementById(
-            "worldSettingsCreateAdvanced"
-        );
+    const advancedContent =document.getElementById("worldSettingsCreateAdvanced");
+
+    const typeSelect = document.getElementById("worldSettingsCreateType");
 
     if (
         !openButton
@@ -224,6 +223,15 @@ function setupCreateWorldModal() {
     ) {
         return;
     }
+
+    typeSelect?.addEventListener(
+        "change",
+        () => {
+            updateCreateWorldGeneratorSettingsState();
+            clearCreateWorldError();
+            updateCreateWorldSubmitAvailability();
+        }
+    );
 
     openButton.addEventListener(
         "click",
@@ -395,6 +403,44 @@ function closeCreateWorldModal() {
 }
 
 
+function updateCreateWorldGeneratorSettingsState() {
+    const typeSelect =
+        document.getElementById(
+            "worldSettingsCreateType"
+        );
+
+    const generatorSettings =
+        document.getElementById(
+            "worldSettingsCreateGeneratorSettings"
+        );
+
+    if (
+        !typeSelect
+        || !generatorSettings
+    ) {
+        return;
+    }
+
+    const worldType =
+        String(
+            typeSelect.value
+            || "minecraft:normal"
+        );
+
+    const canEdit =
+        worldType === "minecraft:flat"
+        || worldType
+            === "minecraft:single_biome_surface";
+
+    generatorSettings.disabled =
+        !canEdit;
+
+    if (!canEdit) {
+        generatorSettings.value = "{}";
+    }
+}
+
+
 function resetCreateWorldForm() {
     const form =
         document.getElementById(
@@ -429,6 +475,8 @@ function resetCreateWorldForm() {
     createWorldSubmitting = false;
 
     form?.reset();
+
+    updateCreateWorldGeneratorSettingsState();
 
     setCreateWorldSwitch(
         structuresSwitch,
@@ -550,43 +598,57 @@ function validateCreateWorldForm() {
         };
     }
 
-    const generatorSettingsText =
+    const worldType =
         String(
             formData.get(
-                "generator-settings"
-            ) || ""
-        ).trim();
+                "level-type"
+            ) || "minecraft:normal"
+        );
 
-    let generatorSettings;
+    const generatorSettingsEnabled =
+        worldType === "minecraft:flat"
+        || worldType
+            === "minecraft:single_biome_surface";
 
-    try {
-        generatorSettings =
-            JSON.parse(
-                generatorSettingsText
-                || "{}"
-            );
+    if (generatorSettingsEnabled) {
+        const generatorSettingsText =
+            String(
+                formData.get(
+                    "generator-settings"
+                ) || ""
+            ).trim();
 
-    } catch {
-        return {
-            valid: false,
-            message:
-                "世界生成設定不是合法 JSON",
-        };
-    }
+        let generatorSettings;
 
-    if (
-        typeof generatorSettings
-            !== "object"
-        || generatorSettings === null
-        || Array.isArray(
-            generatorSettings
-        )
-    ) {
-        return {
-            valid: false,
-            message:
-                "世界生成設定必須是 JSON 物件",
-        };
+        try {
+            generatorSettings =
+                JSON.parse(
+                    generatorSettingsText
+                    || "{}"
+                );
+
+        } catch {
+            return {
+                valid: false,
+                message:
+                    "世界生成設定不是合法 JSON",
+            };
+        }
+
+        if (
+            typeof generatorSettings
+                !== "object"
+            || generatorSettings === null
+            || Array.isArray(
+                generatorSettings
+            )
+        ) {
+            return {
+                valid: false,
+                message:
+                    "世界生成設定必須是 JSON 物件",
+            };
+        }
     }
 
     return {
@@ -609,12 +671,26 @@ function buildCreateWorldPayload() {
     const formData =
         new FormData(form);
 
-    const generatorSettingsText =
+    const worldType =
         String(
             formData.get(
-                "generator-settings"
-            ) || ""
-        ).trim();
+                "level-type"
+            ) || "minecraft:normal"
+        );
+
+    const generatorSettingsEnabled =
+        worldType === "minecraft:flat"
+        || worldType
+            === "minecraft:single_biome_surface";
+
+    const generatorSettingsText =
+        generatorSettingsEnabled
+            ? String(
+                formData.get(
+                    "generator-settings"
+                ) || ""
+            ).trim()
+            : "{}";
 
     return {
         "level-name":
@@ -633,12 +709,7 @@ function buildCreateWorldPayload() {
                 ) || ""
             ),
 
-        "level-type":
-            String(
-                formData.get(
-                    "level-type"
-                ) || "minecraft:normal"
-            ),
+        "level-type":worldType,
 
         "generator-settings":
             JSON.parse(

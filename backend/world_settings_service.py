@@ -26,6 +26,7 @@ ALLOWED_WORLD_TYPES = {
     "minecraft:flat",
     "minecraft:large_biomes",
     "minecraft:amplified",
+    "minecraft:single_biome_surface",
 }
 
 METADATA_WORLD_TYPES = {
@@ -33,6 +34,8 @@ METADATA_WORLD_TYPES = {
     "flat": "minecraft:flat",
     "large_biomes": "minecraft:large_biomes",
     "amplified": "minecraft:amplified",
+    "single_biome_surface":
+        "minecraft:single_biome_surface",
 }
 
 

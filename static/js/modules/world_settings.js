@@ -1200,34 +1200,22 @@ async function loadWorlds() {
                 world => world.is_current
             ) || null;
 
-        renderCurrentWorld(
-            currentWorld,
-            data.current_level_name
-        );
+        renderCurrentWorld(currentWorld,data.current_level_name);
 
-        renderWorldArchiveList(
-            loadedWorlds
-        );
+        renderWorldArchiveList(loadedWorlds);
 
-        const initialWorld =
-            currentWorld || loadedWorlds[0];
+        const initialWorld = currentWorld || loadedWorlds[0];
 
         if (initialWorld) {
-            selectWorld(
-                initialWorld.folder_name
-            );
+            selectWorld(initialWorld.folder_name);
         } else {
-            showContainerMessage(
-                detail,
-                "找不到可顯示的世界存檔"
-            );
+            showContainerMessage(detail,"找不到可顯示的世界存檔");
         }
 
+        loadWorldSizes();
+
     } catch (error) {
-        console.error(
-            "讀取世界清單失敗：",
-            error
-        );
+        console.error("讀取世界清單失敗：",error);
 
         loadedWorlds = [];
         worldListLoaded = false;
@@ -1253,6 +1241,77 @@ async function loadWorlds() {
             detail,
             message
         );
+    }
+}
+
+
+async function loadWorldSizes() {
+    for (const world of loadedWorlds) {
+        const folderName =
+            normalizeText(
+                world.folder_name
+            );
+
+        if (!folderName) {
+            continue;
+        }
+
+        try {
+            const response =
+                await fetch(
+                    (
+                        `/api/worlds/`
+                        + encodeURIComponent(
+                            folderName
+                        )
+                        + "/size"
+                    ),
+                    {
+                        cache: "no-store",
+                    }
+                );
+
+            const data =
+                await response.json();
+
+            if (
+                !response.ok
+                || !data?.success
+            ) {
+                console.warn(
+                    "讀取世界容量失敗：",
+                    folderName,
+                    data?.message
+                );
+
+                continue;
+            }
+
+            const targetWorld =
+                loadedWorlds.find(
+                    item =>
+                        item.folder_name
+                        === folderName
+                );
+
+            if (!targetWorld) {
+                continue;
+            }
+
+            targetWorld.size_bytes =
+                data.size_bytes;
+
+            updateWorldSizeDisplay(
+                targetWorld
+            );
+
+        } catch (error) {
+            console.warn(
+                "讀取世界容量失敗：",
+                folderName,
+                error
+            );
+        }
     }
 }
 
@@ -1395,9 +1454,13 @@ function renderWorldArchiveList(
             ) || "未知版本";
 
         const fileSize =
-            formatFileSize(
-                world.size_bytes
-            ) || "容量未知";
+            world.size_bytes == null
+                ? "計算中..."
+                : (
+                    formatFileSize(
+                        world.size_bytes
+                    ) || "容量未知"
+                );
 
         const lastSaved =
             formatLastSaved(
@@ -1435,44 +1498,34 @@ function renderWorldArchiveList(
                     ],
                 ];
 
-        metaEntries.forEach(
-            ([labelText, valueText]) => {
-                const entry =
-                    document.createElement("span");
+        metaEntries.forEach(([labelText, valueText]) => {
+                const entry = document.createElement("span");
 
-                entry.className =
-                    "world-settings-world-item-meta-entry";
+                entry.className = "world-settings-world-item-meta-entry";
 
-                const label =
-                    document.createElement("span");
+                const label = document.createElement("span");
 
-                label.className =
-                    "world-settings-world-item-meta-label";
+                label.className = "world-settings-world-item-meta-label";
 
-                label.textContent =
-                    `${labelText}：`;
+                label.textContent = `${labelText}：`;
 
-                const value =
-                    document.createElement("span");
+                const value = document.createElement("span");
 
-                value.className =
-                    "world-settings-world-item-meta-value";
+                value.className = "world-settings-world-item-meta-value";
+
+                if (labelText === "容量") {
+                    value.dataset.worldSizeFor = world.folder_name;
+                }
 
                 value.textContent = valueText;
 
-                entry.append(
-                    label,
-                    value
-                );
+                entry.append(label,value);
 
                 meta.appendChild(entry);
             }
         );
 
-        content.append(
-            nameRow,
-            meta
-        );
+        content.append(nameRow,meta);
 
         const actions =
             document.createElement("div");
@@ -1853,9 +1906,13 @@ function renderSelectedWorldPreview(world) {
         appendWorldDetail(
             info,
             "目前容量",
-            formatFileSize(
-                world.size_bytes
-            ) || "0 B"
+            world.size_bytes == null
+                ? "計算中..."
+                : (
+                    formatFileSize(
+                        world.size_bytes
+                    ) || "0 B"
+                )
         );
 
     } else {
@@ -1936,9 +1993,13 @@ function renderSelectedWorldPreview(world) {
         appendWorldDetail(
             info,
             "存檔容量",
-            formatFileSize(
-                world.size_bytes
-            ) || "無法讀取"
+            world.size_bytes == null
+                ? "計算中..."
+                : (
+                    formatFileSize(
+                        world.size_bytes
+                    ) || "無法讀取"
+                )
         );
 
         appendWorldDetail(
@@ -3084,4 +3145,44 @@ function renderCurrentWorld(
     );
 
     list.appendChild(card);
+}
+
+
+function updateWorldSizeDisplay(
+    world
+) {
+    const formattedSize =
+        formatFileSize(
+            world.size_bytes
+        ) || "容量未知";
+
+    document
+        .querySelectorAll(
+            "[data-world-size-for]"
+        )
+        .forEach(element => {
+            if (
+                element.dataset.worldSizeFor
+                === world.folder_name
+            ) {
+                element.textContent =
+                    formattedSize;
+            }
+        });
+
+    if (
+        selectedWorldFolderName
+        === world.folder_name
+    ) {
+        renderSelectedWorldPreview(
+            world
+        );
+    }
+
+    if (world.is_current) {
+        renderCurrentWorld(
+            world,
+            world.level_name
+        );
+    }
 }

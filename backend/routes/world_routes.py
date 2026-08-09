@@ -507,11 +507,7 @@ def api_current_world():
             )
         )
 
-        world_size_bytes = (
-            get_folder_size(world_path)
-            if folder_exists
-            else None
-        )
+        world_size_bytes = None
 
         world_metadata = (
             read_world_metadata(world_path)
@@ -619,9 +615,7 @@ def api_world_list():
                 "folder_exists": True,
                 "is_valid_world": is_valid_world,
                 "is_pending_generation": is_pending_generation,
-                "size_bytes": get_folder_size(
-                    world_path
-                ),
+                "size_bytes": None,
                 "player_count": (
                     count_world_players(
                         world_path
@@ -659,6 +653,69 @@ def api_world_list():
         return jsonify({
             "success": False,
             "message": f"讀取世界清單失敗：{error}",
+        }), 500
+
+
+@world_bp.route(
+    "/api/worlds/<string:folder_name>/size"
+)
+def api_world_size(
+    folder_name: str,
+):
+    try:
+        world_path = (
+            MC_ROOT / folder_name
+        )
+
+        resolved_world_path = (
+            world_path.resolve()
+        )
+
+        resolved_mc_root = (
+            MC_ROOT.resolve()
+        )
+
+        if (
+            resolved_world_path.parent
+            != resolved_mc_root
+        ):
+            return jsonify({
+                "success": False,
+                "message": "世界路徑無效",
+            }), 400
+
+        if (
+            not is_world_folder(
+                world_path
+            )
+            and not _is_pending_world_folder(
+                world_path
+            )
+        ):
+            return jsonify({
+                "success": False,
+                "message": "找不到世界存檔",
+            }), 404
+
+        size_bytes = get_folder_size(
+            world_path
+        )
+
+        return jsonify({
+            "success": True,
+            "folder_name":
+                folder_name,
+            "size_bytes":
+                size_bytes,
+        })
+
+    except OSError as error:
+        return jsonify({
+            "success": False,
+            "message": (
+                "讀取世界容量失敗："
+                f"{error}"
+            ),
         }), 500
 
 

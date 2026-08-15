@@ -207,7 +207,7 @@ def maybe_refresh_player_ban_from_log(line: str) -> None:
                 create_notification(
                     title="玩家黑名單已更新",
                     message=(
-                        f"{operator_name} 已封鎖玩家 {target_name}"
+                        f"{operator_name} 已封鎖玩家 {target_name}。"
                     ),
                     type="warning",
                     source="player_ban",
@@ -225,7 +225,7 @@ def maybe_refresh_player_ban_from_log(line: str) -> None:
 
                 create_notification(
                     title="玩家黑名單已更新",
-                    message=f"{operator_name} 解除了玩家 {target_name} 的封鎖",
+                    message=f"{operator_name} 解除了玩家 {target_name} 的封鎖。",
                     type="success",
                     source="player_ban",
                 )
@@ -325,7 +325,7 @@ def maybe_refresh_ip_ban_from_log(line: str) -> None:
 
                 create_notification(
                     title="IP 黑名單已更新",
-                    message=f"{operator_name} 封鎖了 IP {ip}",
+                    message=f"{operator_name} 封鎖了 IP {ip}。",
                     type="warning",
                     source="player_ban",
                 )
@@ -341,7 +341,7 @@ def maybe_refresh_ip_ban_from_log(line: str) -> None:
 
                 create_notification(
                     title="IP 黑名單已更新",
-                    message=f"{operator_name} 解除了 IP {ip} 的封鎖",
+                    message=f"{operator_name} 解除了 IP {ip} 的封鎖。",
                     type="success",
                     source="player_ban",
                 )
@@ -427,10 +427,10 @@ def maybe_refresh_player_permission_from_log(line: str) -> None:
         )
 
         if action == "add":
-            message = f"{operator_name} 將 {target_name} 設為管理員"
+            message = f"{operator_name} 將 {target_name} 設為管理員。"
             notification_type = "info"
         else:
-            message = f"{operator_name} 收回了 {target_name} 的管理員權限"
+            message = f"{operator_name} 收回了 {target_name} 的管理員權限。"
             notification_type = "warning"
 
         create_notification(
@@ -511,7 +511,7 @@ def maybe_refresh_player_whitelist_from_log(line: str) -> None:
                     message=(
                         f"{operator_name} 重新載入白名單，"
                         f"新增 {result['added_count']} 位，"
-                        f"移除 {result['removed_count']} 位"
+                        f"移除 {result['removed_count']} 位。"
                     ),
                     type="info",
                     source="player_whitelist",
@@ -570,10 +570,10 @@ def maybe_refresh_player_whitelist_from_log(line: str) -> None:
 
         if source != "ui":
             if action == "add":
-                message = f"{operator_name} 將 {target_name} 加入白名單"
+                message = f"{operator_name} 將 {target_name} 加入白名單。"
                 notification_type = "success"
             else:
-                message = f"{operator_name} 將 {target_name} 移出白名單"
+                message = f"{operator_name} 將 {target_name} 移出白名單。"
                 notification_type = "warning"
 
             create_notification(

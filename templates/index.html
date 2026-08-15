@@ -98,15 +98,135 @@
         </div>
 
         <div id="notificationPanel" class="notification-panel hidden">
+
             <div class="notification-panel-header">
-                <div class="notification-panel-title">通知紀錄</div>
+
+                <div class="notification-panel-title">
+                    通知紀錄
+                </div>
+
+                <div class="notification-category-bar">
+
+                    <button
+                        id="notificationCategoryPrev"
+                        class="notification-category-arrow"
+                        type="button"
+                        aria-label="向左捲動通知分類"
+                    >
+                        &lt;
+                    </button>
+
+                    <div
+                        id="notificationCategoryScroll"
+                        class="notification-category-scroll"
+                    >
+
+                        <button
+                            class="notification-category-btn active"
+                            type="button"
+                            data-source=""
+                            data-mc-tooltip="全部通知"
+                            aria-label="全部通知"
+                        >
+                            <img
+                                src="{{ url_for('static', filename='icons/notification/notify.png') }}"
+                                alt=""
+                            >
+                        </button>
+
+                        <button
+                            class="notification-category-btn"
+                            type="button"
+                            data-source="backup"
+                            data-mc-tooltip="備份管理"
+                            aria-label="備份管理"
+                        >
+                            <img
+                                src="{{ url_for('static', filename='icons/feature_button/save_16b.png') }}"
+                                alt=""
+                            >
+                        </button>
+
+                        <button
+                            class="notification-category-btn"
+                            type="button"
+                            data-source="player_whitelist"
+                            data-mc-tooltip="白名單"
+                            aria-label="白名單"
+                        >
+                            <img
+                                src="{{ url_for('static', filename='icons/feature_button/paper.png') }}"
+                                alt=""
+                            >
+                        </button>
+
+                        <button
+                            class="notification-category-btn"
+                            type="button"
+                            data-source="player_ban"
+                            data-mc-tooltip="黑名單"
+                            aria-label="黑名單"
+                        >
+                            <img
+                                src="{{ url_for('static', filename='icons/feature_button/barrier.png') }}"
+                                alt=""
+                            >
+                        </button>
+
+                        <button
+                            class="notification-category-btn"
+                            type="button"
+                            data-source="player_permission"
+                            data-mc-tooltip="權限管理"
+                            aria-label="權限管理"
+                        >
+                            <img
+                                src="{{ url_for('static', filename='icons/feature_button/command_block.gif') }}"
+                                alt=""
+                            >
+                        </button>
+
+                        <button
+                            class="notification-category-btn"
+                            type="button"
+                            data-source="world_settings"
+                            data-mc-tooltip="世界設定"
+                            aria-label="世界設定"
+                        >
+                            <img
+                                src="{{ url_for('static', filename='icons/feature_button/grass_block _btn.png') }}"
+                                alt=""
+                            >
+                        </button>
+
+                    </div>
+
+                    <button
+                        id="notificationCategoryNext"
+                        class="notification-category-arrow"
+                        type="button"
+                        aria-label="向右捲動通知分類"
+                    >
+                        &gt;
+                    </button>
+
+                </div>
+
             </div>
 
-            <div id="notificationList" class="notification-list"></div>
+            <div
+                id="notificationList"
+                class="notification-list"
+            ></div>
 
-            <button id="loadMoreNotificationsBtn" class="notification-load-more-btn" type="button">
+            <button
+                id="loadMoreNotificationsBtn"
+                class="notification-load-more-btn"
+                type="button"
+            >
                 顯示更早之前的通知
             </button>
+
         </div>
 
 

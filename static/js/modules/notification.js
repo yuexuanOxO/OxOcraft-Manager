@@ -1,8 +1,48 @@
+import {
+    initMinecraftTooltip,
+} from "./common/mc_tooltip.js";
+
+
 let notificationOffset = 0;
 let notificationEventSource = null;
 let notificationSseReconnectTimer = null;
 let notificationSseStopped = false;
+
+let selectedNotificationSource = "";
+
 const notificationLimit = 10;
+
+const NOTIFICATION_SOURCE_META = {
+    backup: {
+        label: "備份管理",
+        icon: "/static/icons/feature_button/save_16b.png",
+    },
+
+    player_whitelist: {
+        label: "白名單",
+        icon: "/static/icons/feature_button/paper.png",
+    },
+
+    player_ban: {
+        label: "黑名單",
+        icon: "/static/icons/feature_button/barrier.png",
+    },
+
+    player_permission: {
+        label: "權限管理",
+        icon: "/static/icons/feature_button/command_block.gif",
+    },
+
+    world_settings: {
+        label: "世界設定",
+        icon: "/static/icons/feature_button/grass_block%20_btn.png",
+    },
+};
+
+const DEFAULT_NOTIFICATION_SOURCE_META = {
+    label: "系統通知",
+    icon: "/static/icons/notification/notify.png",
+};
 
 
 function getNotificationElements() {
@@ -12,6 +52,15 @@ function getNotificationElements() {
         list: document.getElementById("notificationList"),
         exclamation: document.getElementById("notificationExclamation"),
         loadMoreBtn: document.getElementById("loadMoreNotificationsBtn"),
+
+        categoryScroll:
+            document.getElementById("notificationCategoryScroll"),
+
+        categoryPrev:
+            document.getElementById("notificationCategoryPrev"),
+
+        categoryNext:
+            document.getElementById("notificationCategoryNext"),
     };
 }
 
@@ -25,13 +74,40 @@ function escapeHtml(value) {
 }
 
 function renderNotificationItem(item) {
-    const type = item.type || "info";
+    const sourceMeta =
+        NOTIFICATION_SOURCE_META[item.source]
+        || DEFAULT_NOTIFICATION_SOURCE_META;
 
     return `
-        <div class="notification-item ${escapeHtml(type)}">
-            <div class="notification-item-title">${escapeHtml(item.title)}</div>
-            <div class="notification-item-message">${escapeHtml(item.message)}</div>
-            <div class="notification-item-time">${escapeHtml(item.created_at)}</div>
+        <div class="notification-item">
+
+            <div class="notification-item-icon">
+                <img
+                    src="${escapeHtml(sourceMeta.icon)}"
+                    alt=""
+                >
+            </div>
+
+            <div class="notification-item-content">
+
+                <div class="notification-item-source">
+                    ${escapeHtml(sourceMeta.label)}
+                </div>
+
+                <div class="notification-item-title">
+                    ${escapeHtml(item.title)}
+                </div>
+
+                <div class="notification-item-message">
+                    ${escapeHtml(item.message)}
+                </div>
+
+                <div class="notification-item-time">
+                    ${escapeHtml(item.created_at)}
+                </div>
+
+            </div>
+
         </div>
     `;
 }
@@ -144,10 +220,95 @@ function connectNotificationEvents() {
 }
 
 
+function setupNotificationCategoryScroll() {
+    const {
+        categoryScroll,
+        categoryPrev,
+        categoryNext,
+    } = getNotificationElements();
+
+    if (!categoryScroll) {
+        return;
+    }
+
+    const categoryButtons =
+        categoryScroll.querySelectorAll(
+            ".notification-category-btn"
+        );
+
+    const scrollAmount = 96;
+
+    categoryPrev?.addEventListener(
+        "click",
+        () => {
+            categoryScroll.scrollBy({
+                left: -scrollAmount,
+                behavior: "smooth",
+            });
+        }
+    );
+
+    categoryNext?.addEventListener(
+        "click",
+        () => {
+            categoryScroll.scrollBy({
+                left: scrollAmount,
+                behavior: "smooth",
+            });
+        }
+    );
+
+    categoryScroll.addEventListener(
+        "wheel",
+        (event) => {
+            const delta =
+                event.deltaY !== 0
+                    ? event.deltaY
+                    : event.deltaX;
+
+            if (delta === 0) {
+                return;
+            }
+
+            event.preventDefault();
+
+            categoryScroll.scrollLeft += delta;
+        },
+        {
+            passive: false,
+        }
+    );
+
+    categoryButtons.forEach((button) => {
+        button.addEventListener(
+            "click",
+            () => {
+                selectedNotificationSource =
+                    button.dataset.source || "";
+
+                categoryButtons.forEach(
+                    (categoryButton) => {
+                        categoryButton.classList.toggle(
+                            "active",
+                            categoryButton === button
+                        );
+                    }
+                );
+            }
+        );
+    });
+
+
+}
+
+
 export function initNotificationUI() {
     const { bell, panel, loadMoreBtn } = getNotificationElements();
 
     if (!bell || !panel) return;
+
+    initMinecraftTooltip();
+    setupNotificationCategoryScroll();
 
     bell.addEventListener("click", async () => {
         const willOpen = panel.classList.contains("hidden");

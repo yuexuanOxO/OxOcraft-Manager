@@ -71,9 +71,10 @@
 }
 
 .notification-panel-header{
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
+    gap: 10px;
 
     margin-bottom: 10px;
 }
@@ -82,6 +83,113 @@
     color: #65ff65;
     font-size: 20px;
     font-weight: bold;
+}
+
+.notification-category-bar{
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) 28px;
+    align-items: center;
+
+    min-width: 0;
+    height: 34px;
+
+    background: #151515;
+
+    border: 1px solid #444;
+
+    box-sizing: border-box;
+}
+
+.notification-category-scroll{
+    display: flex;
+    align-items: center;
+    gap: 2px;
+
+    min-width: 0;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+/* 覆蓋全域 Minecraft scrollbar */
+.notification-category-scroll::-webkit-scrollbar{
+    display: none;
+
+    width: 0;
+    height: 0;
+}
+
+.notification-category-btn{
+    flex: 0 0 32px;
+
+    width: 32px;
+    height: 32px;
+
+    padding: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: transparent;
+
+    border: 0;
+
+    box-sizing: border-box;
+
+    cursor: pointer;
+}
+
+.notification-category-btn:hover{
+    background: #252525;
+}
+
+.notification-category-btn.active{
+    background: #263326;
+
+    box-shadow:
+        inset 0 -2px 0 #65ff65;
+}
+
+.notification-category-btn img{
+    width: 16px;
+    height: 16px;
+
+    object-fit: contain;
+
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+
+    pointer-events: none;
+}
+
+.notification-category-arrow{
+    width: 28px;
+    height: 32px;
+
+    padding: 0;
+
+    background: transparent;
+
+    border: 0;
+
+    color: #aaa;
+
+    font-size: 18px;
+    line-height: 1;
+
+    cursor: pointer;
+}
+
+.notification-category-arrow:hover{
+    background: #252525;
+    color: #fff;
 }
 
 .notification-list{
@@ -96,49 +204,80 @@
 }
 
 .notification-item{
-    position: relative;
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 10px;
+
+    align-items: start;
 
     padding: 12px;
 
-    background: #111;
-
-    border: 1px solid #2a2a2a;
+    background: #151515;
+    border: 1px solid #363636;
 
     box-sizing: border-box;
 }
 
-.notification-item.warning{
-    border-left: 4px solid #d6a23a;
+.notification-item-icon{
+    width: 32px;
+    height: 32px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #1c1c1c;
+
+    box-sizing: border-box;
 }
 
-.notification-item.error{
-    border-left: 4px solid #d85a5a;
+.notification-item-icon img{
+    width: 32px;
+    height: 32px;
+
+    object-fit: contain;
+
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
 }
 
-.notification-item.success{
-    border-left: 4px solid #5ac85a;
+.notification-item-content{
+    min-width: 0;
 }
 
-.notification-item.info{
-    border-left: 4px solid #5aa8d8;
+.notification-item-source{
+    color: #8d8d8d;
+
+    font-size: 12px;
+    font-weight: bold;
+
+    margin-bottom: 4px;
 }
 
 .notification-item-title{
     color: #fff;
+
     font-size: 15px;
     font-weight: bold;
-    margin-bottom: 4px;
+
+    margin-bottom: 6px;
 }
 
 .notification-item-message{
     color: #ccc;
+
     font-size: 13px;
-    word-break: break-all;
+
+    line-height: 1.4;
+
+    overflow-wrap: anywhere;
 }
 
 .notification-item-time{
-    margin-top: 6px;
+    margin-top: 8px;
+
     color: #777;
+
     font-size: 12px;
 }
 
@@ -161,9 +300,5 @@
     cursor: pointer;
 }
 
-/* .notification-bell.has-unread .notification-bell-icon{
-    filter:
-        drop-shadow(0 0 4px #ffcc33)
-        drop-shadow(0 0 10px #ffcc33);
-} */
+
 

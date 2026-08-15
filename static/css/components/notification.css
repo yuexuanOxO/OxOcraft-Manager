@@ -205,8 +205,13 @@
 
 .notification-item{
     display: grid;
-    grid-template-columns: 42px minmax(0, 1fr);
-    gap: 10px;
+    grid-template-columns: 32px minmax(0, 1fr);
+    grid-template-areas:
+        "icon meta"
+        "body body";
+
+    column-gap: 10px;
+    row-gap: 8px;
 
     align-items: start;
 
@@ -219,14 +224,17 @@
 }
 
 .notification-item-icon{
+    grid-area: icon;
+
     width: 32px;
     height: 32px;
 
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
 
-    background: #1c1c1c;
+    background: transparent;
+    border: 0;
 
     box-sizing: border-box;
 }
@@ -241,7 +249,15 @@
     image-rendering: crisp-edges;
 }
 
-.notification-item-content{
+.notification-item-meta{
+    grid-area: meta;
+
+    min-width: 0;
+}
+
+.notification-item-body{
+    grid-area: body;
+
     min-width: 0;
 }
 
@@ -250,6 +266,7 @@
 
     font-size: 12px;
     font-weight: bold;
+    line-height: 1.1;
 
     margin-bottom: 4px;
 }
@@ -259,15 +276,13 @@
 
     font-size: 15px;
     font-weight: bold;
-
-    margin-bottom: 6px;
+    line-height: 1.25;
 }
 
 .notification-item-message{
     color: #ccc;
 
     font-size: 13px;
-
     line-height: 1.4;
 
     overflow-wrap: anywhere;
@@ -277,7 +292,6 @@
     margin-top: 8px;
 
     color: #777;
-
     font-size: 12px;
 }
 

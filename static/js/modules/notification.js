@@ -88,8 +88,7 @@ function renderNotificationItem(item) {
                 >
             </div>
 
-            <div class="notification-item-content">
-
+            <div class="notification-item-meta">
                 <div class="notification-item-source">
                     ${escapeHtml(sourceMeta.label)}
                 </div>
@@ -97,7 +96,9 @@ function renderNotificationItem(item) {
                 <div class="notification-item-title">
                     ${escapeHtml(item.title)}
                 </div>
+            </div>
 
+            <div class="notification-item-body">
                 <div class="notification-item-message">
                     ${escapeHtml(item.message)}
                 </div>
@@ -105,7 +106,6 @@ function renderNotificationItem(item) {
                 <div class="notification-item-time">
                     ${escapeHtml(item.created_at)}
                 </div>
-
             </div>
 
         </div>

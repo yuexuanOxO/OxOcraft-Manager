@@ -112,32 +112,93 @@ function renderNotificationItem(item) {
     `;
 }
 
-async function loadNotifications({ reset = false } = {}) {
-    const { list, exclamation } = getNotificationElements();
+async function loadNotifications(
+    { reset = false } = {}
+) {
+    const {
+        list,
+        loadMoreBtn,
+    } = getNotificationElements();
 
-    if (!list) return;
+    if (!list) {
+        return;
+    }
+
+    const requestedSource =
+        selectedNotificationSource;
 
     if (reset) {
         notificationOffset = 0;
         list.innerHTML = "";
+        list.scrollTop = 0;
     }
 
-    const res = await fetch(`/api/notifications?limit=${notificationLimit}&offset=${notificationOffset}`);
-    const data = await res.json();
+    const params =
+        new URLSearchParams({
+            limit: String(
+                notificationLimit
+            ),
+            offset: String(
+                notificationOffset
+            ),
+        });
 
-    const notifications = data.notifications || [];
-
-    if (reset && notifications.length === 0) {
-        list.innerHTML = `<div class="notification-empty">目前沒有通知</div>`;
-    } else {
-        list.insertAdjacentHTML(
-            "beforeend",
-            notifications.map(renderNotificationItem).join("")
+    if (requestedSource) {
+        params.set(
+            "source",
+            requestedSource
         );
     }
 
-    notificationOffset += notifications.length;
+    const res = await fetch(
+        `/api/notifications?${params.toString()}`
+    );
 
+    const data = await res.json();
+
+    /*
+     * 使用者如果快速切換分類，
+     * 舊分類的 request 可能比較晚回來。
+     * 這時不要把舊結果畫到新分類。
+     */
+    if (
+        requestedSource
+        !== selectedNotificationSource
+    ) {
+        return;
+    }
+
+    const notifications =
+        data.notifications || [];
+
+    if (
+        reset
+        && notifications.length === 0
+    ) {
+        list.innerHTML = `
+            <div class="notification-empty">
+                目前沒有通知
+            </div>
+        `;
+    } else {
+        list.insertAdjacentHTML(
+            "beforeend",
+            notifications
+                .map(renderNotificationItem)
+                .join("")
+        );
+    }
+
+    notificationOffset +=
+        notifications.length;
+
+    if (loadMoreBtn) {
+        loadMoreBtn.classList.toggle(
+            "hidden",
+            notifications.length
+                < notificationLimit
+        );
+    }
 }
 
 async function updateUnreadNotificationBadge() {
@@ -182,10 +243,16 @@ function connectNotificationEvents() {
             bell.classList.add("has-unread");
         }
 
+        const matchesSelectedSource =
+            !selectedNotificationSource
+            || notification.source
+                === selectedNotificationSource;
+
         if (
             panel &&
             list &&
             !panel.classList.contains("hidden")
+            && matchesSelectedSource
         ) {
             const empty = list.querySelector(".notification-empty");
 
@@ -282,18 +349,35 @@ function setupNotificationCategoryScroll() {
     categoryButtons.forEach((button) => {
         button.addEventListener(
             "click",
-            () => {
-                selectedNotificationSource =
+            async () => {
+                const nextSource =
                     button.dataset.source || "";
+
+                if (
+                    selectedNotificationSource
+                    === nextSource
+                ) {
+                    return;
+                }
+
+                selectedNotificationSource =
+                    nextSource;
 
                 categoryButtons.forEach(
                     (categoryButton) => {
-                        categoryButton.classList.toggle(
-                            "active",
-                            categoryButton === button
-                        );
+                        categoryButton
+                            .classList
+                            .toggle(
+                                "active",
+                                categoryButton
+                                    === button
+                            );
                     }
                 );
+
+                await loadNotifications({
+                    reset: true,
+                });
             }
         );
     });

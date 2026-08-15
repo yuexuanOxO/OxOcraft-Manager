@@ -58,16 +58,45 @@ def create_notification(
     return notification
 
 
-def get_notifications(limit: int = 10, offset: int = 0) -> list[dict]:
-    with get_connection() as conn:
-        rows = conn.execute("""
-            SELECT *
-            FROM notifications
-            ORDER BY created_at DESC, id DESC
-            LIMIT ? OFFSET ?
-        """, (limit, offset)).fetchall()
+def get_notifications(
+    limit: int = 10,
+    offset: int = 0,
+    source: str | None = None,
+) -> list[dict]:
+    normalized_source = (
+        str(source or "").strip()
+        or None
+    )
 
-    return [dict(row) for row in rows]
+    with get_connection() as conn:
+        if normalized_source:
+            rows = conn.execute("""
+                SELECT *
+                FROM notifications
+                WHERE source = ?
+                ORDER BY created_at DESC, id DESC
+                LIMIT ? OFFSET ?
+            """, (
+                normalized_source,
+                limit,
+                offset,
+            )).fetchall()
+
+        else:
+            rows = conn.execute("""
+                SELECT *
+                FROM notifications
+                ORDER BY created_at DESC, id DESC
+                LIMIT ? OFFSET ?
+            """, (
+                limit,
+                offset,
+            )).fetchall()
+
+    return [
+        dict(row)
+        for row in rows
+    ]
 
 
 def get_unread_notification_count() -> int:

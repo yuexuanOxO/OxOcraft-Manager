@@ -14,16 +14,43 @@ notification_bp = Blueprint("notification", __name__)
 
 @notification_bp.route("/api/notifications")
 def api_notifications():
-    limit = request.args.get("limit", 10, type=int)
-    offset = request.args.get("offset", 0, type=int)
+    limit = request.args.get(
+        "limit",
+        10,
+        type=int,
+    )
 
-    limit = max(1, min(limit, 50))
-    offset = max(0, offset)
+    offset = request.args.get(
+        "offset",
+        0,
+        type=int,
+    )
+
+    source = request.args.get(
+        "source",
+        "",
+        type=str,
+    ).strip()
+
+    limit = max(
+        1,
+        min(limit, 50),
+    )
+
+    offset = max(
+        0,
+        offset,
+    )
 
     return jsonify({
         "success": True,
-        "notifications": get_notifications(limit=limit, offset=offset),
-        "unread_count": get_unread_notification_count(),
+        "notifications": get_notifications(
+            limit=limit,
+            offset=offset,
+            source=source or None,
+        ),
+        "unread_count":
+            get_unread_notification_count(),
     })
 
 

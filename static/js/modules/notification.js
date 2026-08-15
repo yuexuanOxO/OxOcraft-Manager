@@ -339,7 +339,11 @@ function setupNotificationCategoryScroll() {
 
             event.preventDefault();
 
-            categoryScroll.scrollLeft += delta;
+            categoryScroll.scrollBy({
+                left: delta > 0 ? 48 : -48,
+                behavior: "smooth",
+            });
+            
         },
         {
             passive: false,

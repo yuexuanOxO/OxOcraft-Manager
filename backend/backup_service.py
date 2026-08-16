@@ -327,6 +327,17 @@ def backup_worker(source_root: Path | None, backup_root: Path, task: dict | None
 
         publish_or_update_backup_record(_backup_status)
 
+        print(f"[Backup] Local backup completed: "f"{target_zip.name}")
+
+        create_notification(
+            title="本機備份已完成",
+            message=(
+                f"世界「{map_name}」的本機備份已完成。"
+            ),
+            type="success",
+            source="backup",
+        )
+
     except BackupCanceled:
         mark_backup_canceled(target_zip)
 
@@ -360,6 +371,37 @@ def backup_worker(source_root: Path | None, backup_root: Path, task: dict | None
             pass
 
         publish_or_update_backup_record(_backup_status)
+
+        error_text = (
+            str(error)
+            .replace("\n", "；")
+            .strip()
+        )
+
+        failed_map_name = (
+            _backup_status.get("map_name")
+            or (
+                level_name
+                if "level_name" in locals()
+                else ""
+            )
+            or "未知世界"
+        )
+
+        print(
+            f"[Backup] Local backup failed: "
+            f"{type(error).__name__}: {error_text}"
+        )
+
+        create_notification(
+            title="本機備份失敗",
+            message=(
+                f"世界「{failed_map_name}」的本機備份失敗："
+                f"{error_text}。"
+            ),
+            type="error",
+            source="backup",
+        )
 
 
     finally:

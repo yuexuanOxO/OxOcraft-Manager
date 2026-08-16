@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-08-15T18:28:37",
-    "properties_modified_comment": "Sat Aug 15 18:28:36 CST 2026",
+    "captured_at": "2026-08-15T22:14:28",
+    "properties_modified_comment": "Sat Aug 15 22:14:27 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -45,7 +45,7 @@
         "force-gamemode": "false",
         "rate-limit": "0",
         "hardcore": "false",
-        "white-list": "true",
+        "white-list": "false",
         "broadcast-console-to-ops": "true",
         "spawn-npcs": "true",
         "spawn-animals": "true",

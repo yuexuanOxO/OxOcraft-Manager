@@ -44,6 +44,17 @@ function updateManualCloudBackupButtonState() {
 }
 
 
+function formatManualBackupWorldSize(world) {
+    if (world?.total_bytes == null) {
+        return "計算中...";
+    }
+
+    return formatBytes(
+        world.total_bytes
+    );
+}
+
+
 export function initBackup() {
     setupBackupModal();
     setupBackupActionButton();
@@ -678,7 +689,131 @@ async function loadManualBackupWorlds(rootPath, currentWorldPath = "") {
         return;
     }
 
-    renderManualBackupWorlds(data.worlds || [], currentWorldPath);
+    const worlds =
+        data.worlds || [];
+
+    renderManualBackupWorlds(
+        worlds,
+        currentWorldPath
+    );
+
+    loadManualBackupWorldSizes(
+        worlds
+    );
+
+}
+
+
+async function loadManualBackupWorldSizes(
+    worlds
+) {
+    for (const world of worlds) {
+        if (!world?.name) {
+            continue;
+        }
+
+        try {
+            const response = await fetch(
+                `/api/worlds/${
+                    encodeURIComponent(
+                        world.name
+                    )
+                }/size`,
+                {
+                    cache: "no-store"
+                }
+            );
+
+            const data =
+                await response.json();
+
+            if (
+                !response.ok
+                || !data?.success
+            ) {
+                console.warn(
+                    "讀取世界容量失敗:",
+                    world.name,
+                    data?.message
+                );
+
+                continue;
+            }
+
+            world.total_bytes =
+                data.size_bytes;
+
+            updateManualBackupWorldSize(
+                world
+            );
+
+        } catch (error) {
+            console.warn(
+                "讀取世界容量失敗:",
+                world.name,
+                error
+            );
+        }
+    }
+}
+
+
+function updateManualBackupWorldSize(
+    world
+) {
+    const rows =
+        document.querySelectorAll(
+            ".manual-world-row"
+        );
+
+    for (const row of rows) {
+        if (
+            normalizePath(
+                row.dataset.worldPath
+            )
+            !==
+            normalizePath(
+                world.path
+            )
+        ) {
+            continue;
+        }
+
+        const sizeElement =
+            row.querySelector(
+                ".manual-world-size"
+            );
+
+        if (sizeElement) {
+            sizeElement.textContent =
+                formatManualBackupWorldSize(
+                    world
+                );
+        }
+
+        break;
+    }
+
+    if (
+        normalizePath(
+            manualBackupSelectedWorld?.path
+        )
+        ===
+        normalizePath(
+            world.path
+        )
+    ) {
+        const info =
+            document.getElementById(
+                "manualBackupWorldInfo"
+            );
+
+        if (info) {
+            info.textContent =
+                `${world.name} | `
+                + `${formatManualBackupWorldSize(world)}`;
+        }
+    }
 }
 
 
@@ -755,13 +890,15 @@ function renderManualBackupWorlds(worlds, currentWorldPath = "") {
         row.type = "button";
         row.className = "manual-world-row";
 
+        row.dataset.worldPath = world.path || "";
+
         if (isSelected) {
             row.classList.add("active");
         }
 
         row.innerHTML = `
             <div class="manual-world-name">${world.name}</div>
-            <div class="manual-world-size">${formatBytes(world.total_bytes || 0)}</div>
+            <div class="manual-world-size">${formatManualBackupWorldSize(world)}</div>
             <div class="manual-world-status ${isCurrentWorld ? "using" : "ready"}">
                 ${isCurrentWorld ? "使用中" : "可備份"}
             </div>
@@ -783,7 +920,7 @@ function renderManualBackupWorlds(worlds, currentWorldPath = "") {
             if (sourceText) setPathText(sourceText, parentPath || world.path || "");
 
             if (info) {
-                info.textContent = `${world.name} | ${formatBytes(world.total_bytes || 0)}`;
+                info.textContent = `${world.name} | ${formatManualBackupWorldSize(world)}`;
             }
         });
 
@@ -805,7 +942,8 @@ function renderManualBackupWorlds(worlds, currentWorldPath = "") {
 
     if (info) {
         info.textContent =
-            `${manualBackupSelectedWorld.name} | ${formatBytes(manualBackupSelectedWorld.total_bytes || 0)}`;
+            `${manualBackupSelectedWorld.name} | `
+            + `${formatManualBackupWorldSize(manualBackupSelectedWorld)}`;
     }
 }
 

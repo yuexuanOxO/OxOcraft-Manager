@@ -66,7 +66,7 @@ def find_world_folders(root: Path) -> list[dict]:
         worlds.append({
             "name": world.name,
             "path": str(world),
-            "total_bytes": get_folder_size(world),
+            "total_bytes": None,
         })
 
     return worlds

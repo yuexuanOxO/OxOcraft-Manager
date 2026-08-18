@@ -12,15 +12,43 @@
         </div>
 
         <div id="backupManualPage" class="backup-page">
+
             <div class="backup-row">
-                <div class="backup-label">伺服器世界路徑</div>
+                <div class="backup-label">世界讀取路徑</div>
+
+                <!--
+                暫時停用手動修改伺服器世界路徑。
+                之後若世界存檔管理方式調整，可恢復此區塊。
 
                 <div class="backup-path-wrap" data-path-row="manual-source">
                     <div id="manualBackupSourceText" class="backup-path-text"></div>
                     <input id="manualBackupSourceInput" class="backup-path-input hidden" type="text" value="">
-                    <button class="backup-path-edit-btn" type="button" data-target="manual-source">
-                        <img src="/static/icons/backup/feather.png" alt="編輯">
+
+                    <button
+                        class="backup-path-edit-btn"
+                        type="button"
+                        data-target="manual-source"
+                    >
+                        <img
+                            src="/static/icons/backup/feather.png"
+                            alt="編輯"
+                        >
                     </button>
+                </div>
+                -->
+
+                <div class="backup-path-display" data-path-row="manual-source">
+                    <div
+                        id="manualBackupSourceText"
+                        class="backup-value backup-path-readonly"
+                    ></div>
+
+                    <input
+                        id="manualBackupSourceInput"
+                        class="backup-path-input hidden"
+                        type="text"
+                        value=""
+                    >
                 </div>
             </div>
 
@@ -59,7 +87,7 @@
 
         <div id="backupSettingsPage" class="backup-page hidden">
             <div class="backup-row">
-                <div class="backup-label">伺服器世界路徑</div>
+                <div class="backup-label">世界讀取路徑</div>
 
                 <div class="backup-path-display" data-path-row="source">
                     <div id="backupSourceRootText" class="backup-value"></div>

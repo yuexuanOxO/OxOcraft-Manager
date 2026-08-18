@@ -18,6 +18,7 @@ from backend.backup_service import (
     get_backup_status,
     is_backup_running,
     is_world_folder,
+    get_folder_size,
 )
 
 from backend.auto_backup_service import (
@@ -44,17 +45,6 @@ def save_app_config(config: dict) -> None:
         json.dumps(config, ensure_ascii=False, indent=4),
         encoding="utf-8"
     )
-
-
-def get_folder_size(path: Path) -> int:
-    total = 0
-    for item in path.rglob("*"):
-        if item.is_file():
-            try:
-                total += item.stat().st_size
-            except OSError:
-                pass
-    return total
 
 
 def find_world_folders(root: Path) -> list[dict]:

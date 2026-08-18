@@ -492,7 +492,7 @@ export async function loadBackupConfig() {
         const sourceInput = document.getElementById("backupSourceRootInput");
         // const backupInput = document.getElementById("backupRootInput");
         const manualSourceInput = document.getElementById("manualBackupSourceInput");
-        const manualBackupInput = document.getElementById("manualBackupRootInput");
+        // const manualBackupInput = document.getElementById("manualBackupRootInput");
         const mapName = document.getElementById("backupMapName");
         const sourceText = document.getElementById("backupSourceRootText");
         const backupText = document.getElementById("backupRootText");
@@ -522,9 +522,18 @@ export async function loadBackupConfig() {
             await loadManualBackupWorlds(manualScanRoot, data.world_path || "");
         }
 
-        if (manualBackupInput && manualBackupText && !manualBackupInput.value.trim()) {
-            manualBackupInput.value = data.manual_backup_root || data.backup_root || "";
-            setPathText(manualBackupText, manualBackupInput.value);
+        
+        // 手動修改備份輸出路徑
+        // if (manualBackupInput && manualBackupText && !manualBackupInput.value.trim()) {
+        //     manualBackupInput.value = data.manual_backup_root || data.backup_root || "";
+        //     setPathText(manualBackupText, manualBackupInput.value);
+        // }
+
+        if (manualBackupText) {
+            setPathText(
+                manualBackupText,
+                data.backup_root || ""
+            );
         }
 
         currentBackupLevelName = data.level_name || "world";
@@ -545,8 +554,9 @@ export async function loadBackupConfig() {
 
 
 async function startSafeManualBackup(uploadCloud) {
+    // const sourceInput = document.getElementById("manualBackupSourceInput");
+    // const backupInput = document.getElementById("manualBackupRootInput");
     const sourceInput = document.getElementById("manualBackupSourceInput");
-    const backupInput = document.getElementById("manualBackupRootInput");
     const localBtn = document.getElementById("manualLocalBackupBtn");
     const cloudBtn = document.getElementById("manualLocalCloudBackupBtn");
     const selectedWorldPath = manualBackupSelectedWorld?.path || "";
@@ -562,10 +572,10 @@ async function startSafeManualBackup(uploadCloud) {
         return;
     }
 
-    if (!backupInput?.value.trim()) {
-        alert("請先選擇備份輸出路徑");
-        return;
-    }
+    // if (!backupInput?.value.trim()) {
+    //     alert("請先選擇備份輸出路徑");
+    //     return;
+    // }
 
     try {
         const statusRes = await fetch("/api/server/query-status", { cache: "no-store" });
@@ -604,12 +614,21 @@ async function startSafeManualBackup(uploadCloud) {
             headers: {
                 "Content-Type": "application/json"
             },
+
+            //手動修改備份輸出路徑保留
+            // body: JSON.stringify({
+            //     manual_scan_root: sourceInput.value.trim(),
+            //     selected_world_path: selectedWorldPath,
+            //     backup_root: backupInput.value.trim(),
+            //     upload_cloud: uploadCloud
+            // })
+
             body: JSON.stringify({
                 manual_scan_root: sourceInput.value.trim(),
                 selected_world_path: selectedWorldPath,
-                backup_root: backupInput.value.trim(),
                 upload_cloud: uploadCloud
             })
+
         });
         const data = await response.json();
 

@@ -291,13 +291,13 @@ def api_backup_config():
                 MC_ROOT / "world_backup"
             ),
 
-        "manual_backup_root":
-            config.get(
-                "manual_backup_root"
-            )
-            or str(
-                MC_ROOT / "world_backup"
-            ),
+        # "manual_backup_root":
+        #     config.get(
+        #         "manual_backup_root"
+        #     )
+        #     or str(
+        #         MC_ROOT / "world_backup"
+        #     ),
 
         # 實際目前 server.properties
         # 指到的世界。
@@ -400,9 +400,28 @@ def api_backup_manual_safe_start():
     data = request.get_json(silent=True) or {}
 
     # 手動備份真正要備份的是使用者選中的世界資料夾
-    selected_world_path = data.get("selected_world_path") or data.get("source_root") or ""
-    backup_root = data.get("backup_root") or ""
-    upload_cloud = bool(data.get("upload_cloud"))
+    # selected_world_path = data.get("selected_world_path") or data.get("source_root") or ""
+    # backup_root = data.get("backup_root") or ""
+    # upload_cloud = bool(data.get("upload_cloud"))
+
+
+    selected_world_path = (
+        data.get("selected_world_path")
+        or data.get("source_root")
+        or ""
+    )
+
+    config = load_app_config()
+
+    backup_root = (
+        config.get("backup_root")
+        or str(MC_ROOT / "world_backup")
+    )
+
+    upload_cloud = bool(
+        data.get("upload_cloud")
+    )
+
 
     if not selected_world_path or not is_world_folder(Path(selected_world_path).expanduser()):
         return jsonify({
@@ -410,16 +429,16 @@ def api_backup_manual_safe_start():
             "message": "請先選擇有效的世界資料夾",
         }), 400
 
-    if not backup_root:
-        return jsonify({
-            "success": False,
-            "message": "請先選擇備份輸出路徑",
-        }), 400
+    # if not backup_root:
+    #     return jsonify({
+    #         "success": False,
+    #         "message": "請先選擇備份輸出路徑",
+    #     }), 400
 
-    config = load_app_config()
-    config["manual_backup_root"] = backup_root
+    # config = load_app_config()
+    # config["manual_backup_root"] = backup_root
 
-    save_app_config(config)
+    # save_app_config(config)
 
     _manual_safe_backup_running = True
     threading.Thread(

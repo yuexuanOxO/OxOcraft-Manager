@@ -155,14 +155,6 @@ def manual_safe_backup_worker(source_root: str, backup_root: str, upload_cloud: 
         if need_stop_server:
             start_server()
 
-        if upload_cloud and result.get("status") == "success":
-            from backend.routes.cloud_routes import start_cloud_upload_latest
-
-            backup_path = result.get("backup_path")
-            backup_folder = str(Path(backup_path).parent) if backup_path else ""
-            start_cloud_upload_latest(backup_folder)
-        
-
 
     finally:
         _manual_safe_backup_running = False

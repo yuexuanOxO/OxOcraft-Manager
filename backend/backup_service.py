@@ -310,12 +310,19 @@ def backup_worker(source_root: Path | None, backup_root: Path, task: dict | None
         cleanup_old_local_backups(world_backup_root, map_name)
 
         if task and task.get("upload_cloud"):
-            from backend.routes.cloud_routes import start_cloud_upload_latest
+            from backend.routes.cloud_routes import (
+                start_cloud_upload_latest
+            )
 
-            backup_path = _backup_status.get("backup_path")
-            backup_folder = str(Path(backup_path).parent) if backup_path else ""
+            backup_path = str(
+                _backup_status.get("backup_path")
+                or ""
+            ).strip()
 
-            start_cloud_upload_latest(backup_folder)
+            if backup_path:
+                start_cloud_upload_latest(
+                    backup_file=backup_path
+                )
 
         publish_event("backup_finished", _backup_status)
 

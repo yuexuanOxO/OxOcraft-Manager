@@ -2,6 +2,7 @@ import json
 import os
 import requests
 import threading
+import time
 
 from backend.notification_service import create_notification
 from flask import Blueprint, jsonify, redirect, request, session
@@ -235,7 +236,7 @@ def get_backup_zip_from_file(
         )[0]
     else:
         map_name = (
-            backup_path.parent.name
+            file_stem
             or "unknown_world"
         )
 
@@ -244,6 +245,7 @@ def get_backup_zip_from_file(
 
 def cloud_upload_latest_worker(
     backup_file: str,
+    cloud_file_name: str = "",
 ):
     global _cloud_upload_running, _cloud_upload_cancel_requested
 
@@ -275,10 +277,16 @@ def cloud_upload_latest_worker(
 
         file_size = backup_path.stat().st_size
 
+        upload_file_name = (
+            cloud_file_name.strip()
+            if cloud_file_name
+            else backup_path.name
+        )
+
         cloud_backup_path = (
             f"OxOcraft-Backup/"
             f"{map_name}/"
-            f"{backup_path.name}"
+            f"{upload_file_name}"
         )
 
         cloud_record = insert_cloud_backup_record(
@@ -315,7 +323,7 @@ def cloud_upload_latest_worker(
         )
 
         file_metadata = {
-            "name": backup_path.name,
+            "name": upload_file_name,
             "parents": [world_folder_id]
         }
 
@@ -557,6 +565,7 @@ _cloud_upload_cancel_requested = False
 
 def start_cloud_upload_latest(
     backup_file: str,
+    cloud_file_name: str = "",
 ) -> tuple[bool, str]:
     
     global _cloud_upload_running, _cloud_upload_cancel_requested
@@ -572,6 +581,7 @@ def start_cloud_upload_latest(
             target=cloud_upload_latest_worker,
             args=(
                 backup_file,
+                cloud_file_name,
             ),
             daemon=True
         )
@@ -600,9 +610,33 @@ def api_google_upload_latest():
             "message": "請先選擇要上傳的 ZIP 備份檔"
         }), 400
 
+    backup_path = Path(
+        backup_file
+    )
+
+    file_stem = backup_path.stem
+
+    if "_backup_" in file_stem:
+        map_name = file_stem.split(
+            "_backup_",
+            1
+        )[0]
+    else:
+        map_name = file_stem
+
+    timestamp = time.strftime(
+        "%Y%m%d_%H%M%S"
+    )
+
+    cloud_file_name = (
+        f"{map_name}_backup_"
+        f"{timestamp}.zip"
+    )
+
     success, message = (
         start_cloud_upload_latest(
-            backup_file=backup_file
+            backup_file=backup_file,
+            cloud_file_name=cloud_file_name,
         )
     )
 

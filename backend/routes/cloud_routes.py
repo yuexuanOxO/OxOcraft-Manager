@@ -412,6 +412,26 @@ def cloud_upload_latest_worker(
             "cloud_account": cloud_account,
         })
 
+        completed_file_name = (
+            response.get("name")
+            or upload_file_name
+        )
+
+        print(
+            f"[CloudBackup] Cloud backup completed: "
+            f"{completed_file_name}"
+        )
+
+        create_notification(
+            title="雲端備份已完成",
+            message=(
+                f"檔案「{completed_file_name}」"
+                f"已完成 Google Drive 備份。"
+            ),
+            type="success",
+            source="backup",
+        )
+
 
     except Exception as error:
         if cloud_record:

@@ -12,8 +12,8 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
+
 from backend.db import (
-    get_latest_success_backup,
     insert_cloud_backup_record,
     mark_cloud_backup_deleted,
     update_backup_record_status,
@@ -203,29 +203,6 @@ def get_google_account_email(creds) -> str:
     return "已連接 Google 帳號"
 
 
-def get_latest_zip_from_folder(folder_path: str) -> tuple[Path, str]:
-    folder = Path(folder_path).expanduser()
-
-    if not folder.exists():
-        raise FileNotFoundError(f"找不到備份資料夾：{folder}")
-
-    if not folder.is_dir():
-        raise NotADirectoryError(f"指定路徑不是資料夾：{folder}")
-
-    zip_files = [
-        path for path in folder.glob("*.zip")
-        if path.is_file()
-    ]
-
-    if not zip_files:
-        raise FileNotFoundError(f"資料夾內找不到 zip 備份檔：{folder}")
-
-    latest_zip = max(zip_files, key=lambda path: path.stat().st_mtime)
-    map_name = folder.name
-
-    return latest_zip, map_name
-
-
 def get_backup_zip_from_file(
     file_path: str
 ) -> tuple[Path, str]:
@@ -266,8 +243,7 @@ def get_backup_zip_from_file(
 
 
 def cloud_upload_latest_worker(
-    backup_folder: str = "",
-    backup_file: str = "",
+    backup_file: str,
 ):
     global _cloud_upload_running, _cloud_upload_cancel_requested
 
@@ -291,49 +267,27 @@ def cloud_upload_latest_worker(
         creds = load_token()
         cloud_account = get_google_account_email(creds) if creds else None
 
-        if backup_file:
-            backup_path, map_name = (
-                get_backup_zip_from_file(
-                    backup_file
-                )
+        backup_path, map_name = (
+            get_backup_zip_from_file(
+                backup_file
             )
-
-        elif backup_folder:
-            backup_path, map_name = (
-                get_latest_zip_from_folder(
-                    backup_folder
-                )
-            )
-
-        else:
-            record = get_latest_success_backup()
-
-            if not record:
-                raise Exception(
-                    "找不到成功的本機備份紀錄"
-                )
-
-            backup_path = Path(
-                record["backup_path"]
-            )
-
-            if not backup_path.exists():
-                raise FileNotFoundError(
-                    f"找不到備份檔案：{backup_path}"
-                )
-
-            map_name = (
-                record.get("map_name")
-                or backup_path.parent.name
-                or "unknown_world"
-            )
+        )
 
         file_size = backup_path.stat().st_size
+
+        cloud_backup_path = (
+            f"OxOcraft-Backup/"
+            f"{map_name}/"
+            f"{backup_path.name}"
+        )
 
         cloud_record = insert_cloud_backup_record(
             status="running",
             map_name=map_name,
-            local_backup_path=str(backup_path),
+            local_backup_path=str(
+                backup_path
+            ),
+            cloud_backup_path=cloud_backup_path,
             total_bytes=file_size,
             message="雲端上傳中",
             cloud_provider="google_drive",
@@ -602,8 +556,7 @@ _cloud_upload_cancel_requested = False
 
 
 def start_cloud_upload_latest(
-    backup_folder: str = "",
-    backup_file: str = "",
+    backup_file: str,
 ) -> tuple[bool, str]:
     
     global _cloud_upload_running, _cloud_upload_cancel_requested
@@ -618,7 +571,6 @@ def start_cloud_upload_latest(
         thread = threading.Thread(
             target=cloud_upload_latest_worker,
             args=(
-                backup_folder,
                 backup_file,
             ),
             daemon=True

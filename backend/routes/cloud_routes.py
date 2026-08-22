@@ -153,6 +153,11 @@ def cleanup_old_cloud_backups(
             fileId=file_id
         ).execute()
 
+        print(
+            f"[CloudBackup] Old cloud backup deleted: "
+            f"{file_name}"
+        )
+
         mark_cloud_backup_deleted(file_id)
 
         message = (
@@ -164,7 +169,7 @@ def cleanup_old_cloud_backups(
             type="warning",
             title="已刪除舊雲端備份",
             message=message,
-            source="cloud_backup",
+            source="backup",
         )
 
         record = insert_backup_record(
@@ -185,7 +190,10 @@ def cleanup_old_cloud_backups(
         publish_event("backup_record_added", record)
 
     if old_files:
-        print(f"雲端舊備份清理完成，刪除 {len(old_files)} 筆")
+        print(
+            f"[CloudBackup] Old cloud backup cleanup completed: "
+            f"{len(old_files)} backup(s) deleted"
+        )
 
 def get_google_account_email(creds) -> str:
     headers = {

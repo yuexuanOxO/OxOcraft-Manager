@@ -534,7 +534,11 @@ def cleanup_old_local_backups(
     for zip_path in valid_backups[keep_count:]:
         try:
             zip_path.unlink()
-            print(f"[Backup] 已刪除舊本機備份：{zip_path}")
+
+            print(
+                f"[Backup] Old local backup deleted: "
+                f"{zip_path}"
+            )
 
             message = f"本機備份保留數量上限為({keep_count})份，已刪除舊備份：{zip_path.name}"
 

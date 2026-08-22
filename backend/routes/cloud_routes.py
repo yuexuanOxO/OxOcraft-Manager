@@ -226,7 +226,49 @@ def get_latest_zip_from_folder(folder_path: str) -> tuple[Path, str]:
     return latest_zip, map_name
 
 
-def cloud_upload_latest_worker(backup_folder: str = ""):
+def get_backup_zip_from_file(
+    file_path: str
+) -> tuple[Path, str]:
+
+    backup_path = Path(
+        file_path
+    ).expanduser()
+
+    if not backup_path.exists():
+        raise FileNotFoundError(
+            f"找不到備份檔案：{backup_path}"
+        )
+
+    if not backup_path.is_file():
+        raise FileNotFoundError(
+            f"指定路徑不是檔案：{backup_path}"
+        )
+
+    if backup_path.suffix.lower() != ".zip":
+        raise ValueError(
+            "指定檔案不是 ZIP 備份檔"
+        )
+
+    file_stem = backup_path.stem
+
+    if "_backup_" in file_stem:
+        map_name = file_stem.split(
+            "_backup_",
+            1
+        )[0]
+    else:
+        map_name = (
+            backup_path.parent.name
+            or "unknown_world"
+        )
+
+    return backup_path, map_name
+
+
+def cloud_upload_latest_worker(
+    backup_folder: str = "",
+    backup_file: str = "",
+):
     global _cloud_upload_running, _cloud_upload_cancel_requested
 
     _cloud_upload_running = True
@@ -249,20 +291,42 @@ def cloud_upload_latest_worker(backup_folder: str = ""):
         creds = load_token()
         cloud_account = get_google_account_email(creds) if creds else None
 
-        if backup_folder:
-            backup_path, map_name = get_latest_zip_from_folder(backup_folder)
+        if backup_file:
+            backup_path, map_name = (
+                get_backup_zip_from_file(
+                    backup_file
+                )
+            )
+
+        elif backup_folder:
+            backup_path, map_name = (
+                get_latest_zip_from_folder(
+                    backup_folder
+                )
+            )
+
         else:
             record = get_latest_success_backup()
 
             if not record:
-                raise Exception("找不到成功的本機備份紀錄")
+                raise Exception(
+                    "找不到成功的本機備份紀錄"
+                )
 
-            backup_path = Path(record["backup_path"])
+            backup_path = Path(
+                record["backup_path"]
+            )
 
             if not backup_path.exists():
-                raise FileNotFoundError(f"找不到備份檔案：{backup_path}")
+                raise FileNotFoundError(
+                    f"找不到備份檔案：{backup_path}"
+                )
 
-            map_name = record.get("map_name") or backup_path.parent.name or "unknown_world"
+            map_name = (
+                record.get("map_name")
+                or backup_path.parent.name
+                or "unknown_world"
+            )
 
         file_size = backup_path.stat().st_size
 
@@ -537,7 +601,11 @@ _cloud_upload_running = False
 _cloud_upload_cancel_requested = False
 
 
-def start_cloud_upload_latest(backup_folder: str = "") -> tuple[bool, str]:
+def start_cloud_upload_latest(
+    backup_folder: str = "",
+    backup_file: str = "",
+) -> tuple[bool, str]:
+    
     global _cloud_upload_running, _cloud_upload_cancel_requested
 
     if _cloud_upload_running:
@@ -549,7 +617,10 @@ def start_cloud_upload_latest(backup_folder: str = "") -> tuple[bool, str]:
     try:
         thread = threading.Thread(
             target=cloud_upload_latest_worker,
-            args=(backup_folder,),
+            args=(
+                backup_folder,
+                backup_file,
+            ),
             daemon=True
         )
         thread.start()
@@ -562,10 +633,27 @@ def start_cloud_upload_latest(backup_folder: str = "") -> tuple[bool, str]:
 
 @cloud_bp.route("/api/cloud/google/upload-latest", methods=["POST"])
 def api_google_upload_latest():
-    data = request.get_json(silent=True) or {}
-    backup_folder = data.get("backup_folder") or ""
+    data = request.get_json(
+        silent=True
+    ) or {}
 
-    success, message = start_cloud_upload_latest(backup_folder)
+    backup_file = str(
+        data.get("backup_file")
+        or ""
+    ).strip()
+
+    if not backup_file:
+        return jsonify({
+            "success": False,
+            "message": "請先選擇要上傳的 ZIP 備份檔"
+        }), 400
+
+    success, message = (
+        start_cloud_upload_latest(
+            backup_file=backup_file
+        )
+    )
+
     if not success:
         return jsonify({
             "success": False,

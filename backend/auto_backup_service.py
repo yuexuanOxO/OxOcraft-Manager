@@ -267,27 +267,62 @@ def is_server_online() -> bool:
     return bool(data.get("online"))
 
 
-def start_cloud_upload_after_success(backup_result: dict) -> None:
+def start_cloud_upload_after_success(
+    backup_result: dict
+) -> None:
     if backup_result.get("status") != "success":
         return
 
     config = load_config()
-    if not config.get("auto_backup_upload_cloud"):
+
+    if not config.get(
+        "auto_backup_upload_cloud"
+    ):
+        return
+
+    backup_path = str(
+        backup_result.get("backup_path")
+        or ""
+    ).strip()
+
+    if not backup_path:
+        publish_event(
+            "auto_backup_warning",
+            {
+                "message":
+                    "自動雲端上傳啟動失敗："
+                    "本機備份沒有回傳備份檔案路徑"
+            }
+        )
         return
 
     try:
-        from backend.routes.cloud_routes import start_cloud_upload_latest
+        from backend.routes.cloud_routes import (
+            start_cloud_upload_latest
+        )
 
-        success, message = start_cloud_upload_latest()
+        success, message = (
+            start_cloud_upload_latest(
+                backup_file=backup_path
+            )
+        )
+
         if not success:
-            publish_event("auto_backup_warning", {
-                "message": message
-            })
+            publish_event(
+                "auto_backup_warning",
+                {
+                    "message": message
+                }
+            )
 
     except Exception as error:
-        publish_event("auto_backup_warning", {
-            "message": f"自動雲端上傳啟動失敗：{error}"
-        })
+        publish_event(
+            "auto_backup_warning",
+            {
+                "message":
+                    f"自動雲端上傳啟動失敗：{error}"
+            }
+        )
 
 
 def run_auto_backup_flow(scheduled_time: datetime) -> None:

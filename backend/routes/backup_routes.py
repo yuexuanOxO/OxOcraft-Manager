@@ -13,12 +13,12 @@ from calendar import monthrange
 from pathlib import Path
 
 from backend.backup_service import (
+    start_backup,
     enqueue_backup,
     cancel_backup,
     get_backup_status,
     is_backup_running,
     is_world_folder,
-    get_folder_size,
 )
 
 from backend.auto_backup_service import (

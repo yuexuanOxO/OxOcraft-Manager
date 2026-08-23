@@ -343,8 +343,8 @@ def get_player_whitelist_list() -> list[dict]:
 def add_player_whitelist(
     player_uuid: str,
     player_name: str,
+    history_source: str | None = None,
 ) -> dict:
-
     whitelist_uuid_set = load_whitelist_uuid_set()
 
     if player_uuid.lower() in whitelist_uuid_set:
@@ -388,7 +388,10 @@ def add_player_whitelist(
         target_name=player_name,
         account_type=account_type,
         operator_name="OxOcraft",
-        source=get_whitelist_ui_source(),
+        source=(
+            history_source
+            or get_whitelist_ui_source()
+        ),
         detail=result,
     )
 
@@ -405,6 +408,7 @@ def add_player_whitelist(
 def remove_player_whitelist(
     player_uuid: str,
     player_name: str,
+    history_source: str | None = None,
 ) -> dict:
     
     rebuild_whitelist_json_from_db()
@@ -442,7 +446,10 @@ def remove_player_whitelist(
         target_name=player_name,
         account_type=account_type,
         operator_name="OxOcraft",
-        source=get_whitelist_ui_source(),
+        source=(
+            history_source
+            or get_whitelist_ui_source()
+        ),
         detail=result,
     )
 
@@ -459,6 +466,7 @@ def remove_player_whitelist(
 def toggle_player_whitelist(
     player_uuid: str,
     player_name: str,
+    history_source: str | None = None,
 ) -> dict:
 
     whitelist_uuid_set = (
@@ -470,11 +478,13 @@ def toggle_player_whitelist(
         return remove_player_whitelist(
             player_uuid,
             player_name,
+            history_source=history_source,
         )
 
     return add_player_whitelist(
         player_uuid,
         player_name,
+        history_source=history_source,
     )
 
 

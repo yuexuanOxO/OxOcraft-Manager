@@ -1483,6 +1483,7 @@ function getWhitelistSourceText(source) {
         ui_reload: "OxOcraft",
         console_rcon_reload: "UI輸入指令(reload)",
         player_command_reload: "遊戲內指令(reload)",
+        player_list: "玩家列表",
     };
 
     return sourceMap[source] || source || "未知";

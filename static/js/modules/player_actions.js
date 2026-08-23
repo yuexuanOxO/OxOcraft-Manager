@@ -314,6 +314,7 @@ async function handlePlayerMenuClick(event) {
                         body: JSON.stringify({
                             uuid: playerUuid,
                             name: playerName,
+                            source: "player_list"
                         })
                     }
                 );

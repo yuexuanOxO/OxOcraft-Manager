@@ -295,6 +295,13 @@ def api_player_whitelist_toggle():
     player_uuid = str(data.get("uuid", "")).strip()
     player_name = str(data.get("name", "")).strip()
 
+    history_source = str(
+        data.get("source", "")
+    ).strip()
+
+    if history_source != "player_list":
+        history_source = ""
+
     if not player_uuid or not player_name:
         return jsonify({
             "success": False,
@@ -305,6 +312,7 @@ def api_player_whitelist_toggle():
         result = toggle_player_whitelist(
             player_uuid=player_uuid,
             player_name=player_name,
+            history_source=history_source or None,
         )
 
         return jsonify(result)

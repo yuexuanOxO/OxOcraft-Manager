@@ -1473,14 +1473,14 @@ function getWhitelistOperatorAvatarUrl(item) {
 
 function getWhitelistSourceText(source) {
     const sourceMap = {
-        ui: "OxOcraft",
-        offline_ui_edit: "OxOcraft",
+        ui: "前端UI操作",
+        offline_ui_edit: "前端UI操作",
         minecraft_json: "Minecraft資料同步",
         player_command: "遊戲內指令",
         console_rcon: "UI輸入指令",
         rcon: "UI輸入指令",
         system: "系統操作",
-        ui_reload: "OxOcraft",
+        ui_reload: "前端UI操作",
         console_rcon_reload: "UI輸入指令(reload)",
         player_command_reload: "遊戲內指令(reload)",
         player_list: "玩家列表",

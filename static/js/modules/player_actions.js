@@ -187,6 +187,141 @@ async function handlePlayerMenuClick(event) {
             }
         }
 
+        if (action === "toggle-whitelist") {
+            const isWhitelisted =
+                menuItem.dataset.whitelisted === "1";
+
+            const playerUuid =
+                menuItem.dataset.uuid || "";
+
+            const playerName =
+                menuItem.dataset.player || player;
+
+            if (!playerUuid || !playerName) {
+                await showInfo({
+                    title: "操作失敗",
+                    message:
+                        "缺少玩家 UUID 或名稱，無法修改白名單",
+                    confirmText: "關閉",
+                    variant: "error"
+                });
+
+                return;
+            }
+
+            const playerData = {
+                player_uuid: playerUuid,
+                player_name: playerName,
+                name: playerName,
+                account_type:
+                    menuItem.dataset.accountType ||
+                    "unknown",
+            };
+
+            const confirmed = await showConfirm({
+                title:
+                    isWhitelisted
+                        ? "移出白名單"
+                        : "加入白名單",
+
+                message:
+                    isWhitelisted
+                        ? `確定要將「${playerName}」移出白名單嗎？`
+                        : `確定要將「${playerName}」加入白名單嗎？`,
+
+                icon: getPlayerAvatarUrl(playerData),
+
+                confirmText:
+                    isWhitelisted
+                        ? "移出"
+                        : "加入",
+
+                cancelText: "取消",
+
+                variant:
+                    isWhitelisted
+                        ? "warning"
+                        : "info",
+            });
+
+            if (!confirmed) {
+                return;
+            }
+
+            menuItem.disabled = true;
+
+            try {
+                const response = await fetch(
+                    "/api/player/whitelist/toggle",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+                        body: JSON.stringify({
+                            uuid: playerUuid,
+                            name: playerName,
+                        })
+                    }
+                );
+
+                const data =
+                    await response.json();
+
+                if (!data.success) {
+                    await showInfo({
+                        title: "操作失敗",
+                        message:
+                            data.message ||
+                            "白名單操作失敗",
+                        confirmText: "關閉",
+                        variant: "error"
+                    });
+
+                    return;
+                }
+
+                menuItem.dataset.whitelisted =
+                    data.whitelisted ? "1" : "0";
+
+                menuItem.textContent =
+                    data.whitelisted
+                        ? "移出白名單"
+                        : "加入白名單";
+
+                await showInfo({
+                    title: "玩家白名單",
+                    message: data.message,
+                    confirmText: "關閉",
+                    variant: "success"
+                });
+
+                window.dispatchEvent(
+                    new CustomEvent(
+                        "player-whitelist-should-refresh"
+                    )
+                );
+
+            } catch (error) {
+                console.error(
+                    "白名單操作失敗:",
+                    error
+                );
+
+                await showInfo({
+                    title: "錯誤",
+                    message: "白名單操作失敗",
+                    confirmText: "關閉",
+                    variant: "error"
+                });
+
+            } finally {
+                menuItem.disabled = false;
+            }
+        }
+
+
         return;
     }
 

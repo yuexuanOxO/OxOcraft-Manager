@@ -452,7 +452,7 @@ export function initPlayerWhitelist() {
         await toggleWhitelistSetting("enforce-whitelist");
     });
 
-    window.addEventListener("player_whitelist_should_refresh", async () => {
+    window.addEventListener("player-whitelist-should-refresh", async () => {
             const modal =
                 document.getElementById("playerWhitelistModal");
 

@@ -1,7 +1,15 @@
+let whitelistStatusRefreshTimer = null;
+
+
 export function initPlayerListMenu() {
     window.addEventListener(
         "player-op-status-changed",
         handlePlayerOpStatusChanged
+    );
+
+    window.addEventListener(
+        "player-whitelist-should-refresh",
+        refreshPlayerWhitelistStatuses
     );
 }
 
@@ -33,8 +41,17 @@ export function createPlayerListMenu(player) {
     opBtn.disabled = true;
     opBtn.dataset.action = "toggle-op";
     opBtn.dataset.player = playerName;
-    opBtn.dataset.accountType =
-        player.account_type || "unknown";
+    opBtn.dataset.accountType = player.account_type || "unknown";
+
+    const whitelistBtn = document.createElement("button");
+    whitelistBtn.className = "player-menu-item";
+    whitelistBtn.type = "button";
+    whitelistBtn.textContent = "檢查白名單中...";
+    whitelistBtn.disabled = true;
+    whitelistBtn.dataset.action = "toggle-whitelist";
+    whitelistBtn.dataset.player = playerName;
+    whitelistBtn.dataset.uuid = player.player_uuid || "";
+    whitelistBtn.dataset.accountType = player.account_type || "unknown";
 
 
     const kickBtn = document.createElement("button");
@@ -46,6 +63,7 @@ export function createPlayerListMenu(player) {
 
 
     menu.appendChild(opBtn);
+    menu.appendChild(whitelistBtn);
     menu.appendChild(kickBtn);
 
     menuWrap.appendChild(menuBtn);
@@ -57,8 +75,147 @@ export function createPlayerListMenu(player) {
         opBtn
     );
 
+    schedulePlayerWhitelistStatusRefresh();
+
 
     return menuWrap;
+}
+
+
+function schedulePlayerWhitelistStatusRefresh() {
+    if (whitelistStatusRefreshTimer !== null) {
+        window.clearTimeout(
+            whitelistStatusRefreshTimer
+        );
+    }
+
+    whitelistStatusRefreshTimer =
+        window.setTimeout(() => {
+            whitelistStatusRefreshTimer = null;
+
+            refreshPlayerWhitelistStatuses();
+        }, 0);
+}
+
+
+async function refreshPlayerWhitelistStatuses() {
+    const whitelistButtons =
+        document.querySelectorAll(
+            '.player-menu-item[data-action="toggle-whitelist"]'
+        );
+
+    if (whitelistButtons.length === 0) {
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            "/api/player/whitelist",
+            { cache: "no-store" }
+        );
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(
+                data.message ||
+                "讀取玩家白名單狀態失敗"
+            );
+        }
+
+        const whitelistPlayers =
+            data.players || [];
+
+        whitelistButtons.forEach(button => {
+            const playerUuid =
+                String(
+                    button.dataset.uuid || ""
+                ).toLowerCase();
+
+            const playerName =
+                String(
+                    button.dataset.player || ""
+                );
+
+            const accountType =
+                String(
+                    button.dataset.accountType ||
+                    "unknown"
+                ).toLowerCase();
+
+            const whitelistPlayer =
+                whitelistPlayers.find(item => {
+                    const itemUuid =
+                        String(
+                            item.player_uuid || ""
+                        ).toLowerCase();
+
+                    const itemName =
+                        String(
+                            item.player_name || ""
+                        );
+
+                    if (
+                        playerUuid &&
+                        itemUuid === playerUuid
+                    ) {
+                        return true;
+                    }
+
+                    if (playerUuid) {
+                        return false;
+                    }
+
+                    if (accountType === "offline") {
+                        return itemName === playerName;
+                    }
+
+                    return (
+                        itemName.toLowerCase()
+                        ===
+                        playerName.toLowerCase()
+                    );
+                });
+
+            const isWhitelisted =
+                Boolean(whitelistPlayer);
+
+            button.textContent =
+                isWhitelisted
+                    ? "移出白名單"
+                    : "加入白名單";
+
+            button.dataset.whitelisted =
+                isWhitelisted ? "1" : "0";
+
+            if (whitelistPlayer) {
+                button.dataset.uuid =
+                    whitelistPlayer.player_uuid ||
+                    button.dataset.uuid ||
+                    "";
+
+                button.dataset.player =
+                    whitelistPlayer.player_name ||
+                    button.dataset.player ||
+                    "";
+            }
+
+            button.disabled = false;
+        });
+
+    } catch (error) {
+        console.error(
+            "讀取玩家白名單狀態失敗:",
+            error
+        );
+
+        whitelistButtons.forEach(button => {
+            button.textContent =
+                "白名單狀態讀取失敗";
+
+            button.disabled = true;
+        });
+    }
 }
 
 

@@ -324,6 +324,53 @@ export function clearPlayersList() {
 }
 
 
+function renderServerAuthMode(data) {
+    const authModeText =
+        document.getElementById(
+            "serverAuthModeText"
+        );
+
+    if (!authModeText) {
+        return;
+    }
+
+    authModeText.classList.remove(
+        "premium",
+        "offline",
+        "unknown"
+    );
+
+    if (data?.online_mode === true) {
+        authModeText.textContent =
+            "正版驗證";
+
+        authModeText.classList.add(
+            "premium"
+        );
+
+        return;
+    }
+
+    if (data?.online_mode === false) {
+        authModeText.textContent =
+            "離線模式";
+
+        authModeText.classList.add(
+            "offline"
+        );
+
+        return;
+    }
+
+    authModeText.textContent =
+        "驗證模式未知";
+
+    authModeText.classList.add(
+        "unknown"
+    );
+}
+
+
 export function applyServerStatusPayload(payload) {
     if (!payload || !payload.data) return;
 
@@ -336,6 +383,8 @@ export function applyServerStatusPayload(payload) {
 
     const data = payload.data;
     latestServerStatusData = data;
+
+    renderServerAuthMode(data);
 
     const isFirstStatus = !hasReceivedFirstStatus;
     hasReceivedFirstStatus = true;

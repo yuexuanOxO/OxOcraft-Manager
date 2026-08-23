@@ -14,3 +14,23 @@
 
     flex-shrink: 0;
 }
+
+.server-status-separator {
+    color: #666;
+}
+
+.server-auth-mode {
+    white-space: nowrap;
+}
+
+.server-auth-mode.premium {
+    color: #78d98b;
+}
+
+.server-auth-mode.offline {
+    color: #d6ad57;
+}
+
+.server-auth-mode.unknown {
+    color: #888;
+}

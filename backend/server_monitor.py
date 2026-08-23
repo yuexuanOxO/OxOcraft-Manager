@@ -114,6 +114,26 @@ def publish_event(event_type: str, data: dict) -> None:
             print(f"[ServerMonitor] event handler failed: {error}")
 
 
+def attach_effective_online_mode(
+    data: dict,
+) -> dict:
+    result = dict(data or {})
+
+    try:
+        from backend.player_permissions.player_permission_service import (
+            get_effective_online_mode,
+        )
+
+        result["online_mode"] = (
+            get_effective_online_mode()
+        )
+
+    except Exception:
+        result["online_mode"] = None
+
+    return result
+
+
 def get_poll_interval(state: str) -> float:
     if state == "ready":
         return 2.0
@@ -148,6 +168,8 @@ def monitor_loop() -> None:
                 "management_ready": False,
                 "status_source": "runtime_guard",
             }
+
+        new_data = attach_effective_online_mode(new_data)
 
         should_publish = False
         event_data = None
@@ -224,7 +246,10 @@ def format_sse(event_name: str, data: dict) -> str:
 def refresh_server_status_now() -> dict:
     global _status_cache
 
-    new_data = get_server_query_status()
+    new_data = attach_effective_online_mode(
+        get_server_query_status()
+    )
+
     now = time.time()
 
     should_publish = False
@@ -258,12 +283,16 @@ def get_status_publish_key(data: dict) -> dict:
         return {
             "online": data.get("online"),
             "state": state,
+            "online_mode":
+                data.get("online_mode"),
         }
 
     if state == "offline":
         return {
             "online": False,
             "state": "offline",
+            "online_mode":
+                data.get("online_mode"),
         }
 
     return data

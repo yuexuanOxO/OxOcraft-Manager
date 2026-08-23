@@ -443,7 +443,18 @@ async function openDeathBook() {
 }
 
 function closeDeathBook() {
-    document.getElementById("deathBookModal").classList.add("hidden");
+    const dropdown =
+        document.getElementById(
+            "deathPlayerDropdown"
+        );
+
+    if (dropdown) {
+        dropdown.classList.add("hidden");
+    }
+
+    document.getElementById(
+        "deathBookModal"
+    ).classList.add("hidden");
 }
 
 function showPrevDeathPage() {
@@ -512,14 +523,42 @@ export function initDeathBook() {
         deathNextBtn.addEventListener("click", showNextDeathPage);
     }
 
-    const deathBookModal = document.getElementById("deathBookModal");
+    const deathBookModal =
+        document.getElementById(
+            "deathBookModal"
+        );
+
     if (deathBookModal) {
-        deathBookModal.addEventListener("click", (event) => {
-            if (event.target === deathBookModal) {
-                closeDeathBook();
+        deathBookModal.addEventListener(
+            "click",
+            (event) => {
+                const dropdown =
+                    document.getElementById(
+                        "deathPlayerDropdown"
+                    );
+
+                if (event.target === deathBookModal) {
+                    closeDeathBook();
+                    return;
+                }
+
+                const clickedPlayerSelector =
+                    event.target.closest(
+                        ".death-book-player-selector"
+                    );
+
+                if (
+                    !clickedPlayerSelector &&
+                    dropdown
+                ) {
+                    dropdown.classList.add(
+                        "hidden"
+                    );
+                }
             }
-        });
+        );
     }
+
 }
 
 

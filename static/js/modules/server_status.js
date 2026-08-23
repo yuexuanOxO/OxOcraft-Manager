@@ -188,13 +188,26 @@ function renderPlayersFromQuery(players) {
                 ? ""
                 : String(player.id || player.uuid || player.player_uuid || "");
 
+        const playerAccountType =
+            typeof player === "string"
+                ? ""
+                : String(
+                    player.account_type || ""
+                ).toLowerCase();
+
         const playerData = {
             player_uuid: playerUuid,
             player_name: playerName,
             name: playerName,
-            account_type: effectiveOnlineModeForAvatars
-                ? "premium"
-                : "offline",
+            account_type:
+                playerAccountType === "premium" ||
+                playerAccountType === "offline"
+                    ? playerAccountType
+                    : (
+                        effectiveOnlineModeForAvatars
+                            ? "premium"
+                            : "offline"
+                    ),
             online: true,
         };
 

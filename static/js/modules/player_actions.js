@@ -9,6 +9,33 @@ import {
 } from "./player_permissions.js";
 
 
+async function getWhitelistEnabled() {
+    try {
+        const response = await fetch(
+            "/api/player/whitelist/settings",
+            { cache: "no-store" }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(
+                data.message ||
+                "讀取白名單設定失敗"
+            );
+        }
+
+        return data.white_list === true;
+
+    } catch (error) {
+        console.error(
+            "讀取白名單設定失敗:",
+            error
+        );
+
+        return null;
+    }
+}
 
 
 function closeAllPlayerMenus() {
@@ -218,16 +245,41 @@ async function handlePlayerMenuClick(event) {
                     "unknown",
             };
 
+
+            let whitelistEnabled = null;
+
+            if (!isWhitelisted) {
+                whitelistEnabled =
+                    await getWhitelistEnabled();
+            }
+
+
+            let confirmMessage;
+
+            if (isWhitelisted) {
+                confirmMessage =
+                    `確定要將「${playerName}」移出白名單嗎？`;
+
+            } else if (whitelistEnabled === false) {
+                confirmMessage =
+                    `白名單目前尚未啟用。\n\n` +
+                    `仍可先將「${playerName}」加入白名單，` +
+                    `之後啟用白名單時即可直接生效。\n\n` +
+                    `是否繼續加入？`;
+
+            } else {
+                confirmMessage =
+                    `確定要將「${playerName}」加入白名單嗎？`;
+            }
+
+
             const confirmed = await showConfirm({
                 title:
                     isWhitelisted
                         ? "移出白名單"
                         : "加入白名單",
 
-                message:
-                    isWhitelisted
-                        ? `確定要將「${playerName}」移出白名單嗎？`
-                        : `確定要將「${playerName}」加入白名單嗎？`,
+                message: confirmMessage,
 
                 icon: getPlayerAvatarUrl(playerData),
 

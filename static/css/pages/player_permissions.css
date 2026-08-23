@@ -105,27 +105,6 @@
     line-height: 1;
 }
 
-.player-permission-header-top {
-    display: grid;
-    grid-template-columns: 180px 1fr 180px;
-    align-items: center;
-}
-
-.player-permission-header-status {
-    min-width: 0;
-}
-
-.player-permission-header-spacer {
-    min-width: 0;
-}
-
-.player-permission-page-title {
-    color: #f5f5f5;
-    font-size: 22px;
-    font-weight: bold;
-    text-align: center;
-}
-
 .player-permission-header {
     display: flex;
     align-items: flex-start;
@@ -344,13 +323,6 @@
     padding: 24px;
     color: #aaa;
     text-align: center;
-}
-
-
-.player-permission-player-count {
-    margin-top: 4px;
-    font-size: 13px;
-    color: #bbb;
 }
 
 .player-permission-mode {

@@ -39,29 +39,31 @@
 
             <div id="playerPermissionPage" class="player-permission-page">
 
-                <div class="player-permission-header">
-                    <div class="player-permission-header-main">
-                        <div class="player-permission-header-top">
+                <div class="player-management-header">
 
-                            <div class="player-permission-header-status">
-                                <div id="playerPermissionSummary" class="player-permission-summary" hidden></div>
+                    <div
+                        id="playerPermissionSummary"
+                        class="player-permission-summary player-management-debug"
+                        hidden
+                    ></div>
 
-                                <div
-                                    id="playerPermissionPlayerCount"
-                                    class="player-permission-player-count"
-                                >
-                                    載入中...
-                                </div>
-                            </div>
-
-                            <div class="player-permission-page-title">
-                                玩家權限管理
-                            </div>
-
-                            <div class="player-permission-header-spacer"></div>
-
-                        </div>
+                    <div class="player-management-title">
+                        玩家權限管理
                     </div>
+
+                    <div class="player-management-meta-row">
+
+                        <div
+                            id="playerPermissionPlayerCount"
+                            class="player-management-count"
+                        >
+                            載入中...
+                        </div>
+
+                        <div class="player-management-controls"></div>
+
+                    </div>
+
                 </div>
 
                 <div class="player-permission-toolbar">

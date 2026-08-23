@@ -96,9 +96,13 @@
 .player-whitelist-main {
     position: relative;
     z-index: 2;
+
     flex: 1;
-    padding: 10px 10px 10px;
+
+    padding: 0;
+
     overflow: hidden;
+
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -110,7 +114,7 @@
     justify-content: space-between;
     gap: 16px;
 
-    margin-top: -10px;
+    /* margin-top: -10px; */
 }
 
 .player-whitelist-title {
@@ -122,12 +126,6 @@
 
 .player-whitelist-summary {
     margin-top: 6px;
-    font-size: 13px;
-    color: #bbb;
-}
-
-.player-whitelist-player-count {
-    margin-top: 4px;
     font-size: 13px;
     color: #bbb;
 }
@@ -566,23 +564,6 @@
     align-items: center;
 }
 
-.player-whitelist-status-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 36px;
-}
-
-.player-whitelist-status-left {
-    flex: 0 0 130px;
-}
-
-.player-whitelist-switch-area {
-    display: flex;
-    align-items: center;
-    gap: 36px;
-    padding-top: 4px;
-}
-
 .player-whitelist-switch-group {
     display: flex;
     align-items: center;
@@ -619,11 +600,6 @@
 
     box-shadow: none;
 }
-
-.player-whitelist-header-main {
-    flex: 1;
-}
-
 
 .player-whitelist-card.disabled {
     opacity: 0.58;

@@ -18,8 +18,9 @@
     position: relative;
     display: flex;
 
-    width: min(820px, 90vw);
-    height: min(760px, 88vh);
+    width: min(820px, calc(100vw - 48px));
+    height: min(752px, calc(100vh - 64px));
+    max-height: calc(100vh - 64px);
 
     margin: 0;
 
@@ -136,12 +137,11 @@
 .player-ban-toolbar {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
-    gap: 6px;
+
+    gap: 10px;
     align-items: center;
 
-    margin-top: 18px;
-    padding-top: 14px;
-    border-top: 1px solid #555;
+    margin-top: 14px;
 }
 
 .player-ban-toolbar.hidden {
@@ -150,7 +150,7 @@
 
 .player-ban-add-btn {
     min-width: 120px;
-    height: 40px;
+    height: 42px;
     padding: 10px 14px;
 
     border: 1px solid #c08b42;
@@ -169,7 +169,7 @@
 
 .player-ban-search {
     width: 100%;
-    height: 40px;
+    height: 42px;
 
     padding: 10px 12px;
 

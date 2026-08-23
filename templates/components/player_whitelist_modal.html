@@ -40,87 +40,74 @@
 
             <div id="playerWhitelistPage" class="player-whitelist-page">
 
-                <div class="player-whitelist-header">
+                <div class="player-management-header">
 
-                    <div class="player-whitelist-header-main">
+                    <div
+                        id="playerWhitelistSummary"
+                        class="player-whitelist-summary player-management-debug"
+                        hidden
+                    ></div>
 
-                        <div class="player-whitelist-title-row">
-                            <div class="player-whitelist-title">
-                                玩家白名單管理
-                            </div>
+                    <div class="player-management-title">
+                        玩家白名單管理
+                    </div>
+
+                    <div class="player-management-meta-row">
+
+                        <div
+                            id="playerWhitelistPlayerCount"
+                            class="player-management-count"
+                        >
+                            載入中...
                         </div>
 
-                        <div class="player-whitelist-status-row">
+                        <div class="player-management-controls">
 
-                            <div class="player-whitelist-status-left">
+                            <div class="player-whitelist-switch-group">
 
-                                <div
-                                    id="playerWhitelistSummary"
-                                    class="player-whitelist-summary"
-                                    hidden
-                                ></div>
-
-                                <div
-                                    id="playerWhitelistPlayerCount"
-                                    class="player-whitelist-player-count"
-                                >
-                                    載入中...
+                                <div class="player-whitelist-switch-title">
+                                    白名單
                                 </div>
+
+                                <button
+                                    id="whiteListToggleBtn"
+                                    class="setting-switch-btn off"
+                                    type="button"
+                                    data-mc-tooltip="開啟後只有在白名單內的玩家能進入伺服器(管理員不再此限制內)。"
+                                >
+                                    <span class="setting-switch-visual">
+                                        <span class="setting-switch-track"></span>
+                                        <span class="setting-switch-thumb"></span>
+                                    </span>
+
+                                    <span class="setting-switch-text">
+                                        已關閉
+                                    </span>
+                                </button>
 
                             </div>
 
-                            <div class="player-whitelist-switch-area">
+                            <div class="player-whitelist-switch-group">
 
-                                <div class="player-whitelist-switch-group">
-
-                                    <div class="player-whitelist-switch-title">
-                                        白名單
-                                    </div>
-
-                                    <button
-                                        id="whiteListToggleBtn"
-                                        class="setting-switch-btn off"
-                                        type="button"
-                                        data-mc-tooltip="開啟後只有在白名單內的玩家能進入伺服器(管理員不再此限制內)。"
-                                        
-                                    >
-                                        <span class="setting-switch-visual">
-                                            <span class="setting-switch-track"></span>
-                                            <span class="setting-switch-thumb"></span>
-                                        </span>
-
-                                        <span class="setting-switch-text">
-                                            已關閉
-                                        </span>
-
-                                    </button>
-
+                                <div class="player-whitelist-switch-title">
+                                    強制執行白名單
                                 </div>
 
-                                <div class="player-whitelist-switch-group">
+                                <button
+                                    id="enforceWhitelistToggleBtn"
+                                    class="setting-switch-btn off"
+                                    type="button"
+                                    data-mc-tooltip="需開啟白名單才會生效，開啟後若沒有在白名單內的玩家會立刻被踢出伺服器。(僅能在伺服器關閉時設定)"
+                                >
+                                    <span class="setting-switch-visual">
+                                        <span class="setting-switch-track"></span>
+                                        <span class="setting-switch-thumb"></span>
+                                    </span>
 
-                                    <div class="player-whitelist-switch-title">
-                                        強制執行白名單
-                                    </div>
-
-                                    <button
-                                        id="enforceWhitelistToggleBtn"
-                                        class="setting-switch-btn off"
-                                        type="button"
-                                        data-mc-tooltip="需開啟白名單才會生效，開啟後若沒有在白名單內的玩家會立刻被踢出伺服器。(僅能在伺服器關閉時設定)"
-                                    >
-                                        <span class="setting-switch-visual">
-                                            <span class="setting-switch-track"></span>
-                                            <span class="setting-switch-thumb"></span>
-                                        </span>
-
-                                        <span class="setting-switch-text">
-                                            已關閉
-                                        </span>
-
-                                    </button>
-
-                                </div>
+                                    <span class="setting-switch-text">
+                                        已關閉
+                                    </span>
+                                </button>
 
                             </div>
 

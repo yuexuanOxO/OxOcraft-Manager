@@ -1,0 +1,81 @@
+.player-management-header {
+    position: relative;
+
+    flex: 0 0 auto;
+
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    min-height: 86px;
+
+    padding-bottom: 10px;
+
+    border-bottom: 1px solid #444;
+
+    box-sizing: border-box;
+}
+
+.player-management-title {
+    height: 30px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #f5f5f5;
+    font-size: 22px;
+    font-weight: bold;
+    line-height: 1;
+
+    text-align: center;
+}
+
+.player-management-meta-row {
+    min-height: 40px;
+
+    display: grid;
+    grid-template-columns:
+        140px
+        minmax(0, 1fr)
+        140px;
+
+    align-items: center;
+}
+
+.player-management-count {
+    grid-column: 1;
+
+    justify-self: start;
+
+    margin: 0;
+
+    color: #bbb;
+    font-size: 13px;
+    font-weight: normal;
+
+    white-space: nowrap;
+}
+
+.player-management-controls {
+    grid-column: 2;
+
+    justify-self: center;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 28px;
+
+    min-width: 0;
+}
+
+.player-management-debug {
+    position: absolute;
+
+    top: 0;
+    left: 0;
+
+    z-index: 2;
+}

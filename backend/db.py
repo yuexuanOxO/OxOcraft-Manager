@@ -61,10 +61,12 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS player_deaths (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 player_name TEXT NOT NULL,
+                player_uuid TEXT,
                 death_time DATETIME DEFAULT CURRENT_TIMESTAMP,
                 death_type TEXT,
                 death_text TEXT,
                 killer TEXT,
+                killer_uuid TEXT,
                 item TEXT,
                 x INTEGER,
                 y INTEGER,
@@ -238,9 +240,11 @@ def init_db() -> None:
 
 def insert_player_death(
     player_name: str,
+    player_uuid: str | None,
     death_type: str | None,
     death_text: str | None,
     killer: str | None,
+    killer_uuid: str | None,
     item: str | None,
     x: int | None,
     y: int | None,
@@ -252,9 +256,11 @@ def insert_player_death(
         conn.execute("""
             INSERT INTO player_deaths (
                 player_name,
+                player_uuid,
                 death_type,
                 death_text,
                 killer,
+                killer_uuid,
                 item,
                 x,
                 y,
@@ -262,12 +268,14 @@ def insert_player_death(
                 dimension,
                 raw_log
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             player_name,
+            player_uuid,
             death_type,
             death_text,
             killer,
+            killer_uuid,
             item,
             x,
             y,
@@ -290,34 +298,51 @@ def insert_player_death(
         conn.commit()
 
 
-def get_recent_player_deaths_grouped(limit_per_player: int = 5) -> list[dict]:
+def get_recent_player_deaths_grouped(
+    limit_per_player: int = 5
+) -> list[dict]:
+
     with get_connection() as conn:
 
         players = conn.execute("""
-            SELECT DISTINCT player_name
+            SELECT
+                player_uuid,
+                player_name,
+                MAX(death_time) AS latest_death_time,
+                MAX(id) AS latest_id
             FROM player_deaths
-            ORDER BY death_time DESC, id DESC
+            GROUP BY
+                player_uuid,
+                player_name
+            ORDER BY
+                latest_death_time DESC,
+                latest_id DESC
         """).fetchall()
 
         result = []
 
         for player_row in players:
+            player_uuid = player_row["player_uuid"]
             player_name = player_row["player_name"]
 
             death_rows = conn.execute("""
                 SELECT *
                 FROM player_deaths
-                WHERE player_name = ?
+                WHERE player_uuid = ?
                 ORDER BY death_time DESC, id DESC
                 LIMIT ?
             """, (
-                player_name,
-                limit_per_player
+                player_uuid,
+                limit_per_player,
             )).fetchall()
 
             result.append({
+                "player_uuid": player_uuid,
                 "player_name": player_name,
-                "deaths": [dict(row) for row in death_rows]
+                "deaths": [
+                    dict(row)
+                    for row in death_rows
+                ],
             })
 
     return result

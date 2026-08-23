@@ -1,3 +1,8 @@
+import {
+    getPlayerAvatarUrl
+} from "./player_avatar.js";
+
+
 let deathPlayers = [];
 
 let currentPlayerIndex = 0;
@@ -289,7 +294,11 @@ function formatDeathTime(value) {
     return `死亡時間：${y}/${m}/${d} ${hh}:${mm}`;
 }
 
-function getKillerDisplayInfo(killer) {
+function getKillerDisplayInfo(
+    killer,
+    killerUuid = "",
+    killerAccountType = "unknown",
+) {
     if (!killer) {
         return {
             type: "none",
@@ -311,7 +320,15 @@ function getKillerDisplayInfo(killer) {
     return {
         type: "player",
         text: killer,
-        icon: `https://mc-heads.net/avatar/${encodeURIComponent(killer)}`
+        icon: getPlayerAvatarUrl({
+            player_uuid:
+                killerUuid || "",
+            player_name:
+                killer || "",
+            account_type:
+                killerAccountType
+                || "unknown",
+        }),
     };
 }
 
@@ -336,8 +353,17 @@ function renderDeathRecordPage() {
 
     const record = deathRecords[currentDeathPage];
 
-    document.getElementById("deathPlayerAvatar").src =
-        `https://mc-heads.net/avatar/${encodeURIComponent(record.player_name)}`;
+    document.getElementById(
+        "deathPlayerAvatar"
+    ).src = getPlayerAvatarUrl({
+        player_uuid:
+            record.player_uuid || "",
+        player_name:
+            record.player_name || "",
+        account_type:
+            record.account_type || "unknown",
+    });
+
     document.getElementById("deathPlayerName").textContent = record.player_name;
     document.getElementById("deathPageInfo").textContent =
         `第 ${currentDeathPage + 1} 頁 / 第 ${deathRecords.length} 頁`;
@@ -352,7 +378,11 @@ function renderDeathRecordPage() {
     document.getElementById("deathTime").textContent =
         formatDeathTime(record.death_time);
 
-    const killerInfo = getKillerDisplayInfo(record.killer);
+    const killerInfo = getKillerDisplayInfo(
+        record.killer,
+        record.killer_uuid,
+        record.killer_account_type,
+    );
     const killerSection = document.getElementById("deathKillerSection");
     const killerIcon = document.getElementById("deathKillerIcon");
     const killerText = document.getElementById("deathKillerText");
@@ -551,7 +581,15 @@ function renderPlayerDropdown() {
         item.innerHTML = `
             <img
                 class="death-book-player-dropdown-avatar"
-                src="https://mc-heads.net/avatar/${encodeURIComponent(playerData.player_name)}">
+                src="${getPlayerAvatarUrl({
+                    player_uuid:
+                        playerData.player_uuid || "",
+                    player_name:
+                        playerData.player_name || "",
+                    account_type:
+                        playerData.account_type
+                        || "unknown",
+                })}">
 
             <div class="death-book-player-dropdown-name">
                 ${playerData.player_name}

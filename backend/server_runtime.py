@@ -6,7 +6,6 @@ import json
 import socket
 from pathlib import Path
 from backend.death_record.death_rules import parse_death_message, location_pattern
-from backend.db import insert_player_death
 from backend.server_monitor import append_log_line, clear_log_cache
 from backend.paths import SERVER_JAR_PATH, CONFIG_PATH, MC_ROOT, SERVER_PROPERTIES_PATH
 from backend.server_settings.server_properties import read_properties_file
@@ -28,6 +27,12 @@ from backend.management_api.monitor import (
     start_management_api_monitor,
 )
 
+from backend.db import (
+    insert_player_death,
+    get_player_by_name_and_account_type,
+    get_player_by_name_and_account_type_exact,
+)
+
 
 SERVER_ROOT = MC_ROOT
 
@@ -41,6 +46,40 @@ CURRENT_WORLD_PATH: Path | None = None
 
 SERVER_RUNTIME_STATE = "offline"
 _runtime_state_lock = threading.Lock()
+
+
+def resolve_death_player_uuid(
+    player_name: str | None,
+    account_type: str,
+) -> str | None:
+    player_name = str(
+        player_name or ""
+    ).strip()
+
+    if not player_name:
+        return None
+
+    if account_type == "premium":
+        player = get_player_by_name_and_account_type(
+            player_name,
+            account_type,
+        )
+    else:
+        player = (
+            get_player_by_name_and_account_type_exact(
+                player_name,
+                account_type,
+            )
+        )
+
+    if not player:
+        return None
+
+    player_uuid = str(
+        player.get("player_uuid") or ""
+    ).strip()
+
+    return player_uuid or None
 
 
 def set_server_runtime_state(state: str) -> None:
@@ -178,11 +217,42 @@ def handle_server_output() -> None:
 
 
         death_result = parse_death_message(line)
+
         if death_result:
             player = death_result["player"]
+
             if player:
+                from backend.player_permissions.player_permission_service import (
+                    get_effective_online_mode,
+                )
+
+                account_type = (
+                    "premium"
+                    if get_effective_online_mode()
+                    else "offline"
+                )
+
+                death_result["player_uuid"] = (
+                    resolve_death_player_uuid(
+                        player,
+                        account_type,
+                    )
+                )
+
+                death_result["killer_uuid"] = (
+                    resolve_death_player_uuid(
+                        death_result.get("killer"),
+                        account_type,
+                    )
+                )
+
                 pending_deaths[player] = death_result
-                send_command(f"data get entity {player} LastDeathLocation")
+
+                send_command(
+                    f"data get entity "
+                    f"{player} LastDeathLocation"
+                )
+
             continue
 
         location_match = location_pattern.search(line)
@@ -201,9 +271,15 @@ def handle_server_output() -> None:
 
             insert_player_death(
                 player_name=player,
+                player_uuid=death_data.get(
+                    "player_uuid"
+                ),
                 death_type=death_data["type"],
                 death_text=death_data["death_text"],
                 killer=death_data["killer"],
+                killer_uuid=death_data.get(
+                    "killer_uuid"
+                ),
                 item=death_data["item"],
                 x=x,
                 y=y,

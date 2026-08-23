@@ -34,6 +34,7 @@ export function createPlayerListMenu(player) {
     menu.hidden = true;
 
 
+    //玩家清單權限管理按鈕
     const opBtn = document.createElement("button");
     opBtn.className = "player-menu-item";
     opBtn.type = "button";
@@ -43,6 +44,7 @@ export function createPlayerListMenu(player) {
     opBtn.dataset.player = playerName;
     opBtn.dataset.accountType = player.account_type || "unknown";
 
+    //玩家清單白名單按鈕
     const whitelistBtn = document.createElement("button");
     whitelistBtn.className = "player-menu-item";
     whitelistBtn.type = "button";
@@ -53,7 +55,19 @@ export function createPlayerListMenu(player) {
     whitelistBtn.dataset.uuid = player.player_uuid || "";
     whitelistBtn.dataset.accountType = player.account_type || "unknown";
 
+    //玩家清單封鎖玩家按鈕
+    const banBtn = document.createElement("button");
+    banBtn.className = "player-menu-item";
+    banBtn.type = "button";
+    banBtn.textContent = "封鎖玩家";
+    banBtn.dataset.action = "ban-player";
+    banBtn.dataset.player = playerName;
+    banBtn.dataset.uuid =
+        player.player_uuid || "";
+    banBtn.dataset.accountType =
+        player.account_type || "unknown";
 
+    //玩家清單踢出伺服器按鈕
     const kickBtn = document.createElement("button");
     kickBtn.className = "player-menu-item";
     kickBtn.type = "button";
@@ -64,6 +78,7 @@ export function createPlayerListMenu(player) {
 
     menu.appendChild(opBtn);
     menu.appendChild(whitelistBtn);
+    menu.appendChild(banBtn);
     menu.appendChild(kickBtn);
 
     menuWrap.appendChild(menuBtn);

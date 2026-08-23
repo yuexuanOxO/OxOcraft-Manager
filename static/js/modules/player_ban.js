@@ -30,6 +30,7 @@ let banIpCandidateRecords = [];
 let selectedBanIpCandidate = null;
 let canAddBanPlayerByName = true;
 let selectedBanCandidatePlayer = null;
+let lockedBanCandidate = null;
 let banOnlineMode = true;
 let banSearchKeyword = "";
 let playerBanDateTimePicker = null;
@@ -42,6 +43,13 @@ let banHistoryEndPicker = null;
 const banHistoryFilters = new Set();
 const OXOCRAFT_OPERATOR_ICON = "/static/icons/player_ban/OxOcraft_origin.png";
 const UNKNOWN_OPERATOR_ICON = "/static/icons/general_icon/unknown.png";
+
+
+export async function openAddBanPlayerModalWithLockedPlayer(player) {
+    currentBanTab = "players";
+
+    await openAddBanModal(player);
+}
 
 
 export function initPlayerBan() {
@@ -289,6 +297,13 @@ export function initPlayerBan() {
     });
 
     addTargetInput?.addEventListener("input", () => {
+        if (
+            currentBanTab === "players" &&
+            lockedBanCandidate
+        ) {
+            return;
+        }
+
         if (currentBanTab === "players") {
             selectedBanCandidatePlayer = null;
             renderBanCandidates();
@@ -1254,8 +1269,9 @@ function escapeHtml(text) {
 }
 
 
-async function openAddBanModal() {
-    selectedBanCandidatePlayer = null;
+async function openAddBanModal(lockedPlayer = null) {
+    lockedBanCandidate = lockedPlayer;
+    selectedBanCandidatePlayer = lockedPlayer;
     selectedBanIpCandidate = null;
 
     const modal = document.getElementById("addPlayerBanModal");
@@ -1281,11 +1297,23 @@ async function openAddBanModal() {
     }
 
     if (input) {
-        input.value = "";
+        input.value =
+            lockedBanCandidate
+                ? (
+                    lockedBanCandidate.player_name ||
+                    lockedBanCandidate.name ||
+                    ""
+                )
+                : "";
+
         input.placeholder =
             currentBanTab === "ips"
                 ? "例如：192.168.0.87"
-                : "請輸入玩家名稱";
+                : (
+                    lockedBanCandidate
+                        ? "已從玩家列表選擇玩家"
+                        : "請輸入玩家名稱"
+                );
     }
 
     if (reason) {
@@ -1373,28 +1401,41 @@ function renderBanCandidateSection() {
         return;
     }
 
-    const offlineOnlineSearchDisabled =
-        !canAddBanPlayerByName;
+    const offlineOnlineSearchDisabled =!canAddBanPlayerByName;
 
-    input.disabled = false;
+    const hasLockedCandidate = lockedBanCandidate !== null;
+
+    input.disabled =
+        hasLockedCandidate;
 
     input.placeholder =
-        offlineOnlineSearchDisabled
-            ? "篩選下方已存在的玩家"
-            : "請輸入玩家名稱";
+        hasLockedCandidate
+            ? "已從玩家列表選擇玩家"
+            : (
+                offlineOnlineSearchDisabled
+                    ? "篩選下方已存在的玩家"
+                    : "請輸入玩家名稱"
+            );
 
     if (searchBtn) {
         searchBtn.disabled =
+            hasLockedCandidate ||
             offlineOnlineSearchDisabled;
 
-        searchBtn.title =
-            offlineOnlineSearchDisabled
-                ? (
-                    "離線版伺服器在線時，"
-                    + "無法搜尋新增尚未進入過伺服器的玩家，"
-                    + "請從下方清單選擇玩家。"
-                )
-                : "搜尋玩家";
+        if (hasLockedCandidate) {
+            searchBtn.title =
+                "已從玩家列表選擇玩家";
+
+        } else {
+            searchBtn.title =
+                offlineOnlineSearchDisabled
+                    ? (
+                        "離線版伺服器在線時，"
+                        + "無法搜尋新增尚未進入過伺服器的玩家，"
+                        + "請從下方清單選擇玩家。"
+                    )
+                    : "搜尋玩家";
+        }
     }
 
     if (label) {
@@ -1739,7 +1780,10 @@ function renderBanCandidates() {
     const keyword =
         (input?.value || "").trim().toLowerCase();
 
-    let players = [...banCandidatePlayers];
+    let players =
+        lockedBanCandidate
+            ? [lockedBanCandidate]
+            : [...banCandidatePlayers];
 
     if (keyword) {
         players = players.filter(player =>

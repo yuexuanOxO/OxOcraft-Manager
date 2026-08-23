@@ -8,6 +8,10 @@ import {
     openAddOpPlayerModalWithLockedPlayer
 } from "./player_permissions.js";
 
+import {
+    openAddBanPlayerModalWithLockedPlayer
+} from "./player_ban.js";
+
 
 async function getWhitelistEnabled() {
     try {
@@ -372,6 +376,38 @@ async function handlePlayerMenuClick(event) {
             } finally {
                 menuItem.disabled = false;
             }
+        }
+
+        if (action === "ban-player") {
+            const playerUuid =
+                menuItem.dataset.uuid || "";
+
+            const playerName =
+                menuItem.dataset.player || player;
+
+            if (!playerUuid || !playerName) {
+                await showInfo({
+                    title: "操作失敗",
+                    message:
+                        "缺少玩家 UUID 或名稱，無法封鎖玩家",
+                    confirmText: "關閉",
+                    variant: "error"
+                });
+
+                return;
+            }
+
+            await openAddBanPlayerModalWithLockedPlayer({
+                player_uuid: playerUuid,
+                player_name: playerName,
+                name: playerName,
+                account_type:
+                    menuItem.dataset.accountType ||
+                    "unknown",
+                online: true,
+            });
+
+            return;
         }
 
 

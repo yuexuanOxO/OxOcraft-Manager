@@ -17,7 +17,8 @@ import {
 } from "./cloud_backup.js";
 
 import {
-    loadAutoBackupConfig
+    loadAutoBackupConfig,
+    confirmAutoBackupModalClose
 } from "./auto_backup.js";
 
 
@@ -102,10 +103,18 @@ function setupBackupModal() {
     });
 
 
-    modal.addEventListener("click", (event) => {
-        if (event.target === modal) {
-            modal.classList.add("hidden");
+    modal.addEventListener("click", async (event) => {
+        if (event.target !== modal) {
+            return;
         }
+
+        const canClose = await confirmAutoBackupModalClose();
+
+        if (!canClose) {
+            return;
+        }
+
+        modal.classList.add("hidden");
     });
 
     tabs.forEach((tab) => {

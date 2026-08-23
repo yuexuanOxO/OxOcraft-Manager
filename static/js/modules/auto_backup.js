@@ -7,6 +7,7 @@ import {
 let autoBackupMissedPromptOpen = false;
 let isCloudConnected = false;
 let autoBackupStartPicker = null;
+let autoBackupClosePromptOpen = false;
 
 let autoBackupState = {
     enabled: false,
@@ -109,6 +110,68 @@ function formatAutoBackupTime(value) {
     if (!value) return "尚未套用設定";
 
     return value.replace("T", " ");
+}
+
+
+export async function confirmAutoBackupModalClose() {
+    const enabledBtn =
+        document.getElementById(
+            "autoBackupEnabledBtn"
+        );
+
+    if (!enabledBtn) {
+        return true;
+    }
+
+    const editingEnabled =
+        enabledBtn.dataset.value === "true";
+
+    const appliedEnabled =
+        autoBackupState.enabled;
+
+    const hasUnappliedEnable =
+        editingEnabled &&
+        !appliedEnabled;
+
+    if (!hasUnappliedEnable) {
+        return true;
+    }
+
+    if (autoBackupClosePromptOpen) {
+        return false;
+    }
+
+    autoBackupClosePromptOpen = true;
+
+    try {
+        const shouldClose =
+            await showConfirm({
+                title: "自動備份設定尚未套用",
+                message:
+                    "目前自動備份設定尚未套用。\n\n" +
+                    "若現在離開將不會啟用自動備份，" +
+                    "請問是否要關閉自動備份並離開？",
+                confirmText: "是",
+                cancelText: "否",
+                variant: "warning"
+            });
+
+        if (!shouldClose) {
+            return false;
+        }
+
+        setBoolButton(
+            enabledBtn,
+            false
+        );
+
+        updateAutoBackupAdvancedVisible();
+
+        return true;
+
+    } finally {
+        autoBackupClosePromptOpen = false;
+    }
 }
 
 

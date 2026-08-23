@@ -262,9 +262,9 @@ async function handlePlayerMenuClick(event) {
 
             } else if (whitelistEnabled === false) {
                 confirmMessage =
-                    `白名單目前尚未啟用。\n\n` +
+                    `白名單目前尚未啟用。\n` +
                     `仍可先將「${playerName}」加入白名單，` +
-                    `之後啟用白名單時即可直接生效。\n\n` +
+                    `啟用白名單時即可直接生效。\n` +
                     `是否繼續加入？`;
 
             } else {

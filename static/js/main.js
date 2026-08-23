@@ -3,6 +3,7 @@ import { initFeatureCards } from "./modules/feature_cards.js";
 import { initCommandConsole } from "./modules/command_console.js";
 import { initPlayerActions } from "./modules/player_actions.js";
 import {initServerStatus} from "./modules/server_status.js";
+import {initPlayerListMenu} from "./modules/player_list_menu.js";
 import {initLogConsole} from "./modules/log_console.js";
 import {initServerSettings} from "./modules/server_settings.js";
 import {initBackup} from "./modules/backup.js";
@@ -28,6 +29,7 @@ function setupGlobalImageDragBlocker() {
 
 
 document.addEventListener("DOMContentLoaded", () => {
+    initPlayerListMenu();
     initServerStatus();
     initServerEvents();
     initDeathBook();

@@ -1080,6 +1080,10 @@ function renderFilteredBackupRecords() {
         const providerKey = getBackupProviderKey(record);
         const statusKey = record.status || "unknown";
 
+        if (statusKey === "running") {
+            return false;
+        }
+
         if (backupProviderFilters.size > 0 && !backupProviderFilters.has(providerKey)) {
             return false;
         }

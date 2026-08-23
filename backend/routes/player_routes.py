@@ -177,6 +177,13 @@ def api_player_permission_toggle_op():
     player_uuid = str(data.get("uuid", "")).strip()
     player_name = str(data.get("name", "")).strip()
 
+    history_source = str(
+        data.get("source", "")
+    ).strip()
+
+    if history_source != "player_list":
+        history_source = ""
+
     try:
         op_level = int(data.get("level", 4))
     except (TypeError, ValueError):
@@ -199,7 +206,10 @@ def api_player_permission_toggle_op():
             player_uuid=player_uuid,
             player_name=player_name,
             op_level=op_level,
-            op_bypasses_player_limit=op_bypasses_player_limit,
+            op_bypasses_player_limit=
+                op_bypasses_player_limit,
+            history_source=
+                history_source or None,
         )
 
         return jsonify(result)

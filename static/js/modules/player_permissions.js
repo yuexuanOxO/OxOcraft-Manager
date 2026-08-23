@@ -1534,10 +1534,20 @@ async function addPlayerOpByName(playerName) {
         level: selectedOpLevel,
         bypassesPlayerLimit:
             Boolean(
-                document.getElementById("addOpBypassPlayerLimitCheck")
-                    ?.checked
+                document.getElementById(
+                    "addOpBypassPlayerLimitCheck"
+                )?.checked
             ),
     };
+
+    const operationSource =
+        selectedOpCandidate?.operation_source ||
+        lockedOpCandidate?.operation_source ||
+        "";
+
+    if (operationSource) {
+        payload.source = operationSource;
+    }
 
     let url = "/api/player/permission/add-op";
 
@@ -2516,6 +2526,7 @@ function getPermissionSourceText(source) {
         console_rcon_reload: "UI輸入指令(reload)",
         player_command_reload: "遊戲內指令(reload)",
         online_ui_manage: "在線管理模式",
+        player_list: "玩家列表",
     };
 
     return sourceMap[source] || source || "未知";

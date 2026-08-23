@@ -518,6 +518,7 @@ def set_player_op(
     player_name: str,
     op_level: int | None = None,
     op_bypasses_player_limit: bool = False,
+    history_source: str | None = None,
 ) -> dict:
 
     account_type = get_account_type(player_uuid)
@@ -556,7 +557,10 @@ def set_player_op(
             target_name=player_name,
             account_type=account_type,
             operator_name="OxOcraft",
-            source="online_ui_manage",
+            source=(
+                history_source
+                or "online_ui_manage"
+            ),
             detail=build_op_history_detail(
                 op_level=effective_op_level,
                 op_bypasses_player_limit=
@@ -678,7 +682,11 @@ def can_edit_op_online(
     return False
 
 
-def remove_player_op(player_uuid: str, player_name: str) -> dict:
+def remove_player_op(
+    player_uuid: str,
+    player_name: str,
+    history_source: str | None = None,
+) -> dict:
     ops_entry = get_ops_entry_by_uuid(player_uuid)
     effective_name = str(
         ops_entry.get("name", player_name)
@@ -698,7 +706,10 @@ def remove_player_op(player_uuid: str, player_name: str) -> dict:
             target_name=effective_name,
             account_type=get_account_type(player_uuid),
             operator_name="OxOcraft",
-            source="online_ui_manage",
+            source=(
+                history_source
+                or "online_ui_manage"
+            ),
             detail="{}",
         )
 
@@ -756,18 +767,25 @@ def toggle_player_op(
     player_name: str,
     op_level: int | None = None,
     op_bypasses_player_limit: bool = False,
+    history_source: str | None = None,
 ) -> dict:
 
     ops_uuid_set = load_ops_uuid_set()
 
     if player_uuid.lower() in ops_uuid_set:
-        return remove_player_op(player_uuid, player_name)
+        return remove_player_op(
+            player_uuid,
+            player_name,
+            history_source=history_source,
+        )
 
     return set_player_op(
         player_uuid,
         player_name,
         op_level=op_level,
-        op_bypasses_player_limit=op_bypasses_player_limit,
+        op_bypasses_player_limit=
+            op_bypasses_player_limit,
+        history_source=history_source,
     )
 
 

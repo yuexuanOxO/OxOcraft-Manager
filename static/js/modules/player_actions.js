@@ -102,8 +102,10 @@ async function handlePlayerMenuClick(event) {
                     player_uuid: playerUuid,
                     player_name: playerName,
                     name: playerName,
-                    account_type: menuItem.dataset.accountType || "unknown",
+                    account_type:
+                        menuItem.dataset.accountType || "unknown",
                     online: true,
+                    operation_source: "player_list",
                 });
 
                 return;
@@ -137,7 +139,8 @@ async function handlePlayerMenuClick(event) {
                     },
                     body: JSON.stringify({
                         uuid: playerUuid,
-                        name: playerName
+                        name: playerName,
+                        source: "player_list"
                     })
                 });
 

@@ -1080,10 +1080,7 @@ async function loadWhitelistHistory() {
 
 
 function renderWhitelistHistory() {
-    const list =
-        document.getElementById(
-            "playerWhitelistHistoryList"
-        );
+    const list =document.getElementById("playerWhitelistHistoryList");
 
     if (!list) return;
 
@@ -1233,6 +1230,12 @@ function renderWhitelistHistory() {
                 whitelistHistorySearchKeyword
             );
         });
+    }
+
+    const historyCount = document.getElementById("playerWhitelistHistoryCount");
+
+    if (historyCount) {
+        historyCount.textContent = `共 ${rows.length} 筆白名單紀錄`;
     }
 
     list.innerHTML = "";

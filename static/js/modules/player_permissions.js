@@ -2202,7 +2202,7 @@ function renderPermissionHistory() {
                 (sourceFilters.includes("command") && isCommand) ||
                 (sourceFilters.includes("system") && isSystem)
             );
-            
+
         });
     }
 
@@ -2257,6 +2257,12 @@ function renderPermissionHistory() {
                     .includes(keyword)
             );
         });
+    }
+
+    const historyCount = document.getElementById("playerPermissionHistoryCount");
+
+    if (historyCount) {
+        historyCount.textContent = `共 ${rows.length} 筆權限管理紀錄`;
     }
 
     list.innerHTML = "";

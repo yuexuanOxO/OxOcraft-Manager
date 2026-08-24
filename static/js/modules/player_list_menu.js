@@ -3,8 +3,10 @@ import {
     findPlayerPermission
 } from "./player_permission_state.js";
 
-
-let whitelistStatusRefreshTimer = null;
+import {
+    getPlayerWhitelistState,
+    findPlayerWhitelist
+} from "./player_whitelist_state.js";
 
 
 export function initPlayerListMenu() {
@@ -14,8 +16,8 @@ export function initPlayerListMenu() {
     );
 
     window.addEventListener(
-        "player-whitelist-should-refresh",
-        refreshPlayerWhitelistStatuses
+        "player-whitelist-state-changed",
+        handlePlayerWhitelistStateChanged
     );
 }
 
@@ -93,8 +95,7 @@ export function createPlayerListMenu(player) {
 
 
     loadPlayerOpButtonState(player, opBtn);
-
-    schedulePlayerWhitelistStatusRefresh();
+    loadPlayerWhitelistButtonState(player, whitelistBtn);
 
 
     return menuWrap;
@@ -179,138 +180,84 @@ function handlePlayerPermissionStateChanged(event) {
 }
 
 
-function schedulePlayerWhitelistStatusRefresh() {
-    if (whitelistStatusRefreshTimer !== null) {
-        window.clearTimeout(
-            whitelistStatusRefreshTimer
-        );
-    }
-
-    whitelistStatusRefreshTimer =
-        window.setTimeout(() => {
-            whitelistStatusRefreshTimer = null;
-
-            refreshPlayerWhitelistStatuses();
-        }, 0);
-}
-
-
-async function refreshPlayerWhitelistStatuses() {
-    const whitelistButtons =
-        document.querySelectorAll(
-            '.player-menu-item[data-action="toggle-whitelist"]'
-        );
-
-    if (whitelistButtons.length === 0) {
-        return;
-    }
-
+async function loadPlayerWhitelistButtonState(player, whitelistBtn) {
     try {
-        const response = await fetch(
-            "/api/player/whitelist",
-            { cache: "no-store" }
+        const state = await getPlayerWhitelistState();
+
+        updatePlayerWhitelistButtonState(
+            whitelistBtn,
+            player,
+            state
         );
-
-        const data = await response.json();
-
-        if (!data.success) {
-            throw new Error(
-                data.message ||
-                "讀取玩家白名單狀態失敗"
-            );
-        }
-
-        const whitelistPlayers =
-            data.players || [];
-
-        whitelistButtons.forEach(button => {
-            const playerUuid =
-                String(
-                    button.dataset.uuid || ""
-                ).toLowerCase();
-
-            const playerName =
-                String(
-                    button.dataset.player || ""
-                );
-
-            const accountType =
-                String(
-                    button.dataset.accountType ||
-                    "unknown"
-                ).toLowerCase();
-
-            const whitelistPlayer =
-                whitelistPlayers.find(item => {
-                    const itemUuid =
-                        String(
-                            item.player_uuid || ""
-                        ).toLowerCase();
-
-                    const itemName =
-                        String(
-                            item.player_name || ""
-                        );
-
-                    if (
-                        playerUuid &&
-                        itemUuid === playerUuid
-                    ) {
-                        return true;
-                    }
-
-                    if (playerUuid) {
-                        return false;
-                    }
-
-                    if (accountType === "offline") {
-                        return itemName === playerName;
-                    }
-
-                    return (
-                        itemName.toLowerCase()
-                        ===
-                        playerName.toLowerCase()
-                    );
-                });
-
-            const isWhitelisted =
-                Boolean(whitelistPlayer);
-
-            button.textContent =
-                isWhitelisted
-                    ? "移出白名單"
-                    : "加入白名單";
-
-            button.dataset.whitelisted =
-                isWhitelisted ? "1" : "0";
-
-            if (whitelistPlayer) {
-                button.dataset.uuid =
-                    whitelistPlayer.player_uuid ||
-                    button.dataset.uuid ||
-                    "";
-
-                button.dataset.player =
-                    whitelistPlayer.player_name ||
-                    button.dataset.player ||
-                    "";
-            }
-
-            button.disabled = false;
-        });
-
     } catch (error) {
         console.error(
             "讀取玩家白名單狀態失敗:",
             error
         );
 
-        whitelistButtons.forEach(button => {
-            button.textContent =
-                "白名單狀態讀取失敗";
-
-            button.disabled = true;
-        });
+        whitelistBtn.textContent = "白名單狀態讀取失敗";
+        whitelistBtn.disabled = true;
     }
+}
+
+
+function updatePlayerWhitelistButtonState(
+    whitelistBtn,
+    player,
+    state
+) {
+    const whitelistPlayer = findPlayerWhitelist(
+        player,
+        state?.players
+    );
+
+    const isWhitelisted = Boolean(whitelistPlayer);
+
+    whitelistBtn.textContent = isWhitelisted
+        ? "移出白名單"
+        : "加入白名單";
+
+    whitelistBtn.dataset.whitelisted =
+        isWhitelisted ? "1" : "0";
+
+    whitelistBtn.dataset.uuid =
+        whitelistPlayer?.player_uuid ||
+        player.player_uuid ||
+        player.uuid ||
+        whitelistBtn.dataset.uuid ||
+        "";
+
+    whitelistBtn.dataset.player =
+        whitelistPlayer?.player_name ||
+        player.player_name ||
+        player.name ||
+        whitelistBtn.dataset.player ||
+        "";
+
+    whitelistBtn.disabled = false;
+}
+
+
+function handlePlayerWhitelistStateChanged(event) {
+    const state = event.detail;
+
+    if (!state) return;
+
+    const whitelistButtons = document.querySelectorAll(
+        '.player-menu-item[data-action="toggle-whitelist"]'
+    );
+
+    whitelistButtons.forEach(whitelistBtn => {
+        const player = {
+            player_uuid: whitelistBtn.dataset.uuid || "",
+            player_name: whitelistBtn.dataset.player || "",
+            account_type: whitelistBtn.dataset.accountType || "unknown",
+        };
+
+        updatePlayerWhitelistButtonState(
+            whitelistBtn,
+            player,
+            state
+        );
+    });
 }

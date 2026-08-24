@@ -4,6 +4,7 @@ import { initCommandConsole } from "./modules/command_console.js";
 import { initPlayerActions } from "./modules/player_actions.js";
 import {initServerStatus} from "./modules/server_status.js";
 import {initPlayerPermissionState} from "./modules/player_permission_state.js";
+import {initPlayerWhitelistState} from "./modules/player_whitelist_state.js";
 import {initPlayerListMenu} from "./modules/player_list_menu.js";
 import {initLogConsole} from "./modules/log_console.js";
 import {initServerSettings} from "./modules/server_settings.js";
@@ -31,6 +32,7 @@ function setupGlobalImageDragBlocker() {
 
 document.addEventListener("DOMContentLoaded", () => {
     initPlayerPermissionState();
+    initPlayerWhitelistState();
     initPlayerListMenu();
     initServerStatus();
     initServerEvents();

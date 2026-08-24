@@ -13,6 +13,10 @@ import {
 } from "./player_permission_state.js";
 
 import {
+    refreshPlayerWhitelistState
+} from "./player_whitelist_state.js";
+
+import {
     openAddBanPlayerModalWithLockedPlayer
 } from "./player_ban.js";
 
@@ -334,13 +338,7 @@ async function handlePlayerMenuClick(event) {
                     return;
                 }
 
-                menuItem.dataset.whitelisted =
-                    data.whitelisted ? "1" : "0";
-
-                menuItem.textContent =
-                    data.whitelisted
-                        ? "移出白名單"
-                        : "加入白名單";
+                await refreshPlayerWhitelistState();
 
                 await showInfo({
                     title: "玩家白名單",
@@ -348,12 +346,6 @@ async function handlePlayerMenuClick(event) {
                     confirmText: "關閉",
                     variant: "success"
                 });
-
-                window.dispatchEvent(
-                    new CustomEvent(
-                        "player-whitelist-should-refresh"
-                    )
-                );
 
             } catch (error) {
                 console.error(

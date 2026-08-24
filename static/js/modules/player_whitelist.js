@@ -16,6 +16,10 @@ import {
 } from "./server_ui_state.js";
 
 import {
+    refreshPlayerWhitelistState
+} from "./player_whitelist_state.js";
+
+import {
     initMinecraftTooltip,
 } from "./common/mc_tooltip.js";
 
@@ -452,7 +456,15 @@ export function initPlayerWhitelist() {
         await toggleWhitelistSetting("enforce-whitelist");
     });
 
-    window.addEventListener("player-whitelist-should-refresh", async () => {
+    window.addEventListener(
+        "player-whitelist-state-changed",
+        async (event) => {
+            const data = event.detail;
+
+            if (!data) return;
+
+            applyPlayerWhitelistState(data);
+
             const modal =
                 document.getElementById("playerWhitelistModal");
 
@@ -460,7 +472,6 @@ export function initPlayerWhitelist() {
                 return;
             }
 
-            await loadPlayerWhitelist();
             await loadWhitelistCandidates();
         }
     );
@@ -883,47 +894,50 @@ async function toggleWhitelistSetting(key) {
 }
 
 
+function applyPlayerWhitelistState(data) {
+    if (!data) return;
+
+    allPlayers = (data.players || [])
+        .filter(player => player.whitelisted);
+
+    updateWhitelistModeSummary(
+        Boolean(data.online_mode)
+    );
+
+    renderPlayerWhitelistList();
+}
+
+
 async function loadPlayerWhitelist() {
     const summary =
         document.getElementById("playerWhitelistSummary");
 
     try {
-        summary.textContent = "載入玩家資料中...";
-
-        const response = await fetch(
-            "/api/player/whitelist",
-            { cache: "no-store" }
-        );
-
-        const data = await response.json();
-
-        if (!data.success) {
-            throw new Error(
-                data.message || "白名單資料載入失敗"
-            );
+        if (summary) {
+            summary.textContent = "載入玩家資料中...";
         }
 
-        allPlayers = (data.players || [])
-            .filter(player => player.whitelisted);
-
-        updateWhitelistModeSummary(data.online_mode);
+        const data = await refreshPlayerWhitelistState();
 
         if (
-            whitelistSettings.server_ready
-            && !data.online_mode
-            && localStorage.getItem(
+            whitelistSettings.server_ready &&
+            !data.online_mode &&
+            localStorage.getItem(
                 OFFLINE_WHITELIST_HELP_DISABLED_KEY
             ) !== "1"
         ) {
             await showWhitelistHelp(true);
         }
 
-        renderPlayerWhitelistList();
-
     } catch (error) {
-        console.error("白名單資料載入失敗:", error);
+        console.error(
+            "白名單資料載入失敗:",
+            error
+        );
 
-        summary.textContent = "白名單資料載入失敗";
+        if (summary) {
+            summary.textContent = "白名單資料載入失敗";
+        }
 
         await showInfo({
             title: "錯誤",
@@ -1689,8 +1703,7 @@ async function removePlayerWhitelist(player) {
             );
         }
 
-        await loadPlayerWhitelist();
-        await loadWhitelistCandidates();
+        await refreshPlayerWhitelistState();
 
         await showInfo({
             title: "玩家白名單",
@@ -2240,8 +2253,8 @@ async function addWhitelistCandidate(player) {
 
     selectedWhitelistCandidate = null;
 
-    await loadPlayerWhitelist();
-    await loadWhitelistCandidates();
+    await refreshPlayerWhitelistState();
 
     return data;
+    
 }

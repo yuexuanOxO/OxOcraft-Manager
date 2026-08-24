@@ -1623,6 +1623,36 @@ def sync_banned_json_to_db() -> dict:
     player_result = sync_banned_players_json_to_db()
     ip_result = sync_banned_ips_json_to_db()
 
+    synced_players = player_result["synced_players"]
+    removed_players = player_result["removed_players"]
+
+    synced_ips = ip_result["synced_ips"]
+    removed_ips = ip_result["removed_ips"]
+
+    if synced_players > 0 or removed_players > 0:
+        create_notification(
+            title="玩家黑名單已同步改動",
+            message=(
+                f"資料同步重新載入玩家黑名單，"
+                f"新增 {synced_players} 位，"
+                f"移除 {removed_players} 位。"
+            ),
+            type="info",
+            source="player_ban",
+        )
+
+    if synced_ips > 0 or removed_ips > 0:
+        create_notification(
+            title="IP 黑名單已同步改動",
+            message=(
+                f"資料同步重新載入 IP 黑名單，"
+                f"新增 {synced_ips} 筆，"
+                f"移除 {removed_ips} 筆。"
+            ),
+            type="info",
+            source="player_ban",
+        )
+
     return {
         **player_result,
         **ip_result,

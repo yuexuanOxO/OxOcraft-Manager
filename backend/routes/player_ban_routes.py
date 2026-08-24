@@ -60,6 +60,11 @@ def api_player_ban_player():
             "message": message,
         }), 400
 
+    history_source = str(data.get("source", "")).strip()
+
+    if history_source != "player_list":
+        history_source = ""
+
     result = ban_player(
         player_name=data.get("name", ""),
         reason=data.get("reason", ""),
@@ -71,6 +76,7 @@ def api_player_ban_player():
         ),
         candidate_uuid=data.get("uuid"),
         candidate_account_type=data.get("account_type"),
+        history_source=history_source or None,
     )
 
     status = 200 if result.get("success") else 400

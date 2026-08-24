@@ -2222,14 +2222,13 @@ async function submitAddBan() {
         } else {
             url = "/api/player/ban/player";
 
-            payload.name =
-                selectedBanCandidatePlayer.player_name;
+            payload.name = selectedBanCandidatePlayer.player_name;
+            payload.uuid = selectedBanCandidatePlayer.player_uuid;
+            payload.account_type = selectedBanCandidatePlayer.account_type;
 
-            payload.uuid =
-                selectedBanCandidatePlayer.player_uuid;
-
-            payload.account_type =
-                selectedBanCandidatePlayer.account_type;
+            if (lockedBanCandidate) {
+                payload.source = "player_list";
+            }
         }
 
         const response = await fetch(
@@ -2404,8 +2403,8 @@ function getBanActionText(item) {
 
 function getBanSourceText(source) {
     const sourceMap = {
-        ui: "OxOcraft-Manager介面操作",
-        offline_ui_edit: "OxOcraft-Manager",
+        ui: "前端UI操作",
+        offline_ui_edit: "前端UI操作",
         minecraft_json: "Minecraft資料同步",
         player_command: "遊戲內指令",
 
@@ -2414,6 +2413,7 @@ function getBanSourceText(source) {
 
         scheduler: "OxOcraft封鎖到期解除",
         system: "系統操作",
+        player_list: "玩家列表",
     };
 
     return sourceMap[source] || source || "未知";

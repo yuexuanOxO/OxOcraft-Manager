@@ -536,6 +536,7 @@ def ban_player(
     selected_from_candidate: bool = False,
     candidate_uuid: str | None = None,
     candidate_account_type: str | None = None,
+    history_source: str | None = None,
 ) -> dict:
     player_name = str(player_name or "").strip()
 
@@ -627,7 +628,7 @@ def ban_player(
         target_name=player_name,
         account_type=account_type,
         operator_name=operator,
-        source=(
+        source=history_source or (
             "ui"
             if is_server_running()
             else "offline_ui_edit"

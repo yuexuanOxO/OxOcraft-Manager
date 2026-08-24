@@ -1374,7 +1374,7 @@ def process_expired_ban(record: dict) -> dict:
 
         create_notification(
             title="IP 黑名單已自動解除",
-            message=f"IP {target_name} 的封鎖期限已到，系統已自動解除封鎖。",
+            message=f"IP：{target_name} 的封鎖期限已到，系統已自動解除封鎖。",
             type="success",
             source="player_ban_scheduler",
         )

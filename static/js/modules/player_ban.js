@@ -999,10 +999,11 @@ function renderBanHistory() {
         .filter(filter =>
             [
                 "oxocraft",
+                "player_list",
                 "minecraft_sync",
-                "system",
                 "rcon",
                 "command",
+                "system",
             ].includes(filter)
         );
 
@@ -1042,8 +1043,9 @@ function renderBanHistory() {
                 source === "online_ui_manage" ||
                 source === "ui_reload";
 
-            const isMinecraftSync =
-                source === "minecraft_json";
+            const isMinecraftSync = source === "minecraft_json";
+
+            const isPlayerList = source === "player_list";
 
             const isSystem =
                 source === "system" ||
@@ -1063,8 +1065,11 @@ function renderBanHistory() {
                 (
                     sourceFilters.includes("oxocraft")
                     && isOxocraft
-                )
-                ||
+                )||
+                (
+                    sourceFilters.includes("player_list")
+                    && isPlayerList
+                )||
                 (
                     sourceFilters.includes("minecraft_sync")
                     && isMinecraftSync

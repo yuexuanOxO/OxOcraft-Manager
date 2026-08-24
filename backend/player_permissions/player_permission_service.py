@@ -3,6 +3,7 @@ from datetime import datetime
 
 from backend.paths import MC_ROOT
 from backend.server_monitor import get_cached_server_status
+from backend.notification_service import create_notification
 from backend.server_effective_settings import load_effective_settings_snapshot
 from backend.player_permissions.player_identity_service import (
     get_known_players,
@@ -495,6 +496,24 @@ def sync_ops_json_to_players(
     sync_player_op_entries_from_ops_entries(
         after_entries
     )
+
+    if (
+        source == "minecraft_json"
+        and (
+            added_count > 0
+            or removed_count > 0
+        )
+    ):
+        create_notification(
+            title="管理員資料同步改動",
+            message=(
+                f"資料同步重新載入管理員資料，"
+                f"新增 {added_count} 位，"
+                f"移除 {removed_count} 位。"
+            ),
+            type="info",
+            source="player_permission",
+        )
 
     return {
         "added_count": added_count,

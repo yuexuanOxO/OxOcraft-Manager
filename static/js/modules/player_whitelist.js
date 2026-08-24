@@ -1111,6 +1111,8 @@ function renderWhitelistHistory() {
                     "rcon",
                     "command",
                     "system",
+                    "player_list",
+                    "rcon_reload",
                 ].includes(filter)
             );
 
@@ -1157,16 +1159,22 @@ function renderWhitelistHistory() {
 
             const isRcon =
                 source === "rcon" ||
-                source === "console_rcon" ||
+                source === "console_rcon";
+
+            const isRconReload =
                 source === "console_rcon_reload";
 
             const isCommand =
                 source === "player_command" ||
                 source === "player_command_reload";
 
+            const isPlayerList =
+                source === "player_list";
+
             const isSystem =
                 source === "system";
 
+            
             return (
                 (
                     sourceFilters.includes("oxocraft")
@@ -1174,15 +1182,23 @@ function renderWhitelistHistory() {
                 )
                 ||
                 (
-                    sourceFilters.includes(
-                        "minecraft_sync"
-                    )
+                    sourceFilters.includes("player_list")
+                    && isPlayerList
+                )
+                ||
+                (
+                    sourceFilters.includes("minecraft_sync")
                     && isMinecraftSync
                 )
                 ||
                 (
                     sourceFilters.includes("rcon")
                     && isRcon
+                )
+                ||
+                (
+                    sourceFilters.includes("rcon_reload")
+                    && isRconReload
                 )
                 ||
                 (
@@ -1195,6 +1211,7 @@ function renderWhitelistHistory() {
                     && isSystem
                 )
             );
+
         });
     }
 
@@ -2256,5 +2273,5 @@ async function addWhitelistCandidate(player) {
     await refreshPlayerWhitelistState();
 
     return data;
-    
+
 }

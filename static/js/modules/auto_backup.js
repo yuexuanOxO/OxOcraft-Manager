@@ -153,7 +153,8 @@ export async function confirmAutoBackupModalClose() {
                     "請問是否要關閉自動備份並離開？",
                 confirmText: "是",
                 cancelText: "否",
-                variant: "warning"
+                variant: "warning",
+                closeOnBackdrop: false
             });
 
         if (!shouldClose) {

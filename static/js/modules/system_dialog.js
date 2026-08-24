@@ -1,4 +1,6 @@
 let currentResolver = null;
+let allowBackdropClose = true;
+
 
 export function initSystemDialog() {
 
@@ -24,8 +26,10 @@ export function initSystemDialog() {
     });
 
     dialog.addEventListener("click", (event) => {
-
-        if (event.target === dialog) {
+        if (
+            event.target === dialog &&
+            allowBackdropClose
+        ) {
             closeDialog(false);
         }
     });
@@ -43,8 +47,7 @@ function cleanupDialogExtras() {
 
 function closeDialog(result) {
 
-    const dialog =
-        document.getElementById("systemDialog");
+    const dialog = document.getElementById("systemDialog");
 
     if (!dialog) return;
 
@@ -73,6 +76,9 @@ function closeDialog(result) {
         currentResolver(result);
         currentResolver = null;
     }
+
+    allowBackdropClose = true;
+
 }
 
 
@@ -83,12 +89,15 @@ export function showConfirm({
     confirmText = "確定",
     cancelText = "取消",
     showCancel = true,
-    variant = ""
+    variant = "",
+    closeOnBackdrop = true
 }) {
 
     return new Promise((resolve) => {
 
         cleanupDialogExtras();
+
+        allowBackdropClose = closeOnBackdrop;
 
         currentResolver = resolve;
         const dialog = document.getElementById("systemDialog");

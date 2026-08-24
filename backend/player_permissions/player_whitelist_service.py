@@ -6,12 +6,12 @@ from datetime import datetime, timedelta
 from backend.paths import MC_ROOT,SERVER_PROPERTIES_PATH
 from backend.rcon_service import send_rcon_command
 from backend.server_monitor import get_cached_server_status
+from backend.notification_service import create_notification
 
 from backend.player_permissions.player_identity_service import (
     get_known_players,
     get_account_type,
     resolve_player_identity_by_name,
-    get_mojang_player_profile,
 )
 
 from backend.player_permissions.player_permission_service import (
@@ -209,6 +209,24 @@ def sync_whitelist_json_to_players_with_history(
         )
 
         removed_count += 1
+
+    if (
+        source == "minecraft_json"
+        and (
+            added_count > 0
+            or removed_count > 0
+        )
+    ):
+        create_notification(
+            title="白名單已同步改動",
+            message=(
+                f"資料同步重新載入白名單，"
+                f"新增 {added_count} 位，"
+                f"移除 {removed_count} 位。"
+            ),
+            type="info",
+            source="player_whitelist",
+        )
 
     return {
         "added_count": added_count,

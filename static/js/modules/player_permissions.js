@@ -2115,6 +2115,7 @@ function renderPermissionHistory() {
             .filter(filter =>
                 [
                     "oxocraft",
+                    "player_list",
                     "minecraft_sync",
                     "rcon",
                     "command",
@@ -2174,10 +2175,12 @@ function renderPermissionHistory() {
             const isOxocraft =
                 source === "ui" ||
                 source === "offline_ui_edit" ||
+                source === "online_ui_manage" ||
                 source === "ui_reload";
 
-            const isMinecraftSync =
-                source === "minecraft_json";
+            const isMinecraftSync = source === "minecraft_json";
+
+            const isPlayerList = source === "player_list";
 
             const isRcon =
                 source === "rcon" ||
@@ -2193,11 +2196,13 @@ function renderPermissionHistory() {
 
             return (
                 (sourceFilters.includes("oxocraft") && isOxocraft) ||
+                (sourceFilters.includes("player_list") && isPlayerList) ||
                 (sourceFilters.includes("minecraft_sync") && isMinecraftSync) ||
                 (sourceFilters.includes("rcon") && isRcon) ||
                 (sourceFilters.includes("command") && isCommand) ||
                 (sourceFilters.includes("system") && isSystem)
             );
+            
         });
     }
 

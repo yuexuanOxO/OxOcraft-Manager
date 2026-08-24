@@ -1,16 +1,16 @@
+import {
+    getPlayerPermissionState,
+    findPlayerPermission
+} from "./player_permission_state.js";
+
+
 let whitelistStatusRefreshTimer = null;
-let opStatusRefreshTimer = null;
 
 
 export function initPlayerListMenu() {
     window.addEventListener(
-        "player-op-status-changed",
-        handlePlayerOpStatusChanged
-    );
-
-    window.addEventListener(
-        "player-permissions-should-refresh",
-        schedulePlayerOpStatusRefresh
+        "player-permission-state-changed",
+        handlePlayerPermissionStateChanged
     );
 
     window.addEventListener(
@@ -92,10 +92,7 @@ export function createPlayerListMenu(player) {
     menuWrap.appendChild(menu);
 
 
-    loadPlayerOpStatus(
-        player,
-        opBtn
-    );
+    loadPlayerOpButtonState(player, opBtn);
 
     schedulePlayerWhitelistStatusRefresh();
 
@@ -104,96 +101,81 @@ export function createPlayerListMenu(player) {
 }
 
 
-function schedulePlayerOpStatusRefresh() {
-    if (opStatusRefreshTimer !== null) {
-        window.clearTimeout(opStatusRefreshTimer);
-    }
+async function loadPlayerOpButtonState(player, opBtn) {
+    try {
+        const state = await getPlayerPermissionState();
 
-    opStatusRefreshTimer = window.setTimeout(() => {
-        opStatusRefreshTimer = null;
-        refreshPlayerOpStatuses();
-    }, 0);
+        updatePlayerOpButtonState(
+            opBtn,
+            player,
+            state
+        );
+    } catch (error) {
+        console.error(
+            "讀取玩家 OP 狀態失敗:",
+            error
+        );
+
+        opBtn.textContent = "權限狀態讀取失敗";
+        opBtn.disabled = true;
+    }
 }
 
 
-async function refreshPlayerOpStatuses() {
+function updatePlayerOpButtonState(opBtn, player, state) {
+    const opPlayer = findPlayerPermission(
+        player,
+        state?.players
+    );
+
+    const isOp = Boolean(opPlayer?.op);
+
+    opBtn.textContent = isOp
+        ? "收回管理員權限"
+        : "設為管理員";
+
+    opBtn.dataset.op = isOp ? "1" : "0";
+
+    opBtn.dataset.uuid =
+        opPlayer?.player_uuid ||
+        player.player_uuid ||
+        player.uuid ||
+        opBtn.dataset.uuid ||
+        "";
+
+    opBtn.dataset.player =
+        opPlayer?.player_name ||
+        player.player_name ||
+        player.name ||
+        opBtn.dataset.player ||
+        "";
+
+    opBtn.disabled = false;
+}
+
+
+function handlePlayerPermissionStateChanged(event) {
+    const state = event.detail;
+
+    if (!state) return;
+
     const opButtons = document.querySelectorAll(
         '.player-menu-item[data-action="toggle-op"]'
     );
 
-    if (opButtons.length === 0) {
-        return;
-    }
+    opButtons.forEach(opBtn => {
+        const player = {
+            player_uuid: opBtn.dataset.uuid || "",
+            player_name: opBtn.dataset.player || "",
+            account_type: opBtn.dataset.accountType || "unknown",
+        };
 
-    try {
-        const response = await fetch(
-            "/api/player/permissions",
-            { cache: "no-store" }
+        updatePlayerOpButtonState(
+            opBtn,
+            player,
+            state
         );
-
-        const data = await response.json();
-
-        if (!data.success) {
-            throw new Error(
-                data.message || "讀取玩家 OP 狀態失敗"
-            );
-        }
-
-        const opPlayers = data.players || [];
-
-        opButtons.forEach(button => {
-            const playerUuid = String(
-                button.dataset.uuid || ""
-            ).toLowerCase();
-
-            const playerName = String(
-                button.dataset.player || ""
-            ).toLowerCase();
-
-            const opPlayer = opPlayers.find(item => {
-                const itemUuid = String(
-                    item.player_uuid || ""
-                ).toLowerCase();
-
-                const itemName = String(
-                    item.player_name || ""
-                ).toLowerCase();
-
-                return (
-                    (playerUuid && itemUuid === playerUuid) ||
-                    (!playerUuid && itemName === playerName)
-                );
-            });
-
-            const isOp = Boolean(opPlayer?.op);
-
-            button.textContent = isOp
-                ? "收回管理員權限"
-                : "設為管理員";
-
-            button.dataset.op = isOp ? "1" : "0";
-
-            if (opPlayer) {
-                button.dataset.uuid =
-                    opPlayer.player_uuid ||
-                    button.dataset.uuid ||
-                    "";
-
-                button.dataset.player =
-                    opPlayer.player_name ||
-                    button.dataset.player ||
-                    "";
-            }
-
-            button.disabled = false;
-        });
-
-    } catch (error) {
-        console.error(
-            "重新讀取玩家 OP 狀態失敗:",
-            error
-        );
-    }
+    });
 }
 
 
@@ -330,147 +312,5 @@ async function refreshPlayerWhitelistStatuses() {
 
             button.disabled = true;
         });
-    }
-}
-
-
-async function loadPlayerOpStatus(player, opBtn) {
-    try {
-        const response = await fetch(
-            "/api/player/permissions",
-            { cache: "no-store" }
-        );
-
-        const data = await response.json();
-
-        if (!data.success) {
-            throw new Error(
-                data.message ||
-                "讀取玩家 OP 狀態失敗"
-            );
-        }
-
-        const playerUuid =
-            String(
-                player.player_uuid || ""
-            ).toLowerCase();
-
-        const playerName =
-            String(
-                player.player_name || ""
-            ).toLowerCase();
-
-        const opPlayer =
-            (data.players || []).find(item => {
-                const itemUuid =
-                    String(
-                        item.player_uuid || ""
-                    ).toLowerCase();
-
-                const itemName =
-                    String(
-                        item.player_name || ""
-                    ).toLowerCase();
-
-                return (
-                    (
-                        playerUuid &&
-                        itemUuid === playerUuid
-                    )
-                    ||
-                    (
-                        !playerUuid &&
-                        itemName === playerName
-                    )
-                );
-            });
-
-        const isOp =
-            Boolean(opPlayer?.op);
-
-        opBtn.textContent =
-            isOp
-                ? "收回管理員權限"
-                : "設為管理員";
-
-        opBtn.dataset.op =
-            isOp ? "1" : "0";
-
-        if (opPlayer) {
-            opBtn.dataset.uuid =
-                opPlayer.player_uuid ||
-                player.player_uuid ||
-                "";
-
-            opBtn.dataset.player =
-                opPlayer.player_name ||
-                player.player_name ||
-                "";
-        } else {
-            opBtn.dataset.uuid =
-                player.player_uuid || "";
-
-            opBtn.dataset.player =
-                player.player_name || "";
-        }
-
-        opBtn.disabled = false;
-
-    } catch (error) {
-        console.error(
-            "讀取玩家 OP 狀態失敗:",
-            error
-        );
-
-        opBtn.textContent =
-            "設為管理員";
-
-        opBtn.dataset.op = "0";
-
-        opBtn.dataset.uuid =
-            player.player_uuid || "";
-
-        opBtn.dataset.player =
-            player.player_name || "";
-
-        opBtn.disabled = false;
-    }
-}
-
-
-function handlePlayerOpStatusChanged(event) {
-    const detail = event.detail;
-
-    if (!detail) return;
-
-    const player =
-        String(detail.player || "");
-
-    const uuid =
-        String(detail.uuid || "");
-
-    const op =
-        Boolean(detail.op);
-
-    const opBtn = document.querySelector(
-        `.player-menu-item[data-action="toggle-op"][data-player="${CSS.escape(player)}"]`
-    );
-
-    if (!opBtn) return;
-
-    opBtn.textContent =
-        op
-            ? "收回管理員權限"
-            : "設為管理員";
-
-    opBtn.dataset.op =
-        op ? "1" : "0";
-
-    opBtn.dataset.player =
-        player;
-
-    if (uuid) {
-        opBtn.dataset.uuid =
-            uuid;
     }
 }

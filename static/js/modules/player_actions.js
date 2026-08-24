@@ -9,6 +9,10 @@ import {
 } from "./player_permissions.js";
 
 import {
+    refreshPlayerPermissionState
+} from "./player_permission_state.js";
+
+import {
     openAddBanPlayerModalWithLockedPlayer
 } from "./player_ban.js";
 
@@ -187,23 +191,14 @@ async function handlePlayerMenuClick(event) {
                     return;
                 }
 
+                await refreshPlayerPermissionState();
+
                 await showInfo({
                     title: "玩家權限",
                     message: data.message,
                     confirmText: "關閉",
                     variant: "success"
                 });
-
-                window.dispatchEvent(new CustomEvent(
-                    "player-op-status-changed",
-                    {
-                        detail: {
-                            player,
-                            uuid: playerUuid,
-                            op: data.op
-                        }
-                    }
-                ));
 
 
             } catch (error) {

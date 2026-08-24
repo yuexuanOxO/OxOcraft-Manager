@@ -16,6 +16,10 @@ import {
 } from "./server_ui_state.js";
 
 import {
+    refreshPlayerPermissionState
+} from "./player_permission_state.js";
+
+import {
     filterRowsByDateRange,
     setActiveHistoryTimeRange,
 } from "./history_filter.js";
@@ -464,33 +468,26 @@ export function initPlayerPermissions() {
         renderAddOpInputState();
     });
 
-    window.addEventListener("player-permissions-should-refresh", async (event) => {
-            console.log(
-                "[Permission] refresh event received",
-                event.detail
-            );
+    window.addEventListener("player-permission-state-changed", async (event) => {
+        const data = event.detail;
 
-            const modal =
-                document.getElementById("playerPermissionModal");
+        if (!data) return;
 
-            if (!modal || modal.classList.contains("hidden")) {
-                return;
-            }
+        applyPlayerPermissionState(data);
 
-            const state = getUiServerState();
+        const modal =
+            document.getElementById("playerPermissionModal");
 
-            if (state === "starting" || state === "stopping") {
-                console.log(
-                    "[Permission] skip refresh during transition:",
-                    state
-                );
-                return;
-            }
-
-            await loadPlayerPermissions();
-            await loadOpCandidates();
+        if (!modal || modal.classList.contains("hidden")) {
+            return;
         }
-    );
+
+        if (isUiServerTransitionState()) {
+            return;
+        }
+
+        await loadOpCandidates();
+    });
 
     window.addEventListener("server-ui-state-changed", async (event) => {
             const data = event.detail;
@@ -678,58 +675,52 @@ async function showPermissionHelp(showDontRemind = false) {
 }
 
 
+function applyPlayerPermissionState(data) {
+    if (!data) return;
+
+    allPlayers = data.players || [];
+
+    permissionServerReady = Boolean(data.server_ready);
+    permissionOnlineMode = Boolean(data.online_mode);
+    permissionServerState =
+        data.server_state || getUiServerState();
+
+    defaultOpLevel =
+        getDefaultOpLevelFromData(data);
+
+    console.log(
+        "[Permission] server_state =",
+        permissionServerState,
+        data
+    );
+
+    updatePermissionModeSummary(data.online_mode);
+    renderPlayerPermissionList();
+    renderAddOpInputState();
+    renderPermissionActionButtons();
+}
+
+
 async function loadPlayerPermissions() {
     const summary =
         document.getElementById("playerPermissionSummary");
 
     try {
-        summary.textContent = "載入玩家資料中...";
-
-        const response = await fetch(
-            "/api/player/permissions",
-            { cache: "no-store" }
-        );
-
-        const data = await response.json();
-
-        if (!data.success) {
-            throw new Error(
-                data.message || "玩家資料載入失敗"
-            );
+        if (summary) {
+            summary.textContent = "載入玩家資料中...";
         }
 
-        allPlayers = data.players || [];
-
-        permissionServerReady = Boolean(data.server_ready);
-        permissionOnlineMode = Boolean(data.online_mode);
-
-        permissionServerState = data.server_state || getUiServerState();
-
-        defaultOpLevel = getDefaultOpLevelFromData(data);
-
-        console.log("[Permission] server_state =", permissionServerState, data);
-
-        updatePermissionModeSummary(
-            data.online_mode
-        );
-
-        renderPlayerPermissionList();
-        renderAddOpInputState();
-        renderPermissionActionButtons();
-
-        // 自動提醒暫停使用，保留 showPermissionHelp() 供之後導覽或提醒功能使用。
-        // if (
-        //     permissionServerReady
-        //     && !permissionOnlineMode
-        //     && localStorage.getItem(OFFLINE_OP_HELP_DISABLED_KEY) !== "1"
-        // ) {
-        //     await showPermissionHelp(true);
-        // }
+        await refreshPlayerPermissionState();
 
     } catch (error) {
-        console.error("玩家權限資料載入失敗:", error);
+        console.error(
+            "玩家權限資料載入失敗:",
+            error
+        );
 
-        summary.textContent = "玩家資料載入失敗";
+        if (summary) {
+            summary.textContent = "玩家資料載入失敗";
+        }
 
         await showInfo({
             title: "錯誤",
@@ -1162,26 +1153,7 @@ async function togglePlayerOp(player) {
             );
         }
 
-        player.op = data.op;
-
-        if (data.op_since) {
-            player.op_since = data.op_since;
-        }
-
-        window.dispatchEvent(
-            new CustomEvent(
-                "player-op-status-changed",
-                {
-                    detail: {
-                        player: player.player_name,
-                        uuid: player.player_uuid,
-                        op: data.op
-                    }
-                }
-            )
-        );
-
-        renderPlayerPermissionList();
+        await refreshPlayerPermissionState();
 
         await showInfo({
             title: "玩家權限",
@@ -1457,45 +1429,19 @@ async function handleAddOpPlayer() {
     }
 
     try {
-
-        const addedPlayer =
-            selectedOpCandidate ||
-            lockedOpCandidate ||
-            {
-                player_name: playerName,
-                player_uuid: ""
-            };
-
-        const data =
-            await addPlayerOpByName(playerName);
+        const data = await addPlayerOpByName(playerName);
 
         input.value = "";
 
         selectedOpLevel = getDefaultOpLevel();
 
-        const bypassCheck =
-            document.getElementById(
-                "addOpBypassPlayerLimitCheck"
-            );
+        const bypassCheck = document.getElementById("addOpBypassPlayerLimitCheck");
 
         if (bypassCheck) {
             bypassCheck.checked = false;
         }
 
         renderAddOpLevelState();
-
-        window.dispatchEvent(
-            new CustomEvent(
-                "player-op-status-changed",
-                {
-                    detail: {
-                        player: addedPlayer.player_name,
-                        uuid: addedPlayer.player_uuid,
-                        op: true
-                    }
-                }
-            )
-        );
 
         closeAddOpPlayerModal();
 
@@ -1581,8 +1527,7 @@ async function addPlayerOpByName(playerName) {
 
     selectedOpCandidate = null;
 
-    await loadPlayerPermissions();
-    await loadOpCandidates();
+    await refreshPlayerPermissionState();
 
     return data;
 }
@@ -2515,17 +2460,20 @@ function getPermissionOperatorAvatarUrl(item) {
 
 function getPermissionSourceText(source) {
     const sourceMap = {
-        ui: "OxOcraft",
-        offline_ui_edit: "離線設定模式",
+        ui: "前端UI操作",
+        offline_ui_edit: "前端UI操作",
+        online_ui_manage: "前端UI操作",
+        ui_reload: "前端UI操作",
+
         minecraft_json: "Minecraft資料同步",
         player_command: "遊戲內指令",
         console_rcon: "UI輸入指令",
         rcon: "UI輸入指令",
-        system: "系統操作",
-        ui_reload: "OxOcraft",
+
         console_rcon_reload: "UI輸入指令(reload)",
         player_command_reload: "遊戲內指令(reload)",
-        online_ui_manage: "在線管理模式",
+
+        system: "系統操作",
         player_list: "玩家列表",
     };
 

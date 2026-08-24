@@ -1107,12 +1107,13 @@ function renderWhitelistHistory() {
             .filter(filter =>
                 [
                     "oxocraft",
+                    "player_list",
                     "minecraft_sync",
                     "rcon",
-                    "command",
-                    "system",
-                    "player_list",
                     "rcon_reload",
+                    "command",
+                    "command_reload",
+                    "system",
                 ].includes(filter)
             );
 
@@ -1165,7 +1166,9 @@ function renderWhitelistHistory() {
                 source === "console_rcon_reload";
 
             const isCommand =
-                source === "player_command" ||
+                source === "player_command";
+
+            const isCommandReload =
                 source === "player_command_reload";
 
             const isPlayerList =
@@ -1204,6 +1207,10 @@ function renderWhitelistHistory() {
                 (
                     sourceFilters.includes("command")
                     && isCommand
+                )||
+                (
+                    sourceFilters.includes("command_reload")
+                    && isCommandReload
                 )
                 ||
                 (

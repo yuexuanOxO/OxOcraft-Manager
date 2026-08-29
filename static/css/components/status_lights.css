@@ -23,6 +23,14 @@
     white-space: nowrap;
 }
 
+.server-version {
+    color: #ddd;
+    white-space: nowrap;
+
+    position: relative;
+    top: 2px;
+}
+
 .server-auth-mode.premium {
     color: #78d98b;
 }

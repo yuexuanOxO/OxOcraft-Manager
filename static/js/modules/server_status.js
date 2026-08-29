@@ -249,6 +249,45 @@ function renderServerAuthMode(data) {
 }
 
 
+function renderServerVersion(data) {
+    const versionText =
+        document.getElementById(
+            "serverVersionText"
+        );
+
+    const versionSeparator =
+        document.getElementById(
+            "serverVersionSeparator"
+        );
+
+    if (!versionText || !versionSeparator) {
+        return;
+    }
+
+    const version = String(
+        data?.version || ""
+    ).trim();
+
+    const hasVersion = version !== "";
+
+    versionText.classList.toggle(
+        "hidden",
+        !hasVersion
+    );
+
+    versionSeparator.classList.toggle(
+        "hidden",
+        !hasVersion
+    );
+
+    if (hasVersion) {
+        versionText.textContent = version;
+    } else {
+        versionText.textContent = "";
+    }
+}
+
+
 export function applyServerStatusPayload(payload) {
     if (!payload || !payload.data) return;
 
@@ -263,6 +302,7 @@ export function applyServerStatusPayload(payload) {
     latestServerStatusData = data;
 
     renderServerAuthMode(data);
+    renderServerVersion(data);
 
     const isFirstStatus = !hasReceivedFirstStatus;
     hasReceivedFirstStatus = true;

@@ -125,7 +125,6 @@
 
 .player-ban-title {
     font-size: 22px;
-    font-weight: bold;
 }
 
 .player-ban-close-btn {
@@ -159,7 +158,6 @@
     background: #2b2b2b;
     color: #f0c36a;
 
-    font-weight: bold;
     cursor: pointer;
 }
 
@@ -300,7 +298,7 @@
 
 .player-ban-name {
     font-size: 20px;
-    font-weight: bold;
+      
 }
 
 .player-ban-badge{
@@ -343,7 +341,7 @@
     color: #ff9c9c;
 
     font-size: 22px;
-    font-weight: bold;
+      
     line-height: 1;
 
     cursor: pointer;
@@ -388,7 +386,7 @@
 
     color: #ffcc66;
     font-size: 18px;
-    font-weight: bold;
+      
 }
 
 .player-ban-help-card-text {
@@ -452,7 +450,7 @@
 .player-ban-add-title {
     color: #f5f5f5;
     font-size: 20px;
-    font-weight: bold;
+      
 }
 
 .player-ban-add-body {
@@ -470,7 +468,7 @@
 
     color: #ddd;
     font-size: 15px;
-    font-weight: bold;
+      
 }
 
 .player-ban-add-input,
@@ -523,7 +521,7 @@
 
     color: #ddd;
     font-size: 15px;
-    font-weight: bold;
+      
 }
 
 .player-ban-candidate-list {
@@ -590,7 +588,7 @@
 .player-ban-candidate-name {
     color: #f5f5f5;
     font-size: 16px;
-    font-weight: bold;
+      
 }
 
 .player-ban-candidate-uuid {
@@ -638,7 +636,7 @@
     color: #a9e28a;
 
     font-size: 26px;
-    font-weight: bold;
+      
     line-height: 1;
 
     cursor: pointer;
@@ -662,7 +660,7 @@
 
     color: #f0c36a;
     font-size: 15px;
-    font-weight: bold;
+      
 }
 
 .player-ban-radio-row {
@@ -743,7 +741,7 @@
     color: #f0c36a;
 
     font-size: 16px;
-    font-weight: bold;
+      
 
     cursor: pointer;
 }
@@ -776,8 +774,6 @@
 
     color:#f0c36a;
 
-    font-weight:bold;
-
     cursor:pointer;
 }
 
@@ -803,7 +799,7 @@
     color: #ff9c9c;
 
     font-size: 13px;
-    font-weight: bold;
+      
 }
 
 .player-ban-history-card {
@@ -845,13 +841,13 @@
 .player-ban-history-title {
     color: #f0c36a;
     font-size: 18px;
-    font-weight: bold;
+      
 }
 
 .player-ban-history-target {
     color: #f5f5f5;
     font-size: 18px;
-    font-weight: bold;
+      
 }
 
 .player-ban-history-target-avatar {
@@ -917,7 +913,7 @@
 .player-ban-history-operator-name {
     color: #f5f5f5;
     font-size: 18px;
-    font-weight: bold;
+      
 }
 
 .player-ban-history-source {
@@ -949,7 +945,7 @@
 .player-ban-history-operator-name {
     color: #f5f5f5;
     font-size: 18px;
-    font-weight: bold;
+      
 }
 
 .player-ban-history-toolbar {
@@ -1087,7 +1083,7 @@
     margin: 8px 0 8px;
     color: #72ff72;
     font-size: 13px;
-    font-weight: bold;
+      
 }
 
 .player-ban-history-filter-title:first-child {
@@ -1199,7 +1195,7 @@
     border-radius: 999px;
     border: 1px solid #555;
     font-size: 13px;
-    font-weight: bold;
+      
 }
 
 .player-ban-mode.online {
@@ -1242,7 +1238,7 @@
     color: #ff9c9c;
 
     font-size: 22px;
-    font-weight: bold;
+      
 
     cursor: pointer;
     line-height: 1;

@@ -22,7 +22,6 @@
 .backup-title{
     font-size: 32px;
     color: white;
-    font-weight: bold;
 }
 
 .backup-close-btn{
@@ -237,7 +236,6 @@
 
     color: #fff;
     font-size: 17px;
-    font-weight: bold;
 }
 
 .backup-provider-img-icon{
@@ -353,7 +351,6 @@
     border: 2px solid #3fa65a;
     color: #65ff65;
     font-size: 13px;
-    font-weight: bold;
     line-height: 1;
 }
 
@@ -446,7 +443,6 @@
 
     border-bottom: 2px solid #777;
     color: #ddd;
-    font-weight: bold;
     text-align: center;
 }
 
@@ -493,7 +489,6 @@
 
 .manual-world-status.using{
     color: #65ff65;
-    font-weight: bold;
 }
 
 .manual-world-status.ready{
@@ -627,7 +622,6 @@
     margin-top: 4px;
     margin-bottom: 6px;
     color: #fff;
-    font-weight: bold;
 }
 
 .cloud-account-avatar{
@@ -721,7 +715,6 @@
 .auto-backup-cloud-warning{
     color:#ff5555;
     font-size:14px;
-    font-weight:bold;
 }
 
 .auto-backup-cloud-warning{
@@ -730,7 +723,6 @@
     padding: 0;
     color: #ff5555;
     font-size: 14px;
-    font-weight: bold;
     cursor: pointer;
 }
 
@@ -818,7 +810,6 @@
     color: #ddd;
 
     font-size: 15px;
-    font-weight: bold;
     cursor: pointer;
 }
 

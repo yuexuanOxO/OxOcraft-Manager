@@ -40,10 +40,8 @@ DEFAULT_CLOUD_KEEP_COUNT = 2
 
 SCOPES = [
     "openid",
-    "email",
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/drive.file",
-    "https://www.googleapis.com/auth/drive.metadata.readonly",
 ]
 
 REDIRECT_URI = "http://127.0.0.1:5000/api/cloud/google/callback"

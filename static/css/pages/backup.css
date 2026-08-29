@@ -814,6 +814,10 @@
     cursor: pointer;
 }
 
+#cloudConnectBtn {
+    margin-top: 10px;
+}
+
 #manualLocalBackupBtn:hover,
 #manualLocalCloudBackupBtn:hover,
 #cloudUploadLatestBtn:hover,

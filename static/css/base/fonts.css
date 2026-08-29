@@ -1,4 +1,6 @@
 @font-face {
-    font-family: "MinecraftUI";
-    src: url("/static/fonts/Minecraftia.ttf") format("truetype");
+    font-family: "FusionPixel";
+    src: url("/static/fonts/fusion-pixel-12px-monospaced-zh_hant.otf.woff2") format("woff2");
+    font-weight: normal;
+    font-style: normal;
 }

@@ -27,8 +27,9 @@
     color: #ddd;
     white-space: nowrap;
 
-    position: relative;
-    top: 2px;
+    font-family: "FusionPixel", sans-serif;
+    font-size: 20px;
+    line-height: 1;
 }
 
 .server-auth-mode.premium {

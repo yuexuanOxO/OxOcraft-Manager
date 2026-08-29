@@ -800,7 +800,8 @@
 
 #manualLocalBackupBtn,
 #manualLocalCloudBackupBtn,
-#cloudUploadLatestBtn{
+#cloudUploadLatestBtn,
+#cloudConnectBtn {
     min-width: 150px;
     height: 38px;
     padding: 0 14px;
@@ -815,7 +816,8 @@
 
 #manualLocalBackupBtn:hover,
 #manualLocalCloudBackupBtn:hover,
-#cloudUploadLatestBtn:hover{
+#cloudUploadLatestBtn:hover,
+#cloudConnectBtn:hover {
     background: #2e2e2e;
     border-color: #65ff65;
     color: #65ff65;

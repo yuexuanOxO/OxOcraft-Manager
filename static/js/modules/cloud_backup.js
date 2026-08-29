@@ -89,6 +89,7 @@ export async function loadCloudStatus() {
     const status = document.getElementById("cloudStatusText");
     const email = document.getElementById("cloudEmailText");
     const connectBtn = document.getElementById("cloudConnectBtn");
+    const folderRow = document.getElementById("cloudBackupFolderRow");
 
     if (!status) return;
 
@@ -120,6 +121,7 @@ export async function loadCloudStatus() {
         }
 
         connectBtn?.classList.add("hidden");
+        folderRow?.classList.remove("hidden");
 
         document.getElementById("cloudUploadLatestBtn")?.classList.remove("hidden");
 
@@ -137,8 +139,10 @@ export async function loadCloudStatus() {
         }
 
         connectBtn?.classList.remove("hidden");
+        folderRow?.classList.add("hidden");
 
         document.getElementById("cloudUploadLatestBtn")?.classList.add("hidden");
+        
     }
 }
 

@@ -337,6 +337,7 @@
 
 
 .player-whitelist-add-open-btn {
+    height: 42px;
     flex-shrink: 0;
     padding: 10px 14px;
     border: 1px solid #c08b42;

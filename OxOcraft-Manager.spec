@@ -41,13 +41,22 @@ datas = [
     # Bundle static files except per-user runtime config.
     *static_datas,
 
+    # Bundle OxOcraft Minecraft datapack assets.
+    (
+        "backend/datapacks/assets/core/OxOcraft-Core.zip",
+        "backend/datapacks/assets/core",
+    ),
+    (
+        "backend/datapacks/assets/modules/OxOcraft-DeathRecord.zip",
+        "backend/datapacks/assets/modules",
+    ),
+
     # Bundle OAuth app credentials, but never bundle user token.
-    ("backend/credentials/google_credentials.json", "backend/credentials"),
+    (
+        "backend/credentials/google_credentials.json",
+        "backend/credentials",
+    ),
 ]
-
-
-
-
 
 
 hiddenimports = []

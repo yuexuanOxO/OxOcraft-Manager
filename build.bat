@@ -20,6 +20,20 @@ if not exist "backend\credentials\google_credentials.json" (
     exit /b 1
 )
 
+if not exist "backend\datapacks\assets\core\OxOcraft-Core.zip" (
+    echo [ERROR] Missing backend\datapacks\assets\core\OxOcraft-Core.zip
+    pause
+    exit /b 1
+)
+
+if not exist "backend\datapacks\assets\modules\OxOcraft-DeathRecord.zip" (
+    echo [ERROR] Missing backend\datapacks\assets\modules\OxOcraft-DeathRecord.zip
+    pause
+    exit /b 1
+)
+
+
+
 echo.
 echo Cleaning old build output...
 if exist "build" rmdir /s /q "build"

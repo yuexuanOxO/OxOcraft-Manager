@@ -1,3 +1,17 @@
+import {
+    updateDefaultCloudBackupFolderText,
+    loadCloudStatus,
+    cancelGoogleDriveUpload
+} from "./cloud_backup.js";
+
+import {
+    loadAutoBackupConfig,
+    confirmAutoBackupModalClose
+} from "./auto_backup.js";
+
+import { showConfirm } from "./system_dialog.js";
+
+
 let backupRecordsCache = [];
 let backupRecordKeyword = "";
 let backupProviderFilters = new Set();
@@ -9,17 +23,6 @@ let manualBackupUploadCloud = false;
 let manualLocalBackupRunning = false;
 let manualCloudUploadRunning = false;
 let isCloudConnected = false;
-
-import {
-    updateDefaultCloudBackupFolderText,
-    loadCloudStatus,
-    cancelGoogleDriveUpload
-} from "./cloud_backup.js";
-
-import {
-    loadAutoBackupConfig,
-    confirmAutoBackupModalClose
-} from "./auto_backup.js";
 
 
 export function setCloudConnectionState(connected) {
@@ -606,7 +609,14 @@ async function startSafeManualBackup(uploadCloud) {
             normalizePath(currentServerWorldPath);
 
         if (statusData.online && isSelectedCurrentWorld) {
-            const ok = confirm("你要備份的是目前伺服器使用中的世界。\n\n手動備份需要先關閉伺服器，備份完成後會重新啟動。是否繼續？");
+            const ok = await showConfirm({
+                title: "伺服器將暫時關閉",
+                message: "你要備份的是目前伺服器使用中的世界。\n\n手動備份需要先關閉伺服器，備份完成後會自動重新啟動。",
+                confirmText: "繼續備份",
+                cancelText: "取消",
+                variant: "warning"
+            });
+
             if (!ok) return;
         }
 
@@ -1308,7 +1318,14 @@ function setupManualProgressCancelButtons() {
 
     if (localCancelBtn) {
         localCancelBtn.addEventListener("click", async () => {
-            const ok = confirm("確定要取消目前的本機備份嗎？");
+            const ok = await showConfirm({
+                title: "取消本機備份",
+                message: "確定要取消目前正在進行的本機備份嗎？",
+                confirmText: "取消備份",
+                cancelText: "返回",
+                variant: "warning"
+            });
+
             if (!ok) return;
 
             localCancelBtn.disabled = true;
@@ -1318,13 +1335,21 @@ function setupManualProgressCancelButtons() {
 
     if (cloudCancelBtn) {
         cloudCancelBtn.addEventListener("click", async () => {
-            const ok = confirm("確定要取消目前的雲端上傳嗎？");
+            const ok = await showConfirm({
+                title: "取消雲端上傳",
+                message: "確定要取消目前正在進行的雲端備份上傳嗎？",
+                confirmText: "取消上傳",
+                cancelText: "返回",
+                variant: "warning"
+            });
+
             if (!ok) return;
 
             cloudCancelBtn.disabled = true;
             await cancelGoogleDriveUpload();
         });
     }
+    
 }
 
 

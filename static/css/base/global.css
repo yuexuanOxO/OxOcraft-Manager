@@ -5,6 +5,14 @@ body {
     color: #f5f5f5;
 }
 
+button,
+input,
+textarea,
+select,
+option {
+    font-family: inherit;
+}
+
 .container {
     width: 100%;
     max-width: none;

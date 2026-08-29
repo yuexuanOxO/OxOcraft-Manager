@@ -17,7 +17,25 @@
 }
 
 .server-status-separator {
-    color: #666;
+    display: none;
+}
+
+.server-auth-mode,
+.server-version {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 2px 8px;
+
+    border: 1px solid currentColor;
+    border-radius: 10px;
+
+    font-size: 16px;
+    line-height: 1.2;
+    white-space: nowrap;
+
+    box-sizing: border-box;
 }
 
 .server-auth-mode {
@@ -25,18 +43,21 @@
 }
 
 .server-version {
-    color: #ddd;
-    white-space: nowrap;
+    color: #d0d0d0;
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .server-auth-mode.premium {
     color: #78d98b;
+    background: rgba(120, 217, 139, 0.08);
 }
 
 .server-auth-mode.offline {
     color: #d6ad57;
+    background: rgba(214, 173, 87, 0.08);
 }
 
 .server-auth-mode.unknown {
     color: #888;
+    background: rgba(136, 136, 136, 0.08);
 }

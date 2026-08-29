@@ -1,6 +1,7 @@
 .status-group {
     display: flex;
     align-items: center;
+    font-size: 18px;
     gap: 8px; 
 }
 
@@ -26,10 +27,6 @@
 .server-version {
     color: #ddd;
     white-space: nowrap;
-
-    font-family: "FusionPixel", sans-serif;
-    font-size: 20px;
-    line-height: 1;
 }
 
 .server-auth-mode.premium {

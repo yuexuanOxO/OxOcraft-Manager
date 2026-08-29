@@ -240,7 +240,7 @@
 }
 
 .player-whitelist-name {
-    font-size: 16px;
+    font-size: 24px;
     color: #f5f5f5;
       
 }
@@ -755,13 +755,13 @@
 
 .player-whitelist-history-action {
     color: #f0c36a;
-    font-size: 18px;
+    font-size: 20px;
       
 }
 
 .player-whitelist-history-target {
     color: #f5f5f5;
-    font-size: 18px;
+    font-size: 24px;
       
 }
 
@@ -769,7 +769,7 @@
     margin-top: 4px;
 
     color: #aaa;
-    font-size: 12px;
+    font-size: 14px;
     line-height: 1.35;
 
     word-break: break-all;
@@ -848,13 +848,13 @@
 
 .player-whitelist-history-label {
     color: #bdbdbd;
-    font-size: 15px;
+    font-size: 18px;
     font-weight: 600;
 }
 
 .player-whitelist-history-value {
     color: #f0f0f0;
-    font-size: 16px;
+    font-size: 18px;
 }
 
 .player-whitelist-history-operator-avatar.player {
@@ -894,6 +894,6 @@
 
 .player-whitelist-history-operator-name {
     color: #f5f5f5;
-    font-size: 18px;
+    font-size: 22px;
       
 }

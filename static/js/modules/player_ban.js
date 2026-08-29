@@ -2416,7 +2416,7 @@ function getBanSourceText(source) {
         console_rcon: "UI輸入指令",
         rcon: "UI輸入指令",
 
-        scheduler: "OxOcraft封鎖到期解除",
+        scheduler: "OxOcraft到期解除",
         system: "系統操作",
         player_list: "玩家列表",
     };

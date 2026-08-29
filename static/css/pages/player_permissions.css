@@ -253,7 +253,7 @@
 }
 
 .player-permission-name {
-    font-size: 16px;
+    font-size: 24px;
     color: #f5f5f5;
       
 }
@@ -289,7 +289,7 @@
 .player-permission-uuid,
 .player-permission-meta {
     margin-top: 4px;
-    font-size: 12px;
+    font-size: 14px;
     color: #aaa;
     word-break: break-all;
     line-height: 1.35;
@@ -930,13 +930,13 @@
 
 .player-permission-history-action {
     color: #f0c36a;
-    font-size: 18px;
+    font-size: 22px;
       
 }
 
 .player-permission-history-target {
     color: #f5f5f5;
-    font-size: 18px;
+    font-size: 24px;
       
 }
 
@@ -944,7 +944,7 @@
     margin-top: 4px;
 
     color: #aaa;
-    font-size: 12px;
+    font-size: 14px;
     line-height: 1.35;
 
     word-break: break-all;
@@ -966,13 +966,13 @@
 
 .player-permission-history-label {
     color: #bdbdbd;
-    font-size: 15px;
+    font-size: 18px;
     font-weight: 600;
 }
 
 .player-permission-history-value {
     color: #f0f0f0;
-    font-size: 16px;
+    font-size: 18px;
 }
 
 .player-permission-history-operator-avatar.player {
@@ -999,7 +999,7 @@
 
 .player-permission-history-operator-name {
     color: #f5f5f5;
-    font-size: 18px;
+    font-size: 22px;
       
 }
 

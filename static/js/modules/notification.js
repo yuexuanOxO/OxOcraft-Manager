@@ -1,6 +1,3 @@
-import {
-    initMinecraftTooltip,
-} from "./common/mc_tooltip.js";
 
 
 let notificationOffset = 0;
@@ -395,7 +392,6 @@ export function initNotificationUI() {
 
     if (!bell || !panel) return;
 
-    initMinecraftTooltip();
     setupNotificationCategoryScroll();
 
     bell.addEventListener("click", async () => {

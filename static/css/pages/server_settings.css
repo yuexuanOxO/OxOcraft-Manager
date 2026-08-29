@@ -253,36 +253,6 @@
     gap: 12px;
 }
 
-.server-preview-icon-wrapper{
-    position: relative;
-}
-
-.server-preview-icon-tooltip{
-    position: absolute;
-    left: 0;
-    top: -78px;
-    min-width: 180px;
-    padding: 8px 10px;
-    background: rgba(0,0,0,0.95);
-    border: 2px solid #4a4a4a;
-    color: #ffffff;
-    font-size: 13px;
-    line-height: 1.5;
-    pointer-events: none;
-    opacity: 0;
-    transform: translateY(4px);
-    transition:
-        opacity 0.12s ease,
-        transform 0.12s ease;
-    z-index: 50;
-}
-
-.server-preview-icon-wrapper:hover
-.server-preview-icon-tooltip{
-    opacity: 1;
-    transform: translateY(0);
-}
-
 .server-preview-card{
     width: 520px;
     height: 92px;

@@ -35,16 +35,18 @@ from backend.management_api.state import (
 
 
 STATUS_METHOD = "minecraft:server/status"
+MAX_PLAYERS_METHOD = "minecraft:serversettings/max_players"
 
+SERVER_STATUS_NOTIFICATION = "minecraft:notification/server/status"
 SERVER_STOPPING_NOTIFICATION = "minecraft:notification/server/stopping"
 SERVER_SAVING_NOTIFICATION = "minecraft:notification/server/saving"
 SERVER_SAVED_NOTIFICATION = "minecraft:notification/server/saved"
+
 PLAYER_JOINED_NOTIFICATION = "minecraft:notification/players/joined"
 PLAYER_LEFT_NOTIFICATION = "minecraft:notification/players/left"
-MAX_PLAYERS_METHOD = "minecraft:serversettings/max_players"
+
 OPERATORS_ADDED_NOTIFICATION = "minecraft:notification/operators/added"
 OPERATORS_REMOVED_NOTIFICATION = "minecraft:notification/operators/removed"
-
 
 
 class ManagementApiClient:
@@ -63,8 +65,8 @@ class ManagementApiClient:
         self.open_timeout_seconds = open_timeout_seconds
         self._request_id = 0
         self._ws = None
-        self._pending_status = None
         self._pending_requests = {}
+        self._request_methods = {}
         self._loop = None
 
     def build_url(self) -> str:
@@ -103,7 +105,13 @@ class ManagementApiClient:
             params=params,
         )
 
-        await ws.send(request.to_json())
+        self._request_methods[request_id] = method
+
+        try:
+            await ws.send(request.to_json())
+        except Exception:
+            self._request_methods.pop(request_id, None)
+            raise
 
         return request_id
     
@@ -194,7 +202,6 @@ class ManagementApiClient:
             return
 
     def handle_response(self, data: dict) -> None:
-
         response_id = data.get("id")
 
         if response_id in self._pending_requests:
@@ -212,14 +219,46 @@ class ManagementApiClient:
 
             return
 
+        request_method = self._request_methods.pop(
+            response_id,
+            None,
+        )
+
         if "error" in data:
+            if request_method == MAX_PLAYERS_METHOD:
+                print(
+                    "[Management] max_players read failed:",
+                    data["error"],
+                )
+                return
+
+            if request_method == STATUS_METHOD:
+                print(
+                    "[Management] server status read failed:",
+                    data["error"],
+                )
+
+                try:
+                    asyncio.create_task(
+                        self._retry_status_later()
+                    )
+                except Exception:
+                    pass
+
+                return
+
             mark_disconnected(str(data["error"]))
             return
 
         result = data.get("result")
 
-        if isinstance(result, int):
-            self._handle_max_players_response(result)
+        if request_method == MAX_PLAYERS_METHOD:
+            if isinstance(result, int):
+                self._handle_max_players_response(result)
+
+            return
+
+        if request_method != STATUS_METHOD:
             return
 
         if not isinstance(result, dict):
@@ -234,28 +273,30 @@ class ManagementApiClient:
                 )
             except Exception:
                 pass
+
             return
 
-        self._pending_status = status
+        self._mark_ready_from_status(status)
 
         try:
             asyncio.create_task(
-                self.send_rpc(self._ws, MAX_PLAYERS_METHOD)
+                self.send_rpc(
+                    self._ws,
+                    MAX_PLAYERS_METHOD,
+                )
             )
         except Exception:
-            self._mark_ready_from_status(status)
+            pass
 
 
     def _handle_max_players_response(self, max_players: int) -> None:
         mark_max_players(max_players)
 
-        if self._pending_status is None:
-            return
-
-        status = self._pending_status
-        self._pending_status = None
-
-        self._mark_ready_from_status(status)
+        try:
+            from backend.server_monitor import refresh_server_status_now
+            refresh_server_status_now()
+        except Exception:
+            pass
 
 
     def _mark_ready_from_status(self, status) -> None:
@@ -293,6 +334,19 @@ class ManagementApiClient:
             return
 
         mark_notification(method)
+
+        if method == SERVER_STATUS_NOTIFICATION:
+            try:
+                asyncio.create_task(
+                    self.send_rpc(
+                        self._ws,
+                        STATUS_METHOD,
+                    )
+                )
+            except Exception:
+                pass
+
+            return
 
         params = data.get("params")
 

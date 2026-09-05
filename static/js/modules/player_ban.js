@@ -21,6 +21,18 @@ import {
     setActiveHistoryTimeRange,
 } from "./history_filter.js";
 
+import {
+    closeFirstAvailableLayer,
+    isFlatpickrOpen,
+    closeFlatpickr,
+} from "./ui_close_stack.js";
+
+import {
+    isFilterMenuOpen,
+    closeFilterMenu,
+} from "./common/filter_menu.js";
+
+
 let currentBanTab = "players";
 let banPlayers = [];
 let banIps = [];
@@ -39,6 +51,7 @@ let banHistoryStartTime = "";
 let banHistoryEndTime = "";
 let banHistoryStartPicker = null;
 let banHistoryEndPicker = null;
+let banHistoryFlatpickrWasOpenOnPointerDown = false;
 
 const banHistoryFilters = new Set();
 const OXOCRAFT_OPERATOR_ICON = "/static/icons/player_ban/OxOcraft_origin.png";
@@ -144,11 +157,99 @@ export function initPlayerBan() {
         modal.classList.add("hidden");
     });
 
+    modal.addEventListener(
+        "pointerdown",
+        (event) => {
+            const clickedInsideFlatpickr =
+                event.target.closest(".flatpickr-calendar");
+
+            const clickedInsideTimeMenu =
+                historyTimeMenu?.contains(event.target);
+
+            banHistoryFlatpickrWasOpenOnPointerDown =
+                isFlatpickrOpen(
+                    banHistoryStartPicker,
+                    banHistoryEndPicker
+                )
+                && !clickedInsideFlatpickr
+                && !clickedInsideTimeMenu;
+        },
+        true
+    );
+
     modal.addEventListener("click", (event) => {
-        if (event.target === modal) {
-            modal.classList.add("hidden");
+        const clickedInsideTimeMenu =
+            historyTimeMenu?.contains(event.target);
+
+        const clickedTimeButton =
+            historyTimeBtn?.contains(event.target);
+
+        const clickedInsideFilterMenu =
+            historyFilterMenu?.contains(event.target);
+
+        const clickedFilterButton =
+            historyFilterBtn?.contains(event.target);
+
+        const clickedInsideFlatpickr =
+            event.target.closest(".flatpickr-calendar");
+
+        if (
+            clickedInsideTimeMenu ||
+            clickedTimeButton ||
+            clickedInsideFilterMenu ||
+            clickedFilterButton ||
+            clickedInsideFlatpickr
+        ) {
+            return;
         }
+
+        closeFirstAvailableLayer([
+            {
+                isOpen: () =>
+                    banHistoryFlatpickrWasOpenOnPointerDown ||
+                    isFlatpickrOpen(
+                        banHistoryStartPicker,
+                        banHistoryEndPicker
+                    ),
+
+                close: () => {
+                    closeFlatpickr(
+                        banHistoryStartPicker,
+                        banHistoryEndPicker
+                    );
+
+                    banHistoryFlatpickrWasOpenOnPointerDown = false;
+                },
+            },
+            {
+                isOpen: () =>
+                    historyTimeMenu &&
+                    !historyTimeMenu.classList.contains("hidden"),
+
+                close: () => {
+                    historyTimeMenu.classList.add("hidden");
+                },
+            },
+            {
+                isOpen: () =>
+                    isFilterMenuOpen(historyFilterMenu),
+
+                close: () =>
+                    closeFilterMenu(historyFilterMenu),
+            },
+            {
+                isOpen: () =>
+                    event.target === modal &&
+                    !modal.classList.contains("hidden"),
+
+                close: () => {
+                    modal.classList.add("hidden");
+                },
+            },
+        ]);
     });
+
+    
 
     document.querySelectorAll(".player-ban-tab").forEach((button) => {
             button.addEventListener("click", async () => {
@@ -232,26 +333,7 @@ export function initPlayerBan() {
         event.stopPropagation();
     });
 
-    document.addEventListener("click", (event) => {
-        const clickedInsideTimeMenu = historyTimeMenu?.contains(event.target);
-        const clickedTimeButton = historyTimeBtn?.contains(event.target);
-        const clickedInsideFilterMenu = historyFilterMenu?.contains(event.target);
-        const clickedFilterButton = historyFilterBtn?.contains(event.target);
-        const clickedInsideFlatpickr = event.target.closest(".flatpickr-calendar");
-
-        if (
-            clickedInsideTimeMenu ||
-            clickedTimeButton ||
-            clickedInsideFilterMenu ||
-            clickedFilterButton ||
-            clickedInsideFlatpickr
-        ) {
-            return;
-        }
-
-        historyFilterMenu?.classList.add("hidden");
-        historyTimeMenu?.classList.add("hidden");
-    });
+    
 
     window.addEventListener("server-ui-state-changed", () => {
         renderBanActionButtons();

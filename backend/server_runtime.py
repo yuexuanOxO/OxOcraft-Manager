@@ -288,6 +288,13 @@ def handle_server_output() -> None:
                 raw_log=death_data["message"],
             )
 
+            from backend.server_monitor import publish_event
+
+            publish_event("death_record_added", {
+                "player_name": player,
+                "player_uuid": death_data.get("player_uuid"),
+            })
+
     try:
         from backend.db import mark_all_players_offline
         mark_all_players_offline()

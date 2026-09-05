@@ -106,7 +106,20 @@ export function initServerEvents() {
     });
 
     serverEvents.addEventListener("log_clear", () => {
-        clearLogTextOnly();
+            clearLogTextOnly();
+        });
+
+        serverEvents.addEventListener("death_record_added", (event) => {
+        const data = JSON.parse(event.data);
+
+        window.dispatchEvent(
+            new CustomEvent(
+                "death-record-added",
+                {
+                    detail: data
+                }
+            )
+        );
     });
 
     serverEvents.addEventListener("player_ban_should_refresh",() => {

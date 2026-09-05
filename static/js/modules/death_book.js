@@ -2,6 +2,10 @@ import {
     getPlayerAvatarUrl
 } from "./player_avatar.js";
 
+import {
+    showInfo
+} from "./system_dialog.js";
+
 
 let deathPlayers = [];
 
@@ -333,8 +337,8 @@ function getKillerDisplayInfo(
 }
 
 function renderDeathRecordPage() {
+    window.addEventListener("death-record-added",refreshDeathBookFromEvent);
 
-    
     const deathRecords = getCurrentDeathRecords();
     const canSwitchPlayer = deathPlayers.length > 1;
 
@@ -424,31 +428,87 @@ function renderDeathRecordPage() {
 
 }
 
+
+async function loadDeathBookData(targetPlayerName = "") {
+    const response = await fetch("/api/deaths", {
+        cache: "no-store"
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+        throw new Error(
+            data.message || "讀取死亡紀錄失敗"
+        );
+    }
+
+    deathPlayers = Array.isArray(data.players)
+        ? data.players
+        : [];
+
+    currentPlayerIndex = 0;
+    currentDeathPage = 0;
+
+    if (targetPlayerName) {
+        const targetIndex = deathPlayers.findIndex(
+            playerData =>
+                playerData.player_name === targetPlayerName
+        );
+
+        if (targetIndex >= 0) {
+            currentPlayerIndex = targetIndex;
+        }
+    }
+
+    renderPlayerDropdown();
+    renderDeathRecordPage();
+}
+
+
 async function openDeathBook() {
     try {
-        const response = await fetch("/api/deaths", { cache: "no-store" });
-        const data = await response.json();
+        await loadDeathBookData();
 
-        if (!data.success) {
-            alert(data.message || "讀取死亡紀錄失敗");
-            return;
-        }
-
-        deathPlayers = Array.isArray(data.players)
-            ? data.players
-            : [];
-
-        currentPlayerIndex = 0;
-        currentDeathPage = 0;
-
-        renderPlayerDropdown();
-        renderDeathRecordPage();
         document.getElementById("deathBookModal").classList.remove("hidden");
     } catch (error) {
-        console.error("開啟死亡紀錄失敗:", error);
-        alert("開啟死亡紀錄失敗");
+        console.error("開啟死亡紀錄失敗:",error);
+        await showInfo({
+            title: "開啟死亡紀錄失敗",
+            message:
+                error.message ||
+                "無法讀取死亡紀錄",
+            confirmText: "關閉",
+            variant: "error"
+        });
     }
 }
+
+
+async function refreshDeathBookFromEvent(event) {
+    const deathBookModal =
+        document.getElementById("deathBookModal");
+
+    if (
+        !deathBookModal ||
+        deathBookModal.classList.contains("hidden")
+    ) {
+        return;
+    }
+
+    const playerName = String(
+        event.detail?.player_name || ""
+    ).trim();
+
+    try {
+        await loadDeathBookData(playerName);
+    } catch (error) {
+        console.error(
+            "即時更新死亡紀錄失敗:",
+            error
+        );
+    }
+}
+
 
 function closeDeathBook() {
     const dropdown =
@@ -484,12 +544,8 @@ function showNextDeathPage() {
 }
 
 export function initDeathBook() {
-
-    const deathPlayerDropdownBtn =
-        document.getElementById("deathPlayerDropdownBtn");
-
-    const deathPlayerDropdown =
-        document.getElementById("deathPlayerDropdown");
+    const deathPlayerDropdownBtn =　document.getElementById("deathPlayerDropdownBtn");
+    const deathPlayerDropdown =　document.getElementById("deathPlayerDropdown");
 
     if (deathPlayerDropdownBtn && deathPlayerDropdown) {
         deathPlayerDropdownBtn.addEventListener("click", () => {
@@ -533,10 +589,7 @@ export function initDeathBook() {
         deathNextBtn.addEventListener("click", showNextDeathPage);
     }
 
-    const deathBookModal =
-        document.getElementById(
-            "deathBookModal"
-        );
+    const deathBookModal =　document.getElementById("deathBookModal");
 
     if (deathBookModal) {
         deathBookModal.addEventListener(

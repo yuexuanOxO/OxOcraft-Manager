@@ -151,6 +151,10 @@
 
     padding: 0;
 
+    cursor: default;
+}
+
+.death-book-player-dropdown-btn.has-data {
     cursor: pointer;
 }
 

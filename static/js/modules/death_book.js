@@ -336,6 +336,14 @@ function renderDeathRecordPage() {
 
     
     const deathRecords = getCurrentDeathRecords();
+    const canSwitchPlayer = deathPlayers.length > 1;
+
+    const playerArrow = document.getElementById("deathPlayerArrow");
+    const playerDropdownBtn = document.getElementById("deathPlayerDropdownBtn");
+
+    playerArrow?.classList.toggle("hidden", !canSwitchPlayer);
+
+    playerDropdownBtn?.classList.toggle("has-data", canSwitchPlayer);
 
     if (!deathRecords.length) {
         document.getElementById("deathPlayerAvatar").src = "/static/icons/death_record/steve_avatar.png";
@@ -484,8 +492,10 @@ export function initDeathBook() {
         document.getElementById("deathPlayerDropdown");
 
     if (deathPlayerDropdownBtn && deathPlayerDropdown) {
-
         deathPlayerDropdownBtn.addEventListener("click", () => {
+            if (deathPlayers.length <= 1) {
+                return;
+            }
 
             deathPlayerDropdown.classList.toggle("hidden");
         });

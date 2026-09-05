@@ -232,7 +232,23 @@ export function initPlayerBan() {
         event.stopPropagation();
     });
 
-    document.addEventListener("click", () => {
+    document.addEventListener("click", (event) => {
+        const clickedInsideTimeMenu = historyTimeMenu?.contains(event.target);
+        const clickedTimeButton = historyTimeBtn?.contains(event.target);
+        const clickedInsideFilterMenu = historyFilterMenu?.contains(event.target);
+        const clickedFilterButton = historyFilterBtn?.contains(event.target);
+        const clickedInsideFlatpickr = event.target.closest(".flatpickr-calendar");
+
+        if (
+            clickedInsideTimeMenu ||
+            clickedTimeButton ||
+            clickedInsideFilterMenu ||
+            clickedFilterButton ||
+            clickedInsideFlatpickr
+        ) {
+            return;
+        }
+
         historyFilterMenu?.classList.add("hidden");
         historyTimeMenu?.classList.add("hidden");
     });

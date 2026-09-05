@@ -346,8 +346,8 @@ function renderDeathRecordPage() {
         document.getElementById("deathTime").textContent = "";
         document.getElementById("deathKillerSection").classList.add("hidden");
         document.getElementById("deathWeaponSection").classList.add("hidden");
-        document.getElementById("deathPrevBtn").classList.add("hidden");
-        document.getElementById("deathNextBtn").classList.add("hidden");
+        document.getElementById("deathPrevBtn").classList.add("death-book-page-btn-hidden");
+        document.getElementById("deathNextBtn").classList.add("death-book-page-btn-hidden");
         return;
     }
 

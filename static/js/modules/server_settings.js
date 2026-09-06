@@ -222,6 +222,32 @@ function setupServerSettingTooltip() {
 }
 
 
+function discardUnsavedServerSettingsChanges() {
+    serverSettingsState =
+        structuredClone(serverSettingsSavedState);
+
+    pendingServerIconFile = null;
+
+    if (pendingServerIconPreviewUrl) {
+        URL.revokeObjectURL(
+            pendingServerIconPreviewUrl
+        );
+
+        pendingServerIconPreviewUrl = null;
+    }
+
+    const iconInput =
+        document.getElementById("serverIconInput");
+
+    if (iconInput) {
+        iconInput.value = "";
+    }
+
+    renderServerSettings();
+    updateServerSettingsStatusCard();
+}
+
+
 function closeServerSettingsModal() {
     const modal =
         document.getElementById("serverSettingsModal");
@@ -261,6 +287,7 @@ async function requestCloseServerSettingsModal() {
         return;
     }
 
+    discardUnsavedServerSettingsChanges();
     closeServerSettingsModal();
 }
 

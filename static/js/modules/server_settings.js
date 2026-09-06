@@ -222,6 +222,49 @@ function setupServerSettingTooltip() {
 }
 
 
+function closeServerSettingsModal() {
+    const modal =
+        document.getElementById("serverSettingsModal");
+
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.add("hidden");
+
+    serverSettingKeyword = "";
+
+    const searchInput =
+        document.getElementById("serverSettingSearch");
+
+    if (searchInput) {
+        searchInput.value = "";
+    }
+}
+
+
+async function requestCloseServerSettingsModal() {
+    if (!hasUnsavedChanges()) {
+        closeServerSettingsModal();
+        return;
+    }
+
+    const confirmed = await showConfirm({
+        title: "尚有未套用的設定",
+        message:
+            "目前有修改過的伺服器設定尚未套用。\n\n是否不套用變更並直接離開？",
+        confirmText: "不套用並離開",
+        cancelText: "返回設定"
+    });
+
+    if (!confirmed) {
+        return;
+    }
+
+    closeServerSettingsModal();
+}
+
+
 function setupServerSettingsModal() {
     const modal = document.getElementById("serverSettingsModal");
     const openBtn = document.getElementById("serverSettingBtn");
@@ -299,8 +342,7 @@ function setupServerSettingsModal() {
         });
     }
 
-    modal.addEventListener("click", (event) => {
-
+    modal.addEventListener("click", async (event) => {
         const layout = modal.querySelector(".settings-layout");
 
         if (
@@ -310,16 +352,7 @@ function setupServerSettingsModal() {
             return;
         }
 
-        modal.classList.add("hidden");
-
-        serverSettingKeyword = "";
-
-        const searchInput =
-            document.getElementById("serverSettingSearch");
-
-        if (searchInput) {
-            searchInput.value = "";
-        }
+        await requestCloseServerSettingsModal();
     });
 
 }
@@ -1468,44 +1501,79 @@ function updateServerSettingsStatusCard() {
 
 
 function updateServerSettingsStatusSummary() {
+    const summary =
+        document.getElementById("settingsStatusSummary");
 
-    const summary = document.getElementById("settingsStatusSummary");
     if (!summary) return;
 
-    const dirtyCount = getDirtySettingKeys().length + (serverIconNeedsRestart ? 1 : 0);
+    const pendingKeys = new Set([
+        ...getUnsavedSettingKeys(),
+        ...getDirtySettingKeys()
+    ]);
 
-    if (dirtyCount <= 0) {
+    const pendingCount =
+        pendingKeys.size +
+        (
+            pendingServerIconFile ||
+            serverIconNeedsRestart
+                ? 1
+                : 0
+        );
+
+    if (pendingCount <= 0) {
         summary.textContent = "所有設定已生效";
         return;
     }
 
     summary.textContent =
-        `${dirtyCount} 項設定尚未生效\n重新啟動後才會套用`;
+        `${pendingCount} 項設定尚未生效`;
 }
 
 
 function updateServerSettingsDirtyList() {
-
     const list = document.getElementById("settingsDirtyList");
+
     if (!list) return;
 
+    const unsavedKeys = getUnsavedSettingKeys();
     const dirtyKeys = getDirtySettingKeys();
 
-    if (dirtyKeys.length <= 0 && !serverIconNeedsRestart) {
-        list.innerHTML = `<div class="settings-dirty-item">無</div>`;
+    const pendingKeys = [
+        ...new Set([
+            ...unsavedKeys,
+            ...dirtyKeys
+        ])
+    ];
+
+    if (
+        pendingKeys.length <= 0 &&
+        !pendingServerIconFile &&
+        !serverIconNeedsRestart
+    ) {
+        list.innerHTML =
+            `<div class="settings-dirty-item">無</div>`;
         return;
     }
 
     list.innerHTML = "";
 
-    if (serverIconNeedsRestart) {
-        const div = document.createElement("div");
-        div.className = "settings-dirty-item";
-        div.textContent = "▸ 伺服器圖示：已選擇新圖片";
+    if (
+        pendingServerIconFile ||
+        serverIconNeedsRestart
+    ) {
+        const div =
+            document.createElement("div");
+
+        div.className =
+            "settings-dirty-item";
+
+        div.textContent =
+            "▸ 伺服器圖示：已選擇新圖片";
+
         list.appendChild(div);
     }
 
-    dirtyKeys.forEach((key) => {
+    pendingKeys.forEach((key) => {
 
         const field = serverSettingFields.find(item => item.key === key);
 
@@ -1522,7 +1590,13 @@ function updateServerSettingsDirtyList() {
                 `▸ ${field?.label || key} (${key})：密碼已變更`;
         } else {
             const oldValue = serverSettingsEffectiveState[key] ?? "無";
-            const newValue = serverSettingsSavedState[key] ?? "無";
+
+            const isUnsaved = unsavedKeys.includes(key);
+
+            const newValue =
+                isUnsaved
+                    ? serverSettingsState[key] ?? "無"
+                    : serverSettingsSavedState[key] ?? "無";
 
             div.textContent =
                 `▸ ${field?.label || key} (${key})：${oldValue} > ${newValue}`;

@@ -6,8 +6,6 @@ import {
 
 import {
     getPlayerAvatarUrl,
-    getAccountTypeLabel,
-    getAccountTypeClass,
 } from "./player_avatar.js";
 
 import {
@@ -1629,20 +1627,6 @@ function createPlayerWhitelistCard(player) {
                     ${escapeHtml(player.player_name)}
                 </div>
 
-                <div class="
-                    player-whitelist-badge
-                    whitelisted
-                ">
-                    已加入白名單
-                </div>
-
-                <div class="
-                    player-whitelist-uuid-type
-                    getAccountTypeClass(player)
-                ">
-                    ${getAccountTypeLabel(player)}
-                </div>
-
             </div>
 
             <div class="player-whitelist-uuid">
@@ -2041,6 +2025,19 @@ function renderWhitelistCandidates() {
 }
 
 
+function renderWhitelistStateBadge(player) {
+    if (player.online) {
+        return `
+            <div class=" player-whitelist-state-badge online">在線</div>
+        `;
+    }
+
+    return `
+        <div class=" player-whitelist-state-badge offline">離線</div>
+    `;
+}
+
+
 function createWhitelistCandidateCard(player) {
     const card = document.createElement("div");
 
@@ -2076,22 +2073,7 @@ function createWhitelistCandidateCard(player) {
                     ${escapeHtml(player.player_name)}
                 </div>
 
-                <div class="
-                    player-whitelist-uuid-type
-                    getAccountTypeClass(player)
-                ">
-                    ${getAccountTypeLabel(player)}
-                </div>
-
-                ${
-                    player.whitelisted
-                        ? `
-                            <div class="player-whitelist-badge whitelisted">
-                                已加入
-                            </div>
-                        `
-                        : ""
-                }
+                ${renderWhitelistStateBadge(player)}
 
             </div>
 

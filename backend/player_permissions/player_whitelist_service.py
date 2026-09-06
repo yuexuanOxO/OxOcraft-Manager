@@ -16,6 +16,7 @@ from backend.player_permissions.player_identity_service import (
 
 from backend.player_permissions.player_permission_service import (
     get_effective_online_mode,
+    get_online_uuid_set,
 )
 
 from backend.player_permissions.player_access_history_service import (
@@ -510,6 +511,7 @@ def get_player_whitelist_candidate_list() -> list[dict]:
     players = get_known_players()
     whitelist_uuid_set = load_whitelist_uuid_set()
     online_mode = get_effective_online_mode()
+    online_uuid_set = get_online_uuid_set()
 
     result = []
 
@@ -533,6 +535,7 @@ def get_player_whitelist_candidate_list() -> list[dict]:
         result.append({
             **player,
             "whitelisted": False,
+            "online": player_uuid in online_uuid_set,
         })
 
     return result

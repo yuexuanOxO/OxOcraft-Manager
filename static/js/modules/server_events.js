@@ -172,6 +172,17 @@ export function initServerEvents() {
         }
     );
 
+    window.dispatchEvent(
+        new CustomEvent(
+            "player-whitelist-should-refresh",
+            {
+                detail: {
+                    source: "management_player_joined"
+                }
+            }
+        )
+    );
+
     serverEvents.addEventListener("management_player_left", () => {
             console.log("[PlayerPermission] player left refresh received");
 
@@ -186,6 +197,17 @@ export function initServerEvents() {
                 )
             );
         }
+    );
+
+    window.dispatchEvent(
+        new CustomEvent(
+            "player-whitelist-should-refresh",
+            {
+                detail: {
+                    source: "management_player_left"
+                }
+            }
+        )
     );
 
     serverEvents.addEventListener("management_operator_added",() => {

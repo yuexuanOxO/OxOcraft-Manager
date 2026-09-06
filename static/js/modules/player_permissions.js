@@ -974,6 +974,10 @@ function createPlayerPermissionCard(player) {
 
     if (onlineEditLocked) {
         card.classList.add("online-edit-locked");
+
+        card.dataset.mcTooltip =
+            "此玩家尚未加入過伺服器。離線模式下，若伺服器運行中直接新增或移除管理員，Minecraft 可能會預設使用正版玩家資料；玩家至少進入過伺服器一次後，才會改用已建立的離線版玩家資料。請先讓玩家加入伺服器，或關閉伺服器後使用離線設定模式修改。";
+
     }
 
     const avatarUrl = getPlayerAvatarUrl(player);

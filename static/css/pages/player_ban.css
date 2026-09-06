@@ -301,19 +301,17 @@
       
 }
 
-.player-ban-badge{
+.player-ban-badge {
+    padding: 2px 6px;
 
-    padding:3px 7px;
+    border: 1px solid rgba(255, 156, 156, 0.45);
+    border-radius: 4px;
 
-    border-radius:999px;
+    color: #ff9c9c;
+    background: rgba(255, 156, 156, 0.12);
 
-    font-size:12px;
-
-    border:1px solid #b85c5c;
-
-    color:#ff9c9c;
-
-    background:rgba(184,92,92,.08);
+    font-size: 16px;
+    white-space: nowrap;
 }
 
 .player-ban-meta{
@@ -587,7 +585,7 @@
 
 .player-ban-candidate-name {
     color: #f5f5f5;
-    font-size: 16px;
+    font-size: 24px;
       
 }
 
@@ -595,7 +593,7 @@
     margin-top: 4px;
 
     color: #aaa;
-    font-size: 12px;
+    font-size: 14px;
     line-height: 1.35;
 
     overflow-wrap: anywhere;
@@ -607,7 +605,7 @@
     border: 1px solid #555;
     border-radius: 4px;
 
-    font-size: 12px;
+    font-size: 16px;
     white-space: nowrap;
 }
 
@@ -1286,4 +1284,26 @@
     to {
         background-position: 0 -96px;
     }
+}
+
+.player-ban-player-state {
+    padding: 2px 6px;
+
+    border: 1px solid #555;
+    border-radius: 4px;
+
+    font-size: 16px;
+    white-space: nowrap;
+}
+
+.player-ban-player-state.online {
+    color: #8ee891;
+    border-color: rgba(142, 232, 145, 0.45);
+    background: rgba(79, 157, 105, 0.12);
+}
+
+.player-ban-player-state.offline {
+    color: #bdbdbd;
+    border-color: rgba(189, 189, 189, 0.35);
+    background: rgba(189, 189, 189, 0.08);
 }

@@ -724,7 +724,6 @@ function createBanPlayerCard(item) {
         <div class="player-ban-card-info">
             <div class="player-ban-name-row">
                 <div class="player-ban-name">${escapeHtml(item.target_name)}</div>
-                <div class="player-ban-badge">已封鎖</div>
             </div>
 
             <div class="player-ban-history-meta">UUID：${escapeHtml(item.target_uuid || "未知")}</div>
@@ -824,7 +823,6 @@ function createBanIpCard(item) {
                 <div class="player-ban-name">
                     封鎖IP：${escapeHtml(item.target_name)}
                 </div>
-                <div class="player-ban-badge">已封鎖</div>
             </div>
 
             <div class="player-ban-history-meta">
@@ -1915,6 +1913,29 @@ function renderBanCandidates() {
 }
 
 
+function renderBanPlayerStateBadge(player) {
+    if (player.online) {
+        return `
+            <div class="
+                player-ban-player-state
+                online
+            ">
+                在線
+            </div>
+        `;
+    }
+
+    return `
+        <div class="
+            player-ban-player-state
+            offline
+        ">
+            離線
+        </div>
+    `;
+}
+
+
 function createBanCandidateCard(player) {
     const card = document.createElement("div");
 
@@ -1945,9 +1966,7 @@ function createBanCandidateCard(player) {
                     ${escapeHtml(player.player_name)}
                 </div>
 
-                <div class="player-ban-candidate-type ${getAccountTypeClass(player)}">
-                    ${getAccountTypeLabel(player)}
-                </div>
+                ${renderBanPlayerStateBadge(player)}
             </div>
 
             <div class="player-ban-candidate-uuid">

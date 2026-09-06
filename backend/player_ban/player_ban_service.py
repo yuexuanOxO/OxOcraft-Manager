@@ -35,6 +35,9 @@ from backend.player_permissions.player_access_history_service import (
     record_player_access,
 )
 
+from backend.player_permissions.player_permission_service import (
+    get_online_uuid_set,
+)
 
 BANNED_PLAYERS_FILE = MC_ROOT / "banned-players.json"
 BANNED_IPS_FILE = MC_ROOT / "banned-ips.json"
@@ -1711,6 +1714,7 @@ def can_add_ban_player_by_name() -> bool:
 
 def get_player_ban_candidate_list() -> list[dict]:
     active_bans = get_active_bans("player")
+    online_uuid_set = get_online_uuid_set()
 
     banned_uuid_set = {
         str(item.get("target_uuid", "")).lower()
@@ -1743,6 +1747,7 @@ def get_player_ban_candidate_list() -> list[dict]:
         result.append({
             **player,
             "banned": False,
+            "online": player_uuid in online_uuid_set,
         })
 
     return result

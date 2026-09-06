@@ -569,7 +569,6 @@ def upsert_player_from_usercache(
                 account_type = excluded.account_type,
                 in_usercache = 1,
                 usercache_expires_on = excluded.usercache_expires_on,
-                show_in_player_candidates = 1,
                 updated_at = excluded.updated_at
         """, (
             player_uuid,
@@ -600,7 +599,6 @@ def sync_players_usercache_flags(
             conn.execute(f"""
                 UPDATE players
                 SET in_usercache = 1,
-                    show_in_player_candidates = 1,
                     updated_at = ?
                 WHERE lower(player_uuid) IN ({placeholders})
             """, (

@@ -6,8 +6,6 @@ import {
 
 import {
     getPlayerAvatarUrl,
-    getAccountTypeLabel,
-    getAccountTypeClass,
 } from "./player_avatar.js";
 
 import {
@@ -1002,13 +1000,6 @@ function createPlayerPermissionCard(player) {
                     ${escapeHtml(player.player_name)}
                 </div>
 
-                <div class="
-                    player-permission-uuid-type
-                    ${getAccountTypeClass(player)}
-                ">
-                    ${getAccountTypeLabel(player)}
-                </div>
-
                 ${renderPermissionStateBadge(player)}
 
             </div>
@@ -1898,12 +1889,7 @@ function createOpCandidateCard(player) {
                     ${escapeHtml(player.player_name)}
                 </div>
 
-                <div class="
-                    player-permission-uuid-type
-                    ${getAccountTypeClass(player)}
-                ">
-                    ${getAccountTypeLabel(player)}
-                </div>
+                ${renderPermissionStateBadge(player)}
             </div>
 
             <div class="player-permission-uuid">
@@ -2716,39 +2702,37 @@ function renderPermissionStateBadge(player) {
     const state =
         String(player.permission_state || "");
 
-    const stateMap = {
-        online: {
-            className: "online",
-            text: "在線",
-        },
-        offline: {
-            className: "offline",
-            text: "離線",
-        },
-        offline_usercache: {
-            className: "usercache",
-            text: "離線",
-        },
-        offline_only: {
-            className: "offline-only",
-            text: "離線(未加入過伺服器)",
-        },
-    };
+    if (state === "online") {
+        return `
+            <div class="
+                player-permission-state-badge
+                online
+            ">
+                在線
+            </div>
+        `;
+    }
 
-    const info = stateMap[state];
-
-    if (!info) return "";
+    if (state === "offline_only") {
+        return `
+            <div class="
+                player-permission-state-badge
+                offline-only
+            ">
+                離線(未加入過伺服器)
+            </div>
+        `;
+    }
 
     return `
         <div class="
             player-permission-state-badge
-            ${info.className}
+            offline
         ">
-            ${escapeHtml(info.text)}
+            離線
         </div>
     `;
 }
-
 
 function applyPlayerPermissionSearch() {
     const searchInput =

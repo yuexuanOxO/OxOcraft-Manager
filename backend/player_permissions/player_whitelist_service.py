@@ -24,6 +24,7 @@ from backend.player_permissions.player_access_history_service import (
 )
 
 from backend.db import (
+    get_connection,
     update_player_whitelist_since,
     update_player_whitelist_status,
     get_whitelisted_players_from_db,
@@ -295,47 +296,95 @@ def get_offline_player_uuid(player_name: str) -> str:
     return str(uuid.UUID(bytes=bytes(digest)))
 
 
+def get_whitelisted_players_from_json() -> list[dict]:
+    online_mode = get_effective_online_mode()
+    entries = load_whitelist_entries()
+
+    result = []
+
+    for entry in entries:
+        player_uuid = str(
+            entry.get("uuid", "")
+        ).strip()
+
+        player_name = str(
+            entry.get("name", "")
+        ).strip()
+
+        if not player_uuid or not player_name:
+            continue
+
+        db_record = None
+
+        with get_connection() as conn:
+            row = conn.execute("""
+                SELECT *
+                FROM players
+                WHERE lower(player_uuid) = lower(?)
+                LIMIT 1
+            """, (
+                player_uuid,
+            )).fetchone()
+
+            db_record = (
+                dict(row)
+                if row
+                else None
+            )
+
+        account_type = (
+            db_record.get("account_type")
+            if db_record
+            and db_record.get("account_type")
+            else get_account_type(player_uuid)
+        )
+
+        is_valid_for_current_mode = (
+            account_type == "premium"
+            if online_mode
+            else account_type == "offline"
+        )
+
+        result.append({
+            **(db_record or {}),
+
+            # whitelist.json 才是目前離線狀態的來源
+            "player_uuid": player_uuid,
+            "player_name": player_name,
+            "account_type": account_type,
+
+            "whitelisted": True,
+
+            # JSON 本身沒有加入時間，
+            # DB 沒資料時前端顯示「未知」即可
+            "whitelisted_since": (
+                db_record.get("whitelisted_since")
+                if db_record
+                else None
+            ),
+
+            "valid_for_current_mode":
+                is_valid_for_current_mode,
+        })
+
+    return result
+
+
 def get_player_whitelist_list() -> list[dict]:
     online_mode = get_effective_online_mode()
 
-    if is_server_ready():
-        players = get_whitelisted_players_from_db()
-
-        result = []
-
-        for player in players:
-            player_uuid = str(player.get("player_uuid", "")).strip()
-            account_type = (
-                player.get("account_type")
-                or get_account_type(player_uuid)
-            )
-
-            is_valid_for_current_mode = (
-                account_type == "premium"
-                if online_mode
-                else account_type == "offline"
-            )
-
-            result.append({
-                **player,
-                "player_uuid": player_uuid,
-                "player_name": player.get("player_name"),
-                "account_type": account_type,
-                "whitelisted": True,
-                "valid_for_current_mode": is_valid_for_current_mode,
-            })
-
-        return result
-
-    sync_whitelist_json_to_players(
-        source="offline_refresh"
-    )
+    if not is_server_ready():
+        return get_whitelisted_players_from_json()
 
     players = get_whitelisted_players_from_db()
+
     result = []
 
     for player in players:
-        player_uuid = str(player.get("player_uuid", "")).strip()
+        player_uuid = str(
+            player.get("player_uuid", "")
+        ).strip()
+
         account_type = (
             player.get("account_type")
             or get_account_type(player_uuid)
@@ -353,7 +402,8 @@ def get_player_whitelist_list() -> list[dict]:
             "player_name": player.get("player_name"),
             "account_type": account_type,
             "whitelisted": True,
-            "valid_for_current_mode": is_valid_for_current_mode,
+            "valid_for_current_mode":
+                is_valid_for_current_mode,
         })
 
     return result

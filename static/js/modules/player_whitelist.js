@@ -1993,6 +1993,42 @@ function createInvalidWhitelistEntryCard(
 }
 
 
+function getWhitelistVerificationUnavailableHint(
+    validation
+) {
+    const errorType = String(
+        validation?.verification_error_type
+        || ""
+    );
+
+    if (errorType === "network_error") {
+        return (
+            "目前無法連線至玩家驗證服務，"
+            + "請確認網路後重新驗證。"
+        );
+    }
+
+    if (errorType === "api_error") {
+        return (
+            "Mojang 玩家驗證服務目前異常，"
+            + "請稍後重新驗證。"
+        );
+    }
+
+    if (errorType === "invalid_response") {
+        return (
+            "玩家驗證服務回傳異常資料，"
+            + "請稍後重新驗證。"
+        );
+    }
+
+    return (
+        "目前無法完成玩家資料驗證，"
+        + "請稍後重新驗證。"
+    );
+}
+
+
 function createUnavailableWhitelistEntryCard(
     item
 ) {
@@ -2020,6 +2056,13 @@ function createUnavailableWhitelistEntryCard(
         || ""
     );
 
+    const avatarUrl = getPlayerAvatarUrl({
+        player_uuid: playerUuid,
+        player_name: playerName,
+        account_type:
+            validation.account_type || null,
+    });
+
     const message = String(
         validation.message
         || "目前無法驗證玩家資料"
@@ -2035,8 +2078,8 @@ function createUnavailableWhitelistEntryCard(
     card.innerHTML = `
         <img
             class="player-whitelist-avatar"
-            src="${UNKNOWN_OPERATOR_ICON}"
-            alt="暫時無法驗證"
+            src="${avatarUrl}"
+            alt="${escapeHtml(playerName)}"
         >
 
         <div class="player-whitelist-info">
@@ -2067,15 +2110,69 @@ function createUnavailableWhitelistEntryCard(
             </div>
 
             <div class="player-whitelist-entry-unavailable-hint">
-                目前不會修改此玩家既有的資料狀態，
-                請稍後重新整理再次驗證。
+                ${escapeHtml(
+                    getWhitelistVerificationUnavailableHint(
+                        validation
+                    )
+                )}
             </div>
 
         </div>
 
+        <button class="player-whitelist-entry-retry" type="button">重新驗證</button>
+
     `;
 
+    const retryBtn =
+        card.querySelector(
+            ".player-whitelist-entry-retry"
+        );
+
+    retryBtn?.addEventListener(
+        "click",
+        async () => {
+            await retryWhitelistEntryVerification(
+                retryBtn
+            );
+        }
+    );
+
     return card;
+}
+
+
+async function retryWhitelistEntryVerification(
+    button
+) {
+    if (button) {
+        button.disabled = true;
+        button.textContent = "驗證中...";
+    }
+
+    try {
+        await refreshPlayerWhitelistState();
+
+    } catch (error) {
+        console.error(
+            "重新驗證白名單玩家失敗:",
+            error
+        );
+
+        await showInfo({
+            title: "錯誤",
+            message:
+                error.message
+                || "重新驗證玩家資料失敗",
+            confirmText: "關閉",
+            variant: "error",
+        });
+
+        if (button) {
+            button.disabled = false;
+            button.textContent =
+                "重新驗證";
+        }
+    }
 }
 
 

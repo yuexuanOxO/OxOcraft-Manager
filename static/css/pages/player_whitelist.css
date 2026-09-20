@@ -1047,3 +1047,26 @@
     white-space: normal;
     line-height: 1.4;
 }
+
+.player-whitelist-entry-retry {
+    flex-shrink: 0;
+
+    padding: 9px 12px;
+
+    border: 1px solid #c08b42;
+    border-radius: 6px;
+
+    background: #303030;
+    color: #f0c36a;
+
+    cursor: pointer;
+}
+
+.player-whitelist-entry-retry:hover {
+    background: #3a3324;
+}
+
+.player-whitelist-entry-retry:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}

@@ -637,6 +637,78 @@
     filter: grayscale(100%) brightness(0.75);
 }
 
+.player-whitelist-entry-error {
+    border-color: #b85c5c;
+    background: rgba(120, 45, 45, 0.18);
+}
+
+.player-whitelist-entry-error-tag {
+    padding: 3px 8px;
+
+    border: 1px solid #b85c5c;
+    border-radius: 999px;
+
+    color: #ff8d8d;
+    font-size: 12px;
+}
+
+.player-whitelist-entry-error-message {
+    margin-top: 5px;
+
+    color: #ff8d8d;
+    font-size: 14px;
+}
+
+.player-whitelist-entry-error-hint {
+    margin-top: 4px;
+
+    color: #aaa;
+    font-size: 13px;
+}
+
+.player-whitelist-entry-error-remove {
+    flex-shrink: 0;
+
+    padding: 0;
+
+    border-color: #b85c5c;
+    color: #ff9c9c;
+}
+
+.player-whitelist-entry-error-remove:hover {
+    background: #422e2e;
+}
+
+
+.player-whitelist-entry-unavailable {
+    border-color: #c08b42;
+    background: rgba(120, 90, 35, 0.16);
+}
+
+.player-whitelist-entry-unavailable-tag {
+    padding: 3px 8px;
+
+    border: 1px solid #c08b42;
+    border-radius: 999px;
+
+    color: #f0c36a;
+    font-size: 12px;
+}
+
+.player-whitelist-entry-unavailable-message {
+    margin-top: 5px;
+
+    color: #f0c36a;
+    font-size: 14px;
+}
+
+.player-whitelist-entry-unavailable-hint {
+    margin-top: 4px;
+
+    color: #aaa;
+    font-size: 13px;
+}
+
 .player-whitelist-page {
     flex: 1;
     min-height: 0;
@@ -939,4 +1011,39 @@
     color: #bdbdbd;
     border-color: rgba(189, 189, 189, 0.35);
     background: rgba(189, 189, 189, 0.08);
+}
+
+#playerWhitelistPage
+.player-management-meta-row {
+    display: grid;
+
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+
+    row-gap: 6px;
+
+    align-items: center;
+}
+
+
+#playerWhitelistPage
+.player-management-controls {
+    grid-column: 1;
+    grid-row: 1;
+
+    justify-self: center;
+}
+
+
+#playerWhitelistPage
+.player-management-count {
+    grid-column: 1;
+    grid-row: 2;
+
+    justify-self: start;
+
+    width: 100%;
+
+    white-space: normal;
+    line-height: 1.4;
 }

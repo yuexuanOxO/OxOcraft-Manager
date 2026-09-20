@@ -36,6 +36,7 @@ from backend.player_permissions.player_whitelist_service import (
     toggle_whitelist_setting,
     get_player_whitelist_data,
     recover_whitelist_json_from_db,
+    remove_invalid_whitelist_entry,
     add_player_whitelist_direct
 )
 
@@ -646,3 +647,60 @@ def api_player_access_history(category):
         "category": category,
         "records": records,
     })
+
+
+@player_bp.route(
+    "/api/player/whitelist/invalid-entry/remove",
+    methods=["POST"]
+)
+def api_player_whitelist_remove_invalid_entry():
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+    if "entry_index" not in data:
+        return jsonify({
+            "success": False,
+            "message": "缺少白名單資料位置",
+        }), 400
+
+    if "entry" not in data:
+        return jsonify({
+            "success": False,
+            "message": "缺少原始白名單資料",
+        }), 400
+
+    try:
+        entry_index = int(
+            data.get("entry_index")
+        )
+
+    except (TypeError, ValueError):
+        return jsonify({
+            "success": False,
+            "message": "白名單資料位置錯誤",
+        }), 400
+
+    try:
+        result = (
+            remove_invalid_whitelist_entry(
+                entry_index=entry_index,
+                expected_entry=data.get(
+                    "entry"
+                ),
+            )
+        )
+
+        status = (
+            200
+            if result.get("success")
+            else 400
+        )
+
+        return jsonify(result), status
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error),
+        }), 500

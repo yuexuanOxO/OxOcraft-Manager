@@ -85,9 +85,10 @@ def validate_whitelist_entries(
     invalid_entries = []
     unavailable_entries = []
 
-    for entry in entries:
+    for entry_index, entry in enumerate(entries):
         if not isinstance(entry, dict):
             invalid_entries.append({
+                "entry_index": entry_index,
                 "entry": entry,
                 "validation": {
                     "valid": False,
@@ -116,6 +117,7 @@ def validate_whitelist_entries(
         )
 
         item = {
+            "entry_index": entry_index,
             "entry": entry,
             "validation": validation,
         }
@@ -713,14 +715,21 @@ def get_player_whitelist_data() -> dict:
     if not is_server_ready():
         return get_whitelisted_players_from_json()
 
-    return {
-        "status": "valid",
-        "players": get_player_whitelist_list(),
-        "invalid_entries": [],
-        "unavailable_entries": [],
-        "error_code": None,
-        "message": "",
-    }
+    whitelist_result = (
+        load_validated_whitelist()
+    )
+
+    if (
+        whitelist_result["status"]
+        != "valid"
+    ):
+        return whitelist_result
+
+    whitelist_result["players"] = (
+        get_player_whitelist_list()
+    )
+
+    return whitelist_result
 
 
 def get_player_whitelist_list() -> list[dict]:
@@ -777,6 +786,13 @@ def add_player_whitelist(
     player_name: str,
     history_source: str | None = None,
 ) -> dict:
+    mutation_error = (
+        get_whitelist_mutation_error()
+    )
+
+    if mutation_error:
+        return mutation_error
+
     file_result = load_whitelist_file()
 
     if file_result["status"] != "valid":
@@ -878,6 +894,13 @@ def remove_player_whitelist(
     player_name: str,
     history_source: str | None = None,
 ) -> dict:
+
+    mutation_error = (
+        get_whitelist_mutation_error()
+    )
+
+    if mutation_error:
+        return mutation_error
 
     file_result = load_whitelist_file()
 
@@ -1261,6 +1284,57 @@ def load_validated_whitelist() -> dict:
     }
 
 
+def get_whitelist_mutation_error() -> dict | None:
+    whitelist_result = (
+        load_validated_whitelist()
+    )
+
+    if (
+        whitelist_result["status"]
+        != "valid"
+    ):
+        return {
+            "success": False,
+            "message": (
+                "白名單參數檔發生錯誤，"
+                "請先修復 whitelist.json"
+            ),
+            "error_code": (
+                whitelist_result.get(
+                    "error_code"
+                )
+            ),
+            "data_status": "file_invalid",
+        }
+
+    if whitelist_result["invalid_entries"]:
+        return {
+            "success": False,
+            "message": (
+                "白名單中有玩家資料驗證失敗，"
+                "請先處理錯誤資料"
+            ),
+            "error_code":
+                "invalid_player_entries",
+            "data_status": "entry_invalid",
+        }
+
+    if whitelist_result["unavailable_entries"]:
+        return {
+            "success": False,
+            "message": (
+                "白名單中有玩家資料目前無法驗證，"
+                "請稍後重新驗證後再操作"
+            ),
+            "error_code":
+                "player_verification_unavailable",
+            "data_status":
+                "verification_unavailable",
+        }
+
+    return None
+
+
 def recover_whitelist_json_from_db() -> dict:
     file_result = load_whitelist_file()
 
@@ -1301,4 +1375,124 @@ def recover_whitelist_json_from_db() -> dict:
         "restored_count": len(
             restored_result["entries"]
         ),
+    }
+
+
+def remove_invalid_whitelist_entry(
+    entry_index: int,
+    expected_entry,
+) -> dict:
+    whitelist_result = (
+        load_validated_whitelist()
+    )
+
+    if (
+        whitelist_result["status"]
+        != "valid"
+    ):
+        return {
+            "success": False,
+            "message": (
+                "whitelist.json 目前無法正常讀取"
+            ),
+            "error_code": (
+                whitelist_result.get(
+                    "error_code"
+                )
+            ),
+            "data_status": "file_invalid",
+        }
+
+    target_item = None
+
+    for item in (
+        whitelist_result["invalid_entries"]
+    ):
+        if (
+            item.get("entry_index")
+            == entry_index
+            and item.get("entry")
+            == expected_entry
+        ):
+            target_item = item
+            break
+
+    if target_item is None:
+        return {
+            "success": False,
+            "message": (
+                "白名單資料已發生變更，"
+                "請重新整理後再操作"
+            ),
+            "error_code":
+                "whitelist_entry_changed",
+        }
+
+    file_result = load_whitelist_file()
+
+    if file_result["status"] != "valid":
+        return {
+            "success": False,
+            "message": (
+                "whitelist.json 目前無法正常讀取"
+            ),
+            "error_code": (
+                file_result.get(
+                    "error_code"
+                )
+            ),
+            "data_status": "file_invalid",
+        }
+
+    entries = file_result["entries"]
+
+    if (
+        entry_index < 0
+        or entry_index >= len(entries)
+        or entries[entry_index] != expected_entry
+    ):
+        return {
+            "success": False,
+            "message": (
+                "白名單資料已發生變更，"
+                "請重新整理後再操作"
+            ),
+            "error_code":
+                "whitelist_entry_changed",
+        }
+
+    entries.pop(entry_index)
+
+    save_whitelist_entries(entries)
+
+    refreshed_result = (
+        load_validated_whitelist()
+    )
+
+    if (
+        refreshed_result["status"]
+        != "valid"
+    ):
+        return {
+            "success": False,
+            "message": (
+                "刪除後 whitelist.json "
+                "無法正常讀取"
+            ),
+            "error_code":
+                "whitelist_reload_failed",
+        }
+
+    sync_validated_whitelist_to_players(
+        refreshed_result
+    )
+
+    reload_result = (
+        reload_whitelist_if_ready()
+    )
+
+    return {
+        "success": True,
+        "message": "已刪除錯誤的白名單資料",
+        "result": reload_result,
     }

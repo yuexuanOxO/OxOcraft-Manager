@@ -57,6 +57,8 @@ let whitelistDataState = {
     status: "valid",
     error_code: null,
     message: "",
+    invalid_entries: [],
+    unavailable_entries: [],
 };
 
 let whitelistSettings = {
@@ -906,6 +908,18 @@ function applyPlayerWhitelistState(data) {
         status: data.data_status || "valid",
         error_code: data.error_code || null,
         message: data.message || "",
+
+        invalid_entries:
+            Array.isArray(data.invalid_entries)
+                ? data.invalid_entries
+                : [],
+
+        unavailable_entries:
+            Array.isArray(
+                data.unavailable_entries
+            )
+                ? data.unavailable_entries
+                : [],
     };
 
     allPlayers = (data.players || [])
@@ -1014,6 +1028,14 @@ function renderPlayerWhitelistList() {
 
     let players = [...allPlayers];
 
+    let invalidEntries = [
+        ...whitelistDataState.invalid_entries
+    ];
+
+    let unavailableEntries = [
+        ...whitelistDataState.unavailable_entries
+    ];
+
     if (whitelistSearchKeyword) {
         players = players.filter(player => {
             const playerName =
@@ -1025,19 +1047,67 @@ function renderPlayerWhitelistList() {
                 whitelistSearchKeyword
             );
         });
+
+        const filterEntry = item => {
+            const entry =
+                item?.entry || {};
+
+            const validation =
+                item?.validation || {};
+
+            const playerName = String(
+                validation.player_name
+                || entry.name
+                || ""
+            ).toLowerCase();
+
+            return playerName.includes(
+                whitelistSearchKeyword
+            );
+        };
+
+        invalidEntries =
+            invalidEntries.filter(
+                filterEntry
+            );
+
+        unavailableEntries =
+            unavailableEntries.filter(
+                filterEntry
+            );
     }
 
     const playerCount =
         document.getElementById("playerWhitelistPlayerCount");
 
     if (playerCount) {
+        const summaryParts = [
+            `共 ${players.length} 位白名單玩家`
+        ];
+
+        if (invalidEntries.length > 0) {
+            summaryParts.push(
+                `${invalidEntries.length} 筆資料錯誤`
+            );
+        }
+
+        if (unavailableEntries.length > 0) {
+            summaryParts.push(
+                `${unavailableEntries.length} 筆待驗證`
+            );
+        }
+
         playerCount.textContent =
-            `共 ${players.length} 位白名單玩家`;
+            summaryParts.join("｜");
     }
 
     list.innerHTML = "";
 
-    if (players.length === 0) {
+    if (
+        players.length === 0
+        && invalidEntries.length === 0
+        && unavailableEntries.length === 0
+    ) {
         list.innerHTML = `
             <div class="player-whitelist-empty">
                 目前沒有符合條件的白名單玩家
@@ -1045,6 +1115,22 @@ function renderPlayerWhitelistList() {
         `;
         return;
     }
+
+    invalidEntries.forEach(item => {
+        list.appendChild(
+            createInvalidWhitelistEntryCard(
+                item
+            )
+        );
+    });
+
+    unavailableEntries.forEach(item => {
+        list.appendChild(
+            createUnavailableWhitelistEntryCard(
+                item
+            )
+        );
+    });
 
     players.forEach(player => {
         list.appendChild(
@@ -1799,6 +1885,200 @@ function renderWhitelistHelpPage() {
 }
 
 
+function createInvalidWhitelistEntryCard(
+    item
+) {
+    const entry =
+        (
+            item?.entry
+            && typeof item.entry === "object"
+            && !Array.isArray(item.entry)
+        )
+            ? item.entry
+            : {};
+
+    const validation =
+        item?.validation || {};
+
+    const playerName = String(
+        validation.player_name
+        || entry.name
+        || "未知玩家"
+    );
+
+    const playerUuid = String(
+        validation.player_uuid
+        || entry.uuid
+        || ""
+    );
+
+    const message = String(
+        validation.message
+        || "玩家資料驗證失敗"
+    );
+
+    const card =
+        document.createElement("div");
+
+    card.className =
+        "player-whitelist-card "
+        + "player-whitelist-entry-error";
+
+    card.innerHTML = `
+        <img
+            class="player-whitelist-avatar"
+            src="${UNKNOWN_OPERATOR_ICON}"
+            alt="資料錯誤"
+        >
+
+        <div class="player-whitelist-info">
+
+            <div class="player-whitelist-name-row">
+
+                <div class="player-whitelist-name">
+                    ${escapeHtml(playerName)}
+                </div>
+
+                <div class="player-whitelist-entry-error-tag">
+                    資料錯誤
+                </div>
+
+            </div>
+
+            <div class="player-whitelist-uuid">
+                UUID:
+                ${
+                    playerUuid
+                        ? escapeHtml(playerUuid)
+                        : "缺少 UUID"
+                }
+            </div>
+
+            <div class="player-whitelist-entry-error-message">
+                ${escapeHtml(message)}
+            </div>
+
+            <div class="player-whitelist-entry-error-hint">
+                此資料不會被視為有效白名單玩家。
+            </div>
+
+        </div>
+
+        <button
+            class="
+                player-whitelist-entry-error-remove
+                mc-danger-icon-btn
+            "
+            type="button"
+            data-mc-tooltip="刪除錯誤資料"
+        >
+            ✕
+        </button>
+    `;
+
+    card
+        .querySelector(
+            ".player-whitelist-entry-error-remove"
+        )
+        ?.addEventListener(
+            "click",
+            async () => {
+                await removeInvalidWhitelistEntry(
+                    item
+                );
+            }
+        );
+
+    return card;
+}
+
+
+function createUnavailableWhitelistEntryCard(
+    item
+) {
+    const entry =
+        (
+            item?.entry
+            && typeof item.entry === "object"
+            && !Array.isArray(item.entry)
+        )
+            ? item.entry
+            : {};
+
+    const validation =
+        item?.validation || {};
+
+    const playerName = String(
+        validation.player_name
+        || entry.name
+        || "未知玩家"
+    );
+
+    const playerUuid = String(
+        validation.player_uuid
+        || entry.uuid
+        || ""
+    );
+
+    const message = String(
+        validation.message
+        || "目前無法驗證玩家資料"
+    );
+
+    const card =
+        document.createElement("div");
+
+    card.className =
+        "player-whitelist-card "
+        + "player-whitelist-entry-unavailable";
+
+    card.innerHTML = `
+        <img
+            class="player-whitelist-avatar"
+            src="${UNKNOWN_OPERATOR_ICON}"
+            alt="暫時無法驗證"
+        >
+
+        <div class="player-whitelist-info">
+
+            <div class="player-whitelist-name-row">
+
+                <div class="player-whitelist-name">
+                    ${escapeHtml(playerName)}
+                </div>
+
+                <div class="player-whitelist-entry-unavailable-tag">
+                    無法驗證
+                </div>
+
+            </div>
+
+            <div class="player-whitelist-uuid">
+                UUID:
+                ${
+                    playerUuid
+                        ? escapeHtml(playerUuid)
+                        : "未知"
+                }
+            </div>
+
+            <div class="player-whitelist-entry-unavailable-message">
+                ${escapeHtml(message)}
+            </div>
+
+            <div class="player-whitelist-entry-unavailable-hint">
+                目前不會修改此玩家既有的資料狀態，
+                請稍後重新整理再次驗證。
+            </div>
+
+        </div>
+
+    `;
+
+    return card;
+}
+
+
 function createPlayerWhitelistCard(player) {
     const card = document.createElement("div");
 
@@ -1871,6 +2151,99 @@ function createPlayerWhitelistCard(player) {
     });
 
     return card;
+}
+
+
+async function removeInvalidWhitelistEntry(
+    item
+) {
+    const entry =
+        item?.entry;
+
+    const validation =
+        item?.validation || {};
+
+    const playerName = String(
+        validation.player_name
+        || (
+            entry
+            && typeof entry === "object"
+            && !Array.isArray(entry)
+                ? entry.name
+                : ""
+        )
+        || "未知玩家"
+    );
+
+    const confirmed = await showConfirm({
+        title: "刪除錯誤白名單資料",
+        message:
+            `確定要刪除「${playerName}」這筆`
+            + "無法通過驗證的白名單資料嗎？",
+        confirmText: "刪除",
+        cancelText: "取消",
+        variant: "warning",
+    });
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            "/api/player/whitelist/invalid-entry/remove",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type":
+                        "application/json",
+                },
+                body: JSON.stringify({
+                    entry_index:
+                        item.entry_index,
+                    entry: item.entry,
+                }),
+            }
+        );
+
+        const data = await response.json();
+
+        if (
+            !response.ok
+            || !data.success
+        ) {
+            throw new Error(
+                data.message
+                || "刪除錯誤白名單資料失敗"
+            );
+        }
+
+        await refreshPlayerWhitelistState();
+
+        await showInfo({
+            title: "玩家白名單",
+            message:
+                data.message
+                || "錯誤白名單資料已刪除",
+            confirmText: "關閉",
+            variant: "success",
+        });
+
+    } catch (error) {
+        console.error(
+            "刪除錯誤白名單資料失敗:",
+            error
+        );
+
+        await showInfo({
+            title: "錯誤",
+            message:
+                error.message
+                || "刪除錯誤白名單資料失敗",
+            confirmText: "關閉",
+            variant: "error",
+        });
+    }
 }
 
 

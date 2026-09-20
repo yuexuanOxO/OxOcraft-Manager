@@ -32,6 +32,123 @@ export function initServerControl() {
     checkFirstRunGuide();
 }
 
+
+async function confirmWhitelistStartWarning(
+    data
+) {
+    return await showConfirm({
+        title:
+            "檢測到白名單資料錯誤",
+
+        message:
+            data?.message
+            || "白名單資料存在錯誤，"
+            + "是否仍要繼續開啟伺服器？",
+
+        confirmText: "仍要開啟",
+        cancelText: "取消",
+        variant: "warning",
+    });
+}
+
+
+async function requestServerStart(
+    confirmWhitelistError = false
+) {
+    let response = await fetch(
+        "/api/server/start",
+        {
+            method: "POST",
+
+            headers: {
+                "Content-Type":
+                    "application/json",
+            },
+
+            body: JSON.stringify({
+                confirm_whitelist_error:
+                    confirmWhitelistError,
+            }),
+        }
+    );
+
+    let data = await response.json();
+
+    if (
+        data.requires_confirmation
+    ) {
+        const confirmed =
+            await confirmWhitelistStartWarning(
+                data
+            );
+
+        if (!confirmed) {
+            return {
+                success: false,
+                cancelled: true,
+            };
+        }
+
+        response = await fetch(
+            "/api/server/start",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json",
+                },
+
+                body: JSON.stringify({
+                    confirm_whitelist_error:
+                        true,
+                }),
+            }
+        );
+
+        data = await response.json();
+    }
+
+    return data;
+}
+
+
+async function checkWhitelistBeforeServerStart() {
+    const response = await fetch(
+        "/api/server/start-check",
+        {
+            cache: "no-store",
+        }
+    );
+
+    const data = await response.json();
+
+    if (!data.success) {
+        return {
+            allowed: false,
+            confirmed: false,
+        };
+    }
+
+    if (!data.requires_confirmation) {
+        return {
+            allowed: true,
+            confirmed: false,
+        };
+    }
+
+    const confirmed =
+        await confirmWhitelistStartWarning(
+            data.warning
+        );
+
+    return {
+        allowed: confirmed,
+        confirmed: confirmed,
+    };
+}
+
+
 async function toggleServer() {
     const powerBtn = document.getElementById("powerBtn");
 
@@ -95,11 +212,27 @@ async function toggleServer() {
         isTransitioning = true;
         setPowerButtonLoading(true);
 
-        const response = await fetch(url, {
-            method: "POST"
-        });
+        let data;
 
-        const data = await response.json();
+        if (targetOnline) {
+            data = await requestServerStart();
+
+            if (data.cancelled) {
+                isTransitioning = false;
+                setPowerButtonLoading(false);
+                return;
+            }
+
+        } else {
+            const response = await fetch(
+                url,
+                {
+                    method: "POST"
+                }
+            );
+
+            data = await response.json();
+        }
 
         if (!data.success) {
             await showInfo({
@@ -489,7 +622,17 @@ export async function saveAndRestartServer() {
 
     try {
         const saved = await saveServerSettings(false);
-        if (!saved) return;
+
+        if (!saved) {
+            return;
+        }
+
+        const startCheck =
+            await checkWhitelistBeforeServerStart();
+
+        if (!startCheck.allowed) {
+            return;
+        }
 
         setPowerButtonLoading(true);
 
@@ -512,11 +655,13 @@ export async function saveAndRestartServer() {
 
         setPowerButtonLoading(true);
 
-        response = await fetch("/api/server/start", {
-            method: "POST"
-        });
+        data = await requestServerStart(
+            startCheck.confirmed
+        );
 
-        data = await response.json();
+        if (data.cancelled) {
+            return;
+        }
 
         if (!data.success) {
             alert(data.message || "啟動伺服器失敗");

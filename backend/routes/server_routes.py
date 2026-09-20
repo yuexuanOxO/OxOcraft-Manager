@@ -7,6 +7,11 @@ from backend.server_status import get_server_query_status
 from backend.auto_backup_service import is_auto_backup_control_locked
 
 from flask import Blueprint, jsonify, Response, request
+
+from backend.player_permissions.player_whitelist_service import (
+    get_whitelist_start_warning,
+)
+
 from backend.server_monitor import (
     refresh_server_status_now,
     get_cached_server_status,
@@ -37,18 +42,55 @@ def api_server_setup_status():
     return jsonify(get_server_setup_status())
 
 
-@server_bp.route("/api/server/start", methods=["POST"])
+@server_bp.route("/api/server/start",methods=["POST"])
 def api_server_start():
 
     if is_auto_backup_control_locked():
         return jsonify({
             "success": False,
-            "message": "自動備份進行中，暫時無法啟動伺服器"
+            "message":
+                "自動備份進行中，暫時無法啟動伺服器"
         }), 409
+
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+    confirm_whitelist_error = (
+        data.get(
+            "confirm_whitelist_error"
+        ) is True
+    )
+
+    if not confirm_whitelist_error:
+        warning = (
+            get_whitelist_start_warning()
+        )
+
+        if warning:
+            return jsonify({
+                "success": False,
+                "requires_confirmation":
+                    True,
+                "warning_type":
+                    warning.get(
+                        "warning_type"
+                    ),
+                "error_code":
+                    warning.get(
+                        "error_code"
+                    ),
+                "message":
+                    warning.get(
+                        "message"
+                    ),
+            }), 409
 
     success, message = start_server()
 
-    status_code = 200 if success else 400
+    status_code = (
+        200 if success else 400
+    )
 
     return jsonify({
         "success": success,
@@ -130,3 +172,17 @@ def api_server_management_status():
     response.headers["Cache-Control"] = "no-store"
 
     return response
+
+
+@server_bp.route("/api/server/start-check")
+def api_server_start_check():
+    warning = (
+        get_whitelist_start_warning()
+    )
+
+    return jsonify({
+        "success": True,
+        "requires_confirmation":
+            warning is not None,
+        "warning": warning,
+    })

@@ -1300,6 +1300,54 @@ def load_validated_whitelist() -> dict:
     }
 
 
+def get_whitelist_start_warning() -> dict | None:
+    whitelist_result = (
+        load_validated_whitelist()
+    )
+
+    if (
+        whitelist_result["status"]
+        != "valid"
+    ):
+        return {
+            "warning_type": "file_invalid",
+            "error_code": (
+                whitelist_result.get(
+                    "error_code"
+                )
+            ),
+            "message": (
+                "whitelist.json 目前存在資料錯誤，"
+                "可能影響伺服器啟動或白名單功能。\n"
+                "是否仍要繼續開啟伺服器？"
+            ),
+        }
+
+    invalid_entries = (
+        whitelist_result[
+            "invalid_entries"
+        ]
+    )
+
+    if invalid_entries:
+        return {
+            "warning_type":
+                "invalid_player_entries",
+            "error_code":
+                "invalid_player_entries",
+            "message": (
+                "whitelist.json中有"
+                f"{len(invalid_entries)}筆"
+                "無法通過驗證的玩家資料，"
+                "可能導致部分玩家無法正常"
+                "通過白名單。\n"
+                "是否仍要繼續開啟伺服器？"
+            ),
+        }
+
+    return None
+
+
 def get_whitelist_mutation_error(
     whitelist_result: dict | None = None,
 ) -> dict | None:

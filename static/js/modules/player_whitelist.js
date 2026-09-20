@@ -1743,6 +1743,12 @@ function getWhitelistHistoryActionText(action) {
     }
 
     if (
+        action === "invalid_entry_remove"
+    ) {
+        return "刪除錯誤資料";
+    }
+
+    if (
         action.includes("remove") ||
         action.includes("pardon")
     ) {

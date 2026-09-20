@@ -45,6 +45,7 @@ def record_player_access(
     target_uuid: str | None = None,
     account_type: str | None = None,
     operator_uuid: str | None = None,
+    resolve_target_identity: bool = True,
 ) -> None:
     category = str(category or "").strip()
     action = str(action or "").strip()
@@ -54,12 +55,39 @@ def record_player_access(
     if not category or not action or not target_name:
         return
 
-    if not target_uuid or not account_type:
-        target_identity = resolve_player_identity(target_name)
+    if (
+        resolve_target_identity
+        and (
+            not target_uuid
+            or not account_type
+        )
+    ):
+        target_identity = (
+            resolve_player_identity(
+                target_name
+            )
+        )
 
-        target_uuid = target_uuid or target_identity.get("player_uuid")
-        target_name = target_identity.get("player_name") or target_name
-        account_type = account_type or target_identity.get("account_type")
+        target_uuid = (
+            target_uuid
+            or target_identity.get(
+                "player_uuid"
+            )
+        )
+
+        target_name = (
+            target_identity.get(
+                "player_name"
+            )
+            or target_name
+        )
+
+        account_type = (
+            account_type
+            or target_identity.get(
+                "account_type"
+            )
+        )
 
     if (
         should_resolve_operator_identity(source)

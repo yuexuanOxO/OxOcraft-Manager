@@ -1566,6 +1566,66 @@ def remove_invalid_whitelist_entry(
         reload_whitelist_if_ready()
     )
 
+    validation = (
+        target_item.get("validation")
+        or {}
+    )
+
+    raw_entry = (
+        target_item.get("entry")
+        if isinstance(
+            target_item.get("entry"),
+            dict,
+        )
+        else {}
+    )
+
+    player_uuid = str(
+        validation.get("player_uuid")
+        or raw_entry.get("uuid")
+        or ""
+    ).strip()
+
+    player_name = str(
+        validation.get("player_name")
+        or raw_entry.get("name")
+        or "未知玩家"
+    ).strip()
+
+    error_code = str(
+        validation.get("error_code")
+        or "invalid_entry"
+    ).strip()
+
+    record_player_access(
+        category="whitelist",
+        action="invalid_entry_remove",
+
+        target_uuid=(
+            player_uuid or None
+        ),
+        target_name=(
+            player_name
+            or "未知玩家"
+        ),
+        account_type="unknown",
+
+        operator_name="OxOcraft",
+        source="ui",
+
+        detail=json.dumps(
+            {
+                "reason":
+                    "invalid_player_entry",
+                "error_code":
+                    error_code,
+            },
+            ensure_ascii=False,
+        ),
+
+        resolve_target_identity=False,
+    )
+
     return {
         "success": True,
         "message": "已刪除錯誤的白名單資料",

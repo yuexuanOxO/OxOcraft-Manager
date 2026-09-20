@@ -288,51 +288,39 @@ def sync_whitelist_json_to_players_with_history(
     operator_name: str,
     source: str,
     detail: str = "",
+    validated: dict | None = None,
 ) -> dict:
-    # --------------------------------------------------
-    # 1. 先驗證 whitelist.json 本身
-    # --------------------------------------------------
+    if validated is None:
+        file_result = load_whitelist_file()
 
-    file_result = load_whitelist_file()
+        if file_result["status"] != "valid":
+            return {
+                "added_count": 0,
+                "removed_count": 0,
+                "sync_status": "file_invalid",
+                "error_code": file_result.get(
+                    "error_code"
+                ),
+            }
 
-    if file_result["status"] != "valid":
-        return {
-            "added_count": 0,
-            "removed_count": 0,
-            "sync_status": "file_invalid",
-            "error_code": file_result.get(
-                "error_code"
-            ),
-        }
+        json_entries = file_result["entries"]
 
-    json_entries = file_result["entries"]
-
-    # --------------------------------------------------
-    # 2. 取得 online-mode
-    #
-    # 整次 sync 只讀一次。
-    # --------------------------------------------------
-
-    snapshot = (
-        load_effective_settings_snapshot()
-    )
-
-    online_mode = (
-        get_effective_online_mode_from_snapshot(
-            snapshot
+        snapshot = (
+            load_effective_settings_snapshot()
         )
-    )
 
-    # --------------------------------------------------
-    # 3. 驗證所有 JSON identity
-    # --------------------------------------------------
-
-    validated = (
-        get_validated_whitelist_uuid_sets(
-            entries=json_entries,
-            online_mode=online_mode,
+        online_mode = (
+            get_effective_online_mode_from_snapshot(
+                snapshot
+            )
         )
-    )
+
+        validated = (
+            get_validated_whitelist_uuid_sets(
+                entries=json_entries,
+                online_mode=online_mode,
+            )
+        )
 
     valid_uuid_set = (
         validated["valid_uuid_set"]
@@ -631,8 +619,11 @@ def get_whitelisted_players_from_json() -> dict:
     ):
         return whitelist_result
 
-    sync_validated_whitelist_to_players(
-        whitelist_result
+    sync_whitelist_json_to_players_with_history(
+        operator_name="Unknown",
+        source="minecraft_json",
+        detail="offline whitelist.json sync",
+        validated=whitelist_result,
     )
 
     result = []

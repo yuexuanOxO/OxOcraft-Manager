@@ -600,20 +600,27 @@ def get_whitelist_ui_source() -> str:
     return "ui_reload" if is_server_ready() else "offline_ui_edit"
 
 
-def get_whitelisted_players_from_json() -> list[dict]:
-    online_mode = get_effective_online_mode()
-    entries = load_whitelist_entries()
+def get_whitelisted_players_from_json() -> dict:
+    whitelist_result = (
+        load_validated_whitelist()
+    )
+
+    if (
+        whitelist_result["status"]
+        != "valid"
+    ):
+        return whitelist_result
 
     result = []
 
-    for entry in entries:
-        player_uuid = str(
-            entry.get("uuid", "")
-        ).strip()
+    for item in (
+        whitelist_result["valid_entries"]
+    ):
+        entry = item["entry"]
+        validation = item["validation"]
+        player_uuid = str(validation.get("player_uuid","",)).strip()
 
-        player_name = str(
-            entry.get("name", "")
-        ).strip()
+        player_name = str(validation.get("player_name","",)).strip()
 
         if not player_uuid or not player_name:
             continue
@@ -637,16 +644,20 @@ def get_whitelisted_players_from_json() -> list[dict]:
             )
 
         account_type = (
-            db_record.get("account_type")
-            if db_record
-            and db_record.get("account_type")
-            else get_account_type(player_uuid)
+            validation.get("account_type")
+            or (
+                db_record.get("account_type")
+                if db_record
+                else None
+            )
+            or get_account_type(player_uuid)
         )
 
-        is_valid_for_current_mode = (
-            account_type == "premium"
-            if online_mode
-            else account_type == "offline"
+        is_valid_for_current_mode = bool(
+            validation.get(
+                "valid_for_current_mode",
+                False,
+            )
         )
 
         result.append({
@@ -671,14 +682,40 @@ def get_whitelisted_players_from_json() -> list[dict]:
                 is_valid_for_current_mode,
         })
 
-    return result
+    whitelist_result["players"] = result
+
+    return whitelist_result
+
+
+def get_player_whitelist_data() -> dict:
+    if not is_server_ready():
+        return get_whitelisted_players_from_json()
+
+    return {
+        "status": "valid",
+        "players": get_player_whitelist_list(),
+        "invalid_entries": [],
+        "unavailable_entries": [],
+        "error_code": None,
+        "message": "",
+    }
 
 
 def get_player_whitelist_list() -> list[dict]:
     online_mode = get_effective_online_mode()
 
     if not is_server_ready():
-        return get_whitelisted_players_from_json()
+        whitelist_result = (
+            get_whitelisted_players_from_json()
+        )
+
+        if (
+            whitelist_result["status"]
+            != "valid"
+        ):
+            return []
+
+        return whitelist_result["players"]
 
     players = get_whitelisted_players_from_db()
 
@@ -718,7 +755,29 @@ def add_player_whitelist(
     player_name: str,
     history_source: str | None = None,
 ) -> dict:
-    whitelist_uuid_set = load_whitelist_uuid_set()
+    file_result = load_whitelist_file()
+
+    if file_result["status"] != "valid":
+        return {
+            "success": False,
+            "message": (
+                "白名單參數檔發生錯誤，"
+                "請先修復 whitelist.json"
+            ),
+            "error_code": (
+                file_result.get("error_code")
+            ),
+            "data_status": "file_invalid",
+        }
+
+    whitelist_uuid_set = {
+        str(entry.get("uuid", "")).lower()
+        for entry in file_result["entries"]
+        if (
+            isinstance(entry, dict)
+            and entry.get("uuid")
+        )
+    }
 
     if player_uuid.lower() in whitelist_uuid_set:
         return {
@@ -729,8 +788,22 @@ def add_player_whitelist(
 
     rebuild_whitelist_json_from_db()
 
-    entries = load_whitelist_entries()
-    whitelist_uuid_set = load_whitelist_uuid_set()
+    file_result = load_whitelist_file()
+
+    if file_result["status"] != "valid":
+        return {
+            "success": False,
+            "message": (
+                "白名單參數檔發生錯誤，"
+                "請先修復 whitelist.json"
+            ),
+            "error_code": (
+                file_result.get("error_code")
+            ),
+            "data_status": "file_invalid",
+        }
+
+    entries = file_result["entries"]
 
     entries.append({
         "uuid": player_uuid,
@@ -783,10 +856,40 @@ def remove_player_whitelist(
     player_name: str,
     history_source: str | None = None,
 ) -> dict:
-    
+
+    file_result = load_whitelist_file()
+
+    if file_result["status"] != "valid":
+        return {
+            "success": False,
+            "message": (
+                "白名單參數檔發生錯誤，"
+                "請先修復 whitelist.json"
+            ),
+            "error_code": (
+                file_result.get("error_code")
+            ),
+            "data_status": "file_invalid",
+        }
+
     rebuild_whitelist_json_from_db()
 
-    entries = load_whitelist_entries()
+    file_result = load_whitelist_file()
+
+    if file_result["status"] != "valid":
+        return {
+            "success": False,
+            "message": (
+                "白名單參數檔發生錯誤，"
+                "請先修復 whitelist.json"
+            ),
+            "error_code": (
+                file_result.get("error_code")
+            ),
+            "data_status": "file_invalid",
+        }
+
+    entries = file_result["entries"]
 
     entries = [
         entry
@@ -842,12 +945,31 @@ def toggle_player_whitelist(
     history_source: str | None = None,
 ) -> dict:
 
-    whitelist_uuid_set = (
-        load_whitelist_uuid_set()
-    )
+    file_result = load_whitelist_file()
+
+    if file_result["status"] != "valid":
+        return {
+            "success": False,
+            "message": (
+                "白名單參數檔發生錯誤，"
+                "請先修復 whitelist.json"
+            ),
+            "error_code": (
+                file_result.get("error_code")
+            ),
+            "data_status": "file_invalid",
+        }
+
+    whitelist_uuid_set = {
+        str(entry.get("uuid", "")).lower()
+        for entry in file_result["entries"]
+        if (
+            isinstance(entry, dict)
+            and entry.get("uuid")
+        )
+    }
 
     if player_uuid.lower() in whitelist_uuid_set:
-
         return remove_player_whitelist(
             player_uuid,
             player_name,
@@ -1066,3 +1188,53 @@ def load_whitelist_file() -> dict:
     return load_player_json_file(
         WHITELIST_FILE
     )
+
+
+def load_validated_whitelist() -> dict:
+    file_result = load_whitelist_file()
+
+    if file_result["status"] != "valid":
+        return {
+            "status": "file_invalid",
+            "players": [],
+            "valid_entries": [],
+            "invalid_entries": [],
+            "unavailable_entries": [],
+            "error_code": file_result.get(
+                "error_code"
+            ),
+            "message": file_result.get(
+                "message",
+                "",
+            ),
+        }
+
+    snapshot = (
+        load_effective_settings_snapshot()
+    )
+
+    online_mode = (
+        get_effective_online_mode_from_snapshot(
+            snapshot
+        )
+    )
+
+    validated = (
+        get_validated_whitelist_uuid_sets(
+            entries=file_result["entries"],
+            online_mode=online_mode,
+        )
+    )
+
+    return {
+        "status": "valid",
+        "players": [],
+        "valid_entries":
+            validated["valid_entries"],
+        "invalid_entries":
+            validated["invalid_entries"],
+        "unavailable_entries":
+            validated["unavailable_entries"],
+        "error_code": None,
+        "message": "",
+    }

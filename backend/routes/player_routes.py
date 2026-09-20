@@ -34,6 +34,7 @@ from backend.player_permissions.player_whitelist_service import (
     add_player_whitelist_by_name,
     get_whitelist_settings,
     toggle_whitelist_setting,
+    get_player_whitelist_data,
     add_player_whitelist_direct
 )
 
@@ -268,10 +269,41 @@ def api_player_whitelist():
         get_effective_online_mode
     )
 
+    whitelist_data = (
+        get_player_whitelist_data()
+    )
+
     return jsonify({
         "success": True,
-        "players": get_player_whitelist_list(),
-        "online_mode": get_effective_online_mode(),
+        "players": whitelist_data["players"],
+        "online_mode":
+            get_effective_online_mode(),
+
+        "data_status":
+            whitelist_data["status"],
+
+        "error_code":
+            whitelist_data.get(
+                "error_code"
+            ),
+
+        "message":
+            whitelist_data.get(
+                "message",
+                ""
+            ),
+
+        "invalid_entries":
+            whitelist_data.get(
+                "invalid_entries",
+                [],
+            ),
+
+        "unavailable_entries":
+            whitelist_data.get(
+                "unavailable_entries",
+                [],
+            ),
     })
 
 

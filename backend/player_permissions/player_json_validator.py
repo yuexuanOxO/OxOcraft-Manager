@@ -159,7 +159,6 @@ def validate_player_json_identity(
     player_uuid: str,
     player_name: str,
     online_mode: bool,
-    source: str | None = None,
 ) -> dict:
     player_uuid = str(
         player_uuid or ""

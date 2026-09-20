@@ -52,6 +52,13 @@ let whitelistHistoryStartPicker = null;
 let whitelistHistoryEndPicker = null;
 let whitelistHistoryFlatpickrWasOpenOnPointerDown = false;
 let whitelistSettingsTimer = null;
+
+let whitelistDataState = {
+    status: "valid",
+    error_code: null,
+    message: "",
+};
+
 let whitelistSettings = {
     white_list: false,
     enforce_whitelist: false,
@@ -895,6 +902,12 @@ async function toggleWhitelistSetting(key) {
 function applyPlayerWhitelistState(data) {
     if (!data) return;
 
+    whitelistDataState = {
+        status: data.data_status || "valid",
+        error_code: data.error_code || null,
+        message: data.message || "",
+    };
+
     allPlayers = (data.players || [])
         .filter(player => player.whitelisted);
 
@@ -984,9 +997,20 @@ function applyPlayerWhitelistSearch() {
 
 
 function renderPlayerWhitelistList() {
-    const list = document.getElementById("playerWhitelistList");
+    const list =
+        document.getElementById(
+            "playerWhitelistList"
+        );
 
     if (!list) return;
+
+    if (
+        whitelistDataState.status ===
+        "file_invalid"
+    ) {
+        renderWhitelistFileError(list);
+        return;
+    }
 
     let players = [...allPlayers];
 
@@ -1030,6 +1054,65 @@ function renderPlayerWhitelistList() {
 
     renderWhitelistActionButtons();
 
+}
+
+
+function renderWhitelistFileError(list) {
+    const playerCount =
+        document.getElementById(
+            "playerWhitelistPlayerCount"
+        );
+
+    if (playerCount) {
+        playerCount.textContent =
+            "白名單資料異常";
+    }
+
+    list.innerHTML = `
+        <div class="player-whitelist-file-error">
+
+            <div class="player-whitelist-file-error-title">
+                白名單參數檔出錯
+            </div>
+
+            <div class="player-whitelist-file-error-message">
+                格式或資料錯誤，需要檢查
+                whitelist.json。
+            </div>
+
+            ${
+                whitelistDataState.message
+                    ? `
+                        <div class="player-whitelist-file-error-detail">
+                            ${escapeHtml(
+                                whitelistDataState.message
+                            )}
+                        </div>
+                    `
+                    : ""
+            }
+
+            <button
+                id="refreshInvalidWhitelistBtn"
+                class="player-whitelist-file-error-refresh"
+                type="button"
+            >
+                刷新白名單
+            </button>
+
+        </div>
+    `;
+
+    document
+        .getElementById(
+            "refreshInvalidWhitelistBtn"
+        )
+        ?.addEventListener(
+            "click",
+            async () => {
+                await loadPlayerWhitelist();
+            }
+        );
 }
 
 

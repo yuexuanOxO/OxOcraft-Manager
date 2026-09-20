@@ -1,7 +1,5 @@
-import hashlib
 import json
-import urllib.request
-import uuid
+
 
 from flask import Blueprint, jsonify, request
 
@@ -17,6 +15,7 @@ from backend.player_permissions.player_identity_service import (
     hide_player_candidate,
     resolve_player_identity_by_name,
     get_mojang_player_profile,
+    get_offline_player_uuid,
 )
 
 from backend.player_permissions.player_permission_service import (
@@ -70,18 +69,6 @@ def is_online_mode() -> bool:
     )
 
     return get_effective_online_mode()
-
-
-def get_offline_player_uuid(player_name: str) -> str:
-    raw = ("OfflinePlayer:" + player_name).encode("utf-8")
-    digest = bytearray(hashlib.md5(raw).digest())
-
-    digest[6] &= 0x0f
-    digest[6] |= 0x30
-    digest[8] &= 0x3f
-    digest[8] |= 0x80
-
-    return str(uuid.UUID(bytes=bytes(digest)))
 
 
 def resolve_player_uuid(player_name: str) -> str | None:

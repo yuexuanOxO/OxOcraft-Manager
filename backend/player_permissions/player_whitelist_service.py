@@ -1,6 +1,4 @@
 import json
-import hashlib
-import uuid
 from datetime import datetime, timedelta
 
 from backend.paths import MC_ROOT,SERVER_PROPERTIES_PATH
@@ -23,12 +21,26 @@ from backend.player_permissions.player_access_history_service import (
     record_player_access,
 )
 
+from backend.player_permissions.player_json_validator import (
+    validate_cached_player_json_identity,
+)
+
+from backend.server_effective_settings import (
+    load_effective_settings_snapshot,
+    get_effective_online_mode_from_snapshot,
+)
+
+from backend.player_permissions.player_json_file_service import (
+    load_player_json_file,
+)
+
 from backend.db import (
     get_connection,
     update_player_whitelist_since,
     update_player_whitelist_status,
     get_whitelisted_players_from_db,
     sync_player_whitelist_flags_from_uuid_set,
+    upsert_player_identity,
 )
 
 
@@ -63,6 +75,120 @@ def pop_recent_ui_whitelist_reload_if_match(
         return True
 
     return False
+
+
+def validate_whitelist_entries(
+    entries: list[dict],
+    online_mode: bool,
+) -> dict:
+    valid_entries = []
+    invalid_entries = []
+    unavailable_entries = []
+
+    for entry in entries:
+        if not isinstance(entry, dict):
+            invalid_entries.append({
+                "entry": entry,
+                "validation": {
+                    "valid": False,
+                    "status": "invalid",
+                    "error_code": "invalid_entry",
+                    "message": "白名單玩家資料格式錯誤",
+                },
+            })
+            continue
+
+        player_uuid = str(
+            entry.get("uuid") or ""
+        ).strip()
+
+        player_name = str(
+            entry.get("name") or ""
+        ).strip()
+
+        validation = (
+            validate_cached_player_json_identity(
+                player_uuid=player_uuid,
+                player_name=player_name,
+                online_mode=online_mode,
+                source="whitelist",
+            )
+        )
+
+        item = {
+            "entry": entry,
+            "validation": validation,
+        }
+
+        if validation["status"] == "valid":
+            valid_entries.append(item)
+
+        elif validation["status"] == "invalid":
+            invalid_entries.append(item)
+
+        elif (
+            validation["status"]
+            == "verification_unavailable"
+        ):
+            unavailable_entries.append(item)
+
+    return {
+        "valid": valid_entries,
+        "invalid": invalid_entries,
+        "verification_unavailable":
+            unavailable_entries,
+    }
+
+
+def get_validated_whitelist_uuid_sets(
+    entries: list[dict],
+    online_mode: bool,
+) -> dict:
+    validation_result = (
+        validate_whitelist_entries(
+            entries=entries,
+            online_mode=online_mode,
+        )
+    )
+
+    valid_uuid_set = {
+        str(
+            item["validation"]["player_uuid"]
+        ).lower()
+        for item in validation_result["valid"]
+        if item["validation"].get(
+            "player_uuid"
+        )
+    }
+
+    unavailable_uuid_set = {
+        str(
+            item["validation"]["player_uuid"]
+        ).lower()
+        for item in validation_result[
+            "verification_unavailable"
+        ]
+        if item["validation"].get(
+            "player_uuid"
+        )
+    }
+
+    return {
+        "valid_uuid_set": valid_uuid_set,
+        "unavailable_uuid_set":
+            unavailable_uuid_set,
+
+        "valid_entries":
+            validation_result["valid"],
+
+        "invalid_entries":
+            validation_result["invalid"],
+
+        "unavailable_entries":
+            validation_result[
+                "verification_unavailable"
+            ],
+    }
 
 
 def load_whitelist_entries() -> list[dict]:
@@ -103,8 +229,42 @@ def load_whitelist_uuid_set() -> set[str]:
 def sync_whitelist_json_to_players(
     source: str = "unknown",
 ) -> None:
+    file_result = load_whitelist_file()
+
+    if file_result["status"] != "valid":
+        return
+
+    entries = file_result["entries"]
+
+    snapshot = load_effective_settings_snapshot()
+
+    online_mode = (
+        get_effective_online_mode_from_snapshot(
+            snapshot
+        )
+    )
+
+    validated = (
+        get_validated_whitelist_uuid_sets(
+            entries=entries,
+            online_mode=online_mode,
+        )
+    )
+
+    for item in validated["valid_entries"]:
+        validation = item["validation"]
+
+        upsert_player_identity(
+            player_uuid=validation["player_uuid"],
+            player_name=validation["player_name"],
+            account_type=validation["account_type"],
+        )
+
     sync_player_whitelist_flags_from_uuid_set(
-        load_whitelist_uuid_set()
+        validated["valid_uuid_set"],
+        protected_uuid_set=(
+            validated["unavailable_uuid_set"]
+        ),
     )
 
 
@@ -113,58 +273,198 @@ def sync_whitelist_json_to_players_with_history(
     source: str,
     detail: str = "",
 ) -> dict:
-    # 目前 DB 狀態
-    db_players = get_whitelisted_players_from_db()
+    # --------------------------------------------------
+    # 1. 先驗證 whitelist.json 本身
+    # --------------------------------------------------
+
+    file_result = load_whitelist_file()
+
+    if file_result["status"] != "valid":
+        return {
+            "added_count": 0,
+            "removed_count": 0,
+            "sync_status": "file_invalid",
+            "error_code": file_result.get(
+                "error_code"
+            ),
+        }
+
+    json_entries = file_result["entries"]
+
+    # --------------------------------------------------
+    # 2. 取得 online-mode
+    #
+    # 整次 sync 只讀一次。
+    # --------------------------------------------------
+
+    snapshot = (
+        load_effective_settings_snapshot()
+    )
+
+    online_mode = (
+        get_effective_online_mode_from_snapshot(
+            snapshot
+        )
+    )
+
+    # --------------------------------------------------
+    # 3. 驗證所有 JSON identity
+    # --------------------------------------------------
+
+    validated = (
+        get_validated_whitelist_uuid_sets(
+            entries=json_entries,
+            online_mode=online_mode,
+        )
+    )
+
+    valid_uuid_set = (
+        validated["valid_uuid_set"]
+    )
+
+    unavailable_uuid_set = (
+        validated["unavailable_uuid_set"]
+    )
+
+    # --------------------------------------------------
+    # 4. 取得目前 DB whitelist 狀態
+    # --------------------------------------------------
+
+    db_players = (
+        get_whitelisted_players_from_db()
+    )
+
     db_uuid_set = {
-        str(player.get("player_uuid", "")).lower()
+        str(
+            player.get("player_uuid", "")
+        ).lower()
         for player in db_players
         if player.get("player_uuid")
     }
 
-    # whitelist.json 狀態
-    json_entries = load_whitelist_entries()
-    json_uuid_set = {
-        str(entry.get("uuid", "")).lower()
-        for entry in json_entries
-        if entry.get("uuid")
-    }
+    # --------------------------------------------------
+    # 5. 計算真正可確認的新增 / 移除
+    #
+    # unavailable 不得被判定為 removed。
+    # --------------------------------------------------
 
-    added_uuid_set = json_uuid_set - db_uuid_set
-    removed_uuid_set = db_uuid_set - json_uuid_set
-
-    sync_player_whitelist_flags_from_uuid_set(
-        json_uuid_set
+    added_uuid_set = (
+        valid_uuid_set
+        - db_uuid_set
     )
 
-    entry_by_uuid = {
-        str(entry.get("uuid", "")).lower(): entry
-        for entry in json_entries
-        if entry.get("uuid")
+    removed_uuid_set = (
+        db_uuid_set
+        - valid_uuid_set
+        - unavailable_uuid_set
+    )
+
+    # --------------------------------------------------
+    # 6. valid identity 先同步進 players
+    # --------------------------------------------------
+
+    for item in validated["valid_entries"]:
+        validation = item["validation"]
+
+        upsert_player_identity(
+            player_uuid=(
+                validation["player_uuid"]
+            ),
+            player_name=(
+                validation["player_name"]
+            ),
+            account_type=(
+                validation["account_type"]
+            ),
+        )
+
+    # --------------------------------------------------
+    # 7. 同步 whitelist flag
+    #
+    # unavailable UUID 保留原 DB 狀態。
+    # --------------------------------------------------
+
+    sync_player_whitelist_flags_from_uuid_set(
+        valid_uuid_set,
+        protected_uuid_set=(
+            unavailable_uuid_set
+        ),
+    )
+
+    # --------------------------------------------------
+    # 8. 建立 valid JSON UUID → validation
+    #
+    # 後面的 history 不再直接信任原始 JSON。
+    # --------------------------------------------------
+
+    valid_entry_by_uuid = {
+        str(
+            item["validation"][
+                "player_uuid"
+            ]
+        ).lower(): item["validation"]
+
+        for item in validated[
+            "valid_entries"
+        ]
+
+        if item["validation"].get(
+            "player_uuid"
+        )
     }
 
     db_player_by_uuid = {
-        str(player.get("player_uuid", "")).lower(): player
+        str(
+            player.get(
+                "player_uuid",
+                "",
+            )
+        ).lower(): player
+
         for player in db_players
+
         if player.get("player_uuid")
     }
 
     added_count = 0
     removed_count = 0
 
+    # --------------------------------------------------
+    # 9. 新增 history
+    # --------------------------------------------------
+
     for player_uuid in added_uuid_set:
-        entry = entry_by_uuid.get(player_uuid, {})
+        validation = (
+            valid_entry_by_uuid.get(
+                player_uuid,
+                {},
+            )
+        )
+
         player_name = str(
-            entry.get("name") or "未知玩家"
+            validation.get(
+                "player_name"
+            )
+            or "未知玩家"
         ).strip()
 
-        account_type = get_account_type(player_uuid)
+        account_type = (
+            validation.get(
+                "account_type"
+            )
+            or get_account_type(
+                player_uuid
+            )
+        )
 
         update_player_whitelist_since(
             player_uuid=player_uuid,
             player_name=player_name,
             account_type=account_type,
-            whitelisted_since=datetime.now().strftime(
-                "%Y-%m-%d %H:%M:%S"
+            whitelisted_since=(
+                datetime.now().strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
             ),
         )
 
@@ -181,15 +481,28 @@ def sync_whitelist_json_to_players_with_history(
 
         added_count += 1
 
+    # --------------------------------------------------
+    # 10. 移除 history
+    # --------------------------------------------------
+
     for player_uuid in removed_uuid_set:
-        player = db_player_by_uuid.get(player_uuid, {})
+        player = (
+            db_player_by_uuid.get(
+                player_uuid,
+                {},
+            )
+        )
+
         player_name = str(
-            player.get("player_name") or "未知玩家"
+            player.get("player_name")
+            or "未知玩家"
         ).strip()
 
         account_type = (
             player.get("account_type")
-            or get_account_type(player_uuid)
+            or get_account_type(
+                player_uuid
+            )
         )
 
         update_player_whitelist_status(
@@ -212,6 +525,10 @@ def sync_whitelist_json_to_players_with_history(
 
         removed_count += 1
 
+    # --------------------------------------------------
+    # 11. Minecraft JSON 外部變更通知
+    # --------------------------------------------------
+
     if (
         source == "minecraft_json"
         and (
@@ -233,6 +550,7 @@ def sync_whitelist_json_to_players_with_history(
     return {
         "added_count": added_count,
         "removed_count": removed_count,
+        "sync_status": "success",
     }
 
 
@@ -280,20 +598,6 @@ def reload_whitelist_if_ready() -> str:
 
 def get_whitelist_ui_source() -> str:
     return "ui_reload" if is_server_ready() else "offline_ui_edit"
-
-
-def get_offline_player_uuid(player_name: str) -> str:
-    raw = ("OfflinePlayer:" + player_name).encode("utf-8")
-
-    digest = bytearray(hashlib.md5(raw).digest())
-
-    digest[6] &= 0x0F
-    digest[6] |= 0x30
-
-    digest[8] &= 0x3F
-    digest[8] |= 0x80
-
-    return str(uuid.UUID(bytes=bytes(digest)))
 
 
 def get_whitelisted_players_from_json() -> list[dict]:
@@ -755,4 +1059,10 @@ def add_player_whitelist_direct(
     return add_player_whitelist(
         player_uuid=player_uuid,
         player_name=player_name,
+    )
+
+
+def load_whitelist_file() -> dict:
+    return load_player_json_file(
+        WHITELIST_FILE
     )

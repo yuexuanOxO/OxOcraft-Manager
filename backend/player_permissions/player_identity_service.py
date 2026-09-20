@@ -1,6 +1,8 @@
 import json
 import uuid
 import re
+import hashlib
+import urllib.error
 import urllib.request
 
 from backend.paths import MC_ROOT
@@ -77,39 +79,149 @@ def get_account_type(player_uuid: str) -> str:
         return "unknown"
 
 
-def get_mojang_player_profile(player_name: str) -> dict | None:
-    player_name = str(player_name or "").strip()
+def get_offline_player_uuid(
+    player_name: str,
+) -> str:
+    raw = (
+        "OfflinePlayer:" + player_name
+    ).encode("utf-8")
+
+    digest = bytearray(
+        hashlib.md5(raw).digest()
+    )
+
+    digest[6] &= 0x0F
+    digest[6] |= 0x30
+
+    digest[8] &= 0x3F
+    digest[8] |= 0x80
+
+    return str(
+        uuid.UUID(bytes=bytes(digest))
+    )
+
+
+def query_mojang_player_profile(
+    player_name: str,
+) -> dict:
+    player_name = str(
+        player_name or ""
+    ).strip()
 
     if not player_name:
-        return None
+        return {
+            "status": "not_found",
+            "profile": None,
+            "error_type": None,
+        }
 
-    url = f"https://api.mojang.com/users/profiles/minecraft/{player_name}"
+    url = (
+        "https://api.mojang.com/"
+        f"users/profiles/minecraft/{player_name}"
+    )
 
     try:
         request_obj = urllib.request.Request(
             url,
-            headers={"User-Agent": "OxOcraft-Manager"}
+            headers={
+                "User-Agent": "OxOcraft-Manager"
+            },
         )
 
-        with urllib.request.urlopen(request_obj, timeout=5) as response:
+        with urllib.request.urlopen(
+            request_obj,
+            timeout=5,
+        ) as response:
             if response.status == 204:
-                return None
+                return {
+                    "status": "not_found",
+                    "profile": None,
+                    "error_type": None,
+                }
 
-            data = json.loads(response.read().decode("utf-8"))
+            data = json.loads(
+                response.read().decode("utf-8")
+            )
 
         raw_uuid = data.get("id")
         actual_name = data.get("name")
 
         if not raw_uuid or not actual_name:
-            return None
+            return {
+                "status": "unavailable",
+                "profile": None,
+                "error_type": "invalid_response",
+            }
 
         return {
-            "uuid": str(uuid.UUID(raw_uuid)),
-            "name": actual_name,
+            "status": "found",
+            "profile": {
+                "uuid": str(
+                    uuid.UUID(raw_uuid)
+                ),
+                "name": actual_name,
+            },
+            "error_type": None,
+        }
+
+    except urllib.error.HTTPError as error:
+        if error.code in (204, 404):
+            return {
+                "status": "not_found",
+                "profile": None,
+                "error_type": None,
+            }
+
+        return {
+            "status": "unavailable",
+            "profile": None,
+            "error_type": "api_error",
+        }
+
+    except urllib.error.URLError:
+        return {
+            "status": "unavailable",
+            "profile": None,
+            "error_type": "network_error",
+        }
+
+    except TimeoutError:
+        return {
+            "status": "unavailable",
+            "profile": None,
+            "error_type": "network_error",
+        }
+
+    except (
+        json.JSONDecodeError,
+        ValueError,
+        KeyError,
+    ):
+        return {
+            "status": "unavailable",
+            "profile": None,
+            "error_type": "invalid_response",
         }
 
     except Exception:
+        return {
+            "status": "unavailable",
+            "profile": None,
+            "error_type": "unknown_error",
+        }
+
+
+def get_mojang_player_profile(
+    player_name: str,
+) -> dict | None:
+    result = query_mojang_player_profile(
+        player_name
+    )
+
+    if result["status"] != "found":
         return None
+
+    return result["profile"]
 
 
 def sync_usercache_to_db() -> None:
@@ -315,7 +427,6 @@ def resolve_player_identity(
     try:
         from backend.routes.player_routes import (
             is_online_mode,
-            get_offline_player_uuid,
         )
 
         current_account_type = (

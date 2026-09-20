@@ -235,6 +235,28 @@ def init_db() -> None:
             )
         """)
 
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS invalid_player_json_identities (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                player_uuid TEXT NOT NULL,
+                player_name TEXT NOT NULL,
+                source TEXT NOT NULL,
+                error_code TEXT NOT NULL,
+
+                UNIQUE (
+                    player_uuid,
+                    player_name,
+                    source
+                )
+            )
+        """)
+
+
+
+        conn.execute("""DELETE FROM invalid_player_json_identities""") #刪除暫存錯誤玩家資料表
+
+
         conn.commit()
 
 
@@ -759,6 +781,31 @@ def get_all_players() -> list[dict]:
         """).fetchall()
 
     return [dict(row) for row in rows]
+
+
+def get_player_by_uuid_and_name_exact(
+    player_uuid: str,
+    player_name: str,
+) -> dict | None:
+    player_uuid = str(player_uuid or "").strip()
+    player_name = str(player_name or "").strip()
+
+    if not player_uuid or not player_name:
+        return None
+
+    with get_connection() as conn:
+        row = conn.execute("""
+            SELECT *
+            FROM players
+            WHERE lower(player_uuid) = lower(?)
+              AND player_name = ?
+            LIMIT 1
+        """, (
+            player_uuid,
+            player_name,
+        )).fetchone()
+
+    return dict(row) if row else None
 
 
 def get_player_by_name_and_account_type(
@@ -1603,8 +1650,11 @@ def sync_player_op_entries_from_ops_entries(
 
 def sync_player_whitelist_flags_from_uuid_set(
     whitelist_uuid_set: set[str],
+    protected_uuid_set: set[str] | None = None,
 ) -> None:
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now().strftime(
+        "%Y-%m-%d %H:%M:%S"
+    )
 
     normalized = {
         str(player_uuid).lower()
@@ -1612,30 +1662,54 @@ def sync_player_whitelist_flags_from_uuid_set(
         if player_uuid
     }
 
+    protected = {
+        str(player_uuid).lower()
+        for player_uuid in (
+            protected_uuid_set or set()
+        )
+        if player_uuid
+    }
+
     with get_connection() as conn:
+        # 1. 已確認有效的 whitelist 玩家
         if normalized:
-            placeholders = ",".join("?" for _ in normalized)
+            placeholders = ",".join(
+                "?" for _ in normalized
+            )
 
             conn.execute(f"""
                 UPDATE players
                 SET whitelisted = 1,
                     updated_at = ?
-                WHERE lower(player_uuid) IN ({placeholders})
+                WHERE lower(player_uuid)
+                    IN ({placeholders})
             """, (
                 now,
                 *normalized,
             ))
 
+        # 2. 不在有效 whitelist，
+        #    而且也不屬於暫時無法驗證的玩家
+        #    才能取消 whitelist
+        excluded = normalized | protected
+
+        if excluded:
+            placeholders = ",".join(
+                "?" for _ in excluded
+            )
+
             conn.execute(f"""
                 UPDATE players
                 SET whitelisted = 0,
                     updated_at = ?
-                WHERE lower(player_uuid) NOT IN ({placeholders})
+                WHERE lower(player_uuid)
+                    NOT IN ({placeholders})
                   AND whitelisted != 0
             """, (
                 now,
-                *normalized,
+                *excluded,
             ))
+
         else:
             conn.execute("""
                 UPDATE players
@@ -1783,4 +1857,87 @@ def trim_history_table(
         f"Deleted {delete_count} old record(s). "
         f"{trim_to} record(s) remaining."
     )
-    
+
+
+def get_invalid_player_json_identity(
+    player_uuid: str,
+    player_name: str,
+    source: str,
+) -> dict | None:
+    with get_connection() as conn:
+        row = conn.execute("""
+            SELECT *
+            FROM invalid_player_json_identities
+            WHERE lower(player_uuid) = lower(?)
+              AND player_name = ?
+              AND source = ?
+            LIMIT 1
+        """, (
+            player_uuid,
+            player_name,
+            source,
+        )).fetchone()
+
+    return dict(row) if row else None
+
+
+def add_invalid_player_json_identity(
+    player_uuid: str,
+    player_name: str,
+    source: str,
+    error_code: str,
+) -> None:
+    with get_connection() as conn:
+        conn.execute("""
+            INSERT INTO invalid_player_json_identities (
+                player_uuid,
+                player_name,
+                source,
+                error_code
+            )
+            VALUES (?, ?, ?, ?)
+
+            ON CONFLICT(
+                player_uuid,
+                player_name,
+                source
+            )
+            DO UPDATE SET
+                error_code = excluded.error_code
+        """, (
+            player_uuid,
+            player_name,
+            source,
+            error_code,
+        ))
+
+        conn.commit()
+
+
+def remove_invalid_player_json_identity(
+    player_uuid: str,
+    player_name: str,
+    source: str,
+) -> None:
+    with get_connection() as conn:
+        conn.execute("""
+            DELETE FROM invalid_player_json_identities
+            WHERE lower(player_uuid) = lower(?)
+              AND player_name = ?
+              AND source = ?
+        """, (
+            player_uuid,
+            player_name,
+            source,
+        ))
+
+        conn.commit()
+
+
+def clear_invalid_player_json_identities() -> None:
+    with get_connection() as conn:
+        conn.execute("""
+            DELETE FROM invalid_player_json_identities
+        """)
+
+        conn.commit()

@@ -788,15 +788,17 @@ function renderWhitelistActionButtons() {
 
     const uiLocked = isWhitelistUiLocked();
 
-    const openAddBtn =
-        document.getElementById("openAddWhitelistPlayerBtn");
+    const hasDataIssues = hasWhitelistDataIssues();
 
-    const refreshBtn =
-        document.getElementById("refreshPlayerWhitelistBtn");
+    const openAddBtn = document.getElementById("openAddWhitelistPlayerBtn");
+
+    const refreshBtn = document.getElementById("refreshPlayerWhitelistBtn");
 
     if (openAddBtn) {
         openAddBtn.disabled =
-            uiLocked || !whitelistEnabled;
+            uiLocked
+            || !whitelistEnabled
+            || hasDataIssues;
     }
 
     if (refreshBtn) {
@@ -805,10 +807,14 @@ function renderWhitelistActionButtons() {
     }
 
     document
-        .querySelectorAll(".player-whitelist-action")
+        .querySelectorAll(
+            ".player-whitelist-action"
+        )
         .forEach((button) => {
             button.disabled =
-                uiLocked || !whitelistEnabled;
+                uiLocked
+                || !whitelistEnabled
+                || hasDataIssues;
         });
 
     document
@@ -2934,4 +2940,15 @@ async function addWhitelistCandidate(player) {
 
     return data;
 
+}
+
+
+function hasWhitelistDataIssues() {
+    return (
+        whitelistDataState.status !== "valid"
+        ||
+        whitelistDataState.invalid_entries.length > 0
+        ||
+        whitelistDataState.unavailable_entries.length > 0
+    );
 }

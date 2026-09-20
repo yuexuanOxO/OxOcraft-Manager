@@ -219,38 +219,28 @@ def sync_validated_whitelist_to_players(
     )
 
 
-def load_whitelist_entries() -> list[dict]:
-    if not WHITELIST_FILE.exists():
-        return []
-
-    try:
-        with WHITELIST_FILE.open("r", encoding="utf-8") as file:
-            content = file.read().strip()
-
-        if not content:
-            return []
-
-        data = json.loads(content)
-
-        if not isinstance(data, list):
-            return []
-
-        return data
-
-    except json.JSONDecodeError:
-        return []
-
-
 def save_whitelist_entries(entries: list[dict]) -> None:
     with WHITELIST_FILE.open("w", encoding="utf-8") as file:
         json.dump(entries, file, ensure_ascii=False, indent=2)
 
 
 def load_whitelist_uuid_set() -> set[str]:
+    file_result = load_whitelist_file()
+
+    if file_result["status"] != "valid":
+        return set()
+
     return {
-        str(entry.get("uuid", "")).lower()
-        for entry in load_whitelist_entries()
-        if entry.get("uuid")
+        str(
+            entry.get("uuid", "")
+        ).lower()
+
+        for entry in file_result["entries"]
+
+        if (
+            isinstance(entry, dict)
+            and entry.get("uuid")
+        )
     }
 
 

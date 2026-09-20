@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 
 
@@ -48,13 +49,48 @@ def load_player_json_file(
 
     try:
         data = json.loads(content)
+
     except json.JSONDecodeError:
-        return build_json_file_result(
-            status="invalid",
-            entries=None,
-            error_code="invalid_json",
-            message="JSON 格式錯誤",
+        fixed_content = (
+            fix_minecraft_json_trailing_comma(
+                content
+            )
         )
+
+        if fixed_content == content:
+            return build_json_file_result(
+                status="invalid",
+                entries=None,
+                error_code="invalid_json",
+                message="JSON 格式錯誤",
+            )
+
+        try:
+            data = json.loads(
+                fixed_content
+            )
+
+        except json.JSONDecodeError:
+            return build_json_file_result(
+                status="invalid",
+                entries=None,
+                error_code="invalid_json",
+                message="JSON 格式錯誤",
+            )
+
+        try:
+            file_path.write_text(
+                fixed_content,
+                encoding="utf-8",
+            )
+
+        except OSError:
+            return build_json_file_result(
+                status="invalid",
+                entries=None,
+                error_code="file_write_error",
+                message="無法修正 JSON 檔案",
+            )
 
     if not isinstance(data, list):
         return build_json_file_result(
@@ -67,4 +103,14 @@ def load_player_json_file(
     return build_json_file_result(
         status="valid",
         entries=data,
+    )
+
+
+def fix_minecraft_json_trailing_comma(
+    content: str,
+) -> str:
+    return re.sub(
+        r",(\s*\])",
+        r"\1",
+        content,
     )

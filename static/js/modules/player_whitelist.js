@@ -1737,6 +1737,12 @@ function getWhitelistHistoryActionText(action) {
     action = String(action || "");
 
     if (
+        action === "duplicate_cleanup"
+    ) {
+        return "清除重複資料";
+    }
+
+    if (
         action.includes("remove") ||
         action.includes("pardon")
     ) {

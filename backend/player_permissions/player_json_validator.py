@@ -349,3 +349,43 @@ def validate_cached_player_json_identity(
         )
 
     return result
+
+
+def split_duplicate_valid_player_entries(
+    valid_entries: list[dict],
+) -> dict:
+    unique_entries = []
+    duplicate_entries = []
+
+    seen_uuid_set = set()
+
+    for item in valid_entries:
+        validation = (
+            item.get("validation")
+            if isinstance(item, dict)
+            else {}
+        ) or {}
+
+        player_uuid = str(
+            validation.get(
+                "player_uuid",
+                "",
+            )
+        ).strip().lower()
+
+        if not player_uuid:
+            unique_entries.append(item)
+            continue
+
+        if player_uuid in seen_uuid_set:
+            duplicate_entries.append(item)
+            continue
+
+        seen_uuid_set.add(player_uuid)
+        unique_entries.append(item)
+
+    return {
+        "unique_entries": unique_entries,
+        "duplicate_entries":
+            duplicate_entries,
+    }

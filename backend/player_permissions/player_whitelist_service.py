@@ -23,6 +23,7 @@ from backend.player_permissions.player_access_history_service import (
 
 from backend.player_permissions.player_json_validator import (
     validate_cached_player_json_identity,
+    split_duplicate_valid_player_entries,
 )
 
 from backend.server_effective_settings import (
@@ -153,11 +154,25 @@ def get_validated_whitelist_uuid_sets(
         )
     )
 
+    duplicate_result = (
+        split_duplicate_valid_player_entries(
+            validation_result["valid"]
+        )
+    )
+
+    valid_entries = (
+        duplicate_result["unique_entries"]
+    )
+
+    duplicate_entries = (
+        duplicate_result["duplicate_entries"]
+    )
+
     valid_uuid_set = {
         str(
             item["validation"]["player_uuid"]
         ).lower()
-        for item in validation_result["valid"]
+        for item in valid_entries
         if item["validation"].get(
             "player_uuid"
         )
@@ -177,19 +192,11 @@ def get_validated_whitelist_uuid_sets(
 
     return {
         "valid_uuid_set": valid_uuid_set,
-        "unavailable_uuid_set":
-            unavailable_uuid_set,
-
-        "valid_entries":
-            validation_result["valid"],
-
-        "invalid_entries":
-            validation_result["invalid"],
-
-        "unavailable_entries":
-            validation_result[
-                "verification_unavailable"
-            ],
+        "unavailable_uuid_set":unavailable_uuid_set,
+        "valid_entries":valid_entries,
+        "duplicate_entries":duplicate_entries,
+        "invalid_entries":validation_result["invalid"],
+        "unavailable_entries":validation_result["verification_unavailable"],
     }
 
 
@@ -217,6 +224,126 @@ def sync_validated_whitelist_to_players(
             validated["unavailable_uuid_set"]
         ),
     )
+
+
+def cleanup_duplicate_whitelist_entries(
+    entries: list,
+    duplicate_entries: list[dict],
+) -> dict:
+    if not duplicate_entries:
+        return {
+            "cleaned": False,
+            "entries": entries,
+            "removed_count": 0,
+        }
+
+    duplicate_indexes = {
+        item.get("entry_index")
+        for item in duplicate_entries
+        if isinstance(
+            item.get("entry_index"),
+            int,
+        )
+    }
+
+    cleaned_entries = [
+        entry
+        for index, entry in enumerate(entries)
+        if index not in duplicate_indexes
+    ]
+
+    if len(cleaned_entries) == len(entries):
+        return {
+            "cleaned": False,
+            "entries": entries,
+            "removed_count": 0,
+        }
+
+    save_whitelist_entries(
+        cleaned_entries
+    )
+
+    duplicate_by_uuid = {}
+
+    for item in duplicate_entries:
+        validation = (
+            item.get("validation")
+            or {}
+        )
+
+        player_uuid = str(
+            validation.get(
+                "player_uuid",
+                "",
+            )
+        ).strip()
+
+        player_name = str(
+            validation.get(
+                "player_name",
+                "",
+            )
+        ).strip()
+
+        account_type = (
+            validation.get(
+                "account_type"
+            )
+        )
+
+        if not player_uuid:
+            continue
+
+        key = player_uuid.lower()
+
+        if key not in duplicate_by_uuid:
+            duplicate_by_uuid[key] = {
+                "player_uuid": player_uuid,
+                "player_name": player_name,
+                "account_type":
+                    account_type,
+                "removed_count": 0,
+            }
+
+        duplicate_by_uuid[key][
+            "removed_count"
+        ] += 1
+
+    for item in duplicate_by_uuid.values():
+        record_player_access(
+            category="whitelist",
+            action="duplicate_cleanup",
+            target_uuid=(
+                item["player_uuid"]
+            ),
+            target_name=(
+                item["player_name"]
+                or "未知玩家"
+            ),
+            account_type=(
+                item["account_type"]
+            ),
+            operator_name="Unknown",
+            source="minecraft_json",
+            detail=json.dumps(
+                {
+                    "reason":
+                        "duplicate_entry",
+                    "removed_count":
+                        item["removed_count"],
+                },
+                ensure_ascii=False,
+            ),
+        )
+
+    return {
+        "cleaned": True,
+        "entries": cleaned_entries,
+        "removed_count": (
+            len(entries)
+            - len(cleaned_entries)
+        ),
+    }
 
 
 def save_whitelist_entries(entries: list[dict]) -> None:
@@ -1251,6 +1378,27 @@ def load_validated_whitelist() -> dict:
             online_mode=online_mode,
         )
     )
+
+    cleanup_result = (
+        cleanup_duplicate_whitelist_entries(
+            entries=file_result["entries"],
+            duplicate_entries=(
+                validated[
+                    "duplicate_entries"
+                ]
+            ),
+        )
+    )
+
+    if cleanup_result["cleaned"]:
+        validated = (
+            get_validated_whitelist_uuid_sets(
+                entries=(
+                    cleanup_result["entries"]
+                ),
+                online_mode=online_mode,
+            )
+        )
 
     return {
         "status": "valid",

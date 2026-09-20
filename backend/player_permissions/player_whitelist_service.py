@@ -191,6 +191,32 @@ def get_validated_whitelist_uuid_sets(
     }
 
 
+def sync_validated_whitelist_to_players(
+    validated: dict,
+) -> None:
+    for item in validated["valid_entries"]:
+        validation = item["validation"]
+
+        upsert_player_identity(
+            player_uuid=(
+                validation["player_uuid"]
+            ),
+            player_name=(
+                validation["player_name"]
+            ),
+            account_type=(
+                validation["account_type"]
+            ),
+        )
+
+    sync_player_whitelist_flags_from_uuid_set(
+        validated["valid_uuid_set"],
+        protected_uuid_set=(
+            validated["unavailable_uuid_set"]
+        ),
+    )
+
+
 def load_whitelist_entries() -> list[dict]:
     if not WHITELIST_FILE.exists():
         return []
@@ -251,20 +277,8 @@ def sync_whitelist_json_to_players(
         )
     )
 
-    for item in validated["valid_entries"]:
-        validation = item["validation"]
-
-        upsert_player_identity(
-            player_uuid=validation["player_uuid"],
-            player_name=validation["player_name"],
-            account_type=validation["account_type"],
-        )
-
-    sync_player_whitelist_flags_from_uuid_set(
-        validated["valid_uuid_set"],
-        protected_uuid_set=(
-            validated["unavailable_uuid_set"]
-        ),
+    sync_validated_whitelist_to_players(
+        validated
     )
 
 
@@ -554,9 +568,11 @@ def sync_whitelist_json_to_players_with_history(
     }
 
 
-def rebuild_whitelist_json_from_db() -> None:
-    if not is_server_ready():
-        return
+def rebuild_whitelist_json_from_db(
+    force: bool = False,
+) -> bool:
+    if not force and not is_server_ready():
+        return False
 
     players = get_whitelisted_players_from_db()
 
@@ -575,6 +591,8 @@ def rebuild_whitelist_json_from_db() -> None:
         })
 
     save_whitelist_entries(entries)
+
+    return True
 
 
 def is_server_ready() -> bool:
@@ -610,6 +628,10 @@ def get_whitelisted_players_from_json() -> dict:
         != "valid"
     ):
         return whitelist_result
+
+    sync_validated_whitelist_to_players(
+        whitelist_result
+    )
 
     result = []
 
@@ -1197,16 +1219,16 @@ def load_validated_whitelist() -> dict:
         return {
             "status": "file_invalid",
             "players": [],
+
+            "valid_uuid_set": set(),
+            "unavailable_uuid_set": set(),
+
             "valid_entries": [],
             "invalid_entries": [],
             "unavailable_entries": [],
-            "error_code": file_result.get(
-                "error_code"
-            ),
-            "message": file_result.get(
-                "message",
-                "",
-            ),
+
+            "error_code": file_result.get("error_code"),
+            "message": file_result.get("message","",),
         }
 
     snapshot = (
@@ -1229,12 +1251,54 @@ def load_validated_whitelist() -> dict:
     return {
         "status": "valid",
         "players": [],
-        "valid_entries":
-            validated["valid_entries"],
-        "invalid_entries":
-            validated["invalid_entries"],
-        "unavailable_entries":
-            validated["unavailable_entries"],
+        "valid_entries":validated["valid_entries"],
+        "invalid_entries":validated["invalid_entries"],
+        "unavailable_entries":validated["unavailable_entries"],
+        "valid_uuid_set":validated["valid_uuid_set"],
+        "unavailable_uuid_set":validated["unavailable_uuid_set"],
         "error_code": None,
         "message": "",
+    }
+
+
+def recover_whitelist_json_from_db() -> dict:
+    file_result = load_whitelist_file()
+
+    if file_result["status"] == "valid":
+        return {
+            "success": False,
+            "message": (
+                "whitelist.json 目前沒有"
+                "需要恢復的格式錯誤"
+            ),
+            "error_code": "file_not_invalid",
+        }
+
+    rebuild_whitelist_json_from_db(
+        force=True
+    )
+
+    restored_result = load_whitelist_file()
+
+    if restored_result["status"] != "valid":
+        return {
+            "success": False,
+            "message": (
+                "白名單資料恢復失敗，"
+                "whitelist.json 仍然無法正常讀取"
+            ),
+            "error_code": (
+                restored_result.get(
+                    "error_code"
+                )
+                or "recovery_failed"
+            ),
+        }
+
+    return {
+        "success": True,
+        "message": "白名單舊資料已恢復",
+        "restored_count": len(
+            restored_result["entries"]
+        ),
     }

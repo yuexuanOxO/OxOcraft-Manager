@@ -332,7 +332,7 @@
 }
 
 .player-whitelist-file-error-refresh {
-    margin-top: 8px;
+    margin-top: 0;
 
     padding: 10px 16px;
 
@@ -343,6 +343,16 @@
     color: #f0c36a;
 
     cursor: pointer;
+}
+
+.player-whitelist-file-error-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+
+    gap: 10px;
+    margin-top: 8px;
 }
 
 .player-whitelist-file-error-refresh:hover {

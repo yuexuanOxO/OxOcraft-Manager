@@ -1092,13 +1092,23 @@ function renderWhitelistFileError(list) {
                     : ""
             }
 
-            <button
-                id="refreshInvalidWhitelistBtn"
-                class="player-whitelist-file-error-refresh"
-                type="button"
-            >
-                刷新白名單
-            </button>
+            <div class="player-whitelist-file-error-actions">
+                <button
+                    id="refreshInvalidWhitelistBtn"
+                    class="player-whitelist-file-error-refresh"
+                    type="button"
+                >
+                    刷新白名單
+                </button>
+
+                <button
+                    id="recoverInvalidWhitelistBtn"
+                    class="player-whitelist-file-error-refresh"
+                    type="button"
+                >
+                    恢復舊資料
+                </button>
+            </div>
 
         </div>
     `;
@@ -1113,6 +1123,111 @@ function renderWhitelistFileError(list) {
                 await loadPlayerWhitelist();
             }
         );
+
+
+    document
+        .getElementById(
+            "recoverInvalidWhitelistBtn"
+        )
+        ?.addEventListener(
+            "click",
+            async () => {
+                await recoverWhitelistFile();
+            }
+        );
+
+}
+
+
+async function recoverWhitelistFile() {
+    const confirmed = await showConfirm({
+        title: "恢復白名單舊資料",
+        message:
+            "將使用OxOcraft資料庫中最後一次已驗證的白名單資料，" +
+            "重新建立whitelist.json。\n\n" +
+            "目前損壞的whitelist.json內容會被覆蓋。",
+        confirmText: "恢復",
+        cancelText: "取消",
+        variant: "warning",
+    });
+
+    if (!confirmed) {
+        return;
+    }
+
+    const recoverBtn =
+        document.getElementById(
+            "recoverInvalidWhitelistBtn"
+        );
+
+    const refreshBtn =
+        document.getElementById(
+            "refreshInvalidWhitelistBtn"
+        );
+
+    if (recoverBtn) {
+        recoverBtn.disabled = true;
+        recoverBtn.textContent = "恢復中...";
+    }
+
+    if (refreshBtn) {
+        refreshBtn.disabled = true;
+    }
+
+    try {
+        const response = await fetch(
+            "/api/player/whitelist/recover",
+            {
+                method: "POST",
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(
+                data.message ||
+                "白名單舊資料恢復失敗"
+            );
+        }
+
+        await loadPlayerWhitelist();
+
+        await showInfo({
+            title: "玩家白名單",
+            message:
+                data.message ||
+                "白名單舊資料已恢復",
+            confirmText: "關閉",
+            variant: "success",
+        });
+
+    } catch (error) {
+        console.error(
+            "白名單舊資料恢復失敗:",
+            error
+        );
+
+        await showInfo({
+            title: "錯誤",
+            message:
+                error.message ||
+                "白名單舊資料恢復失敗",
+            confirmText: "關閉",
+            variant: "error",
+        });
+
+    } finally {
+        if (recoverBtn) {
+            recoverBtn.disabled = false;
+            recoverBtn.textContent =
+                "恢復舊資料";
+        }
+
+        if (refreshBtn) {
+            refreshBtn.disabled = false;
+        }
+    }
 }
 
 

@@ -808,36 +808,22 @@ def add_player_whitelist(
     player_name: str,
     history_source: str | None = None,
 ) -> dict:
+    whitelist_result = (
+        load_validated_whitelist()
+    )
+
     mutation_error = (
-        get_whitelist_mutation_error()
+        get_whitelist_mutation_error(
+            whitelist_result
+        )
     )
 
     if mutation_error:
         return mutation_error
 
-    file_result = load_whitelist_file()
-
-    if file_result["status"] != "valid":
-        return {
-            "success": False,
-            "message": (
-                "白名單參數檔發生錯誤，"
-                "請先修復 whitelist.json"
-            ),
-            "error_code": (
-                file_result.get("error_code")
-            ),
-            "data_status": "file_invalid",
-        }
-
-    whitelist_uuid_set = {
-        str(entry.get("uuid", "")).lower()
-        for entry in file_result["entries"]
-        if (
-            isinstance(entry, dict)
-            and entry.get("uuid")
-        )
-    }
+    whitelist_uuid_set = (
+        whitelist_result["valid_uuid_set"]
+    )
 
     if player_uuid.lower() in whitelist_uuid_set:
         return {
@@ -846,24 +832,12 @@ def add_player_whitelist(
             "whitelisted": True,
         }
 
-    rebuild_whitelist_json_from_db()
-
-    file_result = load_whitelist_file()
-
-    if file_result["status"] != "valid":
-        return {
-            "success": False,
-            "message": (
-                "白名單參數檔發生錯誤，"
-                "請先修復 whitelist.json"
-            ),
-            "error_code": (
-                file_result.get("error_code")
-            ),
-            "data_status": "file_invalid",
-        }
-
-    entries = file_result["entries"]
+    entries = [
+        item["entry"]
+        for item in whitelist_result[
+            "valid_entries"
+        ]
+    ]
 
     entries.append({
         "uuid": player_uuid,
@@ -871,6 +845,16 @@ def add_player_whitelist(
     })
 
     save_whitelist_entries(entries)
+
+    sync_whitelist_json_to_players_with_history(
+        operator_name="Unknown",
+        source="minecraft_json",
+        detail=(
+            "whitelist.json sync before "
+            "UI add operation"
+        ),
+        validated=whitelist_result,
+    )
 
     result = reload_whitelist_if_ready()
 
@@ -917,46 +901,25 @@ def remove_player_whitelist(
     history_source: str | None = None,
 ) -> dict:
 
+    whitelist_result = (
+        load_validated_whitelist()
+    )
+
     mutation_error = (
-        get_whitelist_mutation_error()
+        get_whitelist_mutation_error(
+            whitelist_result
+        )
     )
 
     if mutation_error:
         return mutation_error
 
-    file_result = load_whitelist_file()
-
-    if file_result["status"] != "valid":
-        return {
-            "success": False,
-            "message": (
-                "白名單參數檔發生錯誤，"
-                "請先修復 whitelist.json"
-            ),
-            "error_code": (
-                file_result.get("error_code")
-            ),
-            "data_status": "file_invalid",
-        }
-
-    rebuild_whitelist_json_from_db()
-
-    file_result = load_whitelist_file()
-
-    if file_result["status"] != "valid":
-        return {
-            "success": False,
-            "message": (
-                "白名單參數檔發生錯誤，"
-                "請先修復 whitelist.json"
-            ),
-            "error_code": (
-                file_result.get("error_code")
-            ),
-            "data_status": "file_invalid",
-        }
-
-    entries = file_result["entries"]
+    entries = [
+        item["entry"]
+        for item in whitelist_result[
+            "valid_entries"
+        ]
+    ]
 
     entries = [
         entry
@@ -967,6 +930,16 @@ def remove_player_whitelist(
     ]
 
     save_whitelist_entries(entries)
+
+    sync_whitelist_json_to_players_with_history(
+        operator_name="Unknown",
+        source="minecraft_json",
+        detail=(
+            "whitelist.json sync before "
+            "UI remove operation"
+        ),
+        validated=whitelist_result,
+    )
 
     result = reload_whitelist_if_ready()
 
@@ -1327,10 +1300,13 @@ def load_validated_whitelist() -> dict:
     }
 
 
-def get_whitelist_mutation_error() -> dict | None:
-    whitelist_result = (
-        load_validated_whitelist()
-    )
+def get_whitelist_mutation_error(
+    whitelist_result: dict | None = None,
+) -> dict | None:
+    if whitelist_result is None:
+        whitelist_result = (
+            load_validated_whitelist()
+        )
 
     if (
         whitelist_result["status"]

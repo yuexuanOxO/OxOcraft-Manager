@@ -22,7 +22,7 @@ from backend.player_permissions.player_access_history_service import (
 )
 
 from backend.player_permissions.player_json_validator import (
-    validate_cached_player_json_identity,
+    validate_cached_player_json_entries,
     split_duplicate_valid_player_entries,
 )
 
@@ -79,68 +79,14 @@ def pop_recent_ui_whitelist_reload_if_match(
 
 
 def validate_whitelist_entries(
-    entries: list[dict],
+    entries: list,
     online_mode: bool,
 ) -> dict:
-    valid_entries = []
-    invalid_entries = []
-    unavailable_entries = []
-
-    for entry_index, entry in enumerate(entries):
-        if not isinstance(entry, dict):
-            invalid_entries.append({
-                "entry_index": entry_index,
-                "entry": entry,
-                "validation": {
-                    "valid": False,
-                    "status": "invalid",
-                    "error_code": "invalid_entry",
-                    "message": "白名單玩家資料格式錯誤",
-                },
-            })
-            continue
-
-        player_uuid = str(
-            entry.get("uuid") or ""
-        ).strip()
-
-        player_name = str(
-            entry.get("name") or ""
-        ).strip()
-
-        validation = (
-            validate_cached_player_json_identity(
-                player_uuid=player_uuid,
-                player_name=player_name,
-                online_mode=online_mode,
-                source="whitelist",
-            )
-        )
-
-        item = {
-            "entry_index": entry_index,
-            "entry": entry,
-            "validation": validation,
-        }
-
-        if validation["status"] == "valid":
-            valid_entries.append(item)
-
-        elif validation["status"] == "invalid":
-            invalid_entries.append(item)
-
-        elif (
-            validation["status"]
-            == "verification_unavailable"
-        ):
-            unavailable_entries.append(item)
-
-    return {
-        "valid": valid_entries,
-        "invalid": invalid_entries,
-        "verification_unavailable":
-            unavailable_entries,
-    }
+    return validate_cached_player_json_entries(
+        entries=entries,
+        online_mode=online_mode,
+        source="whitelist",
+    )
 
 
 def get_validated_whitelist_uuid_sets(

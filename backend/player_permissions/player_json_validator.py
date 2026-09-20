@@ -15,11 +15,12 @@ from backend.player_permissions.player_identity_service import (
 
 
 INVALID_IDENTITY_MESSAGES = {
-    "missing_uuid":"缺少玩家 UUID",
+    "missing_uuid":"缺少玩家UUID",
     "missing_name":"缺少玩家名稱",
-    "invalid_uuid":"玩家 UUID 格式錯誤",
+    "invalid_uuid":"玩家UUID格式錯誤",
     "invalid_name":"玩家名稱格式錯誤",
-    "identity_mismatch":"玩家名稱與 UUID 不符合",
+    "identity_mismatch":"玩家名稱與UUID不符合",
+    "invalid_entry": "玩家資料格式錯誤",
 }
 
 
@@ -349,6 +350,84 @@ def validate_cached_player_json_identity(
         )
 
     return result
+
+
+def validate_cached_player_json_entry(
+    entry,
+    online_mode: bool,
+    source: str,
+) -> dict:
+    if not isinstance(entry, dict):
+        return build_validation_result(
+            valid=False,
+            status="invalid",
+            player_uuid="",
+            player_name="",
+            valid_for_current_mode=False,
+            error_code="invalid_entry",
+            message="玩家資料格式錯誤",
+        )
+
+    player_uuid = str(
+        entry.get("uuid") or ""
+    ).strip()
+
+    player_name = str(
+        entry.get("name") or ""
+    ).strip()
+
+    return validate_cached_player_json_identity(
+        player_uuid=player_uuid,
+        player_name=player_name,
+        online_mode=online_mode,
+        source=source,
+    )
+
+
+def validate_cached_player_json_entries(
+    entries: list,
+    online_mode: bool,
+    source: str,
+) -> dict:
+    valid_entries = []
+    invalid_entries = []
+    unavailable_entries = []
+
+    for entry_index, entry in enumerate(
+        entries
+    ):
+        validation = (
+            validate_cached_player_json_entry(
+                entry=entry,
+                online_mode=online_mode,
+                source=source,
+            )
+        )
+
+        item = {
+            "entry_index": entry_index,
+            "entry": entry,
+            "validation": validation,
+        }
+
+        if validation["status"] == "valid":
+            valid_entries.append(item)
+
+        elif validation["status"] == "invalid":
+            invalid_entries.append(item)
+
+        elif (
+            validation["status"]
+            == "verification_unavailable"
+        ):
+            unavailable_entries.append(item)
+
+    return {
+        "valid": valid_entries,
+        "invalid": invalid_entries,
+        "verification_unavailable":
+            unavailable_entries,
+    }
 
 
 def split_duplicate_valid_player_entries(

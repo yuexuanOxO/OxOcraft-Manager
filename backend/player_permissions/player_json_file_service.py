@@ -1,5 +1,4 @@
 import json
-import re
 from pathlib import Path
 
 
@@ -109,8 +108,55 @@ def load_player_json_file(
 def fix_minecraft_json_trailing_comma(
     content: str,
 ) -> str:
-    return re.sub(
-        r",(\s*\])",
-        r"\1",
-        content,
-    )
+    result = []
+
+    in_string = False
+    escaped = False
+
+    index = 0
+    length = len(content)
+
+    while index < length:
+        char = content[index]
+
+        if in_string:
+            result.append(char)
+
+            if escaped:
+                escaped = False
+
+            elif char == "\\":
+                escaped = True
+
+            elif char == '"':
+                in_string = False
+
+            index += 1
+            continue
+
+        if char == '"':
+            in_string = True
+            result.append(char)
+            index += 1
+            continue
+
+        if char == ",":
+            next_index = index + 1
+
+            while (
+                next_index < length
+                and content[next_index].isspace()
+            ):
+                next_index += 1
+
+            if (
+                next_index < length
+                and content[next_index] == "]"
+            ):
+                index += 1
+                continue
+
+        result.append(char)
+        index += 1
+
+    return "".join(result)

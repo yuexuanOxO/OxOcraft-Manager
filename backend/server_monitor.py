@@ -202,11 +202,11 @@ def monitor_loop() -> None:
         if should_sync_whitelist_on_ready:
             try:
                 from backend.player_permissions.player_whitelist_service import (
-                    sync_whitelist_reload_from_log,
+                    sync_whitelist_json_to_players_with_history
                 )
 
-                result = sync_whitelist_reload_from_log(
-                    operator_name="OxOcraft",
+                result = sync_whitelist_json_to_players_with_history(
+                    operator_name="Unknown",
                     source="minecraft_json",
                     detail="server ready whitelist json sync",
                 )

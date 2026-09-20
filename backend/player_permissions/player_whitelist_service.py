@@ -320,27 +320,12 @@ def load_whitelist_uuid_set() -> set[str]:
 def sync_whitelist_json_to_players(
     source: str = "unknown",
 ) -> None:
-    file_result = load_whitelist_file()
-
-    if file_result["status"] != "valid":
-        return
-
-    entries = file_result["entries"]
-
-    snapshot = load_effective_settings_snapshot()
-
-    online_mode = (
-        get_effective_online_mode_from_snapshot(
-            snapshot
-        )
-    )
-
     validated = (
-        get_validated_whitelist_uuid_sets(
-            entries=entries,
-            online_mode=online_mode,
-        )
+        load_validated_whitelist()
     )
+
+    if validated["status"] != "valid":
+        return
 
     sync_validated_whitelist_to_players(
         validated
@@ -354,36 +339,19 @@ def sync_whitelist_json_to_players_with_history(
     validated: dict | None = None,
 ) -> dict:
     if validated is None:
-        file_result = load_whitelist_file()
+        validated = (
+            load_validated_whitelist()
+        )
 
-        if file_result["status"] != "valid":
+        if validated["status"] != "valid":
             return {
                 "added_count": 0,
                 "removed_count": 0,
                 "sync_status": "file_invalid",
-                "error_code": file_result.get(
+                "error_code": validated.get(
                     "error_code"
                 ),
             }
-
-        json_entries = file_result["entries"]
-
-        snapshot = (
-            load_effective_settings_snapshot()
-        )
-
-        online_mode = (
-            get_effective_online_mode_from_snapshot(
-                snapshot
-            )
-        )
-
-        validated = (
-            get_validated_whitelist_uuid_sets(
-                entries=json_entries,
-                online_mode=online_mode,
-            )
-        )
 
     valid_uuid_set = (
         validated["valid_uuid_set"]

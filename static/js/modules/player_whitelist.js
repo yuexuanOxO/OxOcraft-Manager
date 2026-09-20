@@ -2383,6 +2383,10 @@ async function removePlayerWhitelist(player) {
         const data = await response.json();
 
         if (!data.success) {
+            await refreshWhitelistAfterMutationError(
+                data
+            );
+
             throw new Error(
                 data.message || "移出白名單失敗"
             );
@@ -2929,6 +2933,10 @@ async function addWhitelistCandidate(player) {
     const data = await response.json();
 
     if (!data.success) {
+        await refreshWhitelistAfterMutationError(
+            data
+        );
+
         throw new Error(
             data.message || "加入白名單失敗"
         );
@@ -2951,4 +2959,61 @@ function hasWhitelistDataIssues() {
         ||
         whitelistDataState.unavailable_entries.length > 0
     );
+}
+
+
+async function refreshWhitelistAfterMutationError(
+    data
+) {
+    const dataStatus = String(
+        data?.data_status || ""
+    );
+
+    const shouldRefresh = [
+        "file_invalid",
+        "entry_invalid",
+        "verification_unavailable",
+    ].includes(dataStatus);
+
+    if (!shouldRefresh) {
+        return;
+    }
+
+    try {
+        const refreshedData =
+            await refreshPlayerWhitelistState();
+
+        const hasIssues =
+            refreshedData.data_status !== "valid"
+            ||
+            (
+                Array.isArray(
+                    refreshedData.invalid_entries
+                )
+                &&
+                refreshedData.invalid_entries.length > 0
+            )
+            ||
+            (
+                Array.isArray(
+                    refreshedData.unavailable_entries
+                )
+                &&
+                refreshedData.unavailable_entries.length > 0
+            );
+
+        if (hasIssues) {
+            document
+                .getElementById(
+                    "addWhitelistPlayerModal"
+                )
+                ?.classList.add("hidden");
+        }
+
+    } catch (error) {
+        console.error(
+            "白名單錯誤狀態重新整理失敗:",
+            error
+        );
+    }
 }

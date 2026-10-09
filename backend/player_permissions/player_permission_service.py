@@ -189,6 +189,71 @@ def load_validated_ops() -> dict:
     }
 
 
+def get_ops_mutation_error(
+    ops_result: dict | None = None,
+) -> dict | None:
+    if ops_result is None:
+        ops_result = (
+            load_validated_ops()
+        )
+
+    if ops_result["status"] != "valid":
+        return {
+            "success": False,
+            "message": (
+                "管理員參數檔發生錯誤，"
+                "請先修復 ops.json"
+            ),
+            "error_code":
+                ops_result.get(
+                    "error_code"
+                ),
+            "data_status":
+                "file_invalid",
+        }
+
+    if ops_result["invalid_entries"]:
+        return {
+            "success": False,
+            "message": (
+                "管理員清單中有玩家資料驗證失敗，"
+                "請先處理錯誤資料"
+            ),
+            "error_code":
+                "invalid_player_entries",
+            "data_status":
+                "entry_invalid",
+        }
+
+    if ops_result["unavailable_entries"]:
+        return {
+            "success": False,
+            "message": (
+                "管理員清單中有玩家資料目前無法驗證，"
+                "請稍後重新驗證後再操作"
+            ),
+            "error_code":
+                "player_verification_unavailable",
+            "data_status":
+                "verification_unavailable",
+        }
+
+    if ops_result["duplicate_entries"]:
+        return {
+            "success": False,
+            "message": (
+                "管理員清單中有重複玩家資料，"
+                "請先處理重複資料"
+            ),
+            "error_code":
+                "duplicate_player_entries",
+            "data_status":
+                "entry_duplicate",
+        }
+
+    return None
+
+
 def load_ops_entries() -> list[dict]:
     if not OPS_FILE.exists():
         return []
@@ -243,6 +308,36 @@ def get_ops_entry_by_uuid(player_uuid: str) -> dict | None:
             return entry
 
     return None
+
+
+def build_management_operator_uuid_set(
+    operators: list[dict],
+) -> set[str]:
+    return {
+        str(
+            item.get(
+                "player",
+                {},
+            ).get(
+                "id",
+                "",
+            )
+        ).strip().lower()
+
+        for item in operators
+
+        if (
+            isinstance(item, dict)
+            and isinstance(
+                item.get("player"),
+                dict,
+            )
+            and item.get(
+                "player",
+                {},
+            ).get("id")
+        )
+    }
 
 
 def build_permission_list_from_management_operators(
@@ -618,10 +713,12 @@ def sync_ops_json_to_players(
     operator_name: str = "Unknown",
     source: str = "minecraft_json",
     detail: str = "ops.json sync",
+    validated: dict | None = None,
 ) -> dict:
-    validated = (
-        load_validated_ops()
-    )
+    if validated is None:
+        validated = (
+            load_validated_ops()
+        )
 
     if validated["status"] != "valid":
         return {
@@ -853,13 +950,6 @@ def set_player_op(
         op_bypasses_player_limit
     )
 
-    if player_uuid.lower() in load_ops_uuid_set():
-        return {
-            "success": False,
-            "message": f"{player_name} 已經是管理員，不能重複加入。",
-            "op": True,
-        }
-
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     upsert_player_identity(
@@ -869,6 +959,29 @@ def set_player_op(
     )
 
     if is_server_ready():
+        client = (get_management_client())
+
+        operators = (management_list_operators(client))
+
+        online_op_uuid_set = (
+            build_management_operator_uuid_set(
+                operators
+            )
+        )
+
+        if (
+            player_uuid.lower()
+            in online_op_uuid_set
+        ):
+            return {
+                "success": False,
+                "message": (
+                    f"{player_name} 已經是管理員，"
+                    "不能重複加入。"
+                ),
+                "op": True,
+            }
+
         record_player_access(
             category="op",
             action="add",
@@ -886,8 +999,6 @@ def set_player_op(
                     effective_bypasses_player_limit,
             ),
         )
-
-        client = get_management_client()
 
         result = management_add_operator(
             client=client,
@@ -927,18 +1038,67 @@ def set_player_op(
             "op": False,
         }
 
-    entries = load_ops_entries()
-    ops_uuid_set = load_ops_uuid_set()
+    ops_result = (
+        load_validated_ops()
+    )
 
-    if player_uuid.lower() not in ops_uuid_set:
-        entries.append({
-            "uuid": player_uuid,
-            "name": player_name,
-            "level": effective_op_level,
-            "bypassesPlayerLimit": effective_bypasses_player_limit,
-        })
+    mutation_error = (
+        get_ops_mutation_error(
+            ops_result
+        )
+    )
 
-        save_ops_entries(entries)
+    if mutation_error:
+        return mutation_error
+
+    if (
+        player_uuid.lower()
+        in ops_result["valid_uuid_set"]
+    ):
+        return {
+            "success": False,
+            "message": (
+                f"{player_name} 已經是管理員，"
+                "不能重複加入。"
+            ),
+            "op": True,
+        }
+
+    entries = [
+        item["entry"]
+        for item in ops_result[
+            "valid_entries"
+        ]
+    ]
+
+    # UI 寫入前，先將原本已存在的
+    # ops.json 外部變更同步進 DB / History。
+    sync_ops_json_to_players(
+        operator_name="Unknown",
+        source="minecraft_json",
+        detail=(
+            "ops.json sync before "
+            "UI add operation"
+        ),
+        validated=ops_result,
+    )
+
+    entries.append({
+        "uuid": player_uuid,
+        "name": player_name,
+        "level":
+            effective_op_level,
+        "bypassesPlayerLimit":
+            effective_bypasses_player_limit,
+    })
+
+    save_ops_entries(entries)
+
+    # UI 寫完後直接更新 DB 狀態，
+    # History 仍由下面 UI 操作另外記錄。
+    sync_player_op_entries_from_ops_entries(
+        entries
+    )
 
     update_player_op_since(
         player_uuid=player_uuid,
@@ -1006,24 +1166,33 @@ def remove_player_op(
     player_name: str,
     history_source: str | None = None,
 ) -> dict:
-    ops_entry = get_ops_entry_by_uuid(player_uuid)
-    effective_name = str(
-        ops_entry.get("name", player_name)
-    ).strip() if ops_entry else player_name
 
-    upsert_player_identity(
-        player_uuid=player_uuid,
-        player_name=effective_name,
-        account_type=get_account_type(player_uuid),
-    )
+    effective_name = str(
+        player_name or ""
+    ).strip()
+
+    # ==================================================
+    # Server Ready
+    # Management API 才是目前 OP 狀態來源
+    # ==================================================
 
     if is_server_ready():
+        upsert_player_identity(
+            player_uuid=player_uuid,
+            player_name=effective_name,
+            account_type=get_account_type(
+                player_uuid
+            ),
+        )
+
         record_player_access(
             category="op",
             action="remove",
             target_uuid=player_uuid,
             target_name=effective_name,
-            account_type=get_account_type(player_uuid),
+            account_type=get_account_type(
+                player_uuid
+            ),
             operator_name="OxOcraft",
             source=(
                 history_source
@@ -1032,42 +1201,182 @@ def remove_player_op(
             detail="{}",
         )
 
-        client = get_management_client()
-
-        result = management_remove_operator(
-            client=client,
-            player_uuid=player_uuid,
-            player_name=effective_name,
+        client = (
+            get_management_client()
         )
 
-        sync_management_operators_to_players(result)
+        result = (
+            management_remove_operator(
+                client=client,
+                player_uuid=player_uuid,
+                player_name=effective_name,
+            )
+        )
+
+        sync_management_operators_to_players(
+            result
+        )
 
         return {
             "success": True,
-            "message": f"已收回 {effective_name} 的管理員權限",
+            "message": (
+                f"已收回 {effective_name} "
+                "的管理員權限"
+            ),
             "result": result,
             "op": False,
         }
 
-    if not can_edit_op_online(player_uuid):
+    # ==================================================
+    # Server Offline
+    # ops.json 才是目前 OP 狀態來源
+    # ==================================================
+
+    ops_result = (
+        load_validated_ops()
+    )
+
+    mutation_error = (
+        get_ops_mutation_error(
+            ops_result
+        )
+    )
+
+    if mutation_error:
+        return mutation_error
+
+    # --------------------------------------------------
+    # 從「已驗證的這一份 ops.json」
+    # 尋找真正要移除的 OP
+    # --------------------------------------------------
+
+    target_entry = None
+
+    for item in ops_result[
+        "valid_entries"
+    ]:
+        entry = item["entry"]
+
+        if (
+            str(
+                entry.get(
+                    "uuid",
+                    "",
+                )
+            ).strip().lower()
+            == player_uuid.lower()
+        ):
+            target_entry = entry
+            break
+
+    # ops.json 中已經沒有這個玩家
+    if target_entry is None:
         return {
             "success": False,
             "message": (
-                f"{effective_name} 不在目前 Minecraft usercache 中，"
-                "離線模式下無法在 Server 在線時移除此玩家 OP，"
+                f"{player_name} "
+                "目前不是管理員"
+            ),
+            "op": False,
+        }
+
+    # 以 ops.json 目前真正的名稱為準
+    effective_name = str(
+        target_entry.get(
+            "name",
+            player_name,
+        )
+    ).strip()
+
+    if not can_edit_op_online(
+        player_uuid
+    ):
+        return {
+            "success": False,
+            "message": (
+                f"{effective_name} "
+                "不在目前 Minecraft usercache 中，"
+                "離線模式下無法在 Server 在線時"
+                "移除此玩家 OP，"
                 "請關閉伺服器後使用離線設定模式。"
             ),
             "op": True,
         }
 
-    remove_ops_entry_by_uuid(player_uuid)
+    upsert_player_identity(
+        player_uuid=player_uuid,
+        player_name=effective_name,
+        account_type=get_account_type(
+            player_uuid
+        ),
+    )
+
+    # --------------------------------------------------
+    # 取得這次已驗證 snapshot 的完整資料
+    # --------------------------------------------------
+
+    entries = [
+        item["entry"]
+        for item in ops_result[
+            "valid_entries"
+        ]
+    ]
+
+    # --------------------------------------------------
+    # 在 UI 動手前，
+    # 先把使用者先前直接修改 ops.json 的變更
+    # 同步進 DB / History
+    # --------------------------------------------------
+
+    sync_ops_json_to_players(
+        operator_name="Unknown",
+        source="minecraft_json",
+        detail=(
+            "ops.json sync before "
+            "UI remove operation"
+        ),
+        validated=ops_result,
+    )
+
+    # --------------------------------------------------
+    # 再從同一份最新資料移除目標玩家
+    # --------------------------------------------------
+
+    entries = [
+        entry
+        for entry in entries
+        if (
+            str(
+                entry.get(
+                    "uuid",
+                    "",
+                )
+            ).strip().lower()
+            != player_uuid.lower()
+        )
+    ]
+
+    save_ops_entries(
+        entries
+    )
+
+    # 將 UI 修改後的新結果同步進 DB
+    sync_player_op_entries_from_ops_entries(
+        entries
+    )
+
+    # --------------------------------------------------
+    # 這一筆才是「UI 自己做的移除」
+    # --------------------------------------------------
 
     record_player_access(
         category="op",
         action="remove",
         target_uuid=player_uuid,
         target_name=effective_name,
-        account_type=get_account_type(player_uuid),
+        account_type=get_account_type(
+            player_uuid
+        ),
         operator_name="OxOcraft",
         source="offline_ui_edit",
         detail="{}",
@@ -1075,7 +1384,10 @@ def remove_player_op(
 
     return {
         "success": True,
-        "message": f"已將 {effective_name} 從待生效管理員清單移除",
+        "message": (
+            f"已將 {effective_name} "
+            "從待生效管理員清單移除"
+        ),
         "result": "offline-edit",
         "op": False,
     }
@@ -1089,13 +1401,66 @@ def toggle_player_op(
     history_source: str | None = None,
 ) -> dict:
 
-    ops_uuid_set = load_ops_uuid_set()
+    # ==================================================
+    # Server Ready
+    # Management API 是目前 OP 狀態來源
+    # ==================================================
 
-    if player_uuid.lower() in ops_uuid_set:
+    if is_server_ready():
+        client = (
+            get_management_client()
+        )
+
+        operators = (
+            management_list_operators(
+                client
+            )
+        )
+
+        op_uuid_set = (
+            build_management_operator_uuid_set(
+                operators
+            )
+        )
+
+    # ==================================================
+    # Server Offline
+    # ops.json 是目前 OP 狀態來源
+    # ==================================================
+
+    else:
+        ops_result = (
+            load_validated_ops()
+        )
+
+        mutation_error = (
+            get_ops_mutation_error(
+                ops_result
+            )
+        )
+
+        if mutation_error:
+            return mutation_error
+
+        op_uuid_set = (
+            ops_result[
+                "valid_uuid_set"
+            ]
+        )
+
+    # ==================================================
+    # 依目前真正狀態決定 add / remove
+    # ==================================================
+
+    if (
+        player_uuid.lower()
+        in op_uuid_set
+    ):
         return remove_player_op(
             player_uuid,
             player_name,
-            history_source=history_source,
+            history_source=
+                history_source,
         )
 
     return set_player_op(
@@ -1104,7 +1469,8 @@ def toggle_player_op(
         op_level=op_level,
         op_bypasses_player_limit=
             op_bypasses_player_limit,
-        history_source=history_source,
+        history_source=
+            history_source,
     )
 
 
@@ -1140,11 +1506,11 @@ def get_player_permission_candidate_list() -> list[dict]:
         client = get_management_client()
         operators = management_list_operators(client)
 
-        op_uuid_set = {
-            str(item.get("player", {}).get("id", "")).lower()
-            for item in operators
-            if isinstance(item, dict)
-        }
+        op_uuid_set = (
+            build_management_operator_uuid_set(
+                operators
+            )
+        )
 
         players = get_known_players()
 

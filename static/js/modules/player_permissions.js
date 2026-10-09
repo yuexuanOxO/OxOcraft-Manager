@@ -59,6 +59,15 @@ let permissionHistoryStartPicker = null;
 let permissionHistoryEndPicker = null;
 let permissionHistoryFlatpickrWasOpenOnPointerDown = false;
 
+let permissionDataState = {
+    status: "valid",
+    error_code: null,
+    message: "",
+    invalid_entries: [],
+    unavailable_entries: [],
+    duplicate_entries: [],
+};
+
 
 const permissionFilters = new Set();
 const permissionHistoryFilters = new Set();
@@ -676,12 +685,49 @@ async function showPermissionHelp(showDontRemind = false) {
 function applyPlayerPermissionState(data) {
     if (!data) return;
 
+    permissionDataState = {
+        status:
+            data.data_status || "valid",
+
+        error_code:
+            data.error_code || null,
+
+        message:
+            data.message || "",
+
+        invalid_entries:
+            Array.isArray(
+                data.invalid_entries
+            )
+                ? data.invalid_entries
+                : [],
+
+        unavailable_entries:
+            Array.isArray(
+                data.unavailable_entries
+            )
+                ? data.unavailable_entries
+                : [],
+
+        duplicate_entries:
+            Array.isArray(
+                data.duplicate_entries
+            )
+                ? data.duplicate_entries
+                : [],
+    };
+
     allPlayers = data.players || [];
 
-    permissionServerReady = Boolean(data.server_ready);
-    permissionOnlineMode = Boolean(data.online_mode);
+    permissionServerReady =
+        Boolean(data.server_ready);
+
+    permissionOnlineMode =
+        Boolean(data.online_mode);
+
     permissionServerState =
-        data.server_state || getUiServerState();
+        data.server_state
+        || getUiServerState();
 
     defaultOpLevel =
         getDefaultOpLevelFromData(data);
@@ -692,7 +738,10 @@ function applyPlayerPermissionState(data) {
         data
     );
 
-    updatePermissionModeSummary(data.online_mode);
+    updatePermissionModeSummary(
+        data.online_mode
+    );
+
     renderPlayerPermissionList();
     renderAddOpInputState();
     renderPermissionActionButtons();
@@ -763,9 +812,37 @@ function renderPlayerPermissionList() {
 
     if (!list) return;
 
+    if (
+        permissionDataState.status
+        === "file_invalid"
+    ) {
+        renderPermissionFileError(
+            list
+        );
+
+        renderPermissionActionButtons();
+
+        return;
+    }
+
     const keyword = permissionSearchKeyword;
 
     let players = [...allPlayers];
+
+    let invalidEntries = [
+        ...permissionDataState
+            .invalid_entries
+    ];
+
+    let unavailableEntries = [
+        ...permissionDataState
+            .unavailable_entries
+    ];
+
+    let duplicateEntries = [
+        ...permissionDataState
+            .duplicate_entries
+    ];
 
     if (currentFilter === "op") {
         players = players.filter(player => player.op);
@@ -773,14 +850,52 @@ function renderPlayerPermissionList() {
 
     if (currentFilter === "normal") {
         players = players.filter(player => !player.op);
+        invalidEntries = [];
+        unavailableEntries = [];
+        duplicateEntries = [];
     }
 
     if (keyword) {
         players = players.filter(player => {
-            return String(player.player_name || "")
+            return String(
+                player.player_name || ""
+            )
                 .toLowerCase()
                 .includes(keyword);
         });
+
+        const filterEntry = item => {
+            const entry =
+                item?.entry || {};
+
+            const validation =
+                item?.validation || {};
+
+            const playerName = String(
+                validation.player_name
+                || entry.name
+                || ""
+            ).toLowerCase();
+
+            return playerName.includes(
+                keyword
+            );
+        };
+
+        invalidEntries =
+            invalidEntries.filter(
+                filterEntry
+            );
+
+        unavailableEntries =
+            unavailableEntries.filter(
+                filterEntry
+            );
+
+        duplicateEntries =
+            duplicateEntries.filter(
+                filterEntry
+            );
     }
 
     const stateFilters =
@@ -864,31 +979,167 @@ function renderPlayerPermissionList() {
         );
 
     if (playerCount) {
+        const summaryParts = [
+            `共 ${players.length} 位玩家`
+        ];
+
+        if (
+            invalidEntries.length > 0
+        ) {
+            summaryParts.push(
+                `${invalidEntries.length} 筆資料錯誤`
+            );
+        }
+
+        if (
+            unavailableEntries.length > 0
+        ) {
+            summaryParts.push(
+                `${unavailableEntries.length} 筆待驗證`
+            );
+        }
+
+        if (
+            duplicateEntries.length > 0
+        ) {
+            summaryParts.push(
+                `${duplicateEntries.length} 筆重複資料`
+            );
+        }
+
         playerCount.textContent =
-            `共 ${players.length} 位玩家`;
+            summaryParts.join("｜");
     }
 
     list.innerHTML = "";
 
-    if (players.length === 0) {
+    if (
+        players.length === 0
+        &&
+        invalidEntries.length === 0
+        &&
+        unavailableEntries.length === 0
+        &&
+        duplicateEntries.length === 0
+    ) {
         list.innerHTML = `
             <div class="player-permission-empty">
                 找不到符合條件的玩家
             </div>
         `;
+
+        renderPermissionActionButtons();
+
         return;
     }
+
+    duplicateEntries.forEach(item => {
+        list.appendChild(
+            createDuplicatePermissionEntryCard(
+                item
+            )
+        );
+    });
+
+    invalidEntries.forEach(item => {
+        list.appendChild(
+            createInvalidPermissionEntryCard(
+                item
+            )
+        );
+    });
+
+    unavailableEntries.forEach(item => {
+        list.appendChild(
+            createUnavailablePermissionEntryCard(
+                item
+            )
+        );
+    });
 
     players.sort(comparePlayerName);
 
     players.forEach(player => {
         list.appendChild(
-            createPlayerPermissionCard(player)
+            createPlayerPermissionCard(
+                player
+            )
         );
     });
 
     renderPermissionActionButtons();
 
+}
+
+
+function renderPermissionFileError(
+    list
+) {
+    const playerCount =
+        document.getElementById(
+            "playerPermissionPlayerCount"
+        );
+
+    if (playerCount) {
+        playerCount.textContent =
+            "管理員資料異常";
+    }
+
+    list.innerHTML = `
+        <div class="
+            player-permission-file-error
+        ">
+
+            <div class="
+                player-permission-file-error-title
+            ">
+                管理員參數檔出錯
+            </div>
+
+            <div class="
+                player-permission-file-error-message
+            ">
+                格式或資料錯誤，需要檢查
+                ops.json。
+            </div>
+
+            ${
+                permissionDataState.message
+                    ? `
+                        <div class="
+                            player-permission-file-error-detail
+                        ">
+                            ${escapeHtml(
+                                permissionDataState.message
+                            )}
+                        </div>
+                    `
+                    : ""
+            }
+
+            <button
+                id="refreshInvalidOpsBtn"
+                class="
+                    player-permission-file-error-refresh
+                "
+                type="button"
+            >
+                刷新管理員資料
+            </button>
+
+        </div>
+    `;
+
+    document
+        .getElementById(
+            "refreshInvalidOpsBtn"
+        )
+        ?.addEventListener(
+            "click",
+            async () => {
+                await loadPlayerPermissions();
+            }
+        );
 }
 
 
@@ -954,6 +1205,493 @@ function appendPermissionGroup(list, title, players, groupType) {
     group.appendChild(body);
 
     list.appendChild(group);
+}
+
+
+function createInvalidPermissionEntryCard(
+    item
+) {
+    const entry =
+        (
+            item?.entry
+            &&
+            typeof item.entry === "object"
+            &&
+            !Array.isArray(item.entry)
+        )
+            ? item.entry
+            : {};
+
+    const validation =
+        item?.validation || {};
+
+    const playerName = String(
+        validation.player_name
+        || entry.name
+        || "未知玩家"
+    );
+
+    const playerUuid = String(
+        validation.player_uuid
+        || entry.uuid
+        || ""
+    );
+
+    const message = String(
+        validation.message
+        || "玩家資料驗證失敗"
+    );
+
+    const card =
+        document.createElement("div");
+
+    card.className =
+        "player-permission-card "
+        + "player-permission-entry-error";
+
+    card.innerHTML = `
+        <img
+            class="player-permission-avatar"
+            src="${UNKNOWN_OPERATOR_ICON}"
+            alt="資料錯誤"
+        >
+
+        <div class="player-permission-info">
+
+            <div class="
+                player-permission-name-row
+            ">
+                <div class="
+                    player-permission-name
+                ">
+                    ${escapeHtml(playerName)}
+                </div>
+
+                <div class="
+                    player-permission-entry-error-tag
+                ">
+                    資料錯誤
+                </div>
+            </div>
+
+            <div class="
+                player-permission-uuid
+            ">
+                UUID:
+                ${
+                    playerUuid
+                        ? escapeHtml(
+                            playerUuid
+                        )
+                        : "缺少 UUID"
+                }
+            </div>
+
+            <div class="
+                player-permission-entry-error-message
+            ">
+                ${escapeHtml(message)}
+            </div>
+
+            <div class="
+                player-permission-entry-error-hint
+            ">
+                此資料不會被視為有效管理員。
+            </div>
+
+        </div>
+    `;
+
+    return card;
+}
+
+
+function createUnavailablePermissionEntryCard(
+    item
+) {
+    const entry =
+        item?.entry || {};
+
+    const validation =
+        item?.validation || {};
+
+    const playerName = String(
+        validation.player_name
+        || entry.name
+        || "未知玩家"
+    );
+
+    const playerUuid = String(
+        validation.player_uuid
+        || entry.uuid
+        || ""
+    );
+
+    const avatarUrl =
+        getPlayerAvatarUrl({
+            player_uuid:
+                playerUuid,
+            player_name:
+                playerName,
+            account_type:
+                validation.account_type
+                || null,
+        });
+
+    const card =
+        document.createElement("div");
+
+    card.className =
+        "player-permission-card "
+        + "player-permission-entry-unavailable";
+
+    card.innerHTML = `
+        <img
+            class="player-permission-avatar"
+            src="${avatarUrl}"
+            alt="${escapeHtml(playerName)}"
+        >
+
+        <div class="player-permission-info">
+
+            <div class="
+                player-permission-name-row
+            ">
+                <div class="
+                    player-permission-name
+                ">
+                    ${escapeHtml(playerName)}
+                </div>
+
+                <div class="
+                    player-permission-entry-unavailable-tag
+                ">
+                    無法驗證
+                </div>
+            </div>
+
+            <div class="
+                player-permission-uuid
+            ">
+                UUID:
+                ${
+                    playerUuid
+                        ? escapeHtml(
+                            playerUuid
+                        )
+                        : "未知"
+                }
+            </div>
+
+            <div class="
+                player-permission-entry-unavailable-message
+            ">
+                ${escapeHtml(
+                    validation.message
+                    || "目前無法驗證玩家資料"
+                )}
+            </div>
+
+        </div>
+
+        <button
+            class="
+                player-permission-entry-retry
+            "
+            type="button"
+        >
+            重新驗證
+        </button>
+    `;
+
+    const retryBtn =
+        card.querySelector(
+            ".player-permission-entry-retry"
+        );
+
+    retryBtn?.addEventListener(
+        "click",
+        async () => {
+            retryBtn.disabled = true;
+            retryBtn.textContent =
+                "驗證中...";
+
+            try {
+                await refreshPlayerPermissionState();
+            } catch (error) {
+                retryBtn.disabled = false;
+                retryBtn.textContent =
+                    "重新驗證";
+            }
+        }
+    );
+
+    return card;
+}
+
+
+function createDuplicatePermissionEntryCard(
+    item
+) {
+    const entry =
+        (
+            item?.entry
+            &&
+            typeof item.entry === "object"
+            &&
+            !Array.isArray(item.entry)
+        )
+            ? item.entry
+            : {};
+
+    const validation =
+        item?.validation || {};
+
+    const playerName = String(
+        validation.player_name
+        || entry.name
+        || "未知玩家"
+    );
+
+    const playerUuid = String(
+        validation.player_uuid
+        || entry.uuid
+        || ""
+    );
+
+    const avatarUrl =
+        getPlayerAvatarUrl({
+            player_uuid:
+                playerUuid,
+            player_name:
+                playerName,
+            account_type:
+                validation.account_type
+                || null,
+        });
+
+    const entryIndex =
+        Number.isInteger(
+            item?.entry_index
+        )
+            ? item.entry_index + 1
+            : null;
+
+    const opLevel =
+        entry.level ?? "?";
+
+    const bypassText =
+        entry.bypassesPlayerLimit === true
+            ? "是"
+            : (
+                entry.bypassesPlayerLimit === false
+                    ? "否"
+                    : "未知"
+            );
+
+    const card =
+        document.createElement("div");
+
+    card.className =
+        "player-permission-card "
+        + "player-permission-entry-duplicate";
+
+    card.innerHTML = `
+        <img
+            class="player-permission-avatar"
+            src="${avatarUrl}"
+            alt="${escapeHtml(playerName)}"
+        >
+
+        <div class="player-permission-info">
+
+            <div class="
+                player-permission-name-row
+            ">
+                <div class="
+                    player-permission-name
+                ">
+                    ${escapeHtml(playerName)}
+                </div>
+
+                <div class="
+                    player-permission-entry-duplicate-tag
+                ">
+                    重複資料
+                </div>
+            </div>
+
+            <div class="
+                player-permission-uuid
+            ">
+                UUID:
+                ${
+                    playerUuid
+                        ? escapeHtml(playerUuid)
+                        : "未知"
+                }
+            </div>
+
+            <div class="
+                player-permission-entry-duplicate-detail
+            ">
+                權限等級：
+                Lv${escapeHtml(opLevel)}
+                ｜可無視玩家上限：
+                ${escapeHtml(bypassText)}
+            </div>
+
+            <div class="
+                player-permission-entry-duplicate-message
+            ">
+                同一個 UUID 在 ops.json
+                中重複出現。
+            </div>
+
+            ${
+                entryIndex !== null
+                    ? `
+                        <div class="
+                            player-permission-entry-duplicate-hint
+                        ">
+                            ops.json 第
+                            ${entryIndex}
+                            筆資料
+                        </div>
+                    `
+                    : ""
+            }
+
+        </div>
+
+        <button
+            class="
+                player-permission-entry-duplicate-remove
+                mc-danger-icon-btn
+            "
+            type="button"
+            data-mc-tooltip="刪除此筆重複資料"
+        >
+            ✕
+        </button>
+    `;
+
+    card
+        .querySelector(
+            ".player-permission-entry-duplicate-remove"
+        )
+        ?.addEventListener(
+            "click",
+            async () => {
+                await removeDuplicatePermissionEntry(
+                    item
+                );
+            }
+        );
+
+    return card;
+}
+
+
+async function removeDuplicatePermissionEntry(
+    item
+) {
+    const entry =
+        item?.entry || {};
+
+    const playerName = String(
+        entry.name
+        || "未知玩家"
+    );
+
+    const level =
+        entry.level ?? "?";
+
+    const bypassText =
+        entry.bypassesPlayerLimit === true
+            ? "是"
+            : "否";
+
+    const confirmed =
+        await showConfirm({
+            title:
+                "刪除重複管理員資料",
+
+            message:
+                `確定要刪除「${playerName}」`
+                + "這筆重複管理員資料嗎？\n\n"
+                + `權限等級：Lv${level}\n`
+                + `可無視玩家上限：${bypassText}`,
+
+            confirmText: "刪除",
+            cancelText: "取消",
+            variant: "warning",
+        });
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            "/api/player/permission/"
+            + "duplicate-entry/remove",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json",
+                },
+
+                body: JSON.stringify({
+                    entry_index:
+                        item.entry_index,
+                    entry:
+                        item.entry,
+                }),
+            }
+        );
+
+        const data =
+            await response.json();
+
+        if (
+            !response.ok
+            || !data.success
+        ) {
+            throw new Error(
+                data.message
+                || "刪除重複管理員資料失敗"
+            );
+        }
+
+        await refreshPlayerPermissionState();
+
+        await showInfo({
+            title: "玩家權限",
+            message:
+                data.message
+                || "重複管理員資料已刪除",
+            confirmText: "關閉",
+            variant: "success",
+        });
+
+    } catch (error) {
+        console.error(
+            "刪除重複管理員資料失敗:",
+            error
+        );
+
+        await showInfo({
+            title: "錯誤",
+            message:
+                error.message
+                || "刪除重複管理員資料失敗",
+            confirmText: "關閉",
+            variant: "error",
+        });
+    }
 }
 
 
@@ -1572,14 +2310,41 @@ async function loadOpCandidates() {
 }
 
 
+function hasPermissionDataIssues() {
+    return (
+        permissionDataState.status
+            !== "valid"
+        ||
+        permissionDataState
+            .invalid_entries
+            .length > 0
+        ||
+        permissionDataState
+            .unavailable_entries
+            .length > 0
+        ||
+        permissionDataState
+            .duplicate_entries
+            .length > 0
+    );
+}
+
+
 function isPermissionActionLocked() {
-    return isUiServerTransitionState();
+    return (
+        isUiServerTransitionState()
+        ||
+        hasPermissionDataIssues()
+    );
 }
 
 
 function renderPermissionActionButtons() {
 
-    const uiLocked =
+    const transitionLocked =
+        isUiServerTransitionState();
+
+    const mutationLocked =
         isPermissionActionLocked();
 
     const openAddBtn =
@@ -1589,41 +2354,35 @@ function renderPermissionActionButtons() {
         document.getElementById("refreshPlayerPermissionBtn");
 
     if (openAddBtn) {
-        openAddBtn.disabled = uiLocked;
+        openAddBtn.disabled = mutationLocked;
     }
 
     if (refreshBtn) {
-        refreshBtn.disabled = uiLocked;
+        refreshBtn.disabled = transitionLocked;
     }
 
     document
         .querySelectorAll(".player-permission-action")
         .forEach((button) => {
-            button.disabled = uiLocked;
+            button.disabled = mutationLocked;
         });
 
     document
         .querySelectorAll(".op-candidate-add-btn")
         .forEach((button) => {
-            button.disabled = uiLocked;
+            button.disabled = mutationLocked;
         });
 
     document
         .querySelectorAll(".player-permission-card")
         .forEach((card) => {
-            card.classList.toggle(
-                "disabled",
-                uiLocked
-            );
+            card.classList.toggle("disabled",mutationLocked);
         });
 
     document
         .querySelectorAll(".op-candidate-card")
         .forEach((card) => {
-            card.classList.toggle(
-                "disabled",
-                uiLocked
-            );
+            card.classList.toggle("disabled",mutationLocked);
         });
 }
 
@@ -2397,6 +3156,10 @@ function createPermissionHistoryCard(item) {
 
 function getPermissionHistoryActionText(action) {
     action = String(action || "");
+
+    if (action.includes("duplicate")) {
+        return "清除重複資料";
+    }
 
     if (action.includes("update")) {
         return "修改管理員";

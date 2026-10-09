@@ -19,13 +19,13 @@ from backend.player_permissions.player_identity_service import (
 )
 
 from backend.player_permissions.player_permission_service import (
-    get_player_permission_list,
     toggle_player_op,
     get_player_permission_candidate_list,
     is_server_ready,
     get_effective_op_permission_level,
     resolve_op_candidate_by_name,
     get_player_permission_data,
+    remove_duplicate_ops_entry,
 )
 
 from backend.player_permissions.player_whitelist_service import (
@@ -762,6 +762,81 @@ def api_player_whitelist_remove_invalid_entry():
         )
 
         return jsonify(result), status
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error),
+        }), 500
+
+
+@player_bp.route(
+    "/api/player/permission/"
+    "duplicate-entry/remove",
+    methods=["POST"]
+)
+def api_player_permission_remove_duplicate_entry():
+    data = (
+        request.get_json(
+            silent=True
+        )
+        or {}
+    )
+
+    if "entry_index" not in data:
+        return jsonify({
+            "success": False,
+            "message":
+                "缺少管理員資料位置",
+        }), 400
+
+    if "entry" not in data:
+        return jsonify({
+            "success": False,
+            "message":
+                "缺少原始管理員資料",
+        }), 400
+
+    try:
+        entry_index = int(
+            data.get(
+                "entry_index"
+            )
+        )
+
+    except (
+        TypeError,
+        ValueError,
+    ):
+        return jsonify({
+            "success": False,
+            "message":
+                "管理員資料位置錯誤",
+        }), 400
+
+    try:
+        result = (
+            remove_duplicate_ops_entry(
+                entry_index=
+                    entry_index,
+                expected_entry=
+                    data.get(
+                        "entry"
+                    ),
+            )
+        )
+
+        status = (
+            200
+            if result.get(
+                "success"
+            )
+            else 400
+        )
+
+        return jsonify(
+            result
+        ), status
 
     except Exception as error:
         return jsonify({

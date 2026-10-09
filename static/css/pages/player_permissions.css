@@ -360,6 +360,165 @@
     background: rgba(192, 139, 66, 0.12);
 }
 
+.player-permission-file-error {
+    flex: 1;
+    min-height: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 12px;
+    padding: 32px;
+
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.player-permission-file-error-title {
+    color: #ff7b7b;
+    font-size: 24px;
+}
+
+.player-permission-file-error-message {
+    max-width: 520px;
+
+    color: #ddd;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.player-permission-file-error-detail {
+    max-width: 520px;
+
+    color: #aaa;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.player-permission-file-error-refresh {
+    padding: 10px 16px;
+
+    border: 1px solid #c08b42;
+    border-radius: 6px;
+
+    background: #2b2b2b;
+    color: #f0c36a;
+
+    cursor: pointer;
+}
+
+.player-permission-file-error-refresh:hover {
+    background: #3a3324;
+}
+
+
+.player-permission-entry-error {
+    border-color: #b85c5c;
+    background: rgba(120, 45, 45, 0.18);
+}
+
+.player-permission-entry-error-tag {
+    padding: 3px 8px;
+
+    border: 1px solid #b85c5c;
+    border-radius: 999px;
+
+    color: #ff8d8d;
+    font-size: 12px;
+}
+
+.player-permission-entry-error-message {
+    margin-top: 5px;
+
+    color: #ff8d8d;
+    font-size: 14px;
+}
+
+.player-permission-entry-error-hint {
+    margin-top: 4px;
+
+    color: #aaa;
+    font-size: 13px;
+}
+
+
+.player-permission-entry-unavailable {
+    border-color: #c08b42;
+    background: rgba(120, 90, 35, 0.16);
+}
+
+.player-permission-entry-unavailable-tag {
+    padding: 3px 8px;
+
+    border: 1px solid #c08b42;
+    border-radius: 999px;
+
+    color: #f0c36a;
+    font-size: 12px;
+}
+
+.player-permission-entry-unavailable-message {
+    margin-top: 5px;
+
+    color: #f0c36a;
+    font-size: 14px;
+}
+
+.player-permission-entry-retry {
+    flex-shrink: 0;
+
+    padding: 9px 12px;
+
+    border: 1px solid #c08b42;
+    border-radius: 6px;
+
+    background: #303030;
+    color: #f0c36a;
+
+    cursor: pointer;
+}
+
+.player-permission-entry-retry:hover {
+    background: #3a3324;
+}
+
+.player-permission-entry-retry:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+
+.player-permission-entry-duplicate {
+    border-color: #b487d8;
+    background: rgba(100, 65, 125, 0.16);
+}
+
+.player-permission-entry-duplicate-tag {
+    padding: 3px 8px;
+
+    border: 1px solid #b487d8;
+    border-radius: 999px;
+
+    color: #d9a7ff;
+    font-size: 12px;
+}
+
+.player-permission-entry-duplicate-message {
+    margin-top: 5px;
+
+    color: #d9a7ff;
+    font-size: 14px;
+}
+
+.player-permission-entry-duplicate-hint {
+    margin-top: 4px;
+
+    color: #aaa;
+    font-size: 13px;
+}
+
 .player-permission-meta.empty {
     visibility: hidden;
 }
@@ -1838,4 +1997,24 @@
 
 #playerPermissionFilterBtn {
     border-radius: 0 !important;
+}
+
+.player-permission-entry-duplicate-detail {
+    margin-top: 5px;
+
+    color: #ddd;
+    font-size: 14px;
+}
+
+.player-permission-entry-duplicate-remove {
+    flex-shrink: 0;
+
+    padding: 0;
+
+    border-color: #b85c5c;
+    color: #ff9c9c;
+}
+
+.player-permission-entry-duplicate-remove:hover {
+    background: #422e2e;
 }

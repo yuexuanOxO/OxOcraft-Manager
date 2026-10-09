@@ -12,6 +12,10 @@ from backend.player_permissions.player_whitelist_service import (
     get_whitelist_start_warning,
 )
 
+from backend.player_permissions.player_permission_service import (
+    get_ops_start_block,
+)
+
 from backend.server_monitor import (
     refresh_server_status_now,
     get_cached_server_status,
@@ -50,6 +54,24 @@ def api_server_start():
             "success": False,
             "message":
                 "自動備份進行中，暫時無法啟動伺服器"
+        }), 409
+
+    ops_start_block = (
+        get_ops_start_block()
+    )
+
+    if ops_start_block:
+        return jsonify({
+            "success": False,
+            "start_blocked": True,
+            "error_code":
+                ops_start_block.get(
+                    "error_code"
+                ),
+            "message":
+                ops_start_block.get(
+                    "message"
+                ),
         }), 409
 
     data = request.get_json(

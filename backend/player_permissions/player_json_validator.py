@@ -5,6 +5,7 @@ from backend.db import (
     get_invalid_player_json_identity,
     add_invalid_player_json_identity,
     remove_invalid_player_json_identity,
+    upsert_player_identity,
 )
 
 from backend.player_permissions.player_identity_service import (
@@ -142,6 +143,201 @@ def is_valid_player_uuid(
         return True
     except (ValueError, TypeError, AttributeError):
         return False
+
+
+def inspect_player_json_entry(
+    entry,
+    schema_type: str,
+) -> dict:
+    if not isinstance(entry, dict):
+        return build_validation_result(
+            valid=False,
+            status="invalid",
+            player_uuid="",
+            player_name="",
+            valid_for_current_mode=False,
+            error_code="invalid_entry",
+            message="玩家資料格式錯誤",
+        )
+
+    player_uuid = str(
+        entry.get("uuid") or ""
+    ).strip()
+
+    player_name = str(
+        entry.get("name") or ""
+    ).strip()
+
+    if not player_uuid:
+        return build_validation_result(
+            valid=False,
+            status="invalid",
+            player_uuid="",
+            player_name=player_name,
+            error_code="missing_uuid",
+            message="缺少玩家 UUID",
+        )
+
+    if not player_name:
+        return build_validation_result(
+            valid=False,
+            status="invalid",
+            player_uuid=player_uuid,
+            player_name="",
+            error_code="missing_name",
+            message="缺少玩家名稱",
+        )
+
+    if not is_valid_player_uuid(
+        player_uuid
+    ):
+        return build_validation_result(
+            valid=False,
+            status="invalid",
+            player_uuid=player_uuid,
+            player_name=player_name,
+            error_code="invalid_uuid",
+            message="玩家 UUID 格式錯誤",
+        )
+
+    if not is_valid_minecraft_player_name(
+        player_name
+    ):
+        return build_validation_result(
+            valid=False,
+            status="invalid",
+            player_uuid=player_uuid,
+            player_name=player_name,
+            error_code="invalid_name",
+            message="玩家名稱格式錯誤",
+        )
+
+    schema_result = (
+        validate_player_json_entry_schema(
+            entry=entry,
+            schema_type=schema_type,
+        )
+    )
+
+    if not schema_result.get("valid"):
+        return build_validation_result(
+            valid=False,
+            status="invalid",
+            player_uuid=player_uuid,
+            player_name=player_name,
+            error_code=(
+                schema_result.get(
+                    "error_code"
+                )
+                or "invalid_entry_schema"
+            ),
+            message=(
+                schema_result.get(
+                    "message"
+                )
+                or "玩家資料格式錯誤"
+            ),
+        )
+
+    return build_validation_result(
+        valid=True,
+        status="valid",
+        player_uuid=player_uuid,
+        player_name=player_name,
+    )
+
+
+def inspect_player_json_entries(
+    entries: list,
+    schema_type: str,
+) -> dict:
+    structure_valid_entries = []
+    invalid_entries = []
+
+    for entry_index, entry in enumerate(
+        entries
+    ):
+        inspection = (
+            inspect_player_json_entry(
+                entry=entry,
+                schema_type=schema_type,
+            )
+        )
+
+        item = {
+            "entry_index": entry_index,
+            "entry": entry,
+            "validation": inspection,
+        }
+
+        if inspection["status"] == "valid":
+            structure_valid_entries.append(
+                item
+            )
+        else:
+            invalid_entries.append(
+                item
+            )
+
+    uuid_count = {}
+
+    for item in structure_valid_entries:
+        player_uuid = str(
+            item["validation"].get(
+                "player_uuid",
+                "",
+            )
+        ).strip().lower()
+
+        if not player_uuid:
+            continue
+
+        uuid_count[player_uuid] = (
+            uuid_count.get(
+                player_uuid,
+                0,
+            )
+            + 1
+        )
+
+    duplicate_uuid_set = {
+        player_uuid
+        for player_uuid, count
+        in uuid_count.items()
+        if count > 1
+    }
+
+    duplicate_entries = [
+        item
+        for item in structure_valid_entries
+        if str(
+            item["validation"].get(
+                "player_uuid",
+                "",
+            )
+        ).strip().lower()
+        in duplicate_uuid_set
+    ]
+
+    unique_entries = [
+        item
+        for item in structure_valid_entries
+        if str(
+            item["validation"].get(
+                "player_uuid",
+                "",
+            )
+        ).strip().lower()
+        not in duplicate_uuid_set
+    ]
+
+    return {
+        "structure_valid_entries":structure_valid_entries,
+        "unique_entries":unique_entries,
+        "duplicate_entries":duplicate_entries,
+        "duplicate_uuid_set":duplicate_uuid_set,
+        "invalid_entries":invalid_entries,
+    }
 
 
 def is_account_type_valid_for_mode(
@@ -428,6 +624,28 @@ def validate_cached_player_json_identity(
         )
 
     elif result["status"] == "valid":
+        account_type = str(
+            result.get(
+                "account_type",
+                "",
+            )
+        ).strip()
+
+        if account_type in (
+            "premium",
+            "offline",
+        ):
+            upsert_player_identity(
+                player_uuid=player_uuid,
+                player_name=(
+                    result.get(
+                        "player_name"
+                    )
+                    or player_name
+                ),
+                account_type=account_type,
+            )
+
         remove_invalid_player_json_identity(
             player_uuid=player_uuid,
             player_name=player_name,
@@ -437,80 +655,137 @@ def validate_cached_player_json_identity(
     return result
 
 
+def verify_cached_player_json_items(
+    items: list[dict],
+    online_mode: bool,
+    source: str,
+) -> dict:
+    valid_entries = []
+    invalid_entries = []
+    unavailable_entries = []
+
+    identity_cache = {}
+
+    for item in items:
+        local_validation = (
+            item.get("validation")
+            or {}
+        )
+
+        player_uuid = str(
+            local_validation.get(
+                "player_uuid",
+                "",
+            )
+        ).strip()
+
+        player_name = str(
+            local_validation.get(
+                "player_name",
+                "",
+            )
+        ).strip()
+
+        cache_key = (
+            player_uuid.lower(),
+            player_name,
+        )
+
+        if cache_key not in identity_cache:
+            identity_cache[cache_key] = (
+                validate_cached_player_json_identity(
+                    player_uuid=
+                        player_uuid,
+                    player_name=
+                        player_name,
+                    online_mode=
+                        online_mode,
+                    source=
+                        source,
+                )
+            )
+
+        validation = dict(
+            identity_cache[
+                cache_key
+            ]
+        )
+
+        verified_item = {
+            "entry_index":
+                item.get(
+                    "entry_index"
+                ),
+            "entry":
+                item.get(
+                    "entry"
+                ),
+            "validation":
+                validation,
+        }
+
+        if validation["status"] == "valid":
+            valid_entries.append(
+                verified_item
+            )
+
+        elif (
+            validation["status"]
+            == "invalid"
+        ):
+            invalid_entries.append(
+                verified_item
+            )
+
+        elif (
+            validation["status"]
+            == "verification_unavailable"
+        ):
+            unavailable_entries.append(
+                verified_item
+            )
+
+    return {
+        "valid":
+            valid_entries,
+        "invalid":
+            invalid_entries,
+        "verification_unavailable":
+            unavailable_entries,
+    }
+
+
 def validate_cached_player_json_entry(
     entry,
     online_mode: bool,
     source: str,
     schema_type: str,
 ) -> dict:
-    if not isinstance(entry, dict):
-        return build_validation_result(
-            valid=False,
-            status="invalid",
-            player_uuid="",
-            player_name="",
-            valid_for_current_mode=False,
-            error_code="invalid_entry",
-            message="玩家資料格式錯誤",
-        )
-
-    player_uuid = str(
-        entry.get("uuid") or ""
-    ).strip()
-
-    player_name = str(
-        entry.get("name") or ""
-    ).strip()
-
-    identity_result = (
-        validate_cached_player_json_identity(
-            player_uuid=player_uuid,
-            player_name=player_name,
-            online_mode=online_mode,
-            source=source,
-        )
-    )
-
-    if identity_result["status"] != "valid":
-        return identity_result
-
-    schema_result = (
-        validate_player_json_entry_schema(
+    inspection = (
+        inspect_player_json_entry(
             entry=entry,
             schema_type=schema_type,
         )
     )
 
-    if schema_result.get("valid") is True:
-        return identity_result
+    if inspection["status"] != "valid":
+        return inspection
 
-    return build_validation_result(
-        valid=False,
-        status="invalid",
-        player_uuid=(
-            identity_result["player_uuid"]
-        ),
-        player_name=(
-            identity_result["player_name"]
-        ),
-        account_type=(
-            identity_result.get(
-                "account_type"
-            )
-        ),
-        valid_for_current_mode=False,
-        error_code=(
-            schema_result.get(
-                "error_code"
-            )
-            or "invalid_entry_schema"
-        ),
-        message=(
-            schema_result.get(
-                "message"
-            )
-            or "玩家資料格式錯誤"
-        ),
+    return (
+        validate_cached_player_json_identity(
+            player_uuid=
+                inspection[
+                    "player_uuid"
+                ],
+            player_name=
+                inspection[
+                    "player_name"
+                ],
+            online_mode=
+                online_mode,
+            source=
+                source,
+        )
     )
 
 
@@ -520,45 +795,41 @@ def validate_cached_player_json_entries(
     source: str,
     schema_type: str,
 ) -> dict:
-    valid_entries = []
-    invalid_entries = []
-    unavailable_entries = []
-
-    for entry_index, entry in enumerate(
-        entries
-    ):
-        validation = (
-            validate_cached_player_json_entry(
-                entry=entry,
-                online_mode=online_mode,
-                source=source,
-                schema_type=schema_type,
-            )
+    inspection = (
+        inspect_player_json_entries(
+            entries=entries,
+            schema_type=schema_type,
         )
+    )
 
-        item = {
-            "entry_index": entry_index,
-            "entry": entry,
-            "validation": validation,
-        }
-
-        if validation["status"] == "valid":
-            valid_entries.append(item)
-
-        elif validation["status"] == "invalid":
-            invalid_entries.append(item)
-
-        elif (
-            validation["status"]
-            == "verification_unavailable"
-        ):
-            unavailable_entries.append(item)
+    verification = (
+        verify_cached_player_json_items(
+            items=inspection[
+                "structure_valid_entries"
+            ],
+            online_mode=online_mode,
+            source=source,
+        )
+    )
 
     return {
-        "valid": valid_entries,
-        "invalid": invalid_entries,
+        "valid":
+            verification["valid"],
+
+        "invalid":
+            (
+                inspection[
+                    "invalid_entries"
+                ]
+                + verification[
+                    "invalid"
+                ]
+            ),
+
         "verification_unavailable":
-            unavailable_entries,
+            verification[
+                "verification_unavailable"
+            ],
     }
 
 

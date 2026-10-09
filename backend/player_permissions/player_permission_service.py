@@ -35,8 +35,8 @@ from backend.player_permissions.player_json_file_service import (
 )
 
 from backend.player_permissions.player_json_validator import (
-    validate_cached_player_json_entries,
-    split_duplicate_valid_player_entries,
+    inspect_player_json_entries,
+    verify_cached_player_json_items,
 )
 
 
@@ -53,76 +53,53 @@ def validate_ops_entries(
     entries: list,
     online_mode: bool,
 ) -> dict:
-    validation_result = (
-        validate_cached_player_json_entries(
+    inspection = (
+        inspect_player_json_entries(
             entries=entries,
-            online_mode=online_mode,
-            source="ops",
             schema_type="ops",
         )
     )
 
-    duplicate_result = (
-        split_duplicate_valid_player_entries(
-            validation_result["valid"]
+    verification = (
+        verify_cached_player_json_items(
+            items=inspection[
+                "unique_entries"
+            ],
+            online_mode=online_mode,
+            source="ops",
         )
     )
 
-    duplicate_uuid_set = {
-        str(
-            item["validation"].get(
-                "player_uuid",
-                "",
-            )
-        ).strip().lower()
-
-        for item in duplicate_result[
-            "duplicate_entries"
-        ]
-
-        if item["validation"].get(
-            "player_uuid"
-        )
-    }
-
-    duplicate_entries = [
-        item
-        for item in validation_result[
-            "valid"
-        ]
-        if (
-            str(
-                item["validation"].get(
-                    "player_uuid",
-                    "",
-                )
-            ).strip().lower()
-            in duplicate_uuid_set
-        )
-    ]
-
-    valid_entries = [
-        item
-        for item in duplicate_result[
-            "unique_entries"
-        ]
-        if (
-            str(
-                item["validation"].get(
-                    "player_uuid",
-                    "",
-                )
-            ).strip().lower()
-            not in duplicate_uuid_set
-        )
-    ]
-
     return {
-        "valid_entries":valid_entries,
-        "duplicate_entries":duplicate_entries,
-        "duplicate_uuid_set":duplicate_uuid_set,
-        "invalid_entries":validation_result["invalid"],
-        "unavailable_entries":validation_result["verification_unavailable"],
+        "valid_entries":
+            verification[
+                "valid"
+            ],
+
+        "duplicate_entries":
+            inspection[
+                "duplicate_entries"
+            ],
+
+        "duplicate_uuid_set":
+            inspection[
+                "duplicate_uuid_set"
+            ],
+
+        "invalid_entries":
+            (
+                inspection[
+                    "invalid_entries"
+                ]
+                + verification[
+                    "invalid"
+                ]
+            ),
+
+        "unavailable_entries":
+            verification[
+                "verification_unavailable"
+            ],
     }
 
 
@@ -1727,52 +1704,6 @@ def remove_duplicate_ops_entry(
     entry_index: int,
     expected_entry,
 ) -> dict:
-    ops_result = (
-        load_validated_ops()
-    )
-
-    if ops_result["status"] != "valid":
-        return {
-            "success": False,
-            "message":
-                "ops.json 目前無法正常讀取",
-            "error_code":
-                ops_result.get(
-                    "error_code"
-                ),
-            "data_status":
-                "file_invalid",
-        }
-
-    target_item = None
-
-    for item in ops_result[
-        "duplicate_entries"
-    ]:
-        if (
-            item.get(
-                "entry_index"
-            ) == entry_index
-            and item.get(
-                "entry"
-            ) == expected_entry
-        ):
-            target_item = item
-            break
-
-    if target_item is None:
-        return {
-            "success": False,
-            "message": (
-                "管理員資料已發生變更，"
-                "請重新整理後再操作"
-            ),
-            "error_code":
-                "ops_entry_changed",
-        }
-
-    # 再讀一次最新檔案，
-    # 避免驗證後到實際刪除前檔案被改掉。
     file_result = (
         load_ops_file()
     )
@@ -1791,7 +1722,9 @@ def remove_duplicate_ops_entry(
         }
 
     entries = (
-        file_result["entries"]
+        file_result[
+            "entries"
+        ]
     )
 
     if (
@@ -1811,6 +1744,63 @@ def remove_duplicate_ops_entry(
                 "ops_entry_changed",
         }
 
+    if not isinstance(
+        expected_entry,
+        dict,
+    ):
+        return {
+            "success": False,
+            "message": (
+                "管理員資料已發生變更，"
+                "請重新整理後再操作"
+            ),
+            "error_code":
+                "ops_entry_changed",
+        }
+
+    player_uuid = str(
+        expected_entry.get(
+            "uuid",
+            "",
+        )
+    ).strip()
+
+    normalized_uuid = (
+        player_uuid.lower()
+    )
+
+    duplicate_count = sum(
+        1
+        for entry in entries
+        if (
+            isinstance(
+                entry,
+                dict,
+            )
+            and str(
+                entry.get(
+                    "uuid",
+                    "",
+                )
+            ).strip().lower()
+            == normalized_uuid
+        )
+    )
+
+    if (
+        not normalized_uuid
+        or duplicate_count < 2
+    ):
+        return {
+            "success": False,
+            "message": (
+                "重複管理員資料已發生變更，"
+                "請重新整理後再操作"
+            ),
+            "error_code":
+                "ops_duplicate_changed",
+        }
+
     removed_entry = (
         entries.pop(
             entry_index
@@ -1820,55 +1810,6 @@ def remove_duplicate_ops_entry(
     save_ops_entries(
         entries
     )
-
-    refreshed_result = (
-        load_validated_ops()
-    )
-
-    if (
-        refreshed_result["status"]
-        != "valid"
-    ):
-        return {
-            "success": False,
-            "message": (
-                "刪除後 ops.json "
-                "無法正常讀取"
-            ),
-            "error_code":
-                "ops_reload_failed",
-        }
-
-    # 如果已經沒有其他資料問題，
-    # 才把使用者選擇後的結果同步進 DB。
-    if (
-        not refreshed_result[
-            "invalid_entries"
-        ]
-        and not refreshed_result[
-            "unavailable_entries"
-        ]
-        and not refreshed_result[
-            "duplicate_entries"
-        ]
-    ):
-        sync_ops_json_to_players(
-            operator_name="Unknown",
-            source="minecraft_json",
-            detail=(
-                "ops.json sync after "
-                "duplicate resolution"
-            ),
-            validated=
-                refreshed_result,
-        )
-
-    player_uuid = str(
-        removed_entry.get(
-            "uuid",
-            "",
-        )
-    ).strip()
 
     player_name = str(
         removed_entry.get(

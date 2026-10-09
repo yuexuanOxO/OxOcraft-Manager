@@ -1666,7 +1666,14 @@ async function removeDuplicatePermissionEntry(
             );
         }
 
-        await refreshPlayerPermissionState();
+        const refreshPromise =
+            refreshPlayerPermissionState()
+                .catch(error => {
+                    console.error(
+                        "刪除後重新整理權限資料失敗:",
+                        error
+                    );
+                });
 
         await showInfo({
             title: "玩家權限",
@@ -1676,6 +1683,8 @@ async function removeDuplicatePermissionEntry(
             confirmText: "關閉",
             variant: "success",
         });
+
+        await refreshPromise;
 
     } catch (error) {
         console.error(

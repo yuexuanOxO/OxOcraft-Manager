@@ -144,6 +144,47 @@ def get_poll_interval(state: str) -> float:
     return 5.0
 
 
+def sync_whitelist_on_server_ready() -> None:
+    try:
+        from backend.player_permissions.player_whitelist_service import (
+            sync_whitelist_json_to_players_with_history,
+        )
+
+        result = (
+            sync_whitelist_json_to_players_with_history(
+                operator_name="Unknown",
+                source="minecraft_json",
+                detail=(
+                    "server ready whitelist.json sync"
+                ),
+            )
+        )
+
+        publish_event(
+            "player_whitelist_should_refresh",
+            {
+                "reason":
+                    "server_ready_sync_whitelist_json",
+                "added_count":
+                    result.get("added_count", 0),
+                "removed_count":
+                    result.get("removed_count", 0),
+            },
+        )
+
+        print(
+            "[PlayerWhitelist] server ready sync:",
+            f"added={result.get('added_count', 0)},",
+            f"removed={result.get('removed_count', 0)}",
+        )
+
+    except Exception as error:
+        print(
+            "[PlayerWhitelist] server ready sync failed:",
+            error,
+        )
+
+
 def monitor_loop() -> None:
     global _status_cache
 
@@ -173,7 +214,7 @@ def monitor_loop() -> None:
 
         should_publish = False
         event_data = None
-        should_sync_whitelist_on_ready = False
+        became_ready = False
 
         with _lock:
             old_data = _status_cache["data"]
@@ -186,7 +227,7 @@ def monitor_loop() -> None:
                 _status_cache["data"] = new_data
                 should_publish = True
 
-                should_sync_whitelist_on_ready = (
+                became_ready = (
                     old_state != "ready"
                     and new_state == "ready"
                 )
@@ -199,28 +240,8 @@ def monitor_loop() -> None:
                 "last_update": _status_cache["last_update"],
             }
 
-        if should_sync_whitelist_on_ready:
-            try:
-                from backend.player_permissions.player_whitelist_service import (
-                    sync_whitelist_json_to_players_with_history
-                )
-
-                result = sync_whitelist_json_to_players_with_history(
-                    operator_name="Unknown",
-                    source="minecraft_json",
-                    detail="server ready whitelist json sync",
-                )
-
-                print(
-                    "[PlayerWhitelist] server ready whitelist sync:",
-                    result,
-                )
-
-            except Exception as error:
-                print(
-                    "[PlayerWhitelist] server ready whitelist sync failed:",
-                    error,
-                )
+        if became_ready:
+            sync_whitelist_on_server_ready()
 
         if should_publish:
             publish_event("server_status_changed", event_data)
@@ -253,11 +274,23 @@ def refresh_server_status_now() -> dict:
     now = time.time()
 
     should_publish = False
+    became_ready = False
 
     with _lock:
         old_data = _status_cache["data"]
 
-        if get_status_publish_key(old_data) != get_status_publish_key(new_data):
+        if (
+            get_status_publish_key(old_data)
+            != get_status_publish_key(new_data)
+        ):
+            old_state = old_data.get("state")
+            new_state = new_data.get("state")
+
+            became_ready = (
+                old_state != "ready"
+                and new_state == "ready"
+            )
+
             _status_cache["revision"] += 1
             _status_cache["data"] = new_data
             should_publish = True
@@ -270,8 +303,14 @@ def refresh_server_status_now() -> dict:
             "last_update": _status_cache["last_update"],
         }
 
+    if became_ready:
+        sync_whitelist_on_server_ready()
+
     if should_publish:
-        publish_event("server_status_changed", event_data)
+        publish_event(
+            "server_status_changed",
+            event_data,
+        )
 
     return event_data
 

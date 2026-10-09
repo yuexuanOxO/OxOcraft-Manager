@@ -24,6 +24,44 @@ INVALID_IDENTITY_MESSAGES = {
 }
 
 
+def validate_whitelist_entry_schema(
+    entry: dict,
+) -> dict:
+    return {
+        "valid": True,
+        "error_code": None,
+        "message": "",
+    }
+
+
+PLAYER_JSON_SCHEMA_VALIDATORS = {
+    "whitelist":validate_whitelist_entry_schema,
+}
+
+
+def validate_player_json_entry_schema(
+    entry: dict,
+    schema_type: str,
+) -> dict:
+    schema_type = str(
+        schema_type or ""
+    ).strip()
+
+    validator = (
+        PLAYER_JSON_SCHEMA_VALIDATORS.get(
+            schema_type
+        )
+    )
+
+    if validator is None:
+        raise ValueError(
+            "不支援的玩家 JSON 驗證類型："
+            f"{schema_type}"
+        )
+
+    return validator(entry)
+
+
 def build_validation_result(
     *,
     valid: bool,
@@ -356,6 +394,7 @@ def validate_cached_player_json_entry(
     entry,
     online_mode: bool,
     source: str,
+    schema_type: str,
 ) -> dict:
     if not isinstance(entry, dict):
         return build_validation_result(
@@ -376,11 +415,55 @@ def validate_cached_player_json_entry(
         entry.get("name") or ""
     ).strip()
 
-    return validate_cached_player_json_identity(
-        player_uuid=player_uuid,
-        player_name=player_name,
-        online_mode=online_mode,
-        source=source,
+    identity_result = (
+        validate_cached_player_json_identity(
+            player_uuid=player_uuid,
+            player_name=player_name,
+            online_mode=online_mode,
+            source=source,
+        )
+    )
+
+    if identity_result["status"] != "valid":
+        return identity_result
+
+    schema_result = (
+        validate_player_json_entry_schema(
+            entry=entry,
+            schema_type=schema_type,
+        )
+    )
+
+    if schema_result.get("valid") is True:
+        return identity_result
+
+    return build_validation_result(
+        valid=False,
+        status="invalid",
+        player_uuid=(
+            identity_result["player_uuid"]
+        ),
+        player_name=(
+            identity_result["player_name"]
+        ),
+        account_type=(
+            identity_result.get(
+                "account_type"
+            )
+        ),
+        valid_for_current_mode=False,
+        error_code=(
+            schema_result.get(
+                "error_code"
+            )
+            or "invalid_entry_schema"
+        ),
+        message=(
+            schema_result.get(
+                "message"
+            )
+            or "玩家資料格式錯誤"
+        ),
     )
 
 
@@ -388,6 +471,7 @@ def validate_cached_player_json_entries(
     entries: list,
     online_mode: bool,
     source: str,
+    schema_type: str,
 ) -> dict:
     valid_entries = []
     invalid_entries = []
@@ -401,6 +485,7 @@ def validate_cached_player_json_entries(
                 entry=entry,
                 online_mode=online_mode,
                 source=source,
+                schema_type=schema_type,
             )
         )
 

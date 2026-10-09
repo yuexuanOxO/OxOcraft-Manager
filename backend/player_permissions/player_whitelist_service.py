@@ -86,6 +86,7 @@ def validate_whitelist_entries(
         entries=entries,
         online_mode=online_mode,
         source="whitelist",
+        schema_type="whitelist",
     )
 
 

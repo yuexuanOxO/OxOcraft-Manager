@@ -582,6 +582,41 @@ def get_player_permission_list() -> list[dict]:
 
 
 def get_player_permission_data() -> dict:
+
+    # ==================================================
+    # Server Ready
+    # Management API 是唯一 OP 狀態來源
+    # ops.json 的外部修改不影響在線管理 UI
+    # ==================================================
+
+    if is_server_ready():
+        players = (
+            get_player_permission_list()
+        )
+
+        return {
+            "status": "valid",
+
+            "valid_uuid_set": set(),
+            "unavailable_uuid_set": set(),
+            "duplicate_uuid_set": set(),
+
+            "valid_entries": [],
+            "invalid_entries": [],
+            "unavailable_entries": [],
+            "duplicate_entries": [],
+
+            "error_code": None,
+            "message": "",
+
+            "players": players,
+        }
+
+    # ==================================================
+    # Server Offline
+    # ops.json 是 OP 設定來源
+    # ==================================================
+
     validated = (
         load_validated_ops()
     )
@@ -592,45 +627,18 @@ def get_player_permission_data() -> dict:
             "players": [],
         }
 
-    if is_server_ready():
-        players = (
-            get_player_permission_list()
-        )
-
-        duplicate_uuid_set = (
-            validated[
-                "duplicate_uuid_set"
-            ]
-        )
-
-        if duplicate_uuid_set:
-            players = [
-                player
-                for player in players
-                if (
-                    str(
-                        player.get(
-                            "player_uuid",
-                            "",
-                        )
-                    ).strip().lower()
-                    not in duplicate_uuid_set
-                )
-            ]
-
-    else:
-        entries = [
-            item["entry"]
-            for item in validated[
-                "valid_entries"
-            ]
+    entries = [
+        item["entry"]
+        for item in validated[
+            "valid_entries"
         ]
+    ]
 
-        players = (
-            build_permission_list_from_ops_entries(
-                entries
-            )
+    players = (
+        build_permission_list_from_ops_entries(
+            entries
         )
+    )
 
     return {
         **validated,

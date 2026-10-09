@@ -34,8 +34,55 @@ def validate_whitelist_entry_schema(
     }
 
 
+def validate_ops_entry_schema(
+    entry: dict,
+) -> dict:
+    level = entry.get("level")
+
+    if (
+        type(level) is not int
+        or level < 1
+        or level > 4
+    ):
+        return {
+            "valid": False,
+            "error_code":
+                "invalid_op_level",
+            "message":
+                "管理員權限等級必須為 1～4",
+        }
+
+    bypasses_player_limit = (
+        entry.get(
+            "bypassesPlayerLimit"
+        )
+    )
+
+    if (
+        type(bypasses_player_limit)
+        is not bool
+    ):
+        return {
+            "valid": False,
+            "error_code":
+                "invalid_op_bypasses_player_limit",
+            "message":
+                "可無視玩家人數上限設定格式錯誤",
+        }
+
+    return {
+        "valid": True,
+        "error_code": None,
+        "message": "",
+    }
+
+
 PLAYER_JSON_SCHEMA_VALIDATORS = {
-    "whitelist":validate_whitelist_entry_schema,
+    "whitelist":
+        validate_whitelist_entry_schema,
+
+    "ops":
+        validate_ops_entry_schema,
 }
 
 

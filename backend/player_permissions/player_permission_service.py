@@ -8,7 +8,6 @@ from backend.server_effective_settings import load_effective_settings_snapshot
 from backend.player_permissions.player_identity_service import (
     get_known_players,
     get_account_type,
-    get_mojang_player_profile,
     resolve_player_identity_by_name,
 )
 
@@ -31,8 +30,163 @@ from backend.management_api.operators import (
     management_list_operators,
 )
 
+from backend.player_permissions.player_json_file_service import (
+    load_player_json_file,
+)
+
+from backend.player_permissions.player_json_validator import (
+    validate_cached_player_json_entries,
+    split_duplicate_valid_player_entries,
+)
+
+
 OPS_FILE = MC_ROOT / "ops.json"
 
+
+def load_ops_file() -> dict:
+    return load_player_json_file(
+        OPS_FILE
+    )
+
+
+def validate_ops_entries(
+    entries: list,
+    online_mode: bool,
+) -> dict:
+    validation_result = (
+        validate_cached_player_json_entries(
+            entries=entries,
+            online_mode=online_mode,
+            source="ops",
+            schema_type="ops",
+        )
+    )
+
+    duplicate_result = (
+        split_duplicate_valid_player_entries(
+            validation_result["valid"]
+        )
+    )
+
+    return {
+        "valid_entries":
+            duplicate_result[
+                "unique_entries"
+            ],
+
+        "duplicate_entries":
+            duplicate_result[
+                "duplicate_entries"
+            ],
+
+        "invalid_entries":
+            validation_result["invalid"],
+
+        "unavailable_entries":
+            validation_result[
+                "verification_unavailable"
+            ],
+    }
+
+
+def load_validated_ops() -> dict:
+    file_result = load_ops_file()
+
+    if file_result["status"] != "valid":
+        return {
+            "status": "file_invalid",
+
+            "valid_uuid_set": set(),
+            "unavailable_uuid_set": set(),
+
+            "valid_entries": [],
+            "invalid_entries": [],
+            "unavailable_entries": [],
+            "duplicate_entries": [],
+
+            "error_code":
+                file_result.get(
+                    "error_code"
+                ),
+
+            "message":
+                file_result.get(
+                    "message",
+                    ""
+                ),
+        }
+
+    online_mode = (
+        get_effective_online_mode()
+    )
+
+    validated = validate_ops_entries(
+        entries=file_result["entries"],
+        online_mode=online_mode,
+    )
+
+    valid_uuid_set = {
+        str(
+            item["validation"].get(
+                "player_uuid",
+                ""
+            )
+        ).strip().lower()
+
+        for item in validated[
+            "valid_entries"
+        ]
+
+        if item["validation"].get(
+            "player_uuid"
+        )
+    }
+
+    unavailable_uuid_set = {
+        str(
+            item["validation"].get(
+                "player_uuid",
+                ""
+            )
+        ).strip().lower()
+
+        for item in validated[
+            "unavailable_entries"
+        ]
+
+        if item["validation"].get(
+            "player_uuid"
+        )
+    }
+
+    return {
+        "status": "valid",
+
+        "valid_uuid_set":
+            valid_uuid_set,
+
+        "unavailable_uuid_set":
+            unavailable_uuid_set,
+
+        "valid_entries":
+            validated["valid_entries"],
+
+        "invalid_entries":
+            validated["invalid_entries"],
+
+        "unavailable_entries":
+            validated[
+                "unavailable_entries"
+            ],
+
+        "duplicate_entries":
+            validated[
+                "duplicate_entries"
+            ],
+
+        "error_code": None,
+        "message": "",
+    }
 
 
 def load_ops_entries() -> list[dict]:
@@ -167,23 +321,20 @@ def build_permission_list_from_management_operators(
     return result
 
 
-def get_player_permission_list() -> list[dict]:
+def build_permission_list_from_ops_entries(
+    entries: list[dict],
+) -> list[dict]:
     online_mode = get_effective_online_mode()
-
-    if is_server_ready():
-        client = get_management_client()
-        operators = management_list_operators(client)
-
-        return build_permission_list_from_management_operators(
-            operators
-        )
-
-    entries = load_ops_entries()
     known_players = get_known_players()
     online_uuid_set = get_online_uuid_set()
 
     known_by_uuid = {
-        str(player.get("player_uuid", "")).lower(): player
+        str(
+            player.get(
+                "player_uuid",
+                "",
+            )
+        ).lower(): player
         for player in known_players
         if player.get("player_uuid")
     }
@@ -191,13 +342,22 @@ def get_player_permission_list() -> list[dict]:
     result = []
 
     for entry in entries:
-        player_uuid = str(entry.get("uuid", "")).strip()
-        player_name = str(entry.get("name", "")).strip()
+        player_uuid = str(
+            entry.get("uuid", "")
+        ).strip()
+
+        player_name = str(
+            entry.get("name", "")
+        ).strip()
 
         if not player_uuid or not player_name:
             continue
 
-        account_type = get_account_type(player_uuid)
+        account_type = (
+            get_account_type(
+                player_uuid
+            )
+        )
 
         is_valid_for_current_mode = (
             account_type == "premium"
@@ -205,29 +365,48 @@ def get_player_permission_list() -> list[dict]:
             else account_type == "offline"
         )
 
-        known_player = known_by_uuid.get(
-            player_uuid.lower(),
-            {}
+        known_player = (
+            known_by_uuid.get(
+                player_uuid.lower(),
+                {},
+            )
         )
 
         try:
-            op_level = int(entry.get("level", 4))
+            op_level = int(
+                entry.get(
+                    "level",
+                    4,
+                )
+            )
         except (TypeError, ValueError):
             op_level = 4
 
-        op_level = max(1, min(op_level, 4))
+        op_level = max(
+            1,
+            min(op_level, 4),
+        )
 
         merged_player = {
             **known_player,
-            "player_uuid": player_uuid,
-            "player_name": player_name,
-            "account_type": account_type,
+            "player_uuid":
+                player_uuid,
+            "player_name":
+                player_name,
+            "account_type":
+                account_type,
             "op": True,
-            "op_level": op_level,
-            "op_bypasses_player_limit": bool(
-                entry.get("bypassesPlayerLimit", False)
-            ),
-            "valid_for_current_mode": is_valid_for_current_mode,
+            "op_level":
+                op_level,
+            "op_bypasses_player_limit":
+                bool(
+                    entry.get(
+                        "bypassesPlayerLimit",
+                        False,
+                    )
+                ),
+            "valid_for_current_mode":
+                is_valid_for_current_mode,
         }
 
         result.append(
@@ -239,6 +418,67 @@ def get_player_permission_list() -> list[dict]:
         )
 
     return result
+
+
+def get_player_permission_list() -> list[dict]:
+    if is_server_ready():
+        client = (
+            get_management_client()
+        )
+
+        operators = (
+            management_list_operators(
+                client
+            )
+        )
+
+        return (
+            build_permission_list_from_management_operators(
+                operators
+            )
+        )
+
+    return (
+        build_permission_list_from_ops_entries(
+            load_ops_entries()
+        )
+    )
+
+
+def get_player_permission_data() -> dict:
+    validated = (
+        load_validated_ops()
+    )
+
+    if validated["status"] != "valid":
+        return {
+            **validated,
+            "players": [],
+        }
+
+    if is_server_ready():
+        players = (
+            get_player_permission_list()
+        )
+
+    else:
+        entries = [
+            item["entry"]
+            for item in validated[
+                "valid_entries"
+            ]
+        ]
+
+        players = (
+            build_permission_list_from_ops_entries(
+                entries
+            )
+        )
+
+    return {
+        **validated,
+        "players": players,
+    }
 
 
 def get_effective_online_mode() -> bool:
@@ -379,8 +619,66 @@ def sync_ops_json_to_players(
     source: str = "minecraft_json",
     detail: str = "ops.json sync",
 ) -> dict:
-    before_players = get_op_players_from_db()
-    after_entries = load_ops_entries()
+    validated = (
+        load_validated_ops()
+    )
+
+    if validated["status"] != "valid":
+        return {
+            "added_count": 0,
+            "removed_count": 0,
+            "updated_count": 0,
+            "sync_status":
+                "file_invalid",
+            "error_code":
+                validated.get(
+                    "error_code"
+                ),
+        }
+
+    if validated["invalid_entries"]:
+        return {
+            "added_count": 0,
+            "removed_count": 0,
+            "updated_count": 0,
+            "sync_status":
+                "validation_blocked",
+            "error_code":
+                "invalid_player_entries",
+        }
+
+    if validated["unavailable_entries"]:
+        return {
+            "added_count": 0,
+            "removed_count": 0,
+            "updated_count": 0,
+            "sync_status":
+                "validation_blocked",
+            "error_code":
+                "player_verification_unavailable",
+        }
+
+    if validated["duplicate_entries"]:
+        return {
+            "added_count": 0,
+            "removed_count": 0,
+            "updated_count": 0,
+            "sync_status":
+                "validation_blocked",
+            "error_code":
+                "duplicate_player_entries",
+        }
+
+    before_players = (
+        get_op_players_from_db()
+    )
+
+    after_entries = [
+        item["entry"]
+        for item in validated[
+            "valid_entries"
+        ]
+    ]
 
     before_by_uuid = {
         str(player.get("player_uuid", "")).lower(): player
@@ -519,6 +817,8 @@ def sync_ops_json_to_players(
         "added_count": added_count,
         "removed_count": removed_count,
         "updated_count": updated_count,
+        "sync_status": "success",
+        "error_code": None,
     }
 
 def sync_ops_json_to_players_if_server_offline() -> None:

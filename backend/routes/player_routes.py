@@ -25,10 +25,10 @@ from backend.player_permissions.player_permission_service import (
     is_server_ready,
     get_effective_op_permission_level,
     resolve_op_candidate_by_name,
+    get_player_permission_data,
 )
 
 from backend.player_permissions.player_whitelist_service import (
-    get_player_whitelist_list,
     get_player_whitelist_candidate_list,
     toggle_player_whitelist,
     add_player_whitelist_by_name,
@@ -142,21 +142,85 @@ def api_player_action():
 
 @player_bp.route("/api/player/permissions")
 def api_player_permissions():
-    from backend.server_monitor import get_cached_server_status
-    from backend.player_permissions.player_permission_service import (
-        get_effective_online_mode
+    from backend.server_monitor import (
+        get_cached_server_status,
     )
 
-    status = get_cached_server_status()
-    server_data = status.get("data", {})
+    from backend.player_permissions.player_permission_service import (
+        get_effective_online_mode,
+    )
+
+    status = (
+        get_cached_server_status()
+    )
+
+    server_data = (
+        status.get(
+            "data",
+            {},
+        )
+    )
+
+    permission_data = (
+        get_player_permission_data()
+    )
 
     return jsonify({
         "success": True,
-        "players": get_player_permission_list(),
-        "online_mode": get_effective_online_mode(),
-        "server_ready": is_server_ready(),
-        "server_state": server_data.get("state", "offline"),
-        "op_permission_level": get_effective_op_permission_level(),
+
+        "players":
+            permission_data[
+                "players"
+            ],
+
+        "online_mode":
+            get_effective_online_mode(),
+
+        "server_ready":
+            is_server_ready(),
+
+        "server_state":
+            server_data.get(
+                "state",
+                "offline",
+            ),
+
+        "op_permission_level":
+            get_effective_op_permission_level(),
+
+        "data_status":
+            permission_data[
+                "status"
+            ],
+
+        "error_code":
+            permission_data.get(
+                "error_code"
+            ),
+
+        "message":
+            permission_data.get(
+                "message",
+                "",
+            ),
+
+        "invalid_entries":
+            permission_data.get(
+                "invalid_entries",
+                [],
+            ),
+
+        "unavailable_entries":
+            permission_data.get(
+                "unavailable_entries",
+                [],
+            ),
+
+        "duplicate_entries":
+            permission_data.get(
+                "duplicate_entries",
+                [],
+            ),
     })
 
 

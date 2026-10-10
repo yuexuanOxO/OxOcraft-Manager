@@ -1152,7 +1152,7 @@ function renderPermissionFileError(list) {
         ?.addEventListener(
             "click",
             async () => {
-                await loadPlayerPermissions();
+                await recheckOpsFile();
             }
         );
 
@@ -1167,6 +1167,117 @@ function renderPermissionFileError(list) {
             }
         );
 
+}
+
+
+async function recheckOpsFile() {
+    const refreshBtn =
+        document.getElementById(
+            "refreshInvalidOpsBtn"
+        );
+
+    const recoverBtn =
+        document.getElementById(
+            "recoverInvalidOpsBtn"
+        );
+
+    if (refreshBtn) {
+        refreshBtn.disabled = true;
+        refreshBtn.textContent =
+            "檢查中...";
+    }
+
+    if (recoverBtn) {
+        recoverBtn.disabled = true;
+    }
+
+    try {
+        const data =
+            await refreshPlayerPermissionState();
+
+        const hasProblems =
+            data.data_status !== "valid"
+            ||
+            (
+                Array.isArray(
+                    data.invalid_entries
+                )
+                &&
+                data.invalid_entries.length > 0
+            )
+            ||
+            (
+                Array.isArray(
+                    data.unavailable_entries
+                )
+                &&
+                data.unavailable_entries.length > 0
+            )
+            ||
+            (
+                Array.isArray(
+                    data.duplicate_entries
+                )
+                &&
+                data.duplicate_entries.length > 0
+            );
+
+        if (hasProblems) {
+            await showInfo({
+                title:
+                    "管理員資料仍有問題",
+
+                message:
+                    "重新檢查完成，目前ops.json"
+                    + "仍存在需要處理的資料問題。"
+                    + "\n請檢查ops.json資料是否正確，"
+                    + "或使用「恢復舊資料」。",
+
+                confirmText: "關閉",
+                variant: "warning",
+            });
+
+            return;
+        }
+
+        await showInfo({
+            title:
+                "管理員資料檢查完成",
+
+            message:
+                "重新檢查完成，"
+                + "目前 ops.json 資料格式與內容皆正常。",
+
+            confirmText: "關閉",
+            variant: "success",
+        });
+
+    } catch (error) {
+        console.error(
+            "管理員資料重新檢查失敗:",
+            error
+        );
+
+        await showInfo({
+            title: "檢查失敗",
+            message:
+                "無法重新檢查管理員資料，"
+                + "請稍後再試。",
+            confirmText: "關閉",
+            variant: "error",
+        });
+
+    } finally {
+        if (refreshBtn) {
+            refreshBtn.disabled = false;
+            refreshBtn.textContent =
+                "重新檢查";
+        }
+
+        if (recoverBtn) {
+            recoverBtn.disabled = false;
+        }
+    }
 }
 
 

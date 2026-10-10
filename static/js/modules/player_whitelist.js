@@ -1216,7 +1216,7 @@ function renderWhitelistFileError(list) {
         ?.addEventListener(
             "click",
             async () => {
-                await loadPlayerWhitelist();
+                await recheckWhitelistFile();
             }
         );
 
@@ -3031,5 +3031,108 @@ async function refreshWhitelistAfterMutationError(
             "白名單錯誤狀態重新整理失敗:",
             error
         );
+    }
+}
+
+
+async function recheckWhitelistFile() {
+    const refreshBtn =
+        document.getElementById(
+            "refreshInvalidWhitelistBtn"
+        );
+
+    const recoverBtn =
+        document.getElementById(
+            "recoverInvalidWhitelistBtn"
+        );
+
+    if (refreshBtn) {
+        refreshBtn.disabled = true;
+        refreshBtn.textContent =
+            "檢查中...";
+    }
+
+    if (recoverBtn) {
+        recoverBtn.disabled = true;
+    }
+
+    try {
+        const data =
+            await refreshPlayerWhitelistState();
+
+        const hasProblems =
+            data.data_status !== "valid"
+            ||
+            (
+                Array.isArray(
+                    data.invalid_entries
+                )
+                &&
+                data.invalid_entries.length > 0
+            )
+            ||
+            (
+                Array.isArray(
+                    data.unavailable_entries
+                )
+                &&
+                data.unavailable_entries.length > 0
+            );
+
+        if (hasProblems) {
+            await showInfo({
+                title:
+                    "白名單資料仍有問題",
+
+                message:
+                    "重新檢查完成，目前whitelist.json"
+                    + "仍存在需要處理的資料問題。"
+                    + "\n請檢查whitelist.json資料是否正確，"
+                    + "或使用「恢復舊資料」。",
+
+                confirmText: "關閉",
+                variant: "warning",
+            });
+
+            return;
+        }
+
+        await showInfo({
+            title:
+                "白名單資料檢查完成",
+
+            message:
+                "重新檢查完成，"
+                + "目前 whitelist.json 資料格式與內容皆正常。",
+
+            confirmText: "關閉",
+            variant: "success",
+        });
+
+    } catch (error) {
+        console.error(
+            "白名單資料重新檢查失敗:",
+            error
+        );
+
+        await showInfo({
+            title: "檢查失敗",
+            message:
+                "無法重新檢查白名單資料，"
+                + "請稍後再試。",
+            confirmText: "關閉",
+            variant: "error",
+        });
+
+    } finally {
+        if (refreshBtn) {
+            refreshBtn.disabled = false;
+            refreshBtn.textContent =
+                "重新檢查";
+        }
+
+        if (recoverBtn) {
+            recoverBtn.disabled = false;
+        }
     }
 }

@@ -32,6 +32,6 @@
     font-size: 20px;
     line-height: 1.4;
 
-    white-space: normal;
+    white-space: pre-line;
     box-sizing: border-box;
 }

@@ -63,9 +63,7 @@ function showTooltip(target, event) {
 
     tooltip.innerHTML = `
         <div class="mc-tooltip-border">
-            <div class="mc-tooltip-content">
-                ${escapeHtml(text)}
-            </div>
+            <div class="mc-tooltip-content">${escapeHtml(text)}</div>
         </div>
     `;
 

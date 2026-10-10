@@ -1124,8 +1124,9 @@ function renderPermissionFileError(list) {
                         player-permission-file-error-refresh
                     "
                     type="button"
+                    data-mc-tooltip="重新讀取目前的 ops.json 並檢查資料格式是否正確。若已手動修正檔案，可按此重新檢查。&#10;(此操作不會自動修改ops.json)"
                 >
-                    刷新管理員資料
+                    重新檢查
                 </button>
 
                 <button
@@ -1134,9 +1135,11 @@ function renderPermissionFileError(list) {
                         player-permission-file-error-refresh
                     "
                     type="button"
+                    data-mc-tooltip="使用 OxOcraft 資料庫中最後記錄的管理員狀態重新建立ops.json，並覆蓋目前損壞的檔案。"
                 >
                     恢復舊資料
                 </button>
+
             </div>
 
         </div>

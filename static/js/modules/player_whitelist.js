@@ -1185,21 +1185,25 @@ function renderWhitelistFileError(list) {
             }
 
             <div class="player-whitelist-file-error-actions">
+
                 <button
                     id="refreshInvalidWhitelistBtn"
                     class="player-whitelist-file-error-refresh"
                     type="button"
+                    data-mc-tooltip="重新讀取目前的whitelist.json並檢查資料格式是否正確。若已手動修正檔案，可按此重新檢查。&#10;(此操作不會自動修改whitelist.json)"
                 >
-                    刷新白名單
+                    重新檢查
                 </button>
 
                 <button
                     id="recoverInvalidWhitelistBtn"
                     class="player-whitelist-file-error-refresh"
                     type="button"
+                    data-mc-tooltip="使用最後記錄的白名單狀態重新建立whitelist.json，並覆蓋目前損壞的檔案。"
                 >
                     恢復舊資料
                 </button>
+
             </div>
 
         </div>

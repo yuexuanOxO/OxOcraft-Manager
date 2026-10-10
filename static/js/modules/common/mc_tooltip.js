@@ -119,5 +119,7 @@ export function initMinecraftTooltip() {
         removeTooltip();
     });
 
+    document.addEventListener("pointerdown",removeTooltip,true);
+
     window.addEventListener("scroll", removeTooltip, true);
 }

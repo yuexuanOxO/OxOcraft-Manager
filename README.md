@@ -20,7 +20,7 @@
 
 <!-- TODO：GitHub Badges -->
 
-![Version](https://img.shields.io/badge/version-v0.11.10-blue)
+![Version](https://img.shields.io/badge/version-v0.11.15-blue)
 
 ![Status](https://img.shields.io/badge/status-Development-orange)
 

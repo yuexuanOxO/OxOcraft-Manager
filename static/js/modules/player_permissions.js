@@ -1072,9 +1072,7 @@ function renderPlayerPermissionList() {
 }
 
 
-function renderPermissionFileError(
-    list
-) {
+function renderPermissionFileError(list) {
     const playerCount =
         document.getElementById(
             "playerPermissionPlayerCount"
@@ -1117,15 +1115,29 @@ function renderPermissionFileError(
                     : ""
             }
 
-            <button
-                id="refreshInvalidOpsBtn"
-                class="
-                    player-permission-file-error-refresh
-                "
-                type="button"
-            >
-                刷新管理員資料
-            </button>
+            <div class="
+                player-permission-file-error-actions
+            ">
+                <button
+                    id="refreshInvalidOpsBtn"
+                    class="
+                        player-permission-file-error-refresh
+                    "
+                    type="button"
+                >
+                    刷新管理員資料
+                </button>
+
+                <button
+                    id="recoverInvalidOpsBtn"
+                    class="
+                        player-permission-file-error-refresh
+                    "
+                    type="button"
+                >
+                    恢復舊資料
+                </button>
+            </div>
 
         </div>
     `;
@@ -1140,6 +1152,119 @@ function renderPermissionFileError(
                 await loadPlayerPermissions();
             }
         );
+
+    document
+        .getElementById(
+            "recoverInvalidOpsBtn"
+        )
+        ?.addEventListener(
+            "click",
+            async () => {
+                await recoverOpsFile();
+            }
+        );
+
+}
+
+
+async function recoverOpsFile() {
+    const confirmed =
+        await showConfirm({
+            title:
+                "恢復管理員舊資料",
+
+            message:
+                "將使用 OxOcraft 資料庫中最後一次記錄的管理員狀態，"
+                + "重新建立 ops.json。\n"
+                + "目前損壞的 ops.json 內容會被覆蓋。",
+
+            confirmText: "恢復",
+            cancelText: "取消",
+            variant: "warning",
+        });
+
+    if (!confirmed) {
+        return;
+    }
+
+    const recoverBtn =
+        document.getElementById(
+            "recoverInvalidOpsBtn"
+        );
+
+    const refreshBtn =
+        document.getElementById(
+            "refreshInvalidOpsBtn"
+        );
+
+    if (recoverBtn) {
+        recoverBtn.disabled = true;
+        recoverBtn.textContent =
+            "恢復中...";
+    }
+
+    if (refreshBtn) {
+        refreshBtn.disabled = true;
+    }
+
+    try {
+        const response = await fetch(
+            "/api/player/permission/recover",
+            {
+                method: "POST",
+            }
+        );
+
+        const data =
+            await response.json();
+
+        if (
+            !response.ok
+            || !data.success
+        ) {
+            throw new Error(
+                data.message
+                || "管理員舊資料恢復失敗"
+            );
+        }
+
+        await loadPlayerPermissions();
+
+        await showInfo({
+            title: "玩家權限",
+            message:
+                data.message
+                || "管理員舊資料已恢復",
+            confirmText: "關閉",
+            variant: "success",
+        });
+
+    } catch (error) {
+        console.error(
+            "管理員舊資料恢復失敗:",
+            error
+        );
+
+        await showInfo({
+            title: "錯誤",
+            message:
+                error.message
+                || "管理員舊資料恢復失敗",
+            confirmText: "關閉",
+            variant: "error",
+        });
+
+    } finally {
+        if (recoverBtn) {
+            recoverBtn.disabled = false;
+            recoverBtn.textContent =
+                "恢復舊資料";
+        }
+
+        if (refreshBtn) {
+            refreshBtn.disabled = false;
+        }
+    }
 }
 
 
@@ -1583,9 +1708,7 @@ function createDuplicatePermissionEntryCard(
         ?.addEventListener(
             "click",
             async () => {
-                await removeDuplicatePermissionEntry(
-                    item
-                );
+                await removeDuplicatePermissionEntry(item);
             }
         );
 
@@ -1593,19 +1716,12 @@ function createDuplicatePermissionEntryCard(
 }
 
 
-async function removeDuplicatePermissionEntry(
-    item
-) {
-    const entry =
-        item?.entry || {};
+async function removeDuplicatePermissionEntry(item) {
+    const entry = item?.entry || {};
 
-    const playerName = String(
-        entry.name
-        || "未知玩家"
-    );
+    const playerName = String(entry.name|| "未知玩家");
 
-    const level =
-        entry.level ?? "?";
+    const level = entry.level ?? "?";
 
     const bypassText =
         entry.bypassesPlayerLimit === true
@@ -1640,8 +1756,7 @@ async function removeDuplicatePermissionEntry(
                 method: "POST",
 
                 headers: {
-                    "Content-Type":
-                        "application/json",
+                    "Content-Type": "application/json",
                 },
 
                 body: JSON.stringify({
@@ -1661,8 +1776,7 @@ async function removeDuplicatePermissionEntry(
             || !data.success
         ) {
             throw new Error(
-                data.message
-                || "刪除重複管理員資料失敗"
+                data.message || "刪除重複管理員資料失敗"
             );
         }
 
@@ -1677,9 +1791,7 @@ async function removeDuplicatePermissionEntry(
 
         await showInfo({
             title: "玩家權限",
-            message:
-                data.message
-                || "重複管理員資料已刪除",
+            message: data.message || "重複管理員資料已刪除",
             confirmText: "關閉",
             variant: "success",
         });
@@ -1687,16 +1799,11 @@ async function removeDuplicatePermissionEntry(
         await refreshPromise;
 
     } catch (error) {
-        console.error(
-            "刪除重複管理員資料失敗:",
-            error
-        );
+        console.error("刪除重複管理員資料失敗:",error);
 
         await showInfo({
             title: "錯誤",
-            message:
-                error.message
-                || "刪除重複管理員資料失敗",
+            message: error.message || "刪除重複管理員資料失敗",
             confirmText: "關閉",
             variant: "error",
         });
@@ -1707,8 +1814,7 @@ async function removeDuplicatePermissionEntry(
 function createPlayerPermissionCard(player) {
     const card = document.createElement("div");
 
-    card.className =
-        "player-permission-card";
+    card.className = "player-permission-card";
 
     if (player.valid_for_current_mode === false) {
         card.classList.add("invalid-mode");

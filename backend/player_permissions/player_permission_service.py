@@ -715,6 +715,116 @@ def normalize_op_level(value) -> int:
     return max(1, min(level, 4))
 
 
+def rebuild_ops_json_from_db() -> int:
+    players = (
+        get_op_players_from_db()
+    )
+
+    entries = []
+
+    for player in players:
+        player_uuid = str(
+            player.get(
+                "player_uuid",
+                "",
+            )
+        ).strip()
+
+        player_name = str(
+            player.get(
+                "player_name",
+                "",
+            )
+        ).strip()
+
+        if (
+            not player_uuid
+            or not player_name
+        ):
+            continue
+
+        entries.append({
+            "uuid":
+                player_uuid,
+
+            "name":
+                player_name,
+
+            "level":
+                normalize_op_level(
+                    player.get(
+                        "op_level",
+                        4,
+                    )
+                ),
+
+            "bypassesPlayerLimit":
+                bool(
+                    player.get(
+                        "op_bypasses_player_limit",
+                        0,
+                    )
+                ),
+        })
+
+    save_ops_entries(
+        entries
+    )
+
+    return len(entries)
+
+
+def recover_ops_json_from_db() -> dict:
+    file_result = (
+        load_ops_file()
+    )
+
+    if file_result["status"] == "valid":
+        return {
+            "success": False,
+            "message": (
+                "ops.json 目前沒有"
+                "需要恢復的格式錯誤"
+            ),
+            "error_code":
+                "file_not_invalid",
+        }
+
+    restored_count = (
+        rebuild_ops_json_from_db()
+    )
+
+    restored_result = (
+        load_ops_file()
+    )
+
+    if (
+        restored_result["status"]
+        != "valid"
+    ):
+        return {
+            "success": False,
+            "message": (
+                "管理員資料恢復失敗，"
+                "ops.json 仍然無法正常讀取"
+            ),
+            "error_code": (
+                restored_result.get(
+                    "error_code"
+                )
+                or "recovery_failed"
+            ),
+        }
+
+    return {
+        "success": True,
+        "message":
+            "管理員舊資料已恢復",
+        "restored_count":
+            restored_count,
+    }
+
+
 def build_op_update_history_detail(
     old_op_level: int,
     new_op_level: int,

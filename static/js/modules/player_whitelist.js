@@ -1236,7 +1236,7 @@ async function recoverWhitelistFile() {
         title: "恢復白名單舊資料",
         message:
             "將使用OxOcraft資料庫中最後一次已驗證的白名單資料，" +
-            "重新建立whitelist.json。\n\n" +
+            "重新建立whitelist.json。\n" +
             "目前損壞的whitelist.json內容會被覆蓋。",
         confirmText: "恢復",
         cancelText: "取消",

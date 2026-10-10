@@ -361,7 +361,7 @@
 }
 
 .player-permission-file-error {
-    flex: 1;
+    flex: 0 0 auto;
     min-height: 0;
 
     display: flex;

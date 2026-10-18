@@ -197,8 +197,7 @@ def classify_server_start_warning(
             "message": (
                 "伺服器已成功啟動，但Minecraft"
                 "無法正確載入ops.json。\n"
-                "管理員權限資料可能已遭清空或重置，"
-                "請至「權限管理」檢查並恢復。"
+                "管理員權限資料已經由伺服器自動清空。"
             ),
             "file": "ops.json",
         }
@@ -554,6 +553,37 @@ def start_server(
             "無法完成管理員資料啟動檢查："
             f"{error}"
         )
+
+    
+    # Minecraft 啟動前的最後一道黑名單檢查
+    # 黑名單錯誤不允許強制略過
+    try:
+        from backend.player_ban.player_ban_service import (
+            get_ban_start_blocks,
+        )
+
+        ban_blocks = get_ban_start_blocks()
+
+        if ban_blocks:
+            details = "\n".join(
+                f"• {item['label']}（{item['file']}）"
+                f"：{item['reason']}"
+                for item in ban_blocks
+            )
+
+            return False, (
+                "黑名單資料檢查未通過：\n"
+                f"{details}\n\n"
+                "請先修復黑名單資料，"
+                "再重新啟動伺服器。"
+            )
+
+    except Exception as error:
+        return False, (
+            "無法完成黑名單啟動檢查："
+            f"{error}"
+        )
+
 
     if SERVER_PROPERTIES_PATH.exists():
         try:

@@ -1318,7 +1318,7 @@ def get_whitelist_start_warning() -> dict | None:
                 )
             ),
             "message": (
-                "whitelist.json 目前存在資料錯誤，"
+                "白名單(whitelist.json)目前存在資料錯誤，"
                 "可能影響伺服器啟動或白名單功能。\n"
                 "是否仍要繼續開啟伺服器？"
             ),

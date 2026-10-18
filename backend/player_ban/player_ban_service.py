@@ -233,6 +233,96 @@ def pop_recent_ui_ban_command_if_match(
     return False
 
 
+
+def get_ban_start_blocks() -> list[dict]:
+    blocks = []
+
+    configs = [
+        {
+            "source": "ban_players",
+            "label": "玩家黑名單",
+            "file": "banned-players.json",
+            "path": BANNED_PLAYERS_FILE,
+            "required": ("uuid", "name"),
+        },
+        {
+            "source": "ban_ips",
+            "label": "IP黑名單",
+            "file": "banned-ips.json",
+            "path": BANNED_IPS_FILE,
+            "required": ("ip",),
+        },
+    ]
+
+    for config in configs:
+        path = config["path"]
+        reason = None
+
+        try:
+            content = path.read_text(
+                encoding="utf-8"
+            )
+
+        except FileNotFoundError:
+            # Minecraft 尚未建立清單檔案是正常情況
+            continue
+
+        except (OSError, UnicodeError):
+            reason = "無法讀取 JSON 檔案"
+
+        else:
+            if not content.strip():
+                reason = "JSON 檔案內容為空"
+
+            else:
+                try:
+                    entries = json.loads(content)
+                except (json.JSONDecodeError, ValueError):
+                    reason = "JSON 格式錯誤"
+
+                else:
+                    if not isinstance(entries, list):
+                        reason = "JSON 最外層必須為陣列"
+
+                    else:
+                        for index, entry in enumerate(
+                            entries,
+                            start=1,
+                        ):
+                            if not isinstance(entry, dict):
+                                reason = (
+                                    f"第 {index} 筆資料格式錯誤"
+                                )
+                                break
+
+                            for key in config["required"]:
+                                value = entry.get(key)
+
+                                if (
+                                    not isinstance(value, str)
+                                    or not value.strip()
+                                ):
+                                    reason = (
+                                        f"第 {index} 筆資料的"
+                                        f" {key} 欄位格式錯誤"
+                                    )
+                                    break
+
+                            if reason:
+                                break
+
+        if reason:
+            blocks.append({
+                "source": config["source"],
+                "label": config["label"],
+                "file": config["file"],
+                "reason": reason,
+            })
+
+    return blocks
+
+
+
 def read_json_list(path: Path) -> list[dict]:
     if not path.exists():
         return []

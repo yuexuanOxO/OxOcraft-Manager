@@ -47,6 +47,89 @@ CURRENT_WORLD_PATH: Path | None = None
 SERVER_RUNTIME_STATE = "offline"
 _runtime_state_lock = threading.Lock()
 
+# Minecraft 啟動失敗紀錄
+_start_failure_lock = threading.Lock()
+_last_start_failure = None
+
+
+def get_server_start_failure() -> dict | None:
+    with _start_failure_lock:
+        return (
+            dict(_last_start_failure)
+            if _last_start_failure
+            else None
+        )
+
+
+def clear_server_start_failure() -> None:
+    global _last_start_failure
+
+    with _start_failure_lock:
+        _last_start_failure = None
+
+
+def record_server_start_failure(
+    failure: dict,
+) -> None:
+    global _last_start_failure
+
+    with _start_failure_lock:
+        _last_start_failure = dict(failure)
+
+
+def classify_server_start_failure(
+    log_lines: list[str],
+    exit_code: int,
+) -> dict:
+    log_text = "\n".join(log_lines)
+
+    has_json_error = (
+        "JsonSyntaxException" in log_text
+        or "MalformedJsonException" in log_text
+    )
+
+    has_player_ban_error = (
+        "DedicatedPlayerList.loadUserBanList"
+        in log_text
+    )
+
+    has_unexpected_exception = (
+        "Encountered an unexpected exception"
+        in log_text
+    )
+
+    if (
+        has_json_error
+        and has_player_ban_error
+        and has_unexpected_exception
+    ):
+        return {
+            "error_code": "banned_players_json_invalid",
+            "title": "玩家黑名單資料錯誤",
+            "message": (
+                "Minecraft無法正確解析"
+                "banned-players.json，"
+                "導致伺服器啟動失敗。\n"
+                "請檢查並修正玩家黑名單資料，"
+                "再重新啟動伺服器。"
+            ),
+            "file": "banned-players.json",
+            "exit_code": exit_code,
+        }
+
+    return {
+        "error_code": "server_exited_before_ready",
+        "title": "伺服器啟動失敗",
+        "message": (
+            "Minecraft 尚未完成啟動就已停止。\n"
+            f"程序退出代碼：{exit_code}\n\n"
+            "目前無法確認具體原因，"
+            "請查看伺服器 Log。"
+        ),
+        "file": None,
+        "exit_code": exit_code,
+    }
+
 
 def resolve_death_player_uuid(
     player_name: str | None,
@@ -116,15 +199,28 @@ def send_command(cmd: str) -> None:
 def handle_server_output() -> None:
     global server_process, pending_deaths
 
-    if not server_process or not server_process.stdout:
+    process = server_process
+
+    if not process or not process.stdout:
         return
 
-    for line in server_process.stdout:
+    startup_logs = []
+    reached_ready = False
+
+    for line in process.stdout:
         line = line.strip()
         print(line)
         append_log_line(line)
 
+        if not reached_ready:
+            startup_logs.append(line)
+
+            # 只保留啟動階段最近的 Log
+            if len(startup_logs) > 300:
+                startup_logs.pop(0)
+
         if "Done (" in line and "For help, type" in line:
+            reached_ready = True
             print("[Runtime Debug] Detected server ready from log.")
 
             try:
@@ -256,6 +352,29 @@ def handle_server_output() -> None:
                 "player_uuid": death_data.get("player_uuid"),
             })
 
+
+    # stdout 結束後，等待 Minecraft 程序完全退出
+    exit_code = process.wait()
+
+    # 只有尚未 Ready 就退出才記錄啟動失敗
+    if (
+        not reached_ready
+        and get_server_runtime_state() != "stopping"
+        and server_process is process
+    ):
+        failure = classify_server_start_failure(
+            startup_logs,
+            exit_code,
+        )
+
+        record_server_start_failure(failure)
+
+        print(
+            "[ServerStartup] Minecraft 啟動失敗:",
+            failure["error_code"],
+        )
+
+
     try:
         from backend.db import mark_all_players_offline
         mark_all_players_offline()
@@ -325,6 +444,23 @@ def start_server() -> tuple[bool, str]:
     if not SERVER_JAR_PATH.exists():
         return False, f"找不到 server.jar：{SERVER_JAR_PATH}"
 
+    # 正式啟動 Minecraft 前，最後確認 OP 資料
+    try:
+        from backend.player_permissions.player_permission_service import (
+            get_ops_start_block,
+        )
+
+        ops_start_block = get_ops_start_block()
+
+        if ops_start_block:
+            return False, ops_start_block["message"]
+
+    except Exception as error:
+        return False, (
+            "無法完成管理員資料啟動檢查："
+            f"{error}"
+        )
+
     if SERVER_PROPERTIES_PATH.exists():
         try:
             # 正式啟動 Server 前確認管理設定已同步。
@@ -388,6 +524,8 @@ def start_server() -> tuple[bool, str]:
 
     if not bind_ip_ok:
         return False, bind_ip_message
+
+    clear_server_start_failure()
 
     set_server_runtime_state("starting")
     

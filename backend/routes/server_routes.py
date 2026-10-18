@@ -1,7 +1,6 @@
 import queue
 from dataclasses import asdict
 from backend.management_api.state import get_management_state
-from backend.server_runtime import start_server, stop_server
 from backend.server_setup import get_server_setup_status
 from backend.server_status import get_server_query_status
 from backend.auto_backup_service import is_auto_backup_control_locked
@@ -22,6 +21,12 @@ from backend.server_monitor import (
     subscribe_events,
     unsubscribe_events,
     format_sse,
+)
+
+from backend.server_runtime import (
+    start_server,
+    stop_server,
+    get_server_start_failure,
 )
 
 server_bp = Blueprint("server", __name__)
@@ -140,6 +145,18 @@ def api_server_stop():
 @server_bp.route("/api/server/status")
 def api_server_status():
     return build_server_status_response()
+
+
+@server_bp.route("/api/server/start-failure")
+def api_server_start_failure():
+    response = jsonify({
+        "success": True,
+        "failure": get_server_start_failure(),
+    })
+
+    response.headers["Cache-Control"] = "no-store"
+
+    return response
 
 
 @server_bp.route("/api/server/query-status")

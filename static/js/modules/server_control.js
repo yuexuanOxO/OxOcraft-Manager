@@ -255,23 +255,53 @@ async function toggleServer() {
         }
 
         let reachedTarget = false;
+        let startupFailure = null;
 
         if (targetOnline && setupStage === "need_first_run") {
-            reachedTarget = await waitForFirstRunFilesGenerated(30000, 1000);
+            reachedTarget =
+                await waitForFirstRunFilesGenerated(
+                    30000,
+                    1000
+                );
+
+        } else if (targetOnline) {
+            const result = await waitForServerStartup();
+
+            reachedTarget = result.ready;
+            startupFailure = result.failure;
+
         } else {
-            reachedTarget = await waitForServerStatus(targetOnline, 30000, 1000);
+            reachedTarget = await waitForServerStatus(
+                false,
+                30000,
+                1000
+            );
         }
 
         isTransitioning = false;
 
 
         if (!reachedTarget) {
-            await showInfo({
-                title: targetOnline
-                    ? "伺服器啟動逾時"
-                    : "伺服器關閉逾時",
+            setPowerButtonLoading(false);
 
-                message: "請查看 log。"
+            await showInfo({
+                title:
+                    startupFailure?.title
+                    || (
+                        targetOnline
+                            ? "伺服器啟動逾時"
+                            : "伺服器關閉逾時"
+                    ),
+
+                message:
+                    startupFailure?.message
+                    || "請查看伺服器 Log。",
+
+                confirmText: "關閉",
+                variant:
+                    startupFailure
+                        ? "error"
+                        : "warning",
             });
         } else if (targetOnline && setupStage === "need_first_run") {
             await fetch("/api/server/sync-rcon", {
@@ -341,6 +371,77 @@ export async function waitForServerStatus(targetOnline, timeoutMs = 30000, inter
     }
 
     return false;
+}
+
+
+async function waitForServerStartup(
+    timeoutMs = 30000,
+    intervalMs = 1000
+) {
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < timeoutMs) {
+        try {
+            const statusResponse = await fetch(
+                "/api/server/status?force=1",
+                { cache: "no-store" }
+            );
+
+            if (!statusResponse.ok) {
+                throw new Error(
+                    "無法取得伺服器狀態"
+                );
+            }
+
+            const payload =
+                await statusResponse.json();
+
+            const status =
+                payload.data || payload;
+
+            if (
+                status.online === true
+                && status.state === "ready"
+            ) {
+                return {
+                    ready: true,
+                    failure: null,
+                };
+            }
+
+            const failureResponse = await fetch(
+                "/api/server/start-failure",
+                { cache: "no-store" }
+            );
+
+            if (failureResponse.ok) {
+                const failureData =
+                    await failureResponse.json();
+
+                if (failureData.failure) {
+                    return {
+                        ready: false,
+                        failure: failureData.failure,
+                    };
+                }
+            }
+
+        } catch (error) {
+            console.error(
+                "等待 Minecraft 啟動時發生錯誤:",
+                error
+            );
+        }
+
+        await new Promise(resolve =>
+            setTimeout(resolve, intervalMs)
+        );
+    }
+
+    return {
+        ready: false,
+        failure: null,
+    };
 }
 
 
@@ -677,7 +778,8 @@ export async function saveAndRestartServer() {
             return;
         }
 
-        const started = await waitForServerStatus(true, 30000, 1000);
+        const startResult = await waitForServerStartup();
+        const started = startResult.ready;
 
         await updateStatus();
 
@@ -688,7 +790,18 @@ export async function saveAndRestartServer() {
                 message: "設定已套用，伺服器已重新啟動。"
             });
         } else {
-            alert("伺服器啟動逾時，請查看 log。");
+            await showInfo({
+                title:
+                    startResult.failure?.title
+                    || "伺服器啟動逾時",
+
+                message:
+                    startResult.failure?.message
+                    || "請查看伺服器 Log。",
+
+                confirmText: "關閉",
+                variant: "error",
+            });
         }
 
     } catch (error) {

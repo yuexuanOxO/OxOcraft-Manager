@@ -83,40 +83,53 @@ def classify_server_start_failure(
 ) -> dict:
     log_text = "\n".join(log_lines)
 
-    has_json_error = (
-        "JsonSyntaxException" in log_text
-        or "MalformedJsonException" in log_text
-    )
-
-    has_player_ban_error = (
-        "DedicatedPlayerList.loadUserBanList"
-        in log_text
-    )
-
-    has_unexpected_exception = (
-        "Encountered an unexpected exception"
-        in log_text
-    )
-
-    if (
-        has_json_error
-        and has_player_ban_error
-        and has_unexpected_exception
-    ):
-        return {
+    # JSON 載入錯誤類型
+    json_error_types = [
+        {
+            "marker": "DedicatedPlayerList.loadUserBanList",
             "error_code": "banned_players_json_invalid",
-            "title": "玩家黑名單資料錯誤",
-            "message": (
-                "Minecraft無法正確解析"
-                "banned-players.json，"
-                "導致伺服器啟動失敗。\n"
-                "請檢查並修正玩家黑名單資料，"
-                "再重新啟動伺服器。"
-            ),
+            "name": "玩家黑名單",
             "file": "banned-players.json",
-            "exit_code": exit_code,
-        }
+        },
+        {
+            "marker": "DedicatedPlayerList.loadIpBanList",
+            "error_code": "banned_ips_json_invalid",
+            "name": "IP黑名單",
+            "file": "banned-ips.json",
+        },
+    ]
 
+    # 判斷是否為 JSON 解析錯誤
+    has_json_error = (
+        "Encountered an unexpected exception" in log_text
+        and (
+            "JsonSyntaxException" in log_text
+            or "MalformedJsonException" in log_text
+        )
+    )
+
+    if has_json_error:
+        for error_type in json_error_types:
+            if error_type["marker"] not in log_text:
+                continue
+
+            name = error_type["name"]
+            filename = error_type["file"]
+
+            return {
+                "error_code": error_type["error_code"],
+                "title": f"{name}資料錯誤",
+                "message": (
+                    f"Minecraft無法正確解析{filename}，"
+                    "導致伺服器啟動失敗。\n"
+                    f"請檢查並修正{name}資料，"
+                    "再重新啟動伺服器。"
+                ),
+                "file": filename,
+                "exit_code": exit_code,
+            }
+
+    # 無法辨識的啟動失敗
     return {
         "error_code": "server_exited_before_ready",
         "title": "伺服器啟動失敗",

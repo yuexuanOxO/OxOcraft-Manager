@@ -1974,43 +1974,28 @@ def remove_duplicate_ops_entry(
 
 
 def get_ops_start_block() -> dict | None:
-    ops_result = (
-        load_validated_ops()
+    # 每次啟動都重新讀取 ops.json
+    ops_result = load_validated_ops()
+
+    # 沿用離線 OP 操作的資料保護規則
+    mutation_error = get_ops_mutation_error(
+        ops_result
     )
 
-    duplicate_entries = (
-        ops_result.get(
-            "duplicate_entries",
-            [],
-        )
-    )
-
-    if not duplicate_entries:
+    if mutation_error is None:
         return None
 
-    duplicate_uuid_set = {
-        str(
-            item["validation"].get(
-                "player_uuid",
-                "",
-            )
-        ).strip().lower()
-
-        for item in duplicate_entries
-
-        if item.get(
-            "validation"
-        )
-    }
-
     return {
-        "error_code":
-            "duplicate_player_entries",
-
+        "error_code": (
+            mutation_error.get("error_code")
+            or "invalid_ops_data"
+        ),
         "message": (
-            "ops.json 中存在"
-            f"{len(duplicate_uuid_set)}組"
-            "重複的管理員資料。\n"
-            "由於重複資料的權限等級或玩家上限設定可能不同，請先到「權限管理」刪除不需要的重複資料後再開啟伺服器。"
+            mutation_error.get("message")
+            or "管理員資料檢查未通過"
+        ) + (
+            "\n請先至「權限管理」檢查並處理資料，"
+            "再開啟伺服器，以免 Minecraft 啟動時"
+            "重新寫入 ops.json，造成資料遺失。"
         ),
     }

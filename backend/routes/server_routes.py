@@ -198,6 +198,17 @@ def api_server_management_status():
 
 @server_bp.route("/api/server/start-check")
 def api_server_start_check():
+
+    ops_start_block = get_ops_start_block()
+
+    if ops_start_block:
+        return jsonify({
+            "success": False,
+            "start_blocked": True,
+            "error_code": ops_start_block.get("error_code"),
+            "message": ops_start_block.get("message"),
+        }), 409
+
     warning = (
         get_whitelist_start_warning()
     )

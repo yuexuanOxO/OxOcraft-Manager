@@ -124,6 +124,15 @@ async function checkWhitelistBeforeServerStart() {
     const data = await response.json();
 
     if (!data.success) {
+        await showInfo({
+            title: "伺服器啟動檢查未通過",
+            message:
+                data.message
+                || "無法完成伺服器啟動前檢查。",
+            confirmText: "關閉",
+            variant: "error",
+        });
+
         return {
             allowed: false,
             confirmed: false,

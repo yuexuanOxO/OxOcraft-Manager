@@ -865,7 +865,30 @@ export async function saveAndRestartServer() {
         console.error("套用並重啟失敗:", error);
         alert("套用並重啟失敗，請查看 console。");
 
+        
     } finally {
+        // 重啟流程結束後，依實際狀態恢復電源按鈕
+        try {
+            const response = await fetch("/api/server/status?force=1",{ cache: "no-store" });
+
+            if (response.ok) {
+                const payload = await response.json();
+                const status = payload.data || payload;
+
+                if (
+                    status.state === "offline"
+                    || status.state === "ready"
+                ) {
+                    setPowerButtonLoading(false);
+                }
+            }
+
+        } catch (error) {
+            console.error("重新啟動後更新電源按鈕失敗:",error);
+        }
+
         await updateServerSettingsFooterMode();
     }
+
+
 }

@@ -33,16 +33,18 @@ export function initServerControl() {
 }
 
 
-async function confirmWhitelistStartWarning(
-    data
-) {
+async function confirmServerStartWarning(data) {
+    const isOps =
+        data?.warning_source === "ops";
+
     return await showConfirm({
-        title:
-            "檢測到白名單資料錯誤",
+        title: isOps
+            ? "偵測到管理員資料錯誤"
+            : "偵測到白名單資料錯誤",
 
         message:
             data?.message
-            || "白名單資料存在錯誤，"
+            || "伺服器設定資料存在異常，"
             + "是否仍要繼續開啟伺服器？",
 
         confirmText: "仍要開啟",
@@ -70,80 +72,81 @@ async function showServerStartWarning(warning) {
 }
 
 
-async function requestServerStart(
-    confirmWhitelistError = false
-) {
-    let response = await fetch(
+async function requestServerStart({
+    confirmOpsError = false,
+    confirmWhitelistError = false,
+} = {}) {
+    const response = await fetch(
         "/api/server/start",
         {
             method: "POST",
-
             headers: {
-                "Content-Type":
-                    "application/json",
+                "Content-Type": "application/json",
             },
-
             body: JSON.stringify({
+                confirm_ops_error: confirmOpsError,
                 confirm_whitelist_error:
                     confirmWhitelistError,
             }),
         }
     );
 
-    let data = await response.json();
+    const data = await response.json();
 
-    if (
-        data.requires_confirmation
-    ) {
-        const confirmed =
-            await confirmWhitelistStartWarning(
-                data
-            );
-
-        if (!confirmed) {
-            return {
-                success: false,
-                cancelled: true,
-            };
-        }
-
-        response = await fetch(
-            "/api/server/start",
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type":
-                        "application/json",
-                },
-
-                body: JSON.stringify({
-                    confirm_whitelist_error:
-                        true,
-                }),
-            }
-        );
-
-        data = await response.json();
+    if (!data.requires_confirmation) {
+        return data;
     }
 
-    return data;
+    const source = data.warning_source;
+
+    // 避免未知類型或同一類警告重複要求確認
+    if (
+        !["ops", "whitelist"].includes(source)
+        || (source === "ops" && confirmOpsError)
+        || (
+            source === "whitelist"
+            && confirmWhitelistError
+        )
+    ) {
+        return {
+            success: false,
+            message: "伺服器啟動確認狀態異常。",
+        };
+    }
+
+    const confirmed =
+        await confirmServerStartWarning(data);
+
+    if (!confirmed) {
+        return {
+            success: false,
+            cancelled: true,
+        };
+    }
+
+    // 保留先前確認結果，繼續檢查其他類型
+    return requestServerStart({
+        confirmOpsError:
+            confirmOpsError || source === "ops",
+
+        confirmWhitelistError:
+            confirmWhitelistError
+            || source === "whitelist",
+    });
 }
 
 
-async function checkWhitelistBeforeServerStart() {
+async function checkServerBeforeRestart() {
     const response = await fetch(
         "/api/server/start-check",
-        {
-            cache: "no-store",
-        }
+        { cache: "no-store" }
     );
 
     const data = await response.json();
 
-    if (!data.success) {
+    if (!response.ok || !data.success) {
         await showInfo({
-            title: "伺服器啟動檢查未通過",
+            title: "伺服器啟動檢查失敗",
             message:
                 data.message
                 || "無法完成伺服器啟動前檢查。",
@@ -151,27 +154,45 @@ async function checkWhitelistBeforeServerStart() {
             variant: "error",
         });
 
-        return {
-            allowed: false,
-            confirmed: false,
-        };
+        return { allowed: false };
     }
 
-    if (!data.requires_confirmation) {
-        return {
-            allowed: true,
-            confirmed: false,
-        };
-    }
+    let confirmOpsError = false;
+    let confirmWhitelistError = false;
 
-    const confirmed =
-        await confirmWhitelistStartWarning(
-            data.warning
-        );
+    for (const warning of data.warnings || []) {
+        const source = warning.warning_source;
+
+        if (!["ops", "whitelist"].includes(source)) {
+            await showInfo({
+                title: "伺服器啟動檢查失敗",
+                message: "收到無法辨識的啟動警告。",
+                variant: "error",
+            });
+
+            return { allowed: false };
+        }
+
+        const confirmed =
+            await confirmServerStartWarning(warning);
+
+        if (!confirmed) {
+            return { allowed: false };
+        }
+
+        if (source === "ops") {
+            confirmOpsError = true;
+        }
+
+        if (source === "whitelist") {
+            confirmWhitelistError = true;
+        }
+    }
 
     return {
-        allowed: confirmed,
-        confirmed: confirmed,
+        allowed: true,
+        confirmOpsError,
+        confirmWhitelistError,
     };
 }
 
@@ -782,8 +803,7 @@ export async function saveAndRestartServer() {
             return;
         }
 
-        const startCheck =
-            await checkWhitelistBeforeServerStart();
+        const startCheck = await checkServerBeforeRestart();
 
         if (!startCheck.allowed) {
             return;
@@ -810,9 +830,13 @@ export async function saveAndRestartServer() {
 
         setPowerButtonLoading(true);
 
-        data = await requestServerStart(
-            startCheck.confirmed
-        );
+        data = await requestServerStart({
+            confirmOpsError:
+                startCheck.confirmOpsError,
+
+            confirmWhitelistError:
+                startCheck.confirmWhitelistError,
+        });
 
         if (data.cancelled) {
             return;

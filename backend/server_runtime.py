@@ -195,8 +195,8 @@ def classify_server_start_warning(
             "error_code": "ops_json_load_failed",
             "title": "管理員資料載入異常",
             "message": (
-                "伺服器已成功啟動，但 Minecraft "
-                "無法正確載入 ops.json。\n"
+                "伺服器已成功啟動，但Minecraft"
+                "無法正確載入ops.json。\n"
                 "管理員權限資料可能已遭清空或重置，"
                 "請至「權限管理」檢查並恢復。"
             ),
@@ -524,7 +524,9 @@ def validate_server_bind_ip(server_ip: str) -> tuple[bool, str]:
         return False, f"檢查 server-ip 時發生錯誤：{error}"
 
 
-def start_server() -> tuple[bool, str]:
+def start_server(
+    allow_invalid_ops: bool = False,
+) -> tuple[bool, str]:
     global server_process
 
     if is_server_running():
@@ -541,7 +543,10 @@ def start_server() -> tuple[bool, str]:
 
         ops_start_block = get_ops_start_block()
 
-        if ops_start_block:
+        if (
+            ops_start_block
+            and not allow_invalid_ops
+        ):
             return False, ops_start_block["message"]
 
     except Exception as error:

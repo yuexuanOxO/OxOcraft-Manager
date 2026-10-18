@@ -220,7 +220,7 @@ def get_ops_mutation_error(
             "success": False,
             "message": (
                 "管理員參數檔發生錯誤，"
-                "請先修復 ops.json"
+                "請先修復ops.json"
             ),
             "error_code":
                 ops_result.get(
@@ -1994,8 +1994,9 @@ def get_ops_start_block() -> dict | None:
             mutation_error.get("message")
             or "管理員資料檢查未通過"
         ) + (
-            "\n請先至「權限管理」檢查並處理資料，"
-            "再開啟伺服器，以免 Minecraft 啟動時"
-            "重新寫入 ops.json，造成資料遺失。"
+            "\n\n若仍要開啟伺服器，Minecraft"
+            "可能忽略、清空或重置管理員資料。\n"
+            "建議先備份並修復ops.json。\n\n"
+            "是否仍要繼續開啟伺服器？"
         ),
     }

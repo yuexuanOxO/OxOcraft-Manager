@@ -52,7 +52,7 @@ def api_server_setup_status():
     return jsonify(get_server_setup_status())
 
 
-@server_bp.route("/api/server/start",methods=["POST"])
+@server_bp.route("/api/server/start", methods=["POST"])
 def api_server_start():
 
     if is_auto_backup_control_locked():
@@ -62,67 +62,64 @@ def api_server_start():
                 "自動備份進行中，暫時無法啟動伺服器"
         }), 409
 
-    ops_start_block = (
-        get_ops_start_block()
+    data = request.get_json(silent=True) or {}
+
+    confirm_ops_error = (
+        data.get("confirm_ops_error") is True
     )
-
-    if ops_start_block:
-        return jsonify({
-            "success": False,
-            "start_blocked": True,
-            "error_code":
-                ops_start_block.get(
-                    "error_code"
-                ),
-            "message":
-                ops_start_block.get(
-                    "message"
-                ),
-        }), 409
-
-    data = request.get_json(
-        silent=True
-    ) or {}
 
     confirm_whitelist_error = (
-        data.get(
-            "confirm_whitelist_error"
-        ) is True
+        data.get("confirm_whitelist_error") is True
     )
 
+    # OP 資料檢查
+    ops_warning = get_ops_start_block()
+
+    if ops_warning and not confirm_ops_error:
+        return jsonify({
+            "success": False,
+            "requires_confirmation": True,
+            "warning_source": "ops",
+            "error_code":
+                ops_warning.get("error_code"),
+            "message":
+                ops_warning.get("message"),
+        }), 409
+
+    # 白名單資料檢查
     if not confirm_whitelist_error:
-        warning = (
+        whitelist_warning = (
             get_whitelist_start_warning()
         )
 
-        if warning:
+        if whitelist_warning:
             return jsonify({
                 "success": False,
-                "requires_confirmation":
-                    True,
+                "requires_confirmation": True,
+                "warning_source": "whitelist",
                 "warning_type":
-                    warning.get(
+                    whitelist_warning.get(
                         "warning_type"
                     ),
                 "error_code":
-                    warning.get(
+                    whitelist_warning.get(
                         "error_code"
                     ),
                 "message":
-                    warning.get(
+                    whitelist_warning.get(
                         "message"
                     ),
             }), 409
 
-    success, message = start_server()
-
-    status_code = (
-        200 if success else 400
+    success, message = start_server(
+        allow_invalid_ops=confirm_ops_error
     )
+
+    status_code = 200 if success else 400
 
     return jsonify({
         "success": success,
-        "message": message
+        "message": message,
     }), status_code
 
 
@@ -228,24 +225,28 @@ def api_server_management_status():
 
 @server_bp.route("/api/server/start-check")
 def api_server_start_check():
+    warnings = []
 
-    ops_start_block = get_ops_start_block()
+    ops_warning = get_ops_start_block()
 
-    if ops_start_block:
-        return jsonify({
-            "success": False,
-            "start_blocked": True,
-            "error_code": ops_start_block.get("error_code"),
-            "message": ops_start_block.get("message"),
-        }), 409
+    if ops_warning:
+        warnings.append({
+            "warning_source": "ops",
+            **ops_warning,
+        })
 
-    warning = (
+    whitelist_warning = (
         get_whitelist_start_warning()
     )
 
+    if whitelist_warning:
+        warnings.append({
+            "warning_source": "whitelist",
+            **whitelist_warning,
+        })
+
     return jsonify({
         "success": True,
-        "requires_confirmation":
-            warning is not None,
-        "warning": warning,
+        "requires_confirmation": bool(warnings),
+        "warnings": warnings,
     })

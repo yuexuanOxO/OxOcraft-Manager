@@ -52,6 +52,36 @@ _start_failure_lock = threading.Lock()
 _last_start_failure = None
 
 
+# Minecraft 啟動警告紀錄
+_start_warning_lock = threading.Lock()
+_last_start_warning = None
+
+
+def get_server_start_warning() -> dict | None:
+    with _start_warning_lock:
+        return (
+            dict(_last_start_warning)
+            if _last_start_warning
+            else None
+        )
+
+
+def clear_server_start_warning() -> None:
+    global _last_start_warning
+
+    with _start_warning_lock:
+        _last_start_warning = None
+
+
+def record_server_start_warning(
+    warning: dict,
+) -> None:
+    global _last_start_warning
+
+    with _start_warning_lock:
+        _last_start_warning = dict(warning)
+
+
 def get_server_start_failure() -> dict | None:
     with _start_failure_lock:
         return (
@@ -144,6 +174,38 @@ def classify_server_start_failure(
     }
 
 
+def classify_server_start_warning(
+    log_lines: list[str],
+) -> dict | None:
+    log_text = "\n".join(log_lines)
+
+    has_ops_error = (
+        "Failed to load operators list"
+        in log_text
+        and "DedicatedPlayerList.loadOps"
+        in log_text
+        and (
+            "JsonSyntaxException" in log_text
+            or "MalformedJsonException" in log_text
+        )
+    )
+
+    if has_ops_error:
+        return {
+            "error_code": "ops_json_load_failed",
+            "title": "管理員資料載入異常",
+            "message": (
+                "伺服器已成功啟動，但 Minecraft "
+                "無法正確載入 ops.json。\n"
+                "管理員權限資料可能已遭清空或重置，"
+                "請至「權限管理」檢查並恢復。"
+            ),
+            "file": "ops.json",
+        }
+
+    return None
+
+
 def resolve_death_player_uuid(
     player_name: str | None,
     account_type: str,
@@ -219,6 +281,7 @@ def handle_server_output() -> None:
 
     startup_logs = []
     reached_ready = False
+    startup_warning_recorded = False
 
     for line in process.stdout:
         line = line.strip()
@@ -231,6 +294,19 @@ def handle_server_output() -> None:
             # 只保留啟動階段最近的 Log
             if len(startup_logs) > 300:
                 startup_logs.pop(0)
+
+            # 偵測 ops.json 載入異常
+            if (
+                not startup_warning_recorded
+                and "DedicatedPlayerList.loadOps" in line
+            ):
+                warning = classify_server_start_warning(
+                    startup_logs
+                )
+
+                if warning:
+                    record_server_start_warning(warning)
+                    startup_warning_recorded = True
 
         if "Done (" in line and "For help, type" in line:
             reached_ready = True
@@ -539,6 +615,7 @@ def start_server() -> tuple[bool, str]:
         return False, bind_ip_message
 
     clear_server_start_failure()
+    clear_server_start_warning()
 
     set_server_runtime_state("starting")
     

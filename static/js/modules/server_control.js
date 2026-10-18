@@ -52,6 +52,24 @@ async function confirmWhitelistStartWarning(
 }
 
 
+async function showServerStartWarning(warning) {
+    if (!warning) return;
+
+    await showInfo({
+        title:
+            warning.title
+            || "伺服器啟動警告",
+
+        message:
+            warning.message
+            || "伺服器啟動時偵測到資料異常。",
+
+        confirmText: "關閉",
+        variant: "warning",
+    });
+}
+
+
 async function requestServerStart(
     confirmWhitelistError = false
 ) {
@@ -256,6 +274,7 @@ async function toggleServer() {
 
         let reachedTarget = false;
         let startupFailure = null;
+        let startupWarning = null;
 
         if (targetOnline && setupStage === "need_first_run") {
             reachedTarget =
@@ -269,6 +288,7 @@ async function toggleServer() {
 
             reachedTarget = result.ready;
             startupFailure = result.failure;
+            startupWarning = result.warning || null;
 
         } else {
             reachedTarget = await waitForServerStatus(
@@ -314,6 +334,8 @@ async function toggleServer() {
             `伺服器必要檔案已產生。\nRCON 設定已同步，請同意 Minecraft EULA 後再啟動伺服器。`
             });
             await checkEulaStatus();
+        }else if (targetOnline && startupWarning) {
+            await showServerStartWarning(startupWarning);
         }
 
     } catch (error) {
@@ -403,9 +425,32 @@ async function waitForServerStartup(
                 status.online === true
                 && status.state === "ready"
             ) {
+                let warning = null;
+
+                try {
+                    const warningResponse = await fetch(
+                        "/api/server/start-warning",
+                        { cache: "no-store" }
+                    );
+
+                    if (warningResponse.ok) {
+                        const warningData =
+                            await warningResponse.json();
+
+                        warning = warningData.warning || null;
+                    }
+
+                } catch (error) {
+                    console.error(
+                        "讀取伺服器啟動警告失敗:",
+                        error
+                    );
+                }
+
                 return {
                     ready: true,
                     failure: null,
+                    warning: warning,
                 };
             }
 
@@ -785,10 +830,18 @@ export async function saveAndRestartServer() {
 
         if (started) {
             await loadServerSettings();
-            await showInfo({
-                title: "重新啟動完成",
-                message: "設定已套用，伺服器已重新啟動。"
-            });
+
+            if (startResult.warning) {
+                await showServerStartWarning(
+                    startResult.warning
+                );
+            } else {
+                await showInfo({
+                    title: "重新啟動完成",
+                    message:
+                        "設定已套用，伺服器已重新啟動。",
+                });
+            }
         } else {
             await showInfo({
                 title:

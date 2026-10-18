@@ -27,6 +27,7 @@ from backend.server_runtime import (
     start_server,
     stop_server,
     get_server_start_failure,
+    get_server_start_warning,
 )
 
 server_bp = Blueprint("server", __name__)
@@ -152,6 +153,18 @@ def api_server_start_failure():
     response = jsonify({
         "success": True,
         "failure": get_server_start_failure(),
+    })
+
+    response.headers["Cache-Control"] = "no-store"
+
+    return response
+
+
+@server_bp.route("/api/server/start-warning")
+def api_server_start_warning():
+    response = jsonify({
+        "success": True,
+        "warning": get_server_start_warning(),
     })
 
     response.headers["Cache-Control"] = "no-store"

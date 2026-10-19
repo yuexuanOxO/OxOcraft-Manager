@@ -47,8 +47,9 @@ let candidatePlayers = [];
 let permissionServerReady = false;
 let permissionOnlineMode = true;
 let permissionServerState = "offline";
-let selectedOpLevel = 4;
-let defaultOpLevel = 4;
+const DEFAULT_ADD_OP_LEVEL = 2;
+let defaultOpLevel = DEFAULT_ADD_OP_LEVEL;
+let selectedOpLevel = defaultOpLevel;
 let selectedOpCandidate = null;
 let lockedOpCandidate = null;
 let permissionSearchKeyword = "";
@@ -719,28 +720,16 @@ function applyPlayerPermissionState(data) {
 
     allPlayers = data.players || [];
 
-    permissionServerReady =
-        Boolean(data.server_ready);
+    permissionServerReady = Boolean(data.server_ready);
 
-    permissionOnlineMode =
-        Boolean(data.online_mode);
+    permissionOnlineMode = Boolean(data.online_mode);
 
-    permissionServerState =
-        data.server_state
-        || getUiServerState();
+    permissionServerState = data.server_state || getUiServerState();
 
-    defaultOpLevel =
-        getDefaultOpLevelFromData(data);
 
-    console.log(
-        "[Permission] server_state =",
-        permissionServerState,
-        data
-    );
+    console.log("[Permission] server_state =",permissionServerState,data);
 
-    updatePermissionModeSummary(
-        data.online_mode
-    );
+    updatePermissionModeSummary(data.online_mode);
 
     renderPlayerPermissionList();
     renderAddOpInputState();
@@ -2677,23 +2666,11 @@ function renderPermissionActionButtons() {
 }
 
 
-function getDefaultOpLevelFromData(data) {
-    const value =
-        Number(data.op_permission_level || 4);
-
-    if (!Number.isFinite(value)) {
-        return 4;
-    }
-
-    return Math.max(1, Math.min(value, 4));
-}
-
-
 function getDefaultOpLevel() {
     return Math.max(
         1,
         Math.min(
-            Number(defaultOpLevel || 4),
+            Number(defaultOpLevel || DEFAULT_ADD_OP_LEVEL),
             4
         )
     );

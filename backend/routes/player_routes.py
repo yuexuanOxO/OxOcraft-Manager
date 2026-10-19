@@ -27,6 +27,7 @@ from backend.player_permissions.player_permission_service import (
     get_player_permission_data,
     remove_duplicate_ops_entry,
     recover_ops_json_from_db,
+    open_ops_file,
 )
 
 from backend.player_permissions.player_whitelist_service import (
@@ -870,10 +871,7 @@ def api_player_permission_remove_duplicate_entry():
         }), 500
 
 
-@player_bp.route(
-    "/api/player/permission/recover",
-    methods=["POST"]
-)
+@player_bp.route("/api/player/permission/recover",methods=["POST"])
 def api_player_permission_recover():
     try:
         result = (
@@ -894,4 +892,24 @@ def api_player_permission_recover():
         return jsonify({
             "success": False,
             "message": str(error),
+        }), 500
+
+
+@player_bp.route("/api/player/permission/open-file", methods=["POST"])
+def api_player_permission_open_file():
+    try:
+        result = open_ops_file()
+
+        status = (
+            200
+            if result.get("success")
+            else 400
+        )
+
+        return jsonify(result), status
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": f"開啟 ops.json 失敗：{error}",
         }), 500

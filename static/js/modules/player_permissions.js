@@ -1094,11 +1094,14 @@ function renderPermissionFileError(list) {
                 管理員參數檔出錯
             </div>
 
-            <div class="
-                player-permission-file-error-message
-            ">
+            <div class=" player-permission-file-error-message">
                 格式或資料錯誤，需要檢查
-                ops.json。
+                <button
+                    id="openOpsFileBtn"
+                    class="player-permission-file-link"
+                    type="button"
+                    data-mc-tooltip="使用預設程式開啟目前伺服器的 ops.json"
+                >ops.json</button>。
             </div>
 
             ${
@@ -1146,6 +1149,17 @@ function renderPermissionFileError(list) {
     `;
 
     document
+        .getElementById("openOpsFileBtn")
+        ?.addEventListener(
+            "click",
+            async (event) => {
+                await openOpsFile(
+                    event.currentTarget
+                );
+            }
+        );
+
+    document
         .getElementById(
             "refreshInvalidOpsBtn"
         )
@@ -1167,6 +1181,53 @@ function renderPermissionFileError(list) {
             }
         );
 
+}
+
+
+async function openOpsFile(button) {
+    if (button?.disabled) {
+        return;
+    }
+
+    if (button) {
+        button.disabled = true;
+    }
+
+    try {
+        const response = await fetch(
+            "/api/player/permission/open-file",
+            { method: "POST" }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(
+                data.message
+                || "開啟 ops.json 失敗"
+            );
+        }
+
+    } catch (error) {
+        console.error(
+            "開啟管理員檔案失敗:",
+            error
+        );
+
+        await showInfo({
+            title: "無法開啟管理員檔案",
+            message:
+                error.message
+                || "開啟 ops.json 失敗",
+            confirmText: "關閉",
+            variant: "error",
+        });
+
+    } finally {
+        if (button) {
+            button.disabled = false;
+        }
+    }
 }
 
 

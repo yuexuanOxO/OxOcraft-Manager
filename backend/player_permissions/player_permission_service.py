@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import datetime
 
 from backend.paths import MC_ROOT
@@ -47,6 +48,31 @@ def load_ops_file() -> dict:
     return load_player_json_file(
         OPS_FILE
     )
+
+
+def open_ops_file() -> dict:
+    if not OPS_FILE.is_file():
+        return {
+            "success": False,
+            "message": "找不到目前伺服器的 ops.json",
+            "error_code": "ops_file_not_found",
+        }
+
+    if not hasattr(os, "startfile"):
+        return {
+            "success": False,
+            "message": "開啟本機檔案功能目前僅支援 Windows",
+            "error_code": "unsupported_platform",
+        }
+
+    os.startfile(
+        OPS_FILE.resolve()
+    )
+
+    return {
+        "success": True,
+        "message": "已使用預設程式開啟 ops.json",
+    }
 
 
 def validate_ops_entries(

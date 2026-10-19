@@ -1024,11 +1024,9 @@ function renderPlayerWhitelistList() {
 
     if (!list) return;
 
-    if (
-        whitelistDataState.status ===
-        "file_invalid"
-    ) {
+    if (whitelistDataState.status === "file_invalid") {
         renderWhitelistFileError(list);
+        renderWhitelistActionButtons();
         return;
     }
 
@@ -1119,6 +1117,7 @@ function renderPlayerWhitelistList() {
                 目前沒有符合條件的白名單玩家
             </div>
         `;
+        renderWhitelistActionButtons();
         return;
     }
 
@@ -1169,7 +1168,12 @@ function renderWhitelistFileError(list) {
 
             <div class="player-whitelist-file-error-message">
                 格式或資料錯誤，需要檢查
-                whitelist.json。
+                <button
+                    id="openWhitelistFileBtn"
+                    class="player-whitelist-file-link"
+                    type="button"
+                    data-mc-tooltip="開啟whitelist.json"
+                >whitelist.json</button>。
             </div>
 
             ${
@@ -1210,6 +1214,17 @@ function renderWhitelistFileError(list) {
     `;
 
     document
+        .getElementById("openWhitelistFileBtn")
+        ?.addEventListener(
+            "click",
+            async (event) => {
+                await openWhitelistFile(
+                    event.currentTarget
+                );
+            }
+        );
+
+    document
         .getElementById(
             "refreshInvalidWhitelistBtn"
         )
@@ -1232,6 +1247,53 @@ function renderWhitelistFileError(list) {
             }
         );
 
+}
+
+
+async function openWhitelistFile(button) {
+    if (button?.disabled) {
+        return;
+    }
+
+    if (button) {
+        button.disabled = true;
+    }
+
+    try {
+        const response = await fetch(
+            "/api/player/whitelist/open-file",
+            { method: "POST" }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(
+                data.message
+                || "開啟 whitelist.json 失敗"
+            );
+        }
+
+    } catch (error) {
+        console.error(
+            "開啟白名單檔案失敗:",
+            error
+        );
+
+        await showInfo({
+            title: "無法開啟白名單檔案",
+            message:
+                error.message
+                || "開啟 whitelist.json 失敗",
+            confirmText: "關閉",
+            variant: "error",
+        });
+
+    } finally {
+        if (button) {
+            button.disabled = false;
+        }
+    }
 }
 
 

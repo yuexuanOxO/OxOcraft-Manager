@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import datetime, timedelta
 
 from backend.paths import MC_ROOT,SERVER_PROPERTIES_PATH
@@ -1229,6 +1230,31 @@ def load_whitelist_file() -> dict:
     return load_player_json_file(
         WHITELIST_FILE
     )
+
+
+def open_whitelist_file() -> dict:
+    if not WHITELIST_FILE.is_file():
+        return {
+            "success": False,
+            "message": "找不到目前伺服器的 whitelist.json",
+            "error_code": "whitelist_file_not_found",
+        }
+
+    if not hasattr(os, "startfile"):
+        return {
+            "success": False,
+            "message": "開啟本機檔案功能目前僅支援 Windows",
+            "error_code": "unsupported_platform",
+        }
+
+    os.startfile(
+        WHITELIST_FILE.resolve()
+    )
+
+    return {
+        "success": True,
+        "message": "已使用預設程式開啟whitelist.json",
+    }
 
 
 def load_validated_whitelist() -> dict:

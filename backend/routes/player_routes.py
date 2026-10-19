@@ -37,8 +37,9 @@ from backend.player_permissions.player_whitelist_service import (
     toggle_whitelist_setting,
     get_player_whitelist_data,
     recover_whitelist_json_from_db,
+    open_whitelist_file,
     remove_invalid_whitelist_entry,
-    add_player_whitelist_direct
+    add_player_whitelist_direct,
 )
 
 
@@ -393,6 +394,29 @@ def api_player_whitelist_recover():
         return jsonify({
             "success": False,
             "message": str(error),
+        }), 500
+
+
+@player_bp.route(
+    "/api/player/whitelist/open-file",
+    methods=["POST"],
+)
+def api_player_whitelist_open_file():
+    try:
+        result = open_whitelist_file()
+
+        status = (
+            200
+            if result.get("success")
+            else 400
+        )
+
+        return jsonify(result), status
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": f"開啟 whitelist.json 失敗：{error}",
         }), 500
 
 

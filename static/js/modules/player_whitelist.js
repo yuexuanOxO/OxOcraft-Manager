@@ -1155,8 +1155,7 @@ function renderWhitelistFileError(list) {
         );
 
     if (playerCount) {
-        playerCount.textContent =
-            "白名單資料異常";
+        playerCount.textContent = "白名單資料異常";
     }
 
     list.innerHTML = `

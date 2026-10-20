@@ -531,7 +531,9 @@
 
 .player-permission-entry-duplicate {
     border-color: #b487d8;
-    background: rgba(100, 65, 125, 0.16);
+    background: url("/static/img/ui/shulker_box.png") repeat;
+    background-size: 115px 115px;
+    image-rendering: pixelated;
 }
 
 .player-permission-entry-duplicate-tag {
@@ -2056,4 +2058,8 @@
 
 .player-permission-entry-duplicate-remove:hover {
     background: #422e2e;
+}
+
+.player-permission-card.player-permission-entry-duplicate.disabled {
+    opacity: 1;
 }

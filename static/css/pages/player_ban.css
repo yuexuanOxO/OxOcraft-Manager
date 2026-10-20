@@ -1505,3 +1505,9 @@
     border-color: rgba(189, 189, 189, 0.35);
     background: rgba(189, 189, 189, 0.08);
 }
+
+.player-ban-card.player-ban-json-issue.invalid {
+    align-items: center;
+    grid-template-columns: 42px minmax(260px, 1fr) 210px auto;
+    grid-template-areas: "avatar info time action";
+}

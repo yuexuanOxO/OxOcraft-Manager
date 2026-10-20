@@ -1438,6 +1438,22 @@ function createBanPlayerJsonIssueCard(item, kind) {
         }, item);
     }
 
+    const isInvalid = kind === "invalid";
+
+    const createdText = formatDateTime(
+        typeof entry.created === "string"
+            ? entry.created.trim()
+            : ""
+    );
+
+    const expiresText = entry.expires === "forever"
+        ? "永久封鎖"
+        : formatDateTime(
+            typeof entry.expires === "string"
+                ? entry.expires.trim()
+                : ""
+        );
+
     const labels = {
         invalid: "資料錯誤",
         unavailable: "無法驗證",
@@ -1484,7 +1500,19 @@ function createBanPlayerJsonIssueCard(item, kind) {
             ` : ""}
         </div>
 
-        ${kind === "invalid" ? `
+        ${isInvalid ? `
+            <div class="player-ban-time-info">
+                <div class="player-ban-history-meta">
+                    封鎖時間：${escapeHtml(createdText)}
+                </div>
+
+                <div class="player-ban-history-meta">
+                    解除時間：${escapeHtml(expiresText)}
+                </div>
+            </div>
+        ` : ""}
+
+        ${isInvalid ? `
             <button
                 class="player-ban-json-repair-btn player-ban-json-invalid-remove"
                 type="button"
@@ -1510,7 +1538,7 @@ function createBanPlayerJsonIssueCard(item, kind) {
 
     card.querySelector(".player-ban-json-repair-btn")
         ?.addEventListener("click", event => {
-            if (kind === "invalid") {
+            if (isInvalid) {
                 void removeInvalidBanPlayerEntry(item, event.currentTarget);
             } else {
                 void recheckBannedPlayersFile(event.currentTarget);

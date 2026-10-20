@@ -26,6 +26,7 @@ from backend.player_permissions.player_permission_service import (
     resolve_op_candidate_by_name,
     get_player_permission_data,
     remove_duplicate_ops_entry,
+    remove_invalid_ops_entry,
     recover_ops_json_from_db,
     open_ops_file,
 )
@@ -912,4 +913,36 @@ def api_player_permission_open_file():
         return jsonify({
             "success": False,
             "message": f"開啟 ops.json 失敗：{error}",
+        }), 500
+
+
+@player_bp.route(
+    "/api/player/permission/invalid-entry/remove",
+    methods=["POST"],
+)
+def api_player_permission_remove_invalid_entry():
+    data = request.get_json(silent=True)
+
+    if (
+        not isinstance(data, dict)
+        or type(data.get("entry_index")) is not int
+        or "entry" not in data
+    ):
+        return jsonify({
+            "success": False,
+            "message": "缺少有效的資料位置或原始資料",
+        }), 400
+
+    try:
+        result = remove_invalid_ops_entry(
+            entry_index=data["entry_index"],
+            expected_entry=data["entry"],
+        )
+
+        return jsonify(result), 200 if result.get("success") else 400
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": str(error),
         }), 500

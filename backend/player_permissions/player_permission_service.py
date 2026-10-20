@@ -6,6 +6,8 @@ from backend.paths import MC_ROOT
 from backend.server_monitor import get_cached_server_status
 from backend.notification_service import create_notification
 from backend.server_effective_settings import load_effective_settings_snapshot
+from backend.server_runtime import is_server_running
+
 from backend.player_permissions.player_identity_service import (
     get_known_players,
     get_account_type,
@@ -1086,8 +1088,8 @@ def sync_ops_json_to_players(
             title="管理員資料同步改動",
             message=(
                 f"資料同步重新載入管理員資料，"
-                f"新增 {added_count} 位，"
-                f"移除 {removed_count} 位。"
+                f"新增{added_count}位，"
+                f"移除{removed_count}位。"
             ),
             type="info",
             source="player_permission",
@@ -1834,6 +1836,52 @@ def resolve_op_candidate_by_name(
             online_uuid_set=get_online_uuid_set(),
         ),
     }
+
+
+def remove_invalid_ops_entry(entry_index: int, expected_entry) -> dict:
+    if is_server_running():
+        return {"success": False, "message": "請先關閉伺服器，再刪除錯誤資料"}
+
+    file_result = load_ops_file()
+
+    if file_result["status"] != "valid":
+        return {
+            "success": False,
+            "data_status": "file_invalid",
+            "message": "ops.json 目前無法正常讀取",
+        }
+
+    entries = file_result["entries"]
+
+    if (
+        type(entry_index) is not int
+        or entry_index < 0
+        or entry_index >= len(entries)
+        or json.dumps(entries[entry_index], sort_keys=True)
+            != json.dumps(expected_entry, sort_keys=True)
+    ):
+        return {"success": False, "message": "資料已變更，請重新整理後再操作"}
+
+    original_content = OPS_FILE.read_bytes()
+
+    validated = validate_ops_entries(
+        entries=entries,
+        online_mode=get_effective_online_mode(),
+    )
+
+    if not any(
+        item["entry_index"] == entry_index
+        for item in validated["invalid_entries"]
+    ):
+        return {"success": False, "message": "這筆資料目前不是錯誤資料，請重新整理"}
+
+    if is_server_running() or OPS_FILE.read_bytes() != original_content:
+        return {"success": False, "message": "伺服器或檔案狀態已變更，請重新整理"}
+
+    entries.pop(entry_index)
+    save_ops_entries(entries)
+
+    return {"success": True, "message": "已刪除指定的錯誤管理員資料"}
 
 
 def remove_duplicate_ops_entry(

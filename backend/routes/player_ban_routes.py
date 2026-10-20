@@ -21,6 +21,7 @@ from backend.player_ban.player_ban_service import (
     open_banned_players_file,
     recover_banned_players_json_from_db,
     remove_duplicate_banned_player_entry,
+    remove_invalid_banned_player_entry,
     BannedPlayersDataError,
 )
 
@@ -237,3 +238,27 @@ def api_player_ban_ip_candidates():
         "success": True,
         "records": get_ip_ban_candidate_list(),
     })
+
+
+@player_ban_bp.route(
+    "/api/player/ban/player/invalid-entry/remove",
+    methods=["POST"],
+)
+def api_player_ban_remove_invalid():
+    data = request.get_json(silent=True)
+
+    if (
+        not isinstance(data, dict)
+        or type(data.get("entry_index")) is not int
+        or "entry" not in data
+    ):
+        return jsonify({
+            "success": False,
+            "message": "缺少有效的資料位置或原始資料",
+        }), 400
+
+    return _player_ban_file_action_response(
+        remove_invalid_banned_player_entry,
+        entry_index=data["entry_index"],
+        expected_entry=data["entry"],
+    )

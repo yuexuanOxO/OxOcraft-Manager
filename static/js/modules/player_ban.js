@@ -1463,15 +1463,24 @@ function createBanPlayerJsonIssueCard(item, kind) {
             </div>
 
             <div class="player-ban-json-issue-hint">
-                banned-players.json 第 ${index} 筆資料
+                banned-players.json 第${index}筆資料
             </div>
 
-            <button class="player-ban-file-link" type="button">
-                開啟 banned-players.json
-            </button>
+            ${kind === "unavailable" ? `
+                <button class="player-ban-file-link" type="button">
+                    開啟 banned-players.json
+                </button>
+            ` : ""}
         </div>
 
-        ${kind === "unavailable" ? `
+        ${kind === "invalid" ? `
+            <button
+                class="player-ban-json-repair-btn player-ban-json-invalid-remove"
+                type="button"
+                data-mc-tooltip="刪除此筆錯誤資料"
+                aria-label="刪除此筆錯誤資料"
+            >✕</button>
+        ` : kind === "unavailable" ? `
             <button class="player-ban-json-repair-btn" type="button">
                 重新驗證
             </button>
@@ -1490,10 +1499,47 @@ function createBanPlayerJsonIssueCard(item, kind) {
 
     card.querySelector(".player-ban-json-repair-btn")
         ?.addEventListener("click", event => {
-            void recheckBannedPlayersFile(event.currentTarget);
+            if (kind === "invalid") {
+                void removeInvalidBanPlayerEntry(item, event.currentTarget);
+            } else {
+                void recheckBannedPlayersFile(event.currentTarget);
+            }
         });
 
     return card;
+}
+
+
+async function removeInvalidBanPlayerEntry(item, button) {
+    if (
+        button?.disabled
+        || banPlayerJsonActionBusy
+        || isUiServerTransitionState()
+        || getUiServerState() !== "offline"
+    ) return;
+
+    const confirmed = await showConfirm({
+        title: "刪除錯誤封鎖資料",
+        message: "確定刪除這筆錯誤的 banned-players.json 資料嗎？",
+        confirmText: "刪除",
+        cancelText: "取消",
+        variant: "warning",
+    });
+
+    if (!confirmed) return;
+
+    const success = await performBanPlayerJsonAction(
+        button,
+        "/api/player/ban/player/invalid-entry/remove",
+        {
+            entry_index: item.entry_index,
+            entry: item.entry,
+        }
+    );
+
+    if (!success) {
+        await loadCurrentBanTab();
+    }
 }
 
 

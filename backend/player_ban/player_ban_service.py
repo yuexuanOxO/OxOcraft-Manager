@@ -277,6 +277,55 @@ def recover_banned_players_json_from_db() -> dict:
     }
 
 
+def remove_invalid_banned_player_entry(
+    entry_index: int,
+    expected_entry,
+) -> dict:
+    if is_server_running():
+        return {"success": False, "message": "請先關閉伺服器，再刪除錯誤資料"}
+
+    with _BANNED_PLAYERS_FILE_LOCK:
+        file_result = load_player_json_file(BANNED_PLAYERS_FILE)
+
+        if file_result["status"] != "valid":
+            return {
+                "success": False,
+                "data_status": "file_invalid",
+                "message": "banned-players.json 目前無法正常讀取",
+            }
+
+        entries = file_result["entries"]
+
+        if (
+            type(entry_index) is not int
+            or entry_index < 0
+            or entry_index >= len(entries)
+            or json.dumps(entries[entry_index], sort_keys=True)
+                != json.dumps(expected_entry, sort_keys=True)
+        ):
+            return {"success": False, "message": "資料已變更，請重新整理後再操作"}
+
+        original_content = BANNED_PLAYERS_FILE.read_bytes()
+        validated = load_validated_banned_players()
+
+        if not any(
+            item["entry_index"] == entry_index
+            for item in validated["invalid_entries"]
+        ):
+            return {"success": False, "message": "這筆資料目前不是錯誤資料，請重新整理"}
+
+        if (
+            is_server_running()
+            or BANNED_PLAYERS_FILE.read_bytes() != original_content
+        ):
+            return {"success": False, "message": "伺服器或檔案狀態已變更，請重新整理"}
+
+        entries.pop(entry_index)
+        write_json_list(BANNED_PLAYERS_FILE, entries)
+
+    return {"success": True, "message": "已刪除指定的錯誤封鎖資料"}
+
+
 def remove_duplicate_banned_player_entry(
     entry_index: int,
     expected_entry,
@@ -1782,7 +1831,7 @@ def process_expired_ban(record: dict) -> dict:
 
         create_notification(
             title="黑名單已自動解除",
-            message=f"玩家 {target_name} 的封鎖期限已到，系統已自動解除封鎖。",
+            message=f"玩家{target_name}的封鎖期限已到，系統已自動解除封鎖。",
             type="success",
             source="player_ban_scheduler",
         )
@@ -1827,7 +1876,7 @@ def process_expired_ban(record: dict) -> dict:
 
         create_notification(
             title="IP 黑名單已自動解除",
-            message=f"IP：{target_name} 的封鎖期限已到，系統已自動解除封鎖。",
+            message=f"IP：{target_name}的封鎖期限已到，系統已自動解除封鎖。",
             type="success",
             source="player_ban_scheduler",
         )

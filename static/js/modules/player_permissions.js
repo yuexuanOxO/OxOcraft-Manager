@@ -1497,9 +1497,7 @@ function appendPermissionGroup(list, title, players, groupType) {
 }
 
 
-function createInvalidPermissionEntryCard(
-    item
-) {
+function createInvalidPermissionEntryCard(item) {
     const entry =
         (
             item?.entry
@@ -1589,9 +1587,83 @@ function createInvalidPermissionEntryCard(
             </div>
 
         </div>
+
+        <button
+            class="player-permission-entry-error-remove mc-danger-icon-btn"
+            type="button"
+            data-mc-tooltip="刪除此筆錯誤資料"
+            aria-label="刪除此筆錯誤資料"
+        >✕</button>
     `;
 
+    card.querySelector(".player-permission-entry-error-remove")
+        ?.addEventListener("click", event => {
+            void removeInvalidPermissionEntry(item, event.currentTarget);
+        });
+
     return card;
+}
+
+
+async function removeInvalidPermissionEntry(item, button) {
+    if (
+        button?.disabled
+        || isUiServerTransitionState()
+        || getUiServerState() !== "offline"
+    ) return;
+
+    button.disabled = true;
+
+    try {
+        const confirmed = await showConfirm({
+            title: "刪除錯誤管理員資料",
+            message: "確定刪除這筆錯誤的 ops.json 資料嗎？",
+            confirmText: "刪除",
+            cancelText: "取消",
+            variant: "warning",
+        });
+
+        if (!confirmed) return;
+
+        const response = await fetch(
+            "/api/player/permission/invalid-entry/remove",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    entry_index: item.entry_index,
+                    entry: item.entry,
+                }),
+            }
+        );
+
+        const data = await response.json();
+
+        await refreshPlayerPermissionState();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || "刪除錯誤資料失敗");
+        }
+
+        await showInfo({
+            title: "玩家權限",
+            message: data.message,
+            confirmText: "關閉",
+            variant: "success",
+        });
+
+    } catch (error) {
+        await showInfo({
+            title: "玩家權限",
+            message: error.message || "刪除錯誤資料失敗",
+            confirmText: "關閉",
+            variant: "error",
+        });
+
+    } finally {
+        button.disabled = false;
+        renderPermissionActionButtons();
+    }
 }
 
 
@@ -2620,17 +2692,21 @@ function isPermissionActionLocked() {
 
 function renderPermissionActionButtons() {
 
-    const transitionLocked =
-        isUiServerTransitionState();
+    document
+        .querySelectorAll(".player-permission-entry-error-remove")
+        .forEach(button => {
+            button.disabled =
+                isUiServerTransitionState()
+                || getUiServerState() !== "offline";
+        });
 
-    const mutationLocked =
-        isPermissionActionLocked();
+    const transitionLocked = isUiServerTransitionState();
 
-    const openAddBtn =
-        document.getElementById("openAddOpPlayerBtn");
+    const mutationLocked = isPermissionActionLocked();
 
-    const refreshBtn =
-        document.getElementById("refreshPlayerPermissionBtn");
+    const openAddBtn = document.getElementById("openAddOpPlayerBtn");
+
+    const refreshBtn = document.getElementById("refreshPlayerPermissionBtn");
 
     if (openAddBtn) {
         openAddBtn.disabled = mutationLocked;
@@ -2663,6 +2739,7 @@ function renderPermissionActionButtons() {
         .forEach((card) => {
             card.classList.toggle("disabled",mutationLocked);
         });
+        
 }
 
 

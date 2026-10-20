@@ -325,7 +325,7 @@ def maybe_refresh_ip_ban_from_log(line: str) -> None:
 
                 create_notification(
                     title="IP 黑名單已更新",
-                    message=f"{operator_name} 封鎖了 IP {ip}。",
+                    message=f"{operator_name}封鎖了IP：{ip}。",
                     type="warning",
                     source="player_ban",
                 )
@@ -427,10 +427,10 @@ def maybe_refresh_player_permission_from_log(line: str) -> None:
         )
 
         if action == "add":
-            message = f"{operator_name} 將 {target_name} 設為管理員。"
+            message = f"{operator_name}將{target_name}設為管理員。"
             notification_type = "info"
         else:
-            message = f"{operator_name} 收回了 {target_name} 的管理員權限。"
+            message = f"{operator_name}收回了{target_name}的管理員權限。"
             notification_type = "warning"
 
         create_notification(

@@ -174,7 +174,8 @@
     color: #d9a7ff;
 }
 
-.player-ban-json-issue > .player-ban-json-duplicate-remove {
+.player-ban-json-issue > .player-ban-json-duplicate-remove,
+.player-ban-json-issue > .player-ban-json-invalid-remove {
     width: 42px;
     height: 42px;
     padding: 0;
@@ -192,7 +193,8 @@
     line-height: 1;
 }
 
-.player-ban-json-duplicate-remove:hover {
+.player-ban-json-duplicate-remove:hover,
+.player-ban-json-invalid-remove:hover {
     background: #422e2e;
 }
 

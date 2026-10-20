@@ -577,8 +577,8 @@ def sync_whitelist_json_to_players_with_history(
             title="白名單已同步改動",
             message=(
                 f"資料同步重新載入白名單，"
-                f"新增 {added_count} 位，"
-                f"移除 {removed_count} 位。"
+                f"新增{added_count}位，"
+                f"移除{removed_count}位。"
             ),
             type="info",
             source="player_whitelist",

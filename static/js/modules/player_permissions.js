@@ -1497,6 +1497,45 @@ function appendPermissionGroup(list, title, players, groupType) {
 }
 
 
+function renderPermissionEntryOpDetail(entry) {
+    const validLevel =
+        Number.isInteger(entry.level)
+        && entry.level >= 1
+        && entry.level <= 4;
+
+    const levelText = validLevel ? `Lv${entry.level}` : "未知";
+
+    const icon = validLevel
+        ? getOpLevelIcon({ op_level: entry.level })
+        : UNKNOWN_OPERATOR_ICON;
+
+    const bypassText = entry.bypassesPlayerLimit === true
+        ? "是"
+        : entry.bypassesPlayerLimit === false
+            ? "否"
+            : "未知";
+
+    return `
+        <div class="player-permission-op-detail">
+            <div class="player-permission-op-level">
+                <span>權限等級：</span>
+                <span>${escapeHtml(levelText)}</span>
+
+                <img
+                    class="player-permission-op-level-icon"
+                    src="${icon}"
+                    alt="權限等級 ${escapeHtml(levelText)}"
+                >
+            </div>
+
+            <div class="player-permission-op-bypass">
+                可無視玩家上限：${bypassText}
+            </div>
+        </div>
+    `;
+}
+
+
 function createInvalidPermissionEntryCard(item) {
     const entry =
         (
@@ -1587,6 +1626,8 @@ function createInvalidPermissionEntryCard(item) {
             </div>
 
         </div>
+
+        ${renderPermissionEntryOpDetail(entry)}
 
         <button
             class="player-permission-entry-error-remove mc-danger-icon-btn"
@@ -1791,22 +1832,16 @@ function createUnavailablePermissionEntryCard(
 }
 
 
-function createDuplicatePermissionEntryCard(
-    item
-) {
-    const entry =
-        (
-            item?.entry
-            &&
-            typeof item.entry === "object"
-            &&
-            !Array.isArray(item.entry)
-        )
-            ? item.entry
-            : {};
+function createDuplicatePermissionEntryCard(item) {
+    const entry = (
+        item?.entry
+        && typeof item.entry === "object"
+        && !Array.isArray(item.entry)
+    )
+        ? item.entry
+        : {};
 
-    const validation =
-        item?.validation || {};
+    const validation = item?.validation || {};
 
     const playerName = String(
         validation.player_name
@@ -1820,38 +1855,17 @@ function createDuplicatePermissionEntryCard(
         || ""
     );
 
-    const avatarUrl =
-        getPlayerAvatarUrl({
-            player_uuid:
-                playerUuid,
-            player_name:
-                playerName,
-            account_type:
-                validation.account_type
-                || null,
-        });
+    const avatarUrl = getPlayerAvatarUrl({
+        player_uuid: playerUuid,
+        player_name: playerName,
+        account_type: validation.account_type || null,
+    });
 
-    const entryIndex =
-        Number.isInteger(
-            item?.entry_index
-        )
-            ? item.entry_index + 1
-            : null;
+    const entryIndex = Number.isInteger(item?.entry_index)
+        ? item.entry_index + 1
+        : null;
 
-    const opLevel =
-        entry.level ?? "?";
-
-    const bypassText =
-        entry.bypassesPlayerLimit === true
-            ? "是"
-            : (
-                entry.bypassesPlayerLimit === false
-                    ? "否"
-                    : "未知"
-            );
-
-    const card =
-        document.createElement("div");
+    const card = document.createElement("div");
 
     card.className =
         "player-permission-card "
@@ -1860,86 +1874,50 @@ function createDuplicatePermissionEntryCard(
     card.innerHTML = `
         <img
             class="player-permission-avatar"
-            src="${avatarUrl}"
+            src="${escapeHtml(avatarUrl)}"
             alt="${escapeHtml(playerName)}"
         >
 
         <div class="player-permission-info">
-
-            <div class="
-                player-permission-name-row
-            ">
-                <div class="
-                    player-permission-name
-                ">
+            <div class="player-permission-name-row">
+                <div class="player-permission-name">
                     ${escapeHtml(playerName)}
                 </div>
 
-                <div class="
-                    player-permission-entry-duplicate-tag
-                ">
+                <div class="player-permission-entry-duplicate-tag">
                     重複資料
                 </div>
             </div>
 
-            <div class="
-                player-permission-uuid
-            ">
-                UUID:
-                ${
-                    playerUuid
-                        ? escapeHtml(playerUuid)
-                        : "未知"
-                }
-            </div>
-
-            <div class="
-                player-permission-entry-duplicate-detail
-            ">
-                權限等級：
-                Lv${escapeHtml(opLevel)}
-                ｜可無視玩家上限：
-                ${escapeHtml(bypassText)}
+            <div class="player-permission-uuid">
+                UUID：${playerUuid ? escapeHtml(playerUuid) : "未知"}
             </div>
 
             <div class="player-permission-entry-duplicate-message">
                 同一個UUID在 ops.json中重複出現，請選擇一筆刪除。
             </div>
 
-            ${
-                entryIndex !== null
-                    ? `
-                        <div class="player-permission-entry-duplicate-hint">
-                            ops.json第${entryIndex}筆資料
-                        </div>
-                    `
-                    : ""
-            }
-
+            ${entryIndex !== null ? `
+                <div class="player-permission-entry-duplicate-hint">
+                    ops.json第${entryIndex}筆資料
+                </div>
+            ` : ""}
         </div>
 
+        ${renderPermissionEntryOpDetail(entry)}
+
         <button
-            class="
-                player-permission-entry-duplicate-remove
-                mc-danger-icon-btn
-            "
+            class="player-permission-entry-duplicate-remove mc-danger-icon-btn"
             type="button"
             data-mc-tooltip="刪除此筆重複資料"
-        >
-            ✕
-        </button>
+            aria-label="刪除此筆重複資料"
+        >✕</button>
     `;
 
-    card
-        .querySelector(
-            ".player-permission-entry-duplicate-remove"
-        )
-        ?.addEventListener(
-            "click",
-            async () => {
-                await removeDuplicatePermissionEntry(item);
-            }
-        );
+    card.querySelector(".player-permission-entry-duplicate-remove")
+        ?.addEventListener("click", async () => {
+            await removeDuplicatePermissionEntry(item);
+        });
 
     return card;
 }

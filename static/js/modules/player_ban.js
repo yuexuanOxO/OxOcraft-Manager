@@ -1173,7 +1173,9 @@ function renderBanHistory() {
         .filter(filter => filter === "player" || filter === "ip");
 
     const actionFilters = [...banHistoryFilters]
-        .filter(filter => filter === "add" || filter === "remove");
+        .filter(filter =>
+            ["add", "remove", "duplicate", "invalid"].includes(filter)
+        );
 
     const sourceFilters =
     [...banHistoryFilters]
@@ -1196,17 +1198,26 @@ function renderBanHistory() {
 
     if (actionFilters.length > 0) {
         rows = rows.filter(item => {
-            const action = String(item.action || "");
+            const action = String(item.action || "").toLowerCase();
+
+            const isDuplicate = action.includes("duplicate");
+            const isInvalid = action === "invalid_entry_remove";
+            const isDataCleanup = isDuplicate || isInvalid;
 
             const isRemove =
-                action.includes("remove") ||
-                action.includes("pardon");
+                !isDataCleanup
+                && (
+                    action.includes("remove")
+                    || action.includes("pardon")
+                );
 
-            const isAdd = !isRemove;
+            const isAdd = !isDataCleanup && !isRemove;
 
             return (
                 (actionFilters.includes("add") && isAdd) ||
-                (actionFilters.includes("remove") && isRemove)
+                (actionFilters.includes("remove") && isRemove) ||
+                (actionFilters.includes("duplicate") && isDuplicate) ||
+                (actionFilters.includes("invalid") && isInvalid)
             );
         });
     }

@@ -1445,12 +1445,10 @@ function renderWhitelistHistory() {
         end: whitelistHistoryEndTime,
     });
 
-    const actionFilters =
-        [...whitelistHistoryFilters]
-            .filter(filter =>
-                filter === "add" ||
-                filter === "remove"
-            );
+    const actionFilters = [...whitelistHistoryFilters]
+        .filter(filter =>
+            ["add", "remove", "duplicate", "invalid"].includes(filter)
+        );
 
     const sourceFilters =
         [...whitelistHistoryFilters]
@@ -1469,28 +1467,25 @@ function renderWhitelistHistory() {
 
     if (actionFilters.length > 0) {
         rows = rows.filter(item => {
-            const action =
-                String(
-                    item.action || ""
-                ).toLowerCase();
+            const action = String(item.action || "").toLowerCase();
+
+            const isDuplicate = action.includes("duplicate");
+            const isInvalid = action === "invalid_entry_remove";
+            const isDataCleanup = isDuplicate || isInvalid;
 
             const isRemove =
-                action.includes("remove");
+                !isDataCleanup && action.includes("remove");
 
             const isAdd =
-                !isRemove &&
-                action.includes("add");
+                !isDataCleanup
+                && !isRemove
+                && action.includes("add");
 
             return (
-                (
-                    actionFilters.includes("add")
-                    && isAdd
-                )
-                ||
-                (
-                    actionFilters.includes("remove")
-                    && isRemove
-                )
+                (actionFilters.includes("add") && isAdd) ||
+                (actionFilters.includes("remove") && isRemove) ||
+                (actionFilters.includes("duplicate") && isDuplicate) ||
+                (actionFilters.includes("invalid") && isInvalid)
             );
         });
     }

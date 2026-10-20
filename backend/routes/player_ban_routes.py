@@ -17,6 +17,11 @@ from backend.player_ban.player_ban_service import (
     sync_banned_json_to_db,
     get_player_ban_candidate_list,
     get_ip_ban_candidate_list,
+    get_player_ban_data,
+    open_banned_players_file,
+    recover_banned_players_json_from_db,
+    remove_duplicate_banned_player_entry,
+    BannedPlayersDataError,
 )
 
 player_ban_bp = Blueprint("player_ban", __name__)
@@ -24,11 +29,59 @@ player_ban_bp = Blueprint("player_ban", __name__)
 
 @player_ban_bp.route("/api/player/ban/players")
 def api_player_ban_players():
+    data = get_player_ban_data()
     return jsonify({
         "success": True,
-        "players": get_active_bans("player"),
+        "players": data["players"],
         "online_mode": get_effective_online_mode(),
+        "data_status": data["status"],
+        "error_code": data.get("error_code"),
+        "message": data.get("message", ""),
+        "invalid_entries": data["invalid_entries"],
+        "unavailable_entries": data["unavailable_entries"],
+        "duplicate_entries": data["duplicate_entries"],
     })
+
+
+def _player_ban_file_action_response(action, **kwargs):
+    try:
+        result = action(**kwargs)
+    except BannedPlayersDataError as error:
+        return jsonify(error.result), 400
+    except (OSError, UnicodeError) as error:
+        return jsonify({
+            "success": False,
+            "message": f"玩家黑名單檔案操作失敗：{error}",
+        }), 500
+
+    return jsonify(result), 200 if result.get("success") else 400
+
+
+@player_ban_bp.route("/api/player/ban/player/open-file", methods=["POST"])
+def api_player_ban_open_file():
+    return _player_ban_file_action_response(open_banned_players_file)
+
+
+@player_ban_bp.route("/api/player/ban/player/recover", methods=["POST"])
+def api_player_ban_recover():
+    return _player_ban_file_action_response(recover_banned_players_json_from_db)
+
+
+@player_ban_bp.route("/api/player/ban/player/duplicate-entry/remove", methods=["POST"])
+def api_player_ban_remove_duplicate():
+    data = request.get_json(silent=True)
+
+    if not isinstance(data, dict) or type(data.get("entry_index")) is not int:
+        return jsonify({
+            "success": False,
+            "message": "缺少有效的資料位置",
+        }), 400
+
+    return _player_ban_file_action_response(
+        remove_duplicate_banned_player_entry,
+        entry_index=data["entry_index"],
+        expected_entry=data.get("entry"),
+    )
 
 
 @player_ban_bp.route("/api/player/ban/ips")
@@ -65,7 +118,8 @@ def api_player_ban_player():
     if history_source != "player_list":
         history_source = ""
 
-    result = ban_player(
+    return _player_ban_file_action_response(
+        ban_player,
         player_name=data.get("name", ""),
         reason=data.get("reason", ""),
         operator=data.get("operator", "OxOcraft"),
@@ -79,8 +133,6 @@ def api_player_ban_player():
         history_source=history_source or None,
     )
 
-    status = 200 if result.get("success") else 400
-    return jsonify(result), status
 
 
 @player_ban_bp.route("/api/player/ban/player/unban", methods=["POST"])
@@ -95,13 +147,12 @@ def api_player_unban_player():
             "message": "缺少玩家 UUID",
         }), 400
 
-    result = unban_player_by_uuid(
+    return _player_ban_file_action_response(
+        unban_player_by_uuid,
         player_uuid=player_uuid,
         operator=data.get("operator", "OxOcraft"),
     )
 
-    status = 200 if result.get("success") else 400
-    return jsonify(result), status
 
 
 @player_ban_bp.route("/api/player/ban/ip", methods=["POST"])

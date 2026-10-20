@@ -52,6 +52,15 @@ let banHistoryEndTime = "";
 let banHistoryStartPicker = null;
 let banHistoryEndPicker = null;
 let banHistoryFlatpickrWasOpenOnPointerDown = false;
+let banLoadSequence = 0;
+let banPlayerJsonActionBusy = false;
+let banPlayerDataState = {
+    status: "valid",
+    message: "",
+    invalid_entries: [],
+    unavailable_entries: [],
+    duplicate_entries: [],
+};
 
 const banHistoryFilters = new Set();
 const OXOCRAFT_OPERATOR_ICON = "/static/icons/player_ban/OxOcraft_origin.png";
@@ -335,7 +344,7 @@ export function initPlayerBan() {
 
     
 
-    window.addEventListener("server-ui-state-changed", () => {
+    window.addEventListener("server-ui-state-changed", async () => {
         renderBanActionButtons();
 
         const addModal =
@@ -352,6 +361,11 @@ export function initPlayerBan() {
             && currentBanTab === "players"
         ) {
             renderBanCandidates();
+        }
+
+        const modal = document.getElementById("playerBanModal");
+        if (modal && !modal.classList.contains("hidden") && currentBanTab === "players") {
+            await loadCurrentBanTab();
         }
     });
 
@@ -564,48 +578,64 @@ function updateBanTabs() {
 }
 
 async function loadCurrentBanTab() {
+    const tab = currentBanTab;
+    const sequence = ++banLoadSequence;
+
     try {
         updateBanTabs();
 
-        if (currentBanTab === "players") {
-            const response = await fetch("/api/player/ban/players", { cache: "no-store" });
+        const urls = {
+            players: "/api/player/ban/players",
+            ips: "/api/player/ban/ips",
+            history: "/api/player/ban/history",
+        };
+
+        if (urls[tab]) {
+            const response = await fetch(urls[tab], { cache: "no-store" });
             const data = await response.json();
 
-            if (!data.success) throw new Error(data.message || "讀取封鎖玩家失敗");
+            if (sequence !== banLoadSequence || tab !== currentBanTab) {
+                return false;
+            }
 
-            banPlayers = data.players || [];
-            banOnlineMode = Boolean(data.online_mode);
-        }
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || "讀取黑名單資料失敗");
+            }
 
-        if (currentBanTab === "ips") {
-            const response = await fetch("/api/player/ban/ips", { cache: "no-store" });
-            const data = await response.json();
-
-            if (!data.success) throw new Error(data.message || "讀取封鎖IP失敗");
-
-            banIps = data.ips || [];
-            banOnlineMode = Boolean(data.online_mode);
-        }
-
-        if (currentBanTab === "history") {
-            const response = await fetch("/api/player/ban/history", { cache: "no-store" });
-            const data = await response.json();
-
-            if (!data.success) throw new Error(data.message || "讀取封鎖紀錄失敗");
-
-            banHistory = data.records || [];
+            if (tab === "players") {
+                banPlayers = data.players || [];
+                banOnlineMode = Boolean(data.online_mode);
+                banPlayerDataState = {
+                    status: data.data_status || "valid",
+                    message: data.message || "",
+                    invalid_entries: Array.isArray(data.invalid_entries) ? data.invalid_entries : [],
+                    unavailable_entries: Array.isArray(data.unavailable_entries) ? data.unavailable_entries : [],
+                    duplicate_entries: Array.isArray(data.duplicate_entries) ? data.duplicate_entries : [],
+                };
+            } else if (tab === "ips") {
+                banIps = data.ips || [];
+                banOnlineMode = Boolean(data.online_mode);
+            } else {
+                banHistory = data.records || [];
+            }
         }
 
         renderCurrentBanTab();
+        renderBanActionButtons();
+        return true;
 
     } catch (error) {
-        console.error(error);
+        if (sequence !== banLoadSequence || tab !== currentBanTab) {
+            return false;
+        }
 
+        console.error(error);
         await showInfo({
             title: "黑名單管理",
             message: error.message || "讀取黑名單資料失敗",
-            variant: "error"
+            variant: "error",
         });
+        return false;
     }
 }
 
@@ -647,40 +677,51 @@ function renderBanPlayers() {
     const playerCount = document.getElementById("playerBanPlayerCount");
     const keyword = getSearchKeyword();
 
-    if (!content) return;
+    try {
+        if (!content) return;
 
-    let rows = [...banPlayers];
+        renderBanModeBadge();
 
-    if (keyword) {
-        rows = rows.filter(item => {
-            return String(
-                item.target_name || ""
-            )
-                .toLowerCase()
-                .includes(keyword);
-        });
+        if (banPlayerDataState.status === "file_invalid") {
+            if (playerCount) playerCount.textContent = "玩家黑名單資料異常";
+            renderBanPlayerFileError(content);
+            return;
+        }
+
+        const matches = value => String(value || "").toLowerCase().includes(keyword);
+        const matchEntry = item => matches(
+            item?.validation?.player_name || item?.entry?.name
+        );
+        const players = banPlayers.filter(item => matches(item.target_name));
+        const invalid = banPlayerDataState.invalid_entries.filter(matchEntry);
+        const unavailable = banPlayerDataState.unavailable_entries.filter(matchEntry);
+        const duplicates = banPlayerDataState.duplicate_entries.filter(matchEntry);
+
+        if (playerCount) {
+            const parts = [`共 ${players.length} 位封鎖玩家`];
+            if (invalid.length) parts.push(`${invalid.length} 筆資料錯誤`);
+            if (unavailable.length) parts.push(`${unavailable.length} 筆待驗證`);
+            if (duplicates.length) parts.push(`${duplicates.length} 筆重複資料`);
+            playerCount.textContent = parts.join("｜");
+        }
+
+        content.innerHTML = "";
+
+        if (!players.length && !invalid.length && !unavailable.length && !duplicates.length) {
+            content.innerHTML = `<div class="player-ban-empty">目前沒有符合條件的封鎖玩家</div>`;
+            return;
+        }
+
+        invalid.forEach(item => content.appendChild(createBanPlayerJsonIssueCard(item, "invalid")));
+        unavailable.forEach(item => content.appendChild(createBanPlayerJsonIssueCard(item, "unavailable")));
+        duplicates.forEach(item => content.appendChild(createBanPlayerJsonIssueCard(item, "duplicate")));
+        players.forEach(item => content.appendChild(createBanPlayerCard(item)));
+    } finally {
+        // 空清單及錯誤畫面也必須更新按鈕，避免恢復後沿用舊鎖定狀態。
+        renderBanActionButtons();
     }
-    
-
-    renderBanModeBadge();
-
-    if (playerCount) {
-        playerCount.textContent = `共 ${rows.length} 位封鎖玩家`;
-    }
-
-    content.innerHTML = "";
-
-    if (rows.length === 0) {
-        content.innerHTML = `<div class="player-ban-empty">目前沒有封鎖玩家</div>`;
-        return;
-    }
-
-    rows.forEach(item => {
-        content.appendChild(createBanPlayerCard(item));
-    });
-
-    renderBanActionButtons();
 }
+
 
 function getBanOperatorAvatarUrl(item) {
     const operator = String(item.operator || "OxOcraft").trim();
@@ -895,6 +936,7 @@ async function unbanPlayer(item) {
         const data = await response.json();
 
         if (!data.success) {
+            if (data.data_status) await loadCurrentBanTab();
             throw new Error(
                 data.message || "解除玩家封鎖失敗"
             );
@@ -1254,20 +1296,200 @@ function createBanHelpCard(item) {
 }
 
 function renderBanActionButtons() {
-    const locked = isUiServerTransitionState();
+    const transitionLocked = isUiServerTransitionState();
+    const locked = transitionLocked || (
+        currentBanTab === "players"
+        && (hasBanPlayerDataIssues() || banPlayerJsonActionBusy)
+    );
 
     document
-        .querySelectorAll(".player-ban-unban-btn, #openAddBanBtn")
-        .forEach((button) => {
-            button.disabled = locked;
+        .querySelectorAll(".player-ban-unban-btn, #openAddBanBtn, #confirmAddPlayerBanBtn, .player-ban-candidate-select-btn")
+        .forEach(button => { button.disabled = locked; });
+
+    document
+        .querySelectorAll(".player-ban-card:not(.player-ban-json-issue)")
+        .forEach(card => { card.classList.toggle("disabled", locked); });
+
+    document
+        .querySelectorAll(".player-ban-json-repair-btn")
+        .forEach(button => {
+            button.disabled = banPlayerJsonActionBusy || transitionLocked || getUiServerState() !== "offline";
         });
 
     document
-        .querySelectorAll(".player-ban-card")
-        .forEach((card) => {
-            card.classList.toggle("disabled", locked);
-        });
+        .querySelectorAll(".player-ban-file-link")
+        .forEach(button => { button.disabled = banPlayerJsonActionBusy; });
 }
+
+
+function hasBanPlayerDataIssues() {
+    return banPlayerDataState.status !== "valid"
+        || banPlayerDataState.invalid_entries.length > 0
+        || banPlayerDataState.unavailable_entries.length > 0
+        || banPlayerDataState.duplicate_entries.length > 0;
+}
+
+
+function renderBanPlayerFileError(content) {
+    content.innerHTML = `
+        <div class="player-ban-file-error">
+            <div class="player-ban-file-error-title">玩家黑名單參數檔出錯</div>
+            <div>格式或資料錯誤，需要檢查
+                <button id="openBannedPlayersFileBtn" class="player-ban-file-link" type="button"
+                    data-mc-tooltip="使用預設程式開啟目前伺服器的 banned-players.json"
+                >banned-players.json</button>。
+            </div>
+            <div class="player-ban-file-error-detail">${escapeHtml(banPlayerDataState.message)}</div>
+            <div class="player-ban-file-error-actions">
+                <button id="recheckBannedPlayersBtn" class="player-ban-json-repair-btn" type="button"
+                    data-mc-tooltip="重新讀取並驗證目前的 banned-players.json">重新檢查</button>
+                <button id="recoverBannedPlayersBtn" class="player-ban-json-repair-btn" type="button"
+                    data-mc-tooltip="使用資料庫中記錄的封鎖玩家重建檔案，管理工具的封鎖期限會保留">恢復舊資料</button>
+            </div>
+        </div>
+    `;
+
+    document.getElementById("openBannedPlayersFileBtn")?.addEventListener("click", event => {
+        void performBanPlayerJsonAction(event.currentTarget, "/api/player/ban/player/open-file", {}, false);
+    });
+    document.getElementById("recheckBannedPlayersBtn")?.addEventListener("click", event => {
+        void recheckBannedPlayersFile(event.currentTarget);
+    });
+    document.getElementById("recoverBannedPlayersBtn")?.addEventListener("click", event => {
+        void recoverBannedPlayersFile(event.currentTarget);
+    });
+}
+
+
+function createBanPlayerJsonIssueCard(item, kind) {
+    const entry = item?.entry && typeof item.entry === "object" && !Array.isArray(item.entry)
+        ? item.entry : {};
+    const validation = item?.validation || {};
+    const name = String(validation.player_name || entry.name || "未知玩家");
+    const uuid = String(validation.player_uuid || entry.uuid || "缺少 UUID");
+    const labels = { invalid: "資料錯誤", unavailable: "無法驗證", duplicate: "重複資料" };
+    const message = kind === "duplicate"
+        ? "同一個 UUID 重複出現，請依封鎖原因與時間選擇保留的資料。"
+        : validation.message || "目前無法驗證這筆資料";
+    const index = Number.isInteger(item?.entry_index) ? item.entry_index + 1 : "未知";
+    const card = document.createElement("div");
+    card.className = `player-ban-card player-ban-json-issue ${kind}`;
+    card.innerHTML = `
+        <img class="player-ban-avatar" src="${UNKNOWN_OPERATOR_ICON}" alt="資料狀態">
+        <div class="player-ban-card-info">
+            <div class="player-ban-name-row">
+                <div class="player-ban-name">${escapeHtml(name)}</div>
+                <span class="player-ban-json-issue-tag">${labels[kind]}</span>
+            </div>
+            <div class="player-ban-history-meta">UUID：${escapeHtml(uuid)}</div>
+            <div class="player-ban-json-issue-message">${escapeHtml(message)}</div>
+            <div class="player-ban-history-meta">banned-players.json 第 ${index} 筆資料</div>
+            <pre class="player-ban-json-raw">${escapeHtml(JSON.stringify(item.entry, null, 2))}</pre>
+            <button class="player-ban-file-link" type="button">開啟 banned-players.json</button>
+        </div>
+        ${kind === "duplicate" ? `
+            <button class="player-ban-json-repair-btn" type="button">刪除此筆重複資料</button>
+        ` : kind === "unavailable" ? `
+            <button class="player-ban-json-repair-btn" type="button">重新驗證</button>
+        ` : ""}
+    `;
+
+    card.querySelector(".player-ban-file-link")?.addEventListener("click", event => {
+        void performBanPlayerJsonAction(event.currentTarget, "/api/player/ban/player/open-file", {}, false);
+    });
+    card.querySelector(".player-ban-json-repair-btn")?.addEventListener("click", event => {
+        if (kind === "duplicate") {
+            void removeDuplicateBanPlayerEntry(item, event.currentTarget);
+        } else {
+            void recheckBannedPlayersFile(event.currentTarget);
+        }
+    });
+    return card;
+}
+
+
+async function performBanPlayerJsonAction(button, url, payload = {}, refresh = true) {
+    if (button?.disabled || banPlayerJsonActionBusy) return false;
+    banPlayerJsonActionBusy = true;
+    if (button) button.disabled = true;
+    renderBanActionButtons();
+
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            if (data.data_status) await loadCurrentBanTab();
+            throw new Error(data.message || "玩家黑名單檔案操作失敗");
+        }
+        if (refresh) {
+            const loaded = await loadCurrentBanTab();
+            if (loaded) {
+                await showInfo({ title: "玩家黑名單", message: data.message, variant: "success", confirmText: "關閉" });
+            }
+        }
+        return true;
+    } catch (error) {
+        console.error("玩家黑名單檔案操作失敗:", error);
+        await showInfo({ title: "玩家黑名單", message: error.message || "檔案操作失敗", variant: "error", confirmText: "關閉" });
+        return false;
+    } finally {
+        banPlayerJsonActionBusy = false;
+        if (button) button.disabled = false;
+        renderBanActionButtons();
+    }
+}
+
+
+async function recheckBannedPlayersFile(button) {
+    if (button?.disabled || banPlayerJsonActionBusy) return;
+    banPlayerJsonActionBusy = true;
+    if (button) button.disabled = true;
+    renderBanActionButtons();
+    try {
+        if (!await loadCurrentBanTab()) return;
+        const issues = hasBanPlayerDataIssues();
+        await showInfo({
+            title: "玩家黑名單資料檢查",
+            message: issues ? "重新檢查完成，仍有需要處理的資料問題。" : "目前 banned-players.json 資料格式與內容皆正常。",
+            variant: issues ? "warning" : "success",
+            confirmText: "關閉",
+        });
+    } finally {
+        banPlayerJsonActionBusy = false;
+        if (button) button.disabled = false;
+        renderBanActionButtons();
+    }
+}
+
+
+async function recoverBannedPlayersFile(button) {
+    const confirmed = await showConfirm({
+        title: "恢復玩家黑名單舊資料",
+        message: "將使用資料庫中記錄的封鎖玩家重建 banned-players.json。\n目前損壞的檔案會被覆蓋，管理工具的封鎖期限會保留。",
+        confirmText: "恢復", cancelText: "取消", variant: "warning",
+    });
+    if (!confirmed) return;
+    await performBanPlayerJsonAction(button, "/api/player/ban/player/recover");
+}
+
+
+async function removeDuplicateBanPlayerEntry(item, button) {
+    const confirmed = await showConfirm({
+        title: "刪除重複封鎖資料",
+        message: `只刪除 banned-players.json 第 ${item.entry_index + 1} 筆重複資料，保留其他同 UUID 資料與玩家封鎖狀態。\n是否繼續？`,
+        confirmText: "刪除", cancelText: "取消", variant: "warning",
+    });
+    if (!confirmed) return;
+    await performBanPlayerJsonAction(button, "/api/player/ban/player/duplicate-entry/remove", {
+        entry_index: item.entry_index,
+        entry: item.entry,
+    });
+}
+
 
 function getSearchKeyword() {
     return banSearchKeyword;
@@ -1371,6 +1593,10 @@ function escapeHtml(text) {
 
 
 async function openAddBanModal(lockedPlayer = null) {
+    if (currentBanTab === "players" && hasBanPlayerDataIssues()) {
+        await showInfo({ title: "玩家黑名單", message: "請先處理玩家黑名單資料問題，再新增封鎖。", variant: "warning" });
+        return;
+    }
     lockedBanCandidate = lockedPlayer;
     selectedBanCandidatePlayer = lockedPlayer;
     selectedBanIpCandidate = null;
@@ -2367,6 +2593,7 @@ async function submitAddBan() {
         const data = await response.json();
 
         if (!data.success) {
+            if (data.data_status) await loadCurrentBanTab();
             throw new Error(
                 data.message || "新增黑名單失敗"
             );
@@ -2400,6 +2627,7 @@ async function submitAddBan() {
             confirmBtn.disabled = false;
             confirmBtn.textContent = "新增封鎖";
         }
+        renderBanActionButtons();
     }
 }
 
@@ -2510,6 +2738,10 @@ function getBanActionText(item) {
             : "封鎖玩家";
 
     const action = String(item.action || "");
+
+    if (action === "duplicate_remove") {
+        return "刪除重複封鎖資料";
+    }
 
     if (
         action.includes("remove") ||

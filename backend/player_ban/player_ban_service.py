@@ -1,5 +1,8 @@
 import ipaddress
 import json
+import os
+import tempfile
+import threading
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -39,8 +42,308 @@ from backend.player_permissions.player_permission_service import (
     get_online_uuid_set,
 )
 
+from backend.player_permissions.player_json_file_service import (
+    load_player_json_file,
+)
+
+from backend.player_permissions.player_json_validator import (
+    inspect_player_json_entries,
+    verify_cached_player_json_items,
+)
+
 BANNED_PLAYERS_FILE = MC_ROOT / "banned-players.json"
 BANNED_IPS_FILE = MC_ROOT / "banned-ips.json"
+
+_BANNED_PLAYERS_FILE_LOCK = threading.RLock()
+
+
+class BannedPlayersDataError(ValueError):
+    def __init__(self, result: dict):
+        super().__init__(result["message"])
+        self.result = result
+
+
+def load_validated_banned_players() -> dict:
+    try:
+        with _BANNED_PLAYERS_FILE_LOCK:
+            file_result = load_player_json_file(BANNED_PLAYERS_FILE)
+    except UnicodeError:
+        file_result = {
+            "status": "invalid",
+            "error_code": "invalid_encoding",
+            "message": "banned-players.json 必須使用 UTF-8 編碼",
+        }
+
+    result = {
+        "status": "valid",
+        "entries": [],
+        "valid_entries": [],
+        "invalid_entries": [],
+        "unavailable_entries": [],
+        "duplicate_entries": [],
+        "error_code": None,
+        "message": "",
+    }
+
+    if file_result["status"] != "valid":
+        return {
+            **result,
+            "status": "file_invalid",
+            "error_code": file_result.get("error_code"),
+            "message": file_result.get("message", ""),
+        }
+
+    inspection = inspect_player_json_entries(
+        entries=file_result["entries"],
+        schema_type="banned_players",
+    )
+
+    verification = verify_cached_player_json_items(
+        items=inspection["unique_entries"],
+        online_mode=is_online_mode(),
+        source="banned_players",
+    )
+
+    return {
+        **result,
+        "entries": file_result["entries"],
+        "valid_entries": verification["valid"],
+        "invalid_entries": (
+            inspection["invalid_entries"] + verification["invalid"]
+        ),
+        "unavailable_entries": verification["verification_unavailable"],
+        "duplicate_entries": inspection["duplicate_entries"],
+    }
+
+
+def get_banned_players_mutation_error(
+    validated: dict | None = None,
+) -> dict | None:
+    if validated is None:
+        validated = load_validated_banned_players()
+
+    if validated["status"] != "valid":
+        return {
+            "success": False,
+            "data_status": "file_invalid",
+            "error_code": validated.get("error_code"),
+            "message": "玩家黑名單參數檔發生錯誤，請先修復 banned-players.json",
+        }
+
+    issues = (
+        ("invalid_entries", "entry_invalid", "invalid_player_entries",
+         "玩家黑名單有資料錯誤，請先修正後再操作"),
+        ("unavailable_entries", "verification_unavailable", "player_verification_unavailable",
+         "玩家黑名單有資料目前無法驗證，請重新驗證後再操作"),
+        ("duplicate_entries", "entry_duplicate", "duplicate_player_entries",
+         "玩家黑名單有重複資料，請先處理後再操作"),
+    )
+
+    for key, status, code, message in issues:
+        if validated[key]:
+            return {
+                "success": False,
+                "data_status": status,
+                "error_code": code,
+                "message": message,
+            }
+
+    return None
+
+
+def require_valid_banned_player_entries() -> list[dict]:
+    validated = load_validated_banned_players()
+    error = get_banned_players_mutation_error(validated)
+
+    if error:
+        raise BannedPlayersDataError(error)
+
+    if is_server_running():
+        raise BannedPlayersDataError({
+            "success": False,
+            "data_status": "server_state_changed",
+            "message": "伺服器狀態已變更，請重新整理後再操作",
+        })
+
+    return validated["entries"]
+
+
+def get_player_ban_data() -> dict:
+    # 在線時沿用 DB 與 ban / pardon 指令同步的狀態。
+    # 磁碟上的外部修改，留到離線及下次啟動前驗證。
+    if is_server_running():
+        return {
+            "status": "valid",
+            "players": get_active_banned_players(),
+            "invalid_entries": [],
+            "unavailable_entries": [],
+            "duplicate_entries": [],
+            "error_code": None,
+            "message": "",
+        }
+
+    validated = load_validated_banned_players()
+
+    if is_server_running():
+        return get_player_ban_data()
+
+    # 只有整份資料都通過驗證，才同步 DB 的封鎖旗標。
+    sync_banned_players_json_to_db(validated=validated)
+    players = get_active_banned_players_from_json([
+        item["entry"] for item in validated["valid_entries"]
+    ])
+
+    return {**validated, "players": players}
+
+
+def open_banned_players_file() -> dict:
+    if not BANNED_PLAYERS_FILE.is_file():
+        return {"success": False, "message": "找不到目前伺服器的 banned-players.json"}
+
+    if not hasattr(os, "startfile"):
+        return {"success": False, "message": "開啟本機檔案功能目前僅支援 Windows"}
+
+    os.startfile(BANNED_PLAYERS_FILE.resolve())
+    return {"success": True, "message": "已使用預設程式開啟 banned-players.json"}
+
+
+def recover_banned_players_json_from_db() -> dict:
+    if is_server_running():
+        return {"success": False, "message": "請先關閉伺服器，再恢復玩家黑名單檔案"}
+
+    with _BANNED_PLAYERS_FILE_LOCK:
+        try:
+            file_result = load_player_json_file(BANNED_PLAYERS_FILE)
+        except UnicodeError:
+            file_result = {"status": "invalid"}
+
+        if file_result["status"] == "valid":
+            return {
+                "success": False,
+                "message": "banned-players.json 目前沒有需要恢復的整份檔案錯誤",
+                "error_code": "file_not_invalid",
+            }
+
+        entries = []
+
+        for player in get_banned_players_from_db():
+            created = player.get("banned_since") or now_text()
+
+            try:
+                created_at = datetime.strptime(created, "%Y-%m-%d %H:%M:%S")
+            except (TypeError, ValueError):
+                return {
+                    "success": False,
+                    "message": "資料庫中的封鎖建立時間異常，無法恢復玩家黑名單",
+                    "error_code": "invalid_ban_snapshot",
+                }
+
+            operator = get_latest_player_ban_operator(
+                player_uuid=player.get("player_uuid"),
+                player_name=player.get("player_name", ""),
+            )
+
+            entries.append({
+                "uuid": player.get("player_uuid"),
+                "name": player.get("player_name"),
+                "created": created_at.strftime("%Y-%m-%d %H:%M:%S +0800"),
+                "source": operator["operator"] or "OxOcraft",
+                # 管理工具的解除期限仍保留在 DB，交由原排程處理。
+                "expires": "forever",
+                "reason": player.get("ban_reason") or "已被管理員封鎖。",
+            })
+
+        inspection = inspect_player_json_entries(
+            entries=entries,
+            schema_type="banned_players",
+        )
+
+        if inspection["invalid_entries"] or inspection["duplicate_entries"]:
+            return {
+                "success": False,
+                "message": "資料庫中的封鎖玩家資料異常，無法恢復玩家黑名單",
+                "error_code": "invalid_ban_snapshot",
+            }
+
+        if is_server_running():
+            return {"success": False, "message": "伺服器狀態已變更，請關閉伺服器後再恢復"}
+
+        write_json_list(BANNED_PLAYERS_FILE, entries)
+
+    return {
+        "success": True,
+        "restored_count": len(entries),
+        "message": f"已恢復 {len(entries)} 位封鎖玩家，管理工具的封鎖期限已保留",
+    }
+
+
+def remove_duplicate_banned_player_entry(
+    entry_index: int,
+    expected_entry,
+) -> dict:
+    if is_server_running():
+        return {"success": False, "message": "請先關閉伺服器，再處理重複檔案資料"}
+
+    with _BANNED_PLAYERS_FILE_LOCK:
+        try:
+            file_result = load_player_json_file(BANNED_PLAYERS_FILE)
+        except UnicodeError:
+            file_result = {"status": "invalid"}
+
+        if file_result["status"] != "valid":
+            return {
+                "success": False,
+                "data_status": "file_invalid",
+                "message": "banned-players.json 目前無法正常讀取",
+            }
+
+        entries = file_result["entries"]
+
+        if (
+            type(entry_index) is not int
+            or entry_index < 0
+            or entry_index >= len(entries)
+            or entries[entry_index] != expected_entry
+        ):
+            return {
+                "success": False,
+                "message": "玩家黑名單資料已發生變更，請重新檢查後再操作",
+                "error_code": "banned_player_entry_changed",
+            }
+
+        inspection = inspect_player_json_entries(
+            entries=entries,
+            schema_type="banned_players",
+        )
+
+        if not any(
+            item["entry_index"] == entry_index
+            for item in inspection["duplicate_entries"]
+        ):
+            return {
+                "success": False,
+                "message": "指定資料目前不是重複項目，請重新檢查後再操作",
+                "error_code": "banned_player_duplicate_changed",
+            }
+
+        if is_server_running():
+            return {"success": False, "message": "伺服器狀態已變更，請關閉伺服器後再操作"}
+
+        removed = entries.pop(entry_index)
+        write_json_list(BANNED_PLAYERS_FILE, entries)
+
+    record_player_access(
+        category="ban",
+        action="duplicate_remove",
+        target_uuid=removed["uuid"],
+        target_name=removed["name"],
+        account_type=detect_account_type(removed["uuid"]),
+        operator_name="OxOcraft",
+        source="offline_ui_edit",
+        detail=json.dumps({"removed_entry": removed}, ensure_ascii=False),
+    )
+
+    return {"success": True, "message": "已刪除指定的重複資料，玩家封鎖狀態保留"}
 
 
 def now_text() -> str:
@@ -236,15 +539,17 @@ def pop_recent_ui_ban_command_if_match(
 
 def get_ban_start_blocks() -> list[dict]:
     blocks = []
+    player_error = get_banned_players_mutation_error()
 
-    configs = [
-        {
+    if player_error:
+        blocks.append({
             "source": "ban_players",
             "label": "玩家黑名單",
             "file": "banned-players.json",
-            "path": BANNED_PLAYERS_FILE,
-            "required": ("uuid", "name"),
-        },
+            "reason": player_error["message"],
+        })
+
+    configs = [
         {
             "source": "ban_ips",
             "label": "IP黑名單",
@@ -345,10 +650,29 @@ def read_json_list(path: Path) -> list[dict]:
 
 
 def write_json_list(path: Path, data: list[dict]) -> None:
-    path.write_text(
-        json.dumps(data, ensure_ascii=False, indent=4),
-        encoding="utf-8"
-    )
+    content = json.dumps(data, ensure_ascii=False, indent=4)
+
+    if path != BANNED_PLAYERS_FILE:
+        path.write_text(content, encoding="utf-8")
+        return
+
+    # 先完整寫入暫存檔，再替換正式檔，避免讀到寫入一半的 JSON。
+    with _BANNED_PLAYERS_FILE_LOCK:
+        temporary_path = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", encoding="utf-8", dir=path.parent,
+                prefix=".banned-players-", suffix=".tmp", delete=False,
+            ) as file:
+                temporary_path = Path(file.name)
+                file.write(content)
+                file.flush()
+                os.fsync(file.fileno())
+
+            os.replace(temporary_path, path)
+        finally:
+            if temporary_path is not None:
+                temporary_path.unlink(missing_ok=True)
 
 
 def get_current_account_type() -> str:
@@ -405,9 +729,28 @@ def get_active_banned_players() -> list[dict]:
     return result
 
 
-def get_active_banned_players_from_json() -> list[dict]:
+def get_banned_player_expiry_from_json(
+    entry: dict,
+    stored_expiry: str | None = None,
+) -> str | None:
+    # forever 保留管理工具自己的定時期限；外部日期期限轉成 DB 的本機時間。
+    if entry["expires"] == "forever":
+        return stored_expiry
+
+    return datetime.strptime(
+        entry["expires"], "%Y-%m-%d %H:%M:%S %z"
+    ).astimezone().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def get_active_banned_players_from_json(
+    entries: list[dict] | None = None,
+) -> list[dict]:
     current_account_type = get_current_account_type()
-    items = read_json_list(BANNED_PLAYERS_FILE)
+    if entries is None:
+        validated = load_validated_banned_players()
+        entries = [item["entry"] for item in validated["valid_entries"]]
+
+    items = entries
 
     result = []
 
@@ -446,6 +789,8 @@ def get_active_banned_players_from_json() -> list[dict]:
         else:
             expires_at = None
             reason = item.get("reason", "") or ""
+
+        expires_at = get_banned_player_expiry_from_json(item, expires_at)
 
 
         operator_info = get_latest_player_ban_operator(
@@ -591,33 +936,34 @@ def write_player_to_banned_json(
     reason: str,
     operator: str,
 ) -> None:
-    data = read_json_list(BANNED_PLAYERS_FILE)
+    with _BANNED_PLAYERS_FILE_LOCK:
+        data = require_valid_banned_player_entries()
 
-    normalized_uuid = str(player_uuid or "").strip().lower()
+        normalized_uuid = str(player_uuid or "").strip().lower()
 
-    data = [
-        item
-        for item in data
-        if str(
-            item.get("uuid", "")
-        ).strip().lower() != normalized_uuid
-    ]
+        data = [
+            item
+            for item in data
+            if str(
+                item.get("uuid", "")
+            ).strip().lower() != normalized_uuid
+        ]
 
-    data.append({
-        "uuid": player_uuid,
-        "name": player_name,
-        "created": datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S +0800"
-        ),
-        "source": operator or "OxOcraft-Manager",
-        "expires": "forever",
-        "reason": (
-            reason
-            or "Banned by OxOcraft-Manager"
-        ),
-    })
+        data.append({
+            "uuid": player_uuid,
+            "name": player_name,
+            "created": datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S +0800"
+            ),
+            "source": operator or "OxOcraft-Manager",
+            "expires": "forever",
+            "reason": (
+                reason
+                or "Banned by OxOcraft-Manager"
+            ),
+        })
 
-    write_json_list(BANNED_PLAYERS_FILE, data)
+        write_json_list(BANNED_PLAYERS_FILE, data)
 
 
 def ban_player(
@@ -632,6 +978,11 @@ def ban_player(
     history_source: str | None = None,
 ) -> dict:
     player_name = str(player_name or "").strip()
+
+    if not is_server_running():
+        error = get_banned_players_mutation_error()
+        if error:
+            return error
 
     reason = str(reason or "").strip()
     if not reason:
@@ -741,48 +1092,54 @@ def remove_player_from_banned_json(
     player_uuid: str | None,
     player_name: str,
 ) -> bool:
-    data = read_json_list(BANNED_PLAYERS_FILE)
+    with _BANNED_PLAYERS_FILE_LOCK:
+        data = require_valid_banned_player_entries()
 
-    original_count = len(data)
+        original_count = len(data)
 
-    normalized_uuid = str(
-        player_uuid or ""
-    ).strip().lower()
-
-    def should_remove(item: dict) -> bool:
-        item_uuid = str(
-            item.get("uuid", "")
+        normalized_uuid = str(
+            player_uuid or ""
         ).strip().lower()
 
-        item_name = str(
-            item.get("name", "")
-        ).strip()
+        def should_remove(item: dict) -> bool:
+            item_uuid = str(
+                item.get("uuid", "")
+            ).strip().lower()
 
-        if normalized_uuid:
-            return item_uuid == normalized_uuid
+            item_name = str(
+                item.get("name", "")
+            ).strip()
 
-        return is_same_player_name(
-            item_name,
-            player_name,
-        )
+            if normalized_uuid:
+                return item_uuid == normalized_uuid
 
-    data = [
-        item
-        for item in data
-        if not should_remove(item)
-    ]
+            return is_same_player_name(
+                item_name,
+                player_name,
+            )
 
-    if len(data) == original_count:
-        return False
+        data = [
+            item
+            for item in data
+            if not should_remove(item)
+        ]
 
-    write_json_list(BANNED_PLAYERS_FILE, data)
-    return True
+        if len(data) == original_count:
+            return False
+
+        write_json_list(BANNED_PLAYERS_FILE, data)
+        return True
 
 
 def unban_player_by_uuid(
     player_uuid: str,
     operator: str = "OxOcraft",
 ) -> dict:
+    if not is_server_running():
+        error = get_banned_players_mutation_error()
+        if error:
+            return error
+
     player = get_banned_player_by_uuid(player_uuid)
 
     if not player:
@@ -861,6 +1218,9 @@ def sync_ban_player_from_log(
     reason = ""
 
     for item in read_json_list(BANNED_PLAYERS_FILE):
+        if not isinstance(item, dict):
+            continue
+
         json_name = str(
             item.get("name", "")
         ).strip()
@@ -1505,11 +1865,26 @@ def process_expired_bans() -> list[dict]:
     return results
 
 
-def sync_banned_players_json_to_db() -> dict:
+def sync_banned_players_json_to_db(
+    validated: dict | None = None,
+) -> dict:
     synced_players = 0
     removed_players = 0
 
-    players = read_json_list(BANNED_PLAYERS_FILE)
+    if validated is None:
+        validated = load_validated_banned_players()
+
+    error = get_banned_players_mutation_error(validated)
+
+    if error:
+        return {
+            "synced_players": 0,
+            "removed_players": 0,
+            "player_sync_status": error["data_status"],
+            "player_error_code": error.get("error_code"),
+        }
+
+    players = [item["entry"] for item in validated["valid_entries"]]
 
     active_uuid_set = {
         str(item.get("uuid", "")).strip().lower()
@@ -1546,6 +1921,8 @@ def sync_banned_players_json_to_db() -> dict:
                 if existing
                 else None
             )
+
+            expires_at = get_banned_player_expiry_from_json(item, expires_at)
 
             print("[BanSync] sync player:", {
                 "player_uuid": player_uuid,
@@ -1621,6 +1998,8 @@ def sync_banned_players_json_to_db() -> dict:
     return {
         "synced_players": synced_players,
         "removed_players": removed_players,
+        "player_sync_status": "success",
+        "player_error_code": None,
     }
 
 

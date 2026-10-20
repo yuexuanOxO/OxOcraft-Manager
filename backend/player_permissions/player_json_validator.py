@@ -1,4 +1,6 @@
 import uuid
+import re
+from datetime import datetime
 
 from backend.db import (
     get_player_by_uuid_and_name_exact,
@@ -78,12 +80,66 @@ def validate_ops_entry_schema(
     }
 
 
+def validate_banned_player_entry_schema(
+    entry: dict,
+) -> dict:
+    for field in ("uuid", "name", "created", "source", "expires", "reason"):
+        value = entry.get(field)
+
+        if not isinstance(value, str):
+            return {
+                "valid": False,
+                "error_code": f"invalid_ban_{field}",
+                "message": f"封鎖資料的 {field} 欄位必須為字串",
+            }
+
+    date_pattern = (
+        r"\d{4}-\d{2}-\d{2} "
+        r"\d{2}:\d{2}:\d{2} [+-]\d{4}"
+    )
+
+    for field in ("created", "expires"):
+        value = entry[field]
+
+        if field == "expires" and value == "forever":
+            continue
+
+        try:
+            if not re.fullmatch(date_pattern, value):
+                raise ValueError("invalid date format")
+
+            datetime.strptime(value, "%Y-%m-%d %H:%M:%S %z")
+
+        except ValueError:
+            return {
+                "valid": False,
+                "error_code": f"invalid_ban_{field}",
+                "message": (
+                    f"封鎖資料的 {field} 欄位日期格式錯誤"
+                    + (
+                        "，必須為 forever 或包含時區的日期時間"
+                        if field == "expires"
+                        else "，必須為包含時區的日期時間"
+                    )
+                ),
+            }
+
+    return {
+        "valid": True,
+        "error_code": None,
+        "message": "",
+    }
+
+
 PLAYER_JSON_SCHEMA_VALIDATORS = {
     "whitelist":
         validate_whitelist_entry_schema,
 
     "ops":
         validate_ops_entry_schema,
+
+    "banned_players":
+        validate_banned_player_entry_schema,
 }
 
 

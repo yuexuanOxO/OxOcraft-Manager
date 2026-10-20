@@ -1,5 +1,142 @@
 @import url("../components/filter_menu.css");
 
+.player-ban-file-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 32px 16px;
+    text-align: center;
+    line-height: 1.6;
+}
+
+.player-ban-file-error-title {
+    color: #ff7b7b;
+    font-size: 24px;
+}
+
+.player-ban-file-error-detail {
+    max-width: 520px;
+    color: #aaa;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
+.player-ban-file-error-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.player-ban-file-link {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #f0c36a;
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.player-ban-file-link:hover {
+    color: #ffe0a3;
+}
+
+.player-ban-file-link:focus-visible {
+    outline: 2px solid #f0c36a;
+    outline-offset: 3px;
+}
+
+.player-ban-json-repair-btn {
+    flex-shrink: 0;
+    padding: 9px 12px;
+    border: 1px solid #c08b42;
+    border-radius: 6px;
+    background: #2b2b2b;
+    color: #f0c36a;
+    font: inherit;
+    cursor: pointer;
+}
+
+.player-ban-json-repair-btn:hover {
+    background: #3a3324;
+}
+
+.player-ban-json-repair-btn:disabled,
+.player-ban-file-link:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.player-ban-card.player-ban-json-issue {
+    align-items: flex-start;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    grid-template-areas: "avatar info action";
+    border-color: #b85c5c;
+    background: rgba(120, 45, 45, 0.18);
+}
+
+.player-ban-json-issue > .player-ban-json-repair-btn {
+    grid-area: action;
+    max-width: 130px;
+}
+
+.player-ban-json-issue > .player-ban-avatar {
+    grid-area: avatar;
+}
+
+.player-ban-json-issue.unavailable,
+.player-ban-json-issue.duplicate {
+    border-color: #c08b42;
+    background: rgba(120, 90, 35, 0.16);
+}
+
+.player-ban-json-issue-tag {
+    padding: 2px 7px;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    color: #ff9c9c;
+    font-size: 12px;
+}
+
+.player-ban-json-issue.unavailable .player-ban-json-issue-tag,
+.player-ban-json-issue.duplicate .player-ban-json-issue-tag {
+    color: #f0c36a;
+}
+
+.player-ban-json-issue-message {
+    margin-top: 5px;
+    color: #ddd;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
+.player-ban-json-issue .player-ban-name-row {
+    flex-wrap: wrap;
+}
+
+.player-ban-json-issue .player-ban-name {
+    font-size: 20px;
+    overflow-wrap: anywhere;
+}
+
+.player-ban-json-raw {
+    max-height: 130px;
+    margin: 8px 0;
+    padding: 8px;
+    overflow: auto;
+    background: #171717;
+    color: #bbb;
+    font-size: 12px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
 #playerBanModal {
     position: fixed;
     inset: 0;

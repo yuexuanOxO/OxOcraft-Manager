@@ -1899,7 +1899,7 @@ async function removeDuplicatePermissionEntry(item) {
 
             message:
                 `確定要刪除「${playerName}」`
-                + "這筆重複管理員資料嗎？\n\n"
+                + "這筆重複管理員資料嗎？\n"
                 + `權限等級：Lv${level}\n`
                 + `可無視玩家上限：${bypassText}`,
 

@@ -737,13 +737,17 @@ function getBanOperatorAvatarUrl(item) {
     });
 }
 
-function createBanPlayerCard(item) {
-    const card = document.createElement("div");
 
-    const isInvalidMode =
-        item.valid_for_current_mode === false;
+function createBanPlayerCard(item, duplicateEntry = null) {
+    const card = document.createElement("div");
+    const isDuplicate = duplicateEntry !== null;
+    const isInvalidMode = item.valid_for_current_mode === false;
 
     card.className = "player-ban-card";
+
+    if (isDuplicate) {
+        card.classList.add("player-ban-json-issue", "duplicate");
+    }
 
     if (isInvalidMode) {
         card.classList.add("player-ban-invalid-mode");
@@ -764,20 +768,30 @@ function createBanPlayerCard(item) {
 
         <div class="player-ban-card-info">
             <div class="player-ban-name-row">
-                <div class="player-ban-name">${escapeHtml(item.target_name)}</div>
+                <div class="player-ban-name">
+                    ${escapeHtml(item.target_name)}
+                </div>
+
+                ${isDuplicate ? `
+                    <span class="player-ban-json-issue-tag">
+                        重複資料
+                    </span>
+                ` : ""}
             </div>
 
-            <div class="player-ban-history-meta">UUID：${escapeHtml(item.target_uuid || "未知")}</div>
-            <div class="player-ban-history-meta">封鎖原因：${escapeHtml(item.reason || "已被管理員封鎖。")}</div>
-            ${
-                isInvalidMode
-                    ? `
-                        <div class="player-ban-meta player-ban-invalid-mode-text">
-                            此資料不符合目前伺服器的登入模式，可能無效
-                        </div>
-                    `
-                    : ""
-            }
+            <div class="player-ban-history-meta">
+                UUID：${escapeHtml(item.target_uuid || "未知")}
+            </div>
+
+            <div class="player-ban-history-meta">
+                封鎖原因：${escapeHtml(item.reason || "已被管理員封鎖。")}
+            </div>
+
+            ${isInvalidMode ? `
+                <div class="player-ban-meta player-ban-invalid-mode-text">
+                    此資料不符合目前伺服器的登入模式，可能無效
+                </div>
+            ` : ""}
         </div>
 
         <div class="player-ban-time-info">
@@ -791,24 +805,53 @@ function createBanPlayerCard(item) {
         </div>
 
         <button
-            class="player-ban-unban-btn"
+            class="${isDuplicate
+                ? "player-ban-json-repair-btn player-ban-json-duplicate-remove"
+                : "player-ban-unban-btn"}"
             type="button"
-            data-mc-tooltip="解除封鎖"
-            aria-label="解除封鎖"
+            data-mc-tooltip="${isDuplicate ? "刪除此筆重複資料" : "解除封鎖"}"
+            aria-label="${isDuplicate ? "刪除此筆重複資料" : "解除封鎖"}"
         >
             ✕
         </button>
+
+        ${isDuplicate ? `
+            <div class="player-ban-json-issue-footer">
+                <div class="player-ban-json-issue-message">
+                    同一個UUID在banned-players.json中重複出現，請自行選擇哪一筆保留。
+                </div>
+
+                <div class="player-ban-json-issue-hint">
+                    banned-players.json 第 ${
+                        Number.isInteger(duplicateEntry.entry_index)
+                            ? duplicateEntry.entry_index + 1
+                            : "未知"
+                    } 筆資料
+                </div>
+            </div>
+        ` : ""}
     `;
 
-    const unbanBtn =
-        card.querySelector(".player-ban-unban-btn");
+    const actionBtn = card.querySelector(
+        isDuplicate
+            ? ".player-ban-json-duplicate-remove"
+            : ".player-ban-unban-btn"
+    );
 
-    unbanBtn?.addEventListener("click", async () => {
-        await unbanPlayer(item);
+    actionBtn?.addEventListener("click", async event => {
+        if (isDuplicate) {
+            await removeDuplicateBanPlayerEntry(
+                duplicateEntry,
+                event.currentTarget
+            );
+        } else {
+            await unbanPlayer(item);
+        }
     });
 
     return card;
 }
+
 
 function renderBanIps() {
     const content = document.getElementById("playerBanContent");
@@ -1362,48 +1405,94 @@ function renderBanPlayerFileError(content) {
 
 
 function createBanPlayerJsonIssueCard(item, kind) {
-    const entry = item?.entry && typeof item.entry === "object" && !Array.isArray(item.entry)
-        ? item.entry : {};
+    const entry = item?.entry
+        && typeof item.entry === "object"
+        && !Array.isArray(item.entry)
+        ? item.entry
+        : {};
+
     const validation = item?.validation || {};
     const name = String(validation.player_name || entry.name || "未知玩家");
     const uuid = String(validation.player_uuid || entry.uuid || "缺少 UUID");
-    const labels = { invalid: "資料錯誤", unavailable: "無法驗證", duplicate: "重複資料" };
-    const message = kind === "duplicate"
-        ? "同一個 UUID 重複出現，請依封鎖原因與時間選擇保留的資料。"
-        : validation.message || "目前無法驗證這筆資料";
-    const index = Number.isInteger(item?.entry_index) ? item.entry_index + 1 : "未知";
+
+    if (kind === "duplicate") {
+        return createBanPlayerCard({
+            target_name: name,
+            target_uuid: validation.player_uuid || entry.uuid || "",
+            account_type: validation.account_type || null,
+            reason: entry.reason,
+            created_at: entry.created,
+            permanent: entry.expires === "forever" ? 1 : 0,
+            expires_at: entry.expires === "forever" ? null : entry.expires,
+        }, item);
+    }
+
+    const labels = {
+        invalid: "資料錯誤",
+        unavailable: "無法驗證",
+    };
+
+    const message = validation.message || "目前無法驗證這筆資料";
+    const index = Number.isInteger(item?.entry_index)
+        ? item.entry_index + 1
+        : "未知";
+
     const card = document.createElement("div");
+
     card.className = `player-ban-card player-ban-json-issue ${kind}`;
+
     card.innerHTML = `
-        <img class="player-ban-avatar" src="${UNKNOWN_OPERATOR_ICON}" alt="資料狀態">
+        <img
+            class="player-ban-avatar"
+            src="${UNKNOWN_OPERATOR_ICON}"
+            alt="${escapeHtml(name)}"
+        >
+
         <div class="player-ban-card-info">
             <div class="player-ban-name-row">
                 <div class="player-ban-name">${escapeHtml(name)}</div>
                 <span class="player-ban-json-issue-tag">${labels[kind]}</span>
             </div>
-            <div class="player-ban-history-meta">UUID：${escapeHtml(uuid)}</div>
-            <div class="player-ban-json-issue-message">${escapeHtml(message)}</div>
-            <div class="player-ban-history-meta">banned-players.json 第 ${index} 筆資料</div>
-            <pre class="player-ban-json-raw">${escapeHtml(JSON.stringify(item.entry, null, 2))}</pre>
-            <button class="player-ban-file-link" type="button">開啟 banned-players.json</button>
+
+            <div class="player-ban-history-meta">
+                UUID：${escapeHtml(uuid)}
+            </div>
+
+            <div class="player-ban-json-issue-message">
+                ${escapeHtml(message)}
+            </div>
+
+            <div class="player-ban-json-issue-hint">
+                banned-players.json 第 ${index} 筆資料
+            </div>
+
+            <button class="player-ban-file-link" type="button">
+                開啟 banned-players.json
+            </button>
         </div>
-        ${kind === "duplicate" ? `
-            <button class="player-ban-json-repair-btn" type="button">刪除此筆重複資料</button>
-        ` : kind === "unavailable" ? `
-            <button class="player-ban-json-repair-btn" type="button">重新驗證</button>
+
+        ${kind === "unavailable" ? `
+            <button class="player-ban-json-repair-btn" type="button">
+                重新驗證
+            </button>
         ` : ""}
     `;
 
-    card.querySelector(".player-ban-file-link")?.addEventListener("click", event => {
-        void performBanPlayerJsonAction(event.currentTarget, "/api/player/ban/player/open-file", {}, false);
-    });
-    card.querySelector(".player-ban-json-repair-btn")?.addEventListener("click", event => {
-        if (kind === "duplicate") {
-            void removeDuplicateBanPlayerEntry(item, event.currentTarget);
-        } else {
+    card.querySelector(".player-ban-file-link")
+        ?.addEventListener("click", event => {
+            void performBanPlayerJsonAction(
+                event.currentTarget,
+                "/api/player/ban/player/open-file",
+                {},
+                false
+            );
+        });
+
+    card.querySelector(".player-ban-json-repair-btn")
+        ?.addEventListener("click", event => {
             void recheckBannedPlayersFile(event.currentTarget);
-        }
-    });
+        });
+
     return card;
 }
 
@@ -1480,7 +1569,7 @@ async function recoverBannedPlayersFile(button) {
 async function removeDuplicateBanPlayerEntry(item, button) {
     const confirmed = await showConfirm({
         title: "刪除重複封鎖資料",
-        message: `只刪除 banned-players.json 第 ${item.entry_index + 1} 筆重複資料，保留其他同 UUID 資料與玩家封鎖狀態。\n是否繼續？`,
+        message: `只刪除 banned-players.json第${item.entry_index + 1}筆重複資料，\n保留其他同UUID資料與玩家封鎖狀態。是否繼續？`,
         confirmText: "刪除", cancelText: "取消", variant: "warning",
     });
     if (!confirmed) return;

@@ -90,8 +90,7 @@
     grid-area: avatar;
 }
 
-.player-ban-json-issue.unavailable,
-.player-ban-json-issue.duplicate {
+.player-ban-json-issue.unavailable {
     border-color: #c08b42;
     background: rgba(120, 90, 35, 0.16);
 }
@@ -104,8 +103,7 @@
     font-size: 12px;
 }
 
-.player-ban-json-issue.unavailable .player-ban-json-issue-tag,
-.player-ban-json-issue.duplicate .player-ban-json-issue-tag {
+.player-ban-json-issue.unavailable .player-ban-json-issue-tag {
     color: #f0c36a;
 }
 
@@ -125,16 +123,77 @@
     overflow-wrap: anywhere;
 }
 
-.player-ban-json-raw {
-    max-height: 130px;
-    margin: 8px 0;
-    padding: 8px;
-    overflow: auto;
-    background: #171717;
-    color: #bbb;
-    font-size: 12px;
-    white-space: pre-wrap;
+.player-ban-json-issue-hint {
+    margin-top: 4px;
+    color: #aaa;
+    font-size: 13px;
+}
+
+.player-ban-json-issue-detail {
+    margin-top: 5px;
+    color: #ddd;
+    font-size: 14px;
     overflow-wrap: anywhere;
+}
+
+.player-ban-card.player-ban-json-issue.duplicate {
+    align-items: center;
+
+    grid-template-columns: 42px minmax(260px, 1fr) 210px auto;
+    grid-template-areas:
+        "avatar info time action"
+        "avatar issue issue action";
+
+    row-gap: 4px;
+
+    border-color: #b487d8;
+    background: rgba(100, 65, 125, 0.16);
+}
+
+.player-ban-json-issue.duplicate .player-ban-name {
+    color: #f5f5f5;
+    font-size: 28px;
+}
+
+.player-ban-json-issue-footer {
+    grid-area: issue;
+    min-width: 0;
+}
+
+.player-ban-json-issue-footer .player-ban-json-issue-message {
+    margin-top: 0;
+}
+
+.player-ban-json-issue.duplicate .player-ban-json-issue-tag {
+    padding: 3px 8px;
+    border-color: #b487d8;
+    color: #d9a7ff;
+}
+
+.player-ban-json-issue.duplicate .player-ban-json-issue-message {
+    color: #d9a7ff;
+}
+
+.player-ban-json-issue > .player-ban-json-duplicate-remove {
+    width: 42px;
+    height: 42px;
+    padding: 0;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+
+    border-color: #b85c5c;
+    background: #303030;
+    color: #ff9c9c;
+
+    font-size: 22px;
+    line-height: 1;
+}
+
+.player-ban-json-duplicate-remove:hover {
+    background: #422e2e;
 }
 
 #playerBanModal {

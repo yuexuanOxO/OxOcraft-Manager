@@ -1878,8 +1878,26 @@ def remove_invalid_ops_entry(entry_index: int, expected_entry) -> dict:
     if is_server_running() or OPS_FILE.read_bytes() != original_content:
         return {"success": False, "message": "伺服器或檔案狀態已變更，請重新整理"}
 
-    entries.pop(entry_index)
+    removed_entry = entries.pop(entry_index)
     save_ops_entries(entries)
+
+    raw_entry = removed_entry if isinstance(removed_entry, dict) else {}
+
+    record_player_access(
+        category="op",
+        action="invalid_entry_remove",
+        target_uuid=str(raw_entry.get("uuid") or "").strip() or None,
+        target_name=str(raw_entry.get("name") or "").strip() or "未知玩家",
+        account_type="unknown",
+        operator_name="OxOcraft",
+        source="ui",
+        detail=json.dumps({
+            "reason": "invalid_player_entry",
+            "entry_index": entry_index,
+            "removed_entry": removed_entry,
+        }, ensure_ascii=False),
+        resolve_target_identity=False,
+    )
 
     return {"success": True, "message": "已刪除指定的錯誤管理員資料"}
 

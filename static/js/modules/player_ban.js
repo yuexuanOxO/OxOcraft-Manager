@@ -1520,7 +1520,7 @@ async function removeInvalidBanPlayerEntry(item, button) {
 
     const confirmed = await showConfirm({
         title: "刪除錯誤封鎖資料",
-        message: "確定刪除這筆錯誤的 banned-players.json 資料嗎？",
+        message: "確定刪除這筆錯誤的玩家資料嗎？",
         confirmText: "刪除",
         cancelText: "取消",
         variant: "warning",
@@ -2874,8 +2874,12 @@ function getBanActionText(item) {
 
     const action = String(item.action || "");
 
-    if (action === "duplicate_remove") {
-        return "刪除重複封鎖資料";
+    if (action === "invalid_entry_remove") {
+        return "刪除錯誤資料";
+    }
+
+    if (action.includes("duplicate")) {
+        return "清除重複資料";
     }
 
     if (

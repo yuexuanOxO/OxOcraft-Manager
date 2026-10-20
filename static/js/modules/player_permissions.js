@@ -1617,7 +1617,7 @@ async function removeInvalidPermissionEntry(item, button) {
     try {
         const confirmed = await showConfirm({
             title: "刪除錯誤管理員資料",
-            message: "確定刪除這筆錯誤的 ops.json 資料嗎？",
+            message: "確定刪除這筆錯誤的玩家資料嗎？",
             confirmText: "刪除",
             cancelText: "取消",
             variant: "warning",
@@ -1902,22 +1902,15 @@ function createDuplicatePermissionEntryCard(
                 ${escapeHtml(bypassText)}
             </div>
 
-            <div class="
-                player-permission-entry-duplicate-message
-            ">
-                同一個 UUID 在 ops.json
-                中重複出現。
+            <div class="player-permission-entry-duplicate-message">
+                同一個UUID在 ops.json中重複出現，請選擇一筆刪除。
             </div>
 
             ${
                 entryIndex !== null
                     ? `
-                        <div class="
-                            player-permission-entry-duplicate-hint
-                        ">
-                            ops.json 第
-                            ${entryIndex}
-                            筆資料
+                        <div class="player-permission-entry-duplicate-hint">
+                            ops.json第${entryIndex}筆資料
                         </div>
                     `
                     : ""
@@ -3500,6 +3493,10 @@ function createPermissionHistoryCard(item) {
 
 function getPermissionHistoryActionText(action) {
     action = String(action || "");
+
+    if (action === "invalid_entry_remove") {
+        return "刪除錯誤資料";
+    }
 
     if (action.includes("duplicate")) {
         return "清除重複資料";

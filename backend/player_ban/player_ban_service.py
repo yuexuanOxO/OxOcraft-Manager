@@ -252,7 +252,7 @@ def recover_banned_players_json_from_db() -> dict:
                 "source": operator["operator"] or "OxOcraft",
                 # 管理工具的解除期限仍保留在 DB，交由原排程處理。
                 "expires": "forever",
-                "reason": player.get("ban_reason") or "已被管理員封鎖。",
+                **build_ban_reason_fields(player.get("ban_reason")),
             })
 
         inspection = inspect_player_json_entries(
@@ -585,7 +585,7 @@ def recover_banned_ips_json_from_db() -> dict:
                 "created": created.strftime("%Y-%m-%d %H:%M:%S +0800"),
                 "source": operator["operator"] or "OxOcraft",
                 "expires": "forever",
-                "reason": record.get("ban_reason") or "已被管理員封鎖。",
+                **build_ban_reason_fields(record.get("ban_reason")),
             })
         inspection = inspect_banned_ip_entries(entries)
         if inspection["invalid_entries"] or inspection["duplicate_entries"]:
@@ -627,6 +627,11 @@ def remove_banned_ip_json_entry(entry_index: int, expected_entry, kind: str) -> 
         detail=json.dumps({"entry_index": entry_index, "removed_entry": removed}, ensure_ascii=False),
     )
     return {"success": True, "message": "已刪除指定的 IP 檔案資料"}
+
+
+def build_ban_reason_fields(reason: str | None) -> dict:
+    reason = str(reason or "").strip()
+    return {"reason": reason} if reason else {}
 
 
 def now_text() -> str:
@@ -986,16 +991,8 @@ def get_active_banned_players_from_json(
             else detect_account_type(player_uuid)
         )
 
-        if db_record:
-            expires_at = db_record.get("ban_expires_at")
-            reason = (
-                db_record.get("ban_reason")
-                or item.get("reason", "")
-                or ""
-            )
-        else:
-            expires_at = None
-            reason = item.get("reason", "") or ""
+        expires_at = db_record.get("ban_expires_at") if db_record else None
+        reason = item.get("reason", "")
 
         expires_at = get_ban_expiry_from_json(item, expires_at)
 
@@ -1069,7 +1066,7 @@ def get_active_banned_ips_from_json(entries: list[dict] | None = None) -> list[d
         operator = get_latest_ip_ban_operator(record["ip"] if record else ip)
         result.append({
             "ip": ip, "target_name": ip,
-            "reason": item["reason"], "created_at": item["created"],
+            "reason": item.get("reason", ""), "created_at": item["created"],
             "expires_at": expires_at, "permanent": 0 if expires_at else 1,
             "operator": operator["operator"],
             "operator_uuid": operator["operator_uuid"],
@@ -1140,10 +1137,7 @@ def write_player_to_banned_json(
             ),
             "source": operator or "OxOcraft-Manager",
             "expires": "forever",
-            "reason": (
-                reason
-                or "Banned by OxOcraft-Manager"
-            ),
+            **build_ban_reason_fields(reason),
         })
 
         write_json_list(BANNED_PLAYERS_FILE, data)
@@ -1168,8 +1162,6 @@ def ban_player(
             return error
 
     reason = str(reason or "").strip()
-    if not reason:
-        reason = "已被管理員封鎖。"
 
     operator = str(operator or "OxOcraft").strip()
 
@@ -1592,7 +1584,8 @@ def write_ip_to_banned_json(ip: str, reason: str, operator: str) -> None:
             "ip": normalized_ip,
             "created": datetime.now().strftime("%Y-%m-%d %H:%M:%S +0800"),
             "source": operator or "OxOcraft-Manager",
-            "expires": "forever", "reason": reason or "Banned by OxOcraft-Manager",
+            "expires": "forever",
+            **build_ban_reason_fields(reason),
         })
         write_json_list(BANNED_IPS_FILE, data)
 
@@ -1608,8 +1601,6 @@ def ban_ip(
     ip = str(ip or "").strip()
 
     reason = str(reason or "").strip()
-    if not reason:
-        reason = "已被管理員封鎖。"
 
     operator = str(operator or "OxOcraft").strip()
 
@@ -2204,12 +2195,12 @@ def sync_banned_ips_json_to_db(validated: dict | None = None) -> dict:
         stored_expiry = existing.get("ban_expires_at") if existing else None
         expires_at = get_ban_expiry_from_json(item, stored_expiry)
         update_ip_ban_status(
-            ip=ip, banned=True, reason=item["reason"],
+            ip=ip, banned=True, reason=item.get("reason", ""),
             operator_name="banned-ips.json 同步", expires_at=expires_at,
         )
         if not existing:
             record_ip_ban_history(
-                action="sync_add", ip=ip, reason=item["reason"],
+                action="sync_add", ip=ip, reason=item.get("reason", ""),
                 operator_name="banned-ips.json 同步", source="minecraft_json",
                 detail="從 banned-ips.json 同步",
             )

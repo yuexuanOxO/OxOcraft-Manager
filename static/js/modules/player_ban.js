@@ -797,7 +797,7 @@ function createBanPlayerCard(item, duplicateEntry = null) {
             </div>
 
             <div class="player-ban-history-meta">
-                封鎖原因：${escapeHtml(item.reason || "已被管理員封鎖。")}
+                封鎖原因：${escapeHtml(formatBanReason(item.reason))}
             </div>
 
             ${isInvalidMode ? `
@@ -921,7 +921,7 @@ function createBanIpCard(item, issueEntry = null, kind = "") {
                 <div class="player-ban-name">封鎖 IP：${escapeHtml(item.target_name)}</div>
                 ${isIssue ? `<span class="player-ban-json-issue-tag">${isDuplicate ? "重複資料" : "資料錯誤"}</span>` : ""}
             </div>
-            <div class="player-ban-history-meta">封鎖原因：${escapeHtml(item.reason || "已被管理員封鎖。")}</div>
+            <div class="player-ban-history-meta">封鎖原因：${escapeHtml(formatBanReason(item.reason))}</div>
         </div>
         <div class="player-ban-time-info">
             <div class="player-ban-history-meta">封鎖時間：${escapeHtml(formatDateTime(item.created_at))}</div>
@@ -953,7 +953,7 @@ function createBanIpJsonIssueCard(item, kind) {
     const entry = item?.entry && typeof item.entry === "object" && !Array.isArray(item.entry) ? item.entry : {};
     return createBanIpCard({
         target_name: typeof entry.ip === "string" && entry.ip.trim() ? entry.ip : "未知 IP",
-        reason: typeof entry.reason === "string" ? entry.reason : "未知",
+        reason: typeof entry.reason === "string" ? entry.reason : "",
         created_at: typeof entry.created === "string" ? entry.created : "",
         permanent: entry.expires === "forever" ? 1 : 0,
         expires_at: typeof entry.expires === "string" && entry.expires !== "forever" ? entry.expires : "",
@@ -1716,6 +1716,12 @@ function applyBanSearch() {
             .toLowerCase();
 
     renderCurrentBanTab();
+}
+
+
+function formatBanReason(reason) {
+    const value = typeof reason === "string" ? reason.trim() : "";
+    return value || "已被管理員封鎖";
 }
 
 
@@ -2764,7 +2770,7 @@ async function submitAddBan() {
 
     try {
         const payload = {
-            reason,
+            ...(reason ? { reason } : {}),
             operator: "OxOcraft",
             selected_from_candidate:
                 selectedBanCandidatePlayer !== null,
@@ -2882,7 +2888,7 @@ function createBanHistoryCard(item) {
 
             <div class="player-ban-history-meta">
                 封鎖原因：${escapeHtml(
-                    item.reason || "已被管理員封鎖。"
+                    formatBanReason(item.reason)
                 )}
             </div>
 

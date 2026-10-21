@@ -84,7 +84,7 @@ def validate_ban_entry_schema(
     entry: dict,
     identity_fields: tuple[str, ...],
 ) -> dict:
-    for field in (*identity_fields, "created", "source", "expires", "reason"):
+    for field in (*identity_fields, "created", "source", "expires"):
         value = entry.get(field)
 
         if not isinstance(value, str):
@@ -93,6 +93,13 @@ def validate_ban_entry_schema(
                 "error_code": f"invalid_ban_{field}",
                 "message": f"封鎖資料的 {field} 欄位必須為字串",
             }
+
+    if "reason" in entry and not isinstance(entry["reason"], str):
+        return {
+            "valid": False,
+            "error_code": "invalid_ban_reason",
+            "message": "封鎖資料的 reason 欄位必須為字串",
+        }
 
     date_pattern = (
         r"\d{4}-\d{2}-\d{2} "

@@ -48,6 +48,7 @@ from backend.player_permissions.player_json_file_service import (
 
 from backend.player_permissions.player_json_validator import (
     inspect_player_json_entries,
+    validate_ban_entry_schema,
     verify_cached_player_json_items,
 )
 
@@ -55,6 +56,7 @@ BANNED_PLAYERS_FILE = MC_ROOT / "banned-players.json"
 BANNED_IPS_FILE = MC_ROOT / "banned-ips.json"
 
 _BANNED_PLAYERS_FILE_LOCK = threading.RLock()
+_BANNED_IPS_FILE_LOCK = threading.RLock()
 
 
 class BannedPlayersDataError(ValueError):
@@ -413,6 +415,220 @@ def remove_duplicate_banned_player_entry(
     return {"success": True, "message": "已刪除指定的重複資料，玩家封鎖狀態保留"}
 
 
+class BannedIpsDataError(ValueError):
+    def __init__(self, result: dict):
+        super().__init__(result["message"])
+        self.result = result
+
+
+def normalize_banned_ip(ip: str) -> str:
+    if not isinstance(ip, str) or not ip.strip() or "%" in ip:
+        raise ValueError("IP 格式不正確，請填入純 IPv4 或 IPv6 位址")
+    return str(ipaddress.ip_address(ip.strip()))
+
+
+def get_equivalent_banned_ip_from_db(ip: str) -> dict | None:
+    record = get_banned_ip_from_db(ip)
+    if record:
+        return record
+    normalized_ip = normalize_banned_ip(ip)
+    for record in get_banned_ips_from_db():
+        try:
+            if normalize_banned_ip(record["ip"]) == normalized_ip:
+                return record
+        except ValueError:
+            continue
+    return None
+
+
+def inspect_banned_ip_entries(entries: list) -> dict:
+    valid = []
+    invalid = []
+    counts = {}
+    for index, entry in enumerate(entries):
+        message = ""
+        normalized_ip = None
+        if not isinstance(entry, dict):
+            message = "封鎖 IP 資料必須為物件"
+        else:
+            schema = validate_ban_entry_schema(entry, ("ip",))
+            if not schema["valid"]:
+                message = schema["message"]
+            else:
+                try:
+                    normalized_ip = normalize_banned_ip(entry["ip"])
+                except ValueError:
+                    message = "IP 格式不正確，請填入純 IPv4 或 IPv6 位址"
+        item = {
+            "entry_index": index,
+            "entry": entry,
+            "validation": {
+                "status": "invalid" if message else "valid",
+                "message": message,
+                "ip": entry.get("ip") if isinstance(entry, dict) else None,
+                "normalized_ip": normalized_ip,
+            },
+        }
+        if message:
+            invalid.append(item)
+        else:
+            valid.append(item)
+            counts[normalized_ip] = counts.get(normalized_ip, 0) + 1
+    return {
+        "valid_entries": [item for item in valid if counts[item["validation"]["normalized_ip"]] == 1],
+        "invalid_entries": invalid,
+        "duplicate_entries": [item for item in valid if counts[item["validation"]["normalized_ip"]] > 1],
+    }
+
+
+def load_validated_banned_ips() -> dict:
+    with _BANNED_IPS_FILE_LOCK:
+        try:
+            file_result = load_player_json_file(BANNED_IPS_FILE)
+        except UnicodeError:
+            file_result = {
+                "status": "invalid",
+                "error_code": "invalid_encoding",
+                "message": "banned-ips.json 必須使用 UTF-8 編碼",
+            }
+        result = {
+            "status": "valid",
+            "entries": [],
+            "valid_entries": [],
+            "invalid_entries": [],
+            "duplicate_entries": [],
+            "error_code": None,
+            "message": "",
+        }
+        if file_result["status"] != "valid":
+            return {
+                **result,
+                "status": "file_invalid",
+                "error_code": file_result.get("error_code"),
+                "message": file_result.get("message", ""),
+            }
+        entries = file_result["entries"]
+        return {**result, "entries": entries, **inspect_banned_ip_entries(entries)}
+
+
+def get_banned_ips_mutation_error(validated: dict | None = None) -> dict | None:
+    if validated is None:
+        validated = load_validated_banned_ips()
+    if validated["status"] != "valid":
+        return {
+            "success": False,
+            "data_status": "file_invalid",
+            "error_code": validated.get("error_code"),
+            "message": "IP 黑名單參數檔發生錯誤，請先修復 banned-ips.json",
+        }
+    for key, status, message in (
+        ("invalid_entries", "entry_invalid", "IP 黑名單有資料錯誤，請先修正後再操作"),
+        ("duplicate_entries", "entry_duplicate", "IP 黑名單有重複資料，請先處理後再操作"),
+    ):
+        if validated[key]:
+            return {"success": False, "data_status": status, "message": message}
+    return None
+
+
+def require_valid_banned_ip_entries() -> list[dict]:
+    validated = load_validated_banned_ips()
+    error = get_banned_ips_mutation_error(validated)
+    if error:
+        raise BannedIpsDataError(error)
+    if is_server_running():
+        raise BannedIpsDataError({"success": False, "data_status": "server_state_changed", "message": "伺服器狀態已變更，請重新整理後再操作"})
+    return validated["entries"]
+
+
+def get_ip_ban_data() -> dict:
+    if is_server_running():
+        return {
+            "status": "valid", "ips": get_active_banned_ips(),
+            "invalid_entries": [], "duplicate_entries": [],
+            "error_code": None, "message": "",
+        }
+    with _BANNED_IPS_FILE_LOCK:
+        validated = load_validated_banned_ips()
+        if is_server_running():
+            return get_ip_ban_data()
+        sync_banned_ips_json_to_db(validated)
+        entries = [item["entry"] for item in validated["valid_entries"]]
+        return {**validated, "ips": get_active_banned_ips_from_json(entries)}
+
+
+def open_banned_ips_file() -> dict:
+    if not BANNED_IPS_FILE.is_file():
+        return {"success": False, "message": "找不到目前伺服器的 banned-ips.json"}
+    if not hasattr(os, "startfile"):
+        return {"success": False, "message": "開啟本機檔案功能目前僅支援 Windows"}
+    os.startfile(BANNED_IPS_FILE.resolve())
+    return {"success": True, "message": "已使用預設程式開啟 banned-ips.json"}
+
+
+def recover_banned_ips_json_from_db() -> dict:
+    with _BANNED_IPS_FILE_LOCK:
+        if is_server_running():
+            return {"success": False, "message": "請先關閉伺服器，再恢復 IP 黑名單檔案"}
+        original = BANNED_IPS_FILE.read_bytes() if BANNED_IPS_FILE.exists() else None
+        validated = load_validated_banned_ips()
+        if validated["status"] != "file_invalid":
+            return {"success": False, "message": "banned-ips.json 目前沒有需要恢復的整份檔案錯誤"}
+        entries = []
+        for record in get_banned_ips_from_db():
+            try:
+                created = datetime.strptime(record.get("banned_since") or now_text(), "%Y-%m-%d %H:%M:%S")
+            except (TypeError, ValueError):
+                return {"success": False, "message": "資料庫中的封鎖建立時間異常，無法恢復 IP 黑名單"}
+            operator = get_latest_ip_ban_operator(record["ip"])
+            entries.append({
+                "ip": record["ip"],
+                "created": created.strftime("%Y-%m-%d %H:%M:%S +0800"),
+                "source": operator["operator"] or "OxOcraft",
+                "expires": "forever",
+                "reason": record.get("ban_reason") or "已被管理員封鎖。",
+            })
+        inspection = inspect_banned_ip_entries(entries)
+        if inspection["invalid_entries"] or inspection["duplicate_entries"]:
+            return {"success": False, "message": "資料庫中的封鎖 IP 資料異常或重複，無法恢復 IP 黑名單"}
+        if is_server_running() or BANNED_IPS_FILE.read_bytes() != original:
+            return {"success": False, "message": "伺服器或檔案狀態已變更，請重新整理"}
+        write_json_list(BANNED_IPS_FILE, entries)
+    return {"success": True, "restored_count": len(entries), "message": f"已恢復 {len(entries)} 個封鎖 IP，管理工具的封鎖期限已保留"}
+
+
+def remove_banned_ip_json_entry(entry_index: int, expected_entry, kind: str) -> dict:
+    if kind not in ("invalid", "duplicate"):
+        return {"success": False, "message": "不支援的資料類型"}
+    with _BANNED_IPS_FILE_LOCK:
+        if is_server_running():
+            return {"success": False, "message": "請先關閉伺服器，再處理 IP 檔案資料"}
+        original = BANNED_IPS_FILE.read_bytes() if BANNED_IPS_FILE.exists() else None
+        validated = load_validated_banned_ips()
+        if validated["status"] != "valid":
+            return {"success": False, "data_status": "file_invalid", "message": "banned-ips.json 目前無法正常讀取"}
+        entries = validated["entries"]
+        if (
+            type(entry_index) is not int or entry_index < 0 or entry_index >= len(entries)
+            or json.dumps(entries[entry_index], sort_keys=True) != json.dumps(expected_entry, sort_keys=True)
+            or not any(item["entry_index"] == entry_index for item in validated[f"{kind}_entries"])
+        ):
+            return {"success": False, "data_status": "entry_changed", "message": "資料已變更，請重新檢查後再操作"}
+        if is_server_running() or BANNED_IPS_FILE.read_bytes() != original:
+            return {"success": False, "data_status": "entry_changed", "message": "伺服器或檔案狀態已變更，請重新整理"}
+        removed = entries.pop(entry_index)
+        write_json_list(BANNED_IPS_FILE, entries)
+    raw = removed if isinstance(removed, dict) else {}
+    ip = raw.get("ip")
+    record_ip_ban_history(
+        action="duplicate_remove" if kind == "duplicate" else "invalid_entry_remove",
+        ip=ip.strip() if isinstance(ip, str) and ip.strip() else "未知 IP",
+        reason="清除重複資料" if kind == "duplicate" else "刪除錯誤資料",
+        operator_name="OxOcraft", source="offline_ui_edit",
+        detail=json.dumps({"entry_index": entry_index, "removed_entry": removed}, ensure_ascii=False),
+    )
+    return {"success": True, "message": "已刪除指定的 IP 檔案資料"}
+
+
 def now_text() -> str:
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -606,92 +822,15 @@ def pop_recent_ui_ban_command_if_match(
 
 def get_ban_start_blocks() -> list[dict]:
     blocks = []
-    player_error = get_banned_players_mutation_error()
-
-    if player_error:
-        blocks.append({
-            "source": "ban_players",
-            "label": "玩家黑名單",
-            "file": "banned-players.json",
-            "reason": player_error["message"],
-        })
-
-    configs = [
-        {
-            "source": "ban_ips",
-            "label": "IP黑名單",
-            "file": "banned-ips.json",
-            "path": BANNED_IPS_FILE,
-            "required": ("ip",),
-        },
-    ]
-
-    for config in configs:
-        path = config["path"]
-        reason = None
-
-        try:
-            content = path.read_text(
-                encoding="utf-8"
-            )
-
-        except FileNotFoundError:
-            # Minecraft 尚未建立清單檔案是正常情況
-            continue
-
-        except (OSError, UnicodeError):
-            reason = "無法讀取 JSON 檔案"
-
-        else:
-            if not content.strip():
-                reason = "JSON 檔案內容為空"
-
-            else:
-                try:
-                    entries = json.loads(content)
-                except (json.JSONDecodeError, ValueError):
-                    reason = "JSON 格式錯誤"
-
-                else:
-                    if not isinstance(entries, list):
-                        reason = "JSON 最外層必須為陣列"
-
-                    else:
-                        for index, entry in enumerate(
-                            entries,
-                            start=1,
-                        ):
-                            if not isinstance(entry, dict):
-                                reason = (
-                                    f"第 {index} 筆資料格式錯誤"
-                                )
-                                break
-
-                            for key in config["required"]:
-                                value = entry.get(key)
-
-                                if (
-                                    not isinstance(value, str)
-                                    or not value.strip()
-                                ):
-                                    reason = (
-                                        f"第 {index} 筆資料的"
-                                        f" {key} 欄位格式錯誤"
-                                    )
-                                    break
-
-                            if reason:
-                                break
-
-        if reason:
-            blocks.append({
-                "source": config["source"],
-                "label": config["label"],
-                "file": config["file"],
-                "reason": reason,
-            })
-
+    for source, label, file, check in (
+        ("ban_players", "玩家黑名單", "banned-players.json", get_banned_players_mutation_error),
+        ("ban_ips", "IP 黑名單", "banned-ips.json", get_banned_ips_mutation_error),
+    ):
+        error = check()
+        if error:
+            blocks.append({"source": source, "label": label, "file": file, "reason": error["message"]})
     return blocks
+
 
 
 
@@ -719,17 +858,18 @@ def read_json_list(path: Path) -> list[dict]:
 def write_json_list(path: Path, data: list[dict]) -> None:
     content = json.dumps(data, ensure_ascii=False, indent=4)
 
-    if path != BANNED_PLAYERS_FILE:
+    if path not in (BANNED_PLAYERS_FILE, BANNED_IPS_FILE):
         path.write_text(content, encoding="utf-8")
         return
 
     # 先完整寫入暫存檔，再替換正式檔，避免讀到寫入一半的 JSON。
-    with _BANNED_PLAYERS_FILE_LOCK:
+    lock = _BANNED_IPS_FILE_LOCK if path == BANNED_IPS_FILE else _BANNED_PLAYERS_FILE_LOCK
+    with lock:
         temporary_path = None
         try:
             with tempfile.NamedTemporaryFile(
                 mode="w", encoding="utf-8", dir=path.parent,
-                prefix=".banned-players-", suffix=".tmp", delete=False,
+                prefix=f".{path.stem}-", suffix=".tmp", delete=False,
             ) as file:
                 temporary_path = Path(file.name)
                 file.write(content)
@@ -796,7 +936,7 @@ def get_active_banned_players() -> list[dict]:
     return result
 
 
-def get_banned_player_expiry_from_json(
+def get_ban_expiry_from_json(
     entry: dict,
     stored_expiry: str | None = None,
 ) -> str | None:
@@ -857,7 +997,7 @@ def get_active_banned_players_from_json(
             expires_at = None
             reason = item.get("reason", "") or ""
 
-        expires_at = get_banned_player_expiry_from_json(item, expires_at)
+        expires_at = get_ban_expiry_from_json(item, expires_at)
 
 
         operator_info = get_latest_player_ban_operator(
@@ -916,51 +1056,27 @@ def get_active_banned_ips() -> list[dict]:
     return result
 
 
-def get_active_banned_ips_from_json() -> list[dict]:
-    items = read_json_list(BANNED_IPS_FILE)
-
+def get_active_banned_ips_from_json(entries: list[dict] | None = None) -> list[dict]:
+    if entries is None:
+        validated = load_validated_banned_ips()
+        entries = [item["entry"] for item in validated["valid_entries"]]
     result = []
-
-    for item in items:
-        ip = str(item.get("ip", "")).strip()
-
-        if not ip:
-            continue
-
-        db_record = None
-
-        with get_connection() as conn:
-            row = conn.execute("""
-                SELECT *
-                FROM ip_records
-                WHERE ip = ?
-                LIMIT 1
-            """, (ip,)).fetchone()
-
-            db_record = dict(row) if row else None
-
-        if db_record:
-            expires_at = db_record.get("ban_expires_at")
-            reason = db_record.get("ban_reason") or item.get("reason", "") or ""
-        else:
-            expires_at = None
-            reason = item.get("reason", "") or ""
-
-        operator_info = get_latest_ip_ban_operator(ip)
-
+    for item in entries:
+        ip = item["ip"].strip()
+        record = get_equivalent_banned_ip_from_db(ip)
+        stored_expiry = record.get("ban_expires_at") if record else None
+        expires_at = get_ban_expiry_from_json(item, stored_expiry)
+        operator = get_latest_ip_ban_operator(record["ip"] if record else ip)
         result.append({
-            "ip": ip,
-            "target_name": ip,
-            "reason": reason,
-            "created_at": str(item.get("created", "")).replace(" +0800", ""),
-            "expires_at": expires_at,
-            "permanent": 0 if expires_at else 1,
-            "operator": operator_info["operator"],
-            "operator_uuid": operator_info["operator_uuid"],
-            "operator_account_type": operator_info["operator_account_type"],
+            "ip": ip, "target_name": ip,
+            "reason": item["reason"], "created_at": item["created"],
+            "expires_at": expires_at, "permanent": 0 if expires_at else 1,
+            "operator": operator["operator"],
+            "operator_uuid": operator["operator_uuid"],
+            "operator_account_type": operator["operator_account_type"],
         })
-
     return result
+
 
 
 def get_banned_player_by_uuid(player_uuid: str) -> dict | None:
@@ -1448,48 +1564,38 @@ def sync_unban_ip_from_log(
 
 
 def validate_ip(ip: str) -> tuple[bool, str]:
-    ip = str(ip or "").strip()
-
-    if not ip:
-        return False, "請輸入 IP"
-
     try:
-        ipaddress.ip_address(ip)
+        normalize_banned_ip(ip)
         return True, ""
     except ValueError:
-        return False, "IP 格式不正確"
+        return False, "IP 格式不正確，請填入純 IPv4 或 IPv6 位址"
+
 
 
 def ip_exists_in_banned_json(ip: str) -> bool:
-    data = read_json_list(BANNED_IPS_FILE)
+    validated = load_validated_banned_ips()
+    error = get_banned_ips_mutation_error(validated)
+    if error:
+        raise BannedIpsDataError(error)
+    normalized_ip = normalize_banned_ip(ip)
+    return any(normalize_banned_ip(item["ip"]) == normalized_ip for item in validated["entries"])
 
-    return any(
-        str(item.get("ip", "")).strip() == ip
-        for item in data
-    )
 
 
-def write_ip_to_banned_json(
-    ip: str,
-    reason: str,
-    operator: str,
-) -> None:
-    data = read_json_list(BANNED_IPS_FILE)
+def write_ip_to_banned_json(ip: str, reason: str, operator: str) -> None:
+    with _BANNED_IPS_FILE_LOCK:
+        data = require_valid_banned_ip_entries()
+        normalized_ip = normalize_banned_ip(ip)
+        if any(normalize_banned_ip(item["ip"]) == normalized_ip for item in data):
+            raise BannedIpsDataError({"success": False, "data_status": "entry_changed", "message": "此 IP 已經在黑名單中，請重新整理"})
+        data.append({
+            "ip": normalized_ip,
+            "created": datetime.now().strftime("%Y-%m-%d %H:%M:%S +0800"),
+            "source": operator or "OxOcraft-Manager",
+            "expires": "forever", "reason": reason or "Banned by OxOcraft-Manager",
+        })
+        write_json_list(BANNED_IPS_FILE, data)
 
-    data = [
-        item for item in data
-        if str(item.get("ip", "")).strip() != ip
-    ]
-
-    data.append({
-        "ip": ip,
-        "created": datetime.now().strftime("%Y-%m-%d %H:%M:%S +0800"),
-        "source": operator or "OxOcraft-Manager",
-        "expires": "forever",
-        "reason": reason or "Banned by OxOcraft-Manager",
-    })
-
-    write_json_list(BANNED_IPS_FILE, data)
 
 
 def ban_ip(
@@ -1516,7 +1622,12 @@ def ban_ip(
         }
     
 
-    existing_ip_ban = get_banned_ip_from_db(ip)
+    if not is_server_running():
+        error = get_banned_ips_mutation_error()
+        if error:
+            return error
+
+    existing_ip_ban = get_equivalent_banned_ip_from_db(ip)
 
     if existing_ip_ban:
         return {
@@ -1572,20 +1683,15 @@ def ban_ip(
 
 
 def remove_ip_from_banned_json(ip: str) -> bool:
-    data = read_json_list(BANNED_IPS_FILE)
+    with _BANNED_IPS_FILE_LOCK:
+        data = require_valid_banned_ip_entries()
+        normalized_ip = normalize_banned_ip(ip)
+        remaining = [item for item in data if normalize_banned_ip(item["ip"]) != normalized_ip]
+        if len(remaining) == len(data):
+            return False
+        write_json_list(BANNED_IPS_FILE, remaining)
+        return True
 
-    original_count = len(data)
-
-    data = [
-        item for item in data
-        if str(item.get("ip", "")).strip() != ip
-    ]
-
-    if len(data) == original_count:
-        return False
-
-    write_json_list(BANNED_IPS_FILE, data)
-    return True
 
 
 def unban_ip(
@@ -1601,8 +1707,19 @@ def unban_ip(
             "message": "缺少 IP",
         }
 
+    valid, message = validate_ip(ip)
+    if not valid:
+        return {"success": False, "message": message}
+    if not is_server_running():
+        error = get_banned_ips_mutation_error()
+        if error:
+            return error
+    record = get_equivalent_banned_ip_from_db(ip)
+    # 沿用既有 DB 的 IP 字串，保留舊 IPv6 寫法所對應的紀錄。
+    if record:
+        ip = record["ip"]
+
     if is_server_running():
-        record = get_banned_ip_from_db(ip)
 
         if not record:
             return {
@@ -1989,7 +2106,7 @@ def sync_banned_players_json_to_db(
                 else None
             )
 
-            expires_at = get_banned_player_expiry_from_json(item, expires_at)
+            expires_at = get_ban_expiry_from_json(item, expires_at)
 
             print("[BanSync] sync player:", {
                 "player_uuid": player_uuid,
@@ -2070,92 +2187,50 @@ def sync_banned_players_json_to_db(
     }
 
 
-def sync_banned_ips_json_to_db() -> dict:
+def sync_banned_ips_json_to_db(validated: dict | None = None) -> dict:
+    if validated is None:
+        validated = load_validated_banned_ips()
+    error = get_banned_ips_mutation_error(validated)
+    if error:
+        return {"synced_ips": 0, "removed_ips": 0, "ip_sync_status": error["data_status"]}
+    entries = [item["entry"] for item in validated["valid_entries"]]
+    active_ip_set = {normalize_banned_ip(item["ip"]) for item in entries}
     synced_ips = 0
     removed_ips = 0
-
-    ips = read_json_list(BANNED_IPS_FILE)
-
-    active_ip_set = {
-        str(item.get("ip", "")).strip()
-        for item in ips
-        if item.get("ip")
-    }
-
-    for item in ips:
-        ip = str(item.get("ip", "")).strip()
-
-        if not ip:
-            continue
-
-        existing = get_banned_ip_from_db(ip)
-
-        expires_at = (
-            existing.get("ban_expires_at")
-            if existing
-            else None
-        )
-
+    for item in entries:
+        normalized_ip = normalize_banned_ip(item["ip"])
+        existing = get_equivalent_banned_ip_from_db(normalized_ip)
+        ip = existing["ip"] if existing else normalized_ip
+        stored_expiry = existing.get("ban_expires_at") if existing else None
+        expires_at = get_ban_expiry_from_json(item, stored_expiry)
         update_ip_ban_status(
-            ip=ip,
-            banned=True,
-            reason=str(item.get("reason", "") or "").strip(),
-            operator_name="banned-ips.json 同步",
-            operator_uuid=None,
-            expires_at=expires_at,
+            ip=ip, banned=True, reason=item["reason"],
+            operator_name="banned-ips.json 同步", expires_at=expires_at,
         )
-
         if not existing:
             record_ip_ban_history(
-                action="sync_add",
-                ip=ip,
-                reason=str(item.get("reason", "") or "").strip(),
-                operator_name="banned-ips.json 同步",
-                operator_uuid=None,
-                source="minecraft_json",
+                action="sync_add", ip=ip, reason=item["reason"],
+                operator_name="banned-ips.json 同步", source="minecraft_json",
                 detail="從 banned-ips.json 同步",
             )
-
             synced_ips += 1
-
-    with get_connection() as conn:
-        rows = conn.execute("""
-            SELECT ip
-            FROM ip_records
-            WHERE banned = 1
-        """).fetchall()
-
-    for row in rows:
-        ip = str(row["ip"]).strip()
-
-        if ip in active_ip_set:
+    for record in get_banned_ips_from_db():
+        ip = record["ip"]
+        try:
+            if normalize_banned_ip(ip) in active_ip_set:
+                continue
+        except ValueError:
+            # 舊 DB 中若有異常 IP，留給恢復檔案時提示，不在此自動解除。
             continue
-
-        update_ip_ban_status(
-            ip=ip,
-            banned=False,
-            reason="",
-            operator_name="banned-ips.json 同步",
-            operator_uuid=None,
-            expires_at=None,
-        )
-
+        update_ip_ban_status(ip=ip, banned=False, operator_name="banned-ips.json 同步")
         record_ip_ban_history(
-            action="sync_remove",
-            ip=ip,
-            reason="從 banned-ips.json 同步解除",
-            operator_name="banned-ips.json 同步",
-            operator_uuid=None,
-            source="minecraft_json",
+            action="sync_remove", ip=ip, reason="從 banned-ips.json 同步解除",
+            operator_name="banned-ips.json 同步", source="minecraft_json",
             detail="從 banned-ips.json 同步解除",
         )
-
         removed_ips += 1
+    return {"synced_ips": synced_ips, "removed_ips": removed_ips, "ip_sync_status": "success"}
 
-    return {
-        "synced_ips": synced_ips,
-        "removed_ips": removed_ips,
-    }
 
 
 def sync_banned_json_to_db() -> dict:
@@ -2324,13 +2399,11 @@ def get_ip_ban_candidate_list() -> list[dict]:
 
 
 def sync_removed_bans_from_json() -> dict:
-    ip_entries = read_json_list(BANNED_IPS_FILE)
-
-    ip_set = {
-        str(item.get("ip", "")).strip()
-        for item in ip_entries
-        if item.get("ip")
-    }
+    validated = load_validated_banned_ips()
+    error = get_banned_ips_mutation_error(validated)
+    if error:
+        return {"removed_players": 0, "removed_ips": 0, "ip_sync_status": error["data_status"]}
+    ip_set = {normalize_banned_ip(item["entry"]["ip"]) for item in validated["valid_entries"]}
 
     removed_ips = 0
 
@@ -2344,7 +2417,10 @@ def sync_removed_bans_from_json() -> dict:
     for row in rows:
         ip = str(row["ip"]).strip()
 
-        if ip in ip_set:
+        try:
+            if normalize_banned_ip(ip) in ip_set:
+                continue
+        except ValueError:
             continue
 
         update_ip_ban_status(

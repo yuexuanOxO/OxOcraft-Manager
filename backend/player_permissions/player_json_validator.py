@@ -80,10 +80,11 @@ def validate_ops_entry_schema(
     }
 
 
-def validate_banned_player_entry_schema(
+def validate_ban_entry_schema(
     entry: dict,
+    identity_fields: tuple[str, ...],
 ) -> dict:
-    for field in ("uuid", "name", "created", "source", "expires", "reason"):
+    for field in (*identity_fields, "created", "source", "expires", "reason"):
         value = entry.get(field)
 
         if not isinstance(value, str):
@@ -129,6 +130,10 @@ def validate_banned_player_entry_schema(
         "error_code": None,
         "message": "",
     }
+
+
+def validate_banned_player_entry_schema(entry: dict) -> dict:
+    return validate_ban_entry_schema(entry, ("uuid", "name"))
 
 
 PLAYER_JSON_SCHEMA_VALIDATORS = {

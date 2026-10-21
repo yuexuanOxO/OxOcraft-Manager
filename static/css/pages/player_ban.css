@@ -1513,3 +1513,11 @@
     grid-template-columns: 42px minmax(260px, 1fr) 210px auto;
     grid-template-areas: "avatar info time action";
 }
+
+/* IP 錯誤資料沿用黑名單配色，底部提示與右側刪除鈕共用整張卡片高度。 */
+.player-ban-card.player-ban-ip-json-issue.invalid {
+    grid-template-areas:
+        "avatar info time action"
+        "avatar issue issue action";
+    row-gap: 4px;
+}

@@ -23,6 +23,11 @@ from backend.player_ban.player_ban_service import (
     remove_duplicate_banned_player_entry,
     remove_invalid_banned_player_entry,
     BannedPlayersDataError,
+    BannedIpsDataError,
+    get_ip_ban_data,
+    open_banned_ips_file,
+    recover_banned_ips_json_from_db,
+    remove_banned_ip_json_entry,
 )
 
 player_ban_bp = Blueprint("player_ban", __name__)
@@ -47,12 +52,12 @@ def api_player_ban_players():
 def _player_ban_file_action_response(action, **kwargs):
     try:
         result = action(**kwargs)
-    except BannedPlayersDataError as error:
+    except (BannedPlayersDataError, BannedIpsDataError) as error:
         return jsonify(error.result), 400
     except (OSError, UnicodeError) as error:
         return jsonify({
             "success": False,
-            "message": f"玩家黑名單檔案操作失敗：{error}",
+            "message": f"黑名單檔案操作失敗：{error}",
         }), 500
 
     return jsonify(result), 200 if result.get("success") else 400
@@ -87,11 +92,16 @@ def api_player_ban_remove_duplicate():
 
 @player_ban_bp.route("/api/player/ban/ips")
 def api_player_ban_ips():
+    data = get_ip_ban_data()
     return jsonify({
-        "success": True,
-        "ips": get_active_bans("ip"),
+        "success": True, "ips": data["ips"],
         "online_mode": get_effective_online_mode(),
+        "data_status": data["status"], "error_code": data.get("error_code"),
+        "message": data.get("message", ""),
+        "invalid_entries": data["invalid_entries"],
+        "duplicate_entries": data["duplicate_entries"],
     })
+
 
 
 @player_ban_bp.route("/api/player/ban/history")
@@ -168,7 +178,8 @@ def api_player_ban_ip():
             "message": message,
         }), 400
 
-    result = ban_ip(
+    return _player_ban_file_action_response(
+        ban_ip,
         ip=data.get("ip", ""),
         reason=data.get("reason", ""),
         operator=data.get("operator", "OxOcraft"),
@@ -176,29 +187,15 @@ def api_player_ban_ip():
         permanent=permanent,
     )
 
-    status = 200 if result.get("success") else 400
-    return jsonify(result), status
 
 
 @player_ban_bp.route("/api/player/ban/ip/unban", methods=["POST"])
 def api_player_unban_ip():
     data = request.get_json(silent=True) or {}
-
-    ip = str(data.get("ip", "")).strip()
-
-    if not ip:
-        return jsonify({
-            "success": False,
-            "message": "缺少 IP",
-        }), 400
-
-    result = unban_ip(
-        ip=ip,
-        operator=data.get("operator", "OxOcraft"),
+    return _player_ban_file_action_response(
+        unban_ip, ip=data.get("ip", ""), operator=data.get("operator", "OxOcraft"),
     )
 
-    status = 200 if result.get("success") else 400
-    return jsonify(result), status
 
 
 @player_ban_bp.route("/api/player/ban/process-expired", methods=["POST"])
@@ -261,4 +258,27 @@ def api_player_ban_remove_invalid():
         remove_invalid_banned_player_entry,
         entry_index=data["entry_index"],
         expected_entry=data["entry"],
+    )
+
+
+@player_ban_bp.route("/api/player/ban/ip/open-file", methods=["POST"])
+def api_player_ban_ip_open_file():
+    return _player_ban_file_action_response(open_banned_ips_file)
+
+
+@player_ban_bp.route("/api/player/ban/ip/recover", methods=["POST"])
+def api_player_ban_ip_recover():
+    return _player_ban_file_action_response(recover_banned_ips_json_from_db)
+
+
+@player_ban_bp.route("/api/player/ban/ip/<kind>-entry/remove", methods=["POST"])
+def api_player_ban_ip_remove_entry(kind):
+    data = request.get_json(silent=True)
+    if kind not in ("invalid", "duplicate"):
+        return jsonify({"success": False, "message": "不支援的資料類型"}), 400
+    if not isinstance(data, dict) or type(data.get("entry_index")) is not int or "entry" not in data:
+        return jsonify({"success": False, "message": "缺少有效的資料位置或原始資料"}), 400
+    return _player_ban_file_action_response(
+        remove_banned_ip_json_entry,
+        entry_index=data["entry_index"], expected_entry=data["entry"], kind=kind,
     )

@@ -1,3 +1,5 @@
+import { getUiSessionUrl } from "./ui_session.js";
+
 import {
     openZipFilePicker,
     getCurrentBackupLevelName,
@@ -22,7 +24,7 @@ export function initCloudBackup() {
 
     document.getElementById("cloudConnectBtn")
         ?.addEventListener("click", () => {
-            window.location.href = "/api/cloud/google/login";
+            window.location.href = getUiSessionUrl("/api/cloud/google/login");
         });
 }
 

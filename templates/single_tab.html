@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>單一分頁操作 — OxOcraft-Manager</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/ui_session.css') }}">
+</head>
+<body class="single-tab-page">
+    <main class="ui-session-card">
+        <h1>此系統只支援單個分頁操作</h1>
+        <p>此分頁未持有操作權，或操作權已失效。<br>
+            請使用已開啟的管理分頁，或關閉該分頁後重新檢查。</p>
+        <a class="ui-session-retry" href="/">重新檢查</a>
+    </main>
+</body>
+</html>

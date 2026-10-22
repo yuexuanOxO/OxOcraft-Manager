@@ -1,3 +1,5 @@
+from queue import Empty
+
 import json
 
 from flask import Blueprint, jsonify, request, Response
@@ -80,14 +82,18 @@ def api_notification_events():
 
         try:
             while True:
-                notification = queue.get()
+                try:
+                    notification = queue.get(timeout=15)
+                except Empty:
+                    yield ": keep-alive\n\n"
+                    continue
 
                 yield (
                     "event: notification\n"
                     f"data: {json.dumps(notification, ensure_ascii=False)}\n\n"
                 )
 
-        except GeneratorExit:
+        finally:
             unsubscribe_notification_events(queue)
 
     return Response(

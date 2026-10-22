@@ -31,7 +31,7 @@ function setupGlobalImageDragBlocker() {
 }
 
 
-document.addEventListener("DOMContentLoaded", () => {
+export function initApp() {
     initPlayerPermissionState();
     initPlayerWhitelistState();
     initPlayerListMenu();
@@ -57,4 +57,4 @@ document.addEventListener("DOMContentLoaded", () => {
     initWorldSettings();
     setupGlobalImageDragBlocker();
     
-});
+}

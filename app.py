@@ -46,6 +46,9 @@ app.secret_key = "oxo_google_login_secret"
 
 register_no_cache_headers(app)
 
+from backend.ui_session import register_ui_session
+register_ui_session(app)
+
 app.register_blueprint(death_bp)
 app.register_blueprint(page_bp)
 app.register_blueprint(command_bp)
@@ -147,3 +150,4 @@ if __name__ == "__main__":
                 f"daemon={t.daemon} "
                 f"alive={t.is_alive()}"
             )
+

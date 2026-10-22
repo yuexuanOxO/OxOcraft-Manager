@@ -10,6 +10,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OxOcraft-Manager</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/ui_session.css') }}">
     <link rel="icon" href="/static/icons/OxOcraft-Manager_icon/OxOcraft-Manager_icon_128b.png">
 
     <img
@@ -19,7 +20,8 @@
     >
 
 </head>
-<body>
+<body class="ui-session-pending">
+    {% include "components/ui_session_gate.html" %}
 
     <div id="globalFeatureCard" class="global-feature-card hidden"></div>
     <div id="globalFeatureButtonHost" class="global-feature-button-host hidden"></div>
@@ -956,6 +958,6 @@
     <script src="{{ url_for('static', filename='vendor/mc-datetime-picker/flatpickr/l10n/zh-tw.js') }}"></script>
     <script src="{{ url_for('static', filename='vendor/mc-datetime-picker/mc_datetime_picker.js') }}"></script>
 
-    <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/modules/ui_session.js') }}"></script>
 </body>
 </html>

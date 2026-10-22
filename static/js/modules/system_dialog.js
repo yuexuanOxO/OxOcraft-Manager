@@ -231,39 +231,27 @@ export function showLogInfo({
         closeOnBackdrop: false,
     });
 
-    const dialog =
-        document.getElementById("systemDialog");
-
-    const panel =
-        dialog.querySelector(".system-dialog-panel");
-
-    const actions =
-        panel.querySelector(".system-dialog-actions");
-
+    const dialog = document.getElementById("systemDialog");
+    const panel = dialog.querySelector(".system-dialog-panel");
+    const actions = panel.querySelector(".system-dialog-actions");
     dialog.classList.add("log-mode");
-
     const output = document.createElement("pre");
-    output.className =
-        "system-dialog-log system-dialog-extra";
+    output.className = "system-dialog-log system-dialog-extra";
     output.tabIndex = 0;
-    output.textContent =
-        log || "沒有可顯示的本次啟動日誌。";
+    output.textContent = log || "沒有可顯示的本次啟動日誌。";
 
     actions.before(output);
 
     const feedback = document.createElement("div");
-    feedback.className =
-        "system-dialog-log-feedback system-dialog-extra";
+    feedback.className = "system-dialog-log-feedback system-dialog-extra";
     feedback.setAttribute("role", "status");
-    feedback.textContent =
-        "可複製或匯出日誌，向 AI 或相關社群尋求協助。";
+    feedback.textContent = "可複製或匯出日誌，向AI或相關社群尋求協助。";
 
     actions.before(feedback);
 
     const copyBtn = document.createElement("button");
     copyBtn.type = "button";
-    copyBtn.className =
-        "system-dialog-btn cancel system-dialog-extra";
+    copyBtn.className = "system-dialog-btn cancel system-dialog-extra";
     copyBtn.textContent = "複製全部";
     copyBtn.disabled = !log;
 
@@ -291,8 +279,7 @@ export function showLogInfo({
 
     const exportBtn = document.createElement("button");
     exportBtn.type = "button";
-    exportBtn.className =
-        "system-dialog-btn cancel system-dialog-extra";
+    exportBtn.className = "system-dialog-btn cancel system-dialog-extra";
     exportBtn.textContent = "匯出log";
     exportBtn.disabled = !log;
 

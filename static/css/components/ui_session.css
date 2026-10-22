@@ -1,0 +1,58 @@
+.ui-session-pending > :not(#uiSessionGate) {
+    display: none !important;
+}
+
+#uiSessionGate,
+.single-tab-page {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    box-sizing: border-box;
+    background: #181818;
+    color: #eeeeee;
+    font-family: "Microsoft JhengHei", sans-serif;
+}
+
+.ui-session-card {
+    box-sizing: border-box;
+    width: min(560px, 100%);
+    padding: 36px 28px;
+    border: 3px solid #4a4a4a;
+    background: #101010;
+    box-shadow: 0 0 0 2px #252525;
+    text-align: center;
+}
+
+.ui-session-card h1 {
+    font-size: 25px;
+    line-height: 1.5;
+    margin: 0 0 20px;
+}
+
+.ui-session-card p {
+    color: #bbbbbb;
+    line-height: 1.8;
+    font-size: 17px;
+}
+
+.ui-session-retry {
+    display: inline-block;
+    padding: 10px 22px;
+    margin-top: 16px;
+    border: 2px solid #52644b;
+    background: #315c28;
+    color: #ffffff;
+    font: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.ui-session-retry[hidden] {
+    display: none;
+}
+
+.ui-session-retry:hover {
+    background: #3c7030;
+}

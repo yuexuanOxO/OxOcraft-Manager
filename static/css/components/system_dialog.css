@@ -329,3 +329,80 @@
 .help-tooltip.hidden {
     display: none;
 }
+
+/* 啟動失敗日誌視窗 */
+
+.system-dialog.log-mode .system-dialog-panel {
+    box-sizing: border-box;
+
+    width: min(1000px, calc(100vw - 32px));
+    min-width: 0;
+    max-width: none;
+
+    height: 85vh;
+    height: 85dvh;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 22px;
+}
+
+.system-dialog.log-mode .system-dialog-title-row {
+    flex: 0 0 auto;
+}
+
+.system-dialog.log-mode .system-dialog-message {
+    flex: 0 0 auto;
+
+    width: 100%;
+    max-width: none;
+
+    max-height: 18vh;
+    overflow-y: auto;
+
+    margin-bottom: 16px;
+
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+
+.system-dialog-log {
+    flex: 1 1 0;
+    min-height: 0;
+    min-width: 0;
+
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+
+    margin: 0;
+    padding: 16px;
+
+    border: 2px solid #414141;
+    background: #080808;
+    color: #dddddd;
+
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 14px;
+    line-height: 1.6;
+
+    white-space: pre;
+    tab-size: 4;
+    user-select: text;
+}
+
+.system-dialog-log-feedback {
+    flex: 0 0 auto;
+
+    margin: 12px 0 16px;
+
+    color: #aaaaaa;
+    font-size: 15px;
+    overflow-wrap: anywhere;
+}
+
+.system-dialog.log-mode .system-dialog-actions {
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+}

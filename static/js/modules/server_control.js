@@ -10,7 +10,8 @@ import {
 
 import {
     showConfirm,
-    showInfo
+    showInfo,
+    showLogInfo
 } from "./system_dialog.js";
 
 import {
@@ -18,6 +19,18 @@ import {
 } from "./server_ui_state.js";
 
 let isTransitioning = false;
+
+
+function showServerStartupFailure(failure) {
+    return showLogInfo({
+        title: failure.title || "伺服器啟動失敗",
+        message: (
+            failure.message || "Minecraft 尚未完成啟動就已停止。"
+        ).replace("請查看伺服器 Log。", "請查看下方日誌。"),
+        log: failure.log || "",
+        logNote: failure.log_note || "",
+    });
+}
 
 
 export function initServerControl() {
@@ -847,18 +860,18 @@ export async function saveAndRestartServer() {
                 });
             }
         } else {
-            await showInfo({
-                title:
-                    startResult.failure?.title
-                    || "伺服器啟動逾時",
-
-                message:
-                    startResult.failure?.message
-                    || "請查看伺服器 Log。",
-
-                confirmText: "關閉",
-                variant: "error",
-            });
+            if (startResult.failure) {
+                await showServerStartupFailure(
+                    startResult.failure
+                );
+            } else {
+                await showInfo({
+                    title: "伺服器啟動逾時",
+                    message: "尚未確認啟動完成，請查看目前伺服器狀態。",
+                    confirmText: "關閉",
+                    variant: "warning",
+                });
+            }
         }
 
     } catch (error) {

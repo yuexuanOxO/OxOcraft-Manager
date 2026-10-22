@@ -107,6 +107,60 @@ def record_server_start_failure(
         _last_start_failure = dict(failure)
 
 
+def get_latest_log_signature():
+    try:
+        stat = (SERVER_ROOT / "logs" / "latest.log").stat()
+        return (
+            stat.st_ino,
+            stat.st_size,
+            stat.st_mtime_ns,
+            stat.st_ctime_ns,
+        )
+    except OSError:
+        return None
+
+
+def read_start_failure_log(before_signature) -> dict:
+    path = SERVER_ROOT / "logs" / "latest.log"
+    signature = get_latest_log_signature()
+
+    if signature is None:
+        return {
+            "log": "",
+            "log_note": "本次啟動未產生 latest.log。",
+        }
+
+    if signature == before_signature:
+        return {
+            "log": "",
+            "log_note": (
+                "latest.log 未更新，"
+                "為避免顯示舊紀錄，本次不載入。"
+            ),
+        }
+
+    try:
+        content = path.read_text(
+            encoding="utf-8",
+            errors="replace",
+        )
+
+        return {
+            "log": content,
+            "log_note": (
+                ""
+                if content.strip()
+                else "本次 latest.log 沒有內容。"
+            ),
+        }
+
+    except OSError as error:
+        return {
+            "log": "",
+            "log_note": f"無法讀取 latest.log：{error}",
+        }
+
+
 def classify_server_start_failure(
     log_lines: list[str],
     exit_code: int,
@@ -270,7 +324,7 @@ def send_command(cmd: str) -> None:
         server_process.stdin.flush()
 
 
-def handle_server_output() -> None:
+def handle_server_output(log_before=None) -> None:
     global server_process, pending_deaths
 
     process = server_process
@@ -454,6 +508,8 @@ def handle_server_output() -> None:
             startup_logs,
             exit_code,
         )
+
+        failure.update(read_start_failure_log(log_before))
 
         record_server_start_failure(failure)
 
@@ -668,6 +724,8 @@ def start_server(
     ]
 
     try:
+        log_before = get_latest_log_signature()
+
         clear_log_cache()
         server_process = subprocess.Popen(
             command,
@@ -686,7 +744,11 @@ def start_server(
         if SERVER_PROPERTIES_PATH.exists():
             save_effective_settings_snapshot()
 
-        threading.Thread(target=handle_server_output, daemon=True).start()
+        threading.Thread(
+            target=handle_server_output,
+            args=(log_before,),
+            daemon=True,
+        ).start()
         return True, "伺服器啟動成功"
     except Exception as error:
         set_server_runtime_state("offline")

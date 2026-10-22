@@ -50,6 +50,7 @@ _runtime_state_lock = threading.Lock()
 # Minecraft 啟動失敗紀錄
 _start_failure_lock = threading.Lock()
 _last_start_failure = None
+_current_start_log_before = None
 
 
 # Minecraft 啟動警告紀錄
@@ -159,6 +160,24 @@ def read_start_failure_log(before_signature) -> dict:
             "log": "",
             "log_note": f"無法讀取 latest.log：{error}",
         }
+
+
+def get_server_start_diagnostics() -> dict:
+    failure = get_server_start_failure()
+    if failure:
+        return failure
+
+    running = is_server_running()
+    return {
+        "title": "伺服器啟動逾時" if running else "伺服器未完成啟動",
+        "message": (
+            "等待啟動完成已逾時，但 Minecraft 程序仍在執行。"
+            "以下為目前日誌；逾時不代表程序已停止。"
+            if running else
+            "Minecraft 程序已停止，以下為本次啟動日誌。"
+        ),
+        **read_start_failure_log(_current_start_log_before),
+    }
 
 
 def classify_server_start_failure(
@@ -335,6 +354,7 @@ def handle_server_output(log_before=None) -> None:
     startup_logs = []
     reached_ready = False
     startup_warning_recorded = False
+    startup_failed = False
 
     for line in process.stdout:
         line = line.strip()
@@ -347,6 +367,26 @@ def handle_server_output(log_before=None) -> None:
             # 只保留啟動階段最近的 Log
             if len(startup_logs) > 300:
                 startup_logs.pop(0)
+
+            # 致命啟動錯誤不必等到 JVM 完全退出才通知前端。
+            if any(marker in line for marker in (
+                "FAILED TO BIND TO PORT",
+                "Encountered an unexpected exception",
+                "Failed to start the minecraft server",
+            )):
+                startup_failed = True
+
+            if (
+                startup_failed
+                and get_server_runtime_state() != "stopping"
+                and server_process is process
+            ):
+                failure = classify_server_start_failure(
+                    startup_logs,
+                    process.poll(),
+                )
+                failure.update(read_start_failure_log(log_before))
+                record_server_start_failure(failure)
 
             # 偵測 ops.json 載入異常
             if (
@@ -582,7 +622,7 @@ def validate_server_bind_ip(server_ip: str) -> tuple[bool, str]:
 def start_server(
     allow_invalid_ops: bool = False,
 ) -> tuple[bool, str]:
-    global server_process
+    global server_process, _current_start_log_before
 
     if is_server_running():
         return False, "伺服器已經在執行中"
@@ -725,6 +765,7 @@ def start_server(
 
     try:
         log_before = get_latest_log_signature()
+        _current_start_log_before = log_before
 
         clear_log_cache()
         server_process = subprocess.Popen(

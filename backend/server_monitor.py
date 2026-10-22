@@ -193,7 +193,7 @@ def monitor_loop() -> None:
         now = time.time()
 
         try:
-            from backend.server_runtime import get_server_runtime_state
+            from backend.server_runtime import get_server_runtime_state, is_server_running
             runtime_state = get_server_runtime_state()
         except Exception:
             runtime_state = "offline"
@@ -201,6 +201,7 @@ def monitor_loop() -> None:
         if (
             runtime_state == "starting"
             and new_data.get("state") == "offline"
+            and is_server_running()
         ):
             new_data = {
                 "online": False,
@@ -335,3 +336,4 @@ def get_status_publish_key(data: dict) -> dict:
         }
 
     return data
+

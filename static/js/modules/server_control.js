@@ -316,26 +316,23 @@ async function toggleServer() {
 
         if (!reachedTarget) {
             setPowerButtonLoading(false);
+            await updateStatus();
 
-            await showInfo({
-                title:
-                    startupFailure?.title
-                    || (
-                        targetOnline
-                            ? "伺服器啟動逾時"
-                            : "伺服器關閉逾時"
-                    ),
-
-                message:
-                    startupFailure?.message
-                    || "請查看伺服器 Log。",
-
-                confirmText: "關閉",
-                variant:
-                    startupFailure
-                        ? "error"
-                        : "warning",
-            });
+            if (targetOnline) {
+                await showServerStartupFailure(
+                    startupFailure || {
+                        title: "伺服器未完成啟動",
+                        message: "尚未取得啟動失敗紀錄，請查看伺服器日誌。",
+                    }
+                );
+            } else {
+                await showInfo({
+                    title: "伺服器關閉逾時",
+                    message: "尚未確認關閉完成，請查看目前伺服器狀態。",
+                    confirmText: "關閉",
+                    variant: "warning",
+                });
+            }
         } else if (targetOnline && setupStage === "need_first_run") {
             await fetch("/api/server/sync-rcon", {
                 method: "POST"
@@ -409,98 +406,88 @@ export async function waitForServerStatus(targetOnline, timeoutMs = 30000, inter
 }
 
 
+async function fetchStartupJson(url) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    try {
+        const response = await fetch(url, {
+            cache: "no-store",
+            signal: controller.signal,
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.json();
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+
 async function waitForServerStartup(
     timeoutMs = 30000,
     intervalMs = 1000
 ) {
-    const startTime = Date.now();
+    const deadline = Date.now() + timeoutMs;
 
-    while (Date.now() - startTime < timeoutMs) {
+    while (Date.now() < deadline) {
+        // 先取失敗紀錄，避免狀態查詢異常時連帶跳過它。
         try {
-            const statusResponse = await fetch(
-                "/api/server/status?force=1",
-                { cache: "no-store" }
-            );
-
-            if (!statusResponse.ok) {
-                throw new Error(
-                    "無法取得伺服器狀態"
-                );
+            const data = await fetchStartupJson("/api/server/start-failure");
+            if (data.failure) {
+                await updateStatus();
+                return { ready: false, failure: data.failure };
             }
-
-            const payload =
-                await statusResponse.json();
-
-            const status =
-                payload.data || payload;
-
-            if (
-                status.online === true
-                && status.state === "ready"
-            ) {
-                let warning = null;
-
-                try {
-                    const warningResponse = await fetch(
-                        "/api/server/start-warning",
-                        { cache: "no-store" }
-                    );
-
-                    if (warningResponse.ok) {
-                        const warningData =
-                            await warningResponse.json();
-
-                        warning = warningData.warning || null;
-                    }
-
-                } catch (error) {
-                    console.error(
-                        "讀取伺服器啟動警告失敗:",
-                        error
-                    );
-                }
-
-                return {
-                    ready: true,
-                    failure: null,
-                    warning: warning,
-                };
-            }
-
-            const failureResponse = await fetch(
-                "/api/server/start-failure",
-                { cache: "no-store" }
-            );
-
-            if (failureResponse.ok) {
-                const failureData =
-                    await failureResponse.json();
-
-                if (failureData.failure) {
-                    return {
-                        ready: false,
-                        failure: failureData.failure,
-                    };
-                }
-            }
-
         } catch (error) {
-            console.error(
-                "等待 Minecraft 啟動時發生錯誤:",
-                error
-            );
+            console.error("讀取啟動失敗紀錄失敗:", error);
         }
 
-        await new Promise(resolve =>
-            setTimeout(resolve, intervalMs)
-        );
+        try {
+            const payload = await fetchStartupJson("/api/server/status?force=1");
+            const status = payload.data || payload;
+
+            if (status.online === true && status.state === "ready") {
+                let warning = null;
+                try {
+                    const data = await fetchStartupJson("/api/server/start-warning");
+                    warning = data.warning || null;
+                } catch (error) {
+                    console.error("讀取啟動警告失敗:", error);
+                }
+                return { ready: true, failure: null, warning };
+            }
+        } catch (error) {
+            console.error("等待啟動狀態失敗:", error);
+        }
+
+        const remaining = deadline - Date.now();
+        if (remaining > 0) {
+            await new Promise(resolve =>
+                setTimeout(resolve, Math.min(intervalMs, remaining))
+            );
+        }
     }
+
+    // 逾時也顯示 log，並再確認是否剛產生失敗紀錄。
+    let failure;
+    try {
+        const data = await fetchStartupJson("/api/server/start-diagnostics");
+        failure = data.failure;
+    } catch (error) {
+        console.error("讀取啟動日誌失敗:", error);
+    }
+
+    await updateStatus();
 
     return {
         ready: false,
-        failure: null,
+        failure: failure || {
+            title: "伺服器啟動逾時",
+            message: "無法取得啟動診斷資料，請確認後端連線。",
+            log: "",
+            log_note: "本次未能取得日誌。",
+        },
     };
 }
+
 
 
 async function checkEulaStatus() {

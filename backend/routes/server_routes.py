@@ -292,3 +292,17 @@ def api_server_management_status():
 
     return response
 
+
+@server_bp.route("/api/server/start-diagnostics")
+def api_server_start_diagnostics():
+    from backend.server_runtime import get_server_start_diagnostics
+
+    response = jsonify({
+        "success": True,
+        "failure": get_server_start_diagnostics(),
+    })
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+

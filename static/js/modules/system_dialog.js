@@ -293,7 +293,7 @@ export function showLogInfo({
     exportBtn.type = "button";
     exportBtn.className =
         "system-dialog-btn cancel system-dialog-extra";
-    exportBtn.textContent = "匯出 log";
+    exportBtn.textContent = "匯出log";
     exportBtn.disabled = !log;
 
     exportBtn.onclick = () => {

@@ -213,6 +213,26 @@ def get_server_query_status(host: str | None = None) -> dict:
     except Exception:
         pass
 
+    # 受管理的 Minecraft 程序已退出時，不以其他服務的 TCP 連線判定啟動中。
+    from backend import server_runtime
+
+    process = server_runtime.server_process
+    if process is not None and process.poll() is not None:
+        return {
+            "online": False,
+            "state": "offline",
+            "message": "伺服器離線",
+            "status_source": "managed_process",
+        }
+
+    if process is not None and server_runtime.get_server_start_failure():
+        return {
+            "online": False,
+            "state": "stopping",
+            "message": "啟動失敗，等待 Minecraft 程序結束",
+            "status_source": "managed_process",
+        }
+
     management_payload = build_management_status_payload(runtime_state)
 
     if management_payload is not None:
@@ -270,7 +290,11 @@ def get_server_query_status(host: str | None = None) -> dict:
             }
 
 
-        if is_server_online(host=host):
+        from backend.server_runtime import is_server_running
+
+        # TCP 連接埠有人監聽，不代表是 Minecraft。
+        # Query 沒有回應時，以受管理的 Minecraft 程序判斷。
+        if is_server_running():
             if runtime_state == "ready":
                 return {
                     "online": True,
@@ -286,7 +310,7 @@ def get_server_query_status(host: str | None = None) -> dict:
             return {
                 "online": False,
                 "state": "starting",
-                "message": "伺服器啟動中或 Query 尚未就緒",
+                "message": "Minecraft 程序執行中，尚未確認啟動完成",
                 "error": str(error),
             }
 

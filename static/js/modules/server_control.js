@@ -11,7 +11,8 @@ import {
 import {
     showConfirm,
     showInfo,
-    showLogInfo
+    showLogInfo,
+    showJavaSelection
 } from "./system_dialog.js";
 
 import {
@@ -100,7 +101,7 @@ async function showServerStartWarning(warning) {
 
 
 
-async function requestServerStart() {
+async function requestServerStart(javaOptions = {}) {
 
     async function sendStartRequest({
         confirmOpsError = false,
@@ -114,6 +115,7 @@ async function requestServerStart() {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
+                    ...javaOptions,
                     confirm_ops_error: confirmOpsError,
                     confirm_whitelist_error:
                         confirmWhitelistError,
@@ -186,6 +188,86 @@ async function requestServerStart() {
 }
 
 
+async function runServerStartFlow(setupStage = "ready") {
+    let javaOptions = {};
+    while (true) {
+        const data = await requestServerStart(javaOptions);
+        if (data.cancelled) return { ready: false, cancelled: true };
+        let result;
+        if (!data.success) {
+            if (!data.failure) {
+                await showInfo({
+                    title: data.start_blocked ? "無法開啟伺服器" : "啟動伺服器失敗",
+                    message: data.message || "未知錯誤",
+                    variant: "error",
+                });
+                return { ready: false };
+            }
+            result = { ready: false, failure: data.failure };
+        } else if (setupStage === "need_first_run") {
+            const generated = await waitForFirstRunFilesGenerated(30000, 1000);
+            if (generated) return { ready: true, initialized: true };
+            const diagnostics = await fetchStartupJson("/api/server/start-diagnostics");
+            result = { ready: false, failure: diagnostics.failure };
+        } else {
+            result = await waitForServerStartup();
+        }
+        if (result.ready) {
+            if (javaOptions.java_candidate_id) {
+                await offerDefaultJava(data.attempt);
+            }
+            return result;
+        }
+        // 先保留並顯示這次輸出，關閉後才顯示 Java 選擇視窗。
+        await showServerStartupFailure(result.failure || {
+            title: "伺服器未完成啟動",
+            message: "尚未取得啟動失敗紀錄。",
+        });
+        const selected = await showJavaSelection(async () => {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 45000);
+            try {
+                const response = await fetch("/api/server/java-options", {
+                    cache: "no-store", signal: controller.signal,
+                });
+                return await response.json();
+            } finally {
+                clearTimeout(timer);
+            }
+        });
+        if (!selected) return { ready: false, cancelled: true };
+        javaOptions = selected;
+        // 每次重試重新走原有 JSON 啟動檢查與使用者確認。
+    }
+}
+
+
+async function offerDefaultJava(attempt) {
+    if (!attempt?.attempt_id) return;
+    const save = await showConfirm({
+        title: "將此 Java 設為預設？",
+        message: "伺服器已成功啟動。\n是否將本次使用的 Java 設為此伺服器的預設開啟版本？\n\n"
+            + attempt.java_path,
+        confirmText: "設為預設",
+        cancelText: "僅本次使用",
+        closeOnBackdrop: false,
+    });
+    if (!save) return;
+    try {
+        const response = await fetch("/api/server/java-default", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ attempt_id: attempt.attempt_id }),
+        });
+        const data = await response.json();
+        if (!data.success) throw new Error(data.message || "儲存失敗");
+        await showInfo({ title: "預設 Java 已儲存", message: "之後將使用此 Java 開啟伺服器。" });
+    } catch (error) {
+        await showInfo({ title: "無法儲存預設 Java", message: error.message, variant: "error" });
+    }
+}
+
+
 async function toggleServer() {
     const powerBtn = document.getElementById("powerBtn");
 
@@ -193,6 +275,7 @@ async function toggleServer() {
         return;
     }
 
+    isTransitioning = true;
     try {
         const statusRes = await fetch("/api/server/query-status", { cache: "no-store" });
         const statusPayload = await statusRes.json();
@@ -249,115 +332,30 @@ async function toggleServer() {
         isTransitioning = true;
         setPowerButtonLoading(true);
 
-        let data;
-
         if (targetOnline) {
-            data = await requestServerStart();
-
-            if (data.cancelled) {
-                isTransitioning = false;
-                setPowerButtonLoading(false);
-                return;
-            }
-
-        } else {
-            const response = await fetch(
-                url,
-                {
-                    method: "POST"
-                }
-            );
-
-            data = await response.json();
-        }
-
-        if (!data.success) {
-            if (data.failure) {
-                await showServerStartupFailure(data.failure);
-            } else {
+            const result = await runServerStartFlow(setupStage);
+            if (result.ready && result.initialized) {
+                await fetch("/api/server/sync-rcon", { method: "POST" });
                 await showInfo({
-                    title: data.start_blocked ? "無法開啟伺服器": "操作失敗",
-                    message:data.message || "未知錯誤",
-                    confirmText: "關閉",
-                    variant: data.start_blocked ? "error": "warning",
+                    title: "初始化完成",
+                    message: "伺服器必要檔案已產生。\nRCON 設定已同步，請同意 Minecraft EULA 後再啟動伺服器。",
                 });
-
+                await checkEulaStatus();
+            } else if (result.ready && result.warning) {
+                await showServerStartWarning(result.warning);
             }
-            isTransitioning = false;
-            setPowerButtonLoading(false);
-            updateStatus();
-            return;
-        }
-
-        let reachedTarget = false;
-        let startupFailure = null;
-        let startupWarning = null;
-
-        if (targetOnline && setupStage === "need_first_run") {
-            reachedTarget =
-                await waitForFirstRunFilesGenerated(
-                    30000,
-                    1000
-                );
-
-        } else if (targetOnline) {
-            const result = await waitForServerStartup();
-
-            reachedTarget = result.ready;
-            startupFailure = result.failure;
-            startupWarning = result.warning || null;
-
         } else {
-            reachedTarget = await waitForServerStatus(
-                false,
-                30000,
-                1000
-            );
-        }
-
-        isTransitioning = false;
-
-
-        if (!reachedTarget) {
-            setPowerButtonLoading(false);
-            await updateStatus();
-
-            if (targetOnline) {
-                if (!startupFailure) {
-                    try {
-                        const diagnostics = await fetchStartupJson("/api/server/start-diagnostics");
-                        startupFailure = diagnostics.failure;
-                    } catch (error) {
-                        console.error("讀取啟動輸出失敗:", error);
-                    }
-                }
-                await showServerStartupFailure(
-                    startupFailure || {
-                        title: "伺服器未完成啟動",
-                        message: "尚未取得啟動失敗紀錄，請查看伺服器日誌。",
-                    }
-                );
-            } else {
+            const response = await fetch(url, { method: "POST" });
+            const data = await response.json();
+            if (!data.success) {
+                await showInfo({ title: "關閉伺服器失敗", message: data.message || "未知錯誤" });
+            } else if (!await waitForServerStatus(false, 30000, 1000)) {
                 await showInfo({
-                        title: "伺服器關閉逾時",
-                        message: "尚未確認關閉完成，請查看目前伺服器狀態。",
-                        confirmText: "關閉",
-                        variant: "warning",
-                    });
+                    title: "伺服器關閉逾時",
+                    message: "尚未確認關閉完成，請查看目前伺服器狀態。",
+                    variant: "warning",
+                });
             }
-        } else if (targetOnline && setupStage === "need_first_run") {
-            await fetch("/api/server/sync-rcon", {
-                method: "POST"
-            });
-
-            await showInfo({
-                title: "初始化完成",
-                message:
-            `伺服器必要檔案已產生。\nRCON 設定已同步，請同意 Minecraft EULA 後再啟動伺服器。`
-            });
-            await checkEulaStatus();
-        }else if (targetOnline && startupWarning) {
-            await showServerStartWarning(startupWarning);
         }
 
     } catch (error) {
@@ -365,6 +363,10 @@ async function toggleServer() {
         isTransitioning = false;
         setPowerButtonLoading(false);
         updateStatus();
+    } finally {
+        isTransitioning = false;
+        setPowerButtonLoading(false);
+        await updateStatus();
     }
 }
 
@@ -764,6 +766,8 @@ async function checkFirstRunGuide() {
 
 
 export async function saveAndRestartServer() {
+    if (isTransitioning) return;
+    isTransitioning = true;
     const ok = await showConfirm({
         title: "重新啟動伺服器",
         message:
@@ -778,6 +782,7 @@ export async function saveAndRestartServer() {
     });
 
     if (!ok) {
+        isTransitioning = false;
         return;
     }
 
@@ -800,6 +805,7 @@ export async function saveAndRestartServer() {
             return;
         }
 
+        isTransitioning = true;
         setPowerButtonLoading(true);
 
         let response = await fetch("/api/server/stop", {
@@ -821,32 +827,7 @@ export async function saveAndRestartServer() {
 
         setPowerButtonLoading(true);
 
-        data = await requestServerStart();
-
-        if (data.cancelled) {
-            return;
-        }
-
-        if (!data.success) {
-            if (data.failure) {
-                await showServerStartupFailure(data.failure);
-            } else {
-                await showInfo({
-                    title: data.start_blocked
-                        ? "無法開啟伺服器"
-                        : "啟動伺服器失敗",
-    
-                    message:
-                        data.message || "未知錯誤",
-    
-                    confirmText: "關閉",
-                    variant: "error",
-                });
-            }
-            return;
-        }
-
-        const startResult = await waitForServerStartup();
+        const startResult = await runServerStartFlow();
         const started = startResult.ready;
 
         await updateStatus();
@@ -865,19 +846,6 @@ export async function saveAndRestartServer() {
                             "設定已套用，伺服器已重新啟動。",
                     });
             }
-        } else {
-            if (startResult.failure) {
-                await showServerStartupFailure(
-                    startResult.failure
-                );
-            } else {
-                await showInfo({
-                        title: "伺服器啟動逾時",
-                        message: "尚未確認啟動完成，請查看目前伺服器狀態。",
-                        confirmText: "關閉",
-                        variant: "warning",
-                    });
-            }
         }
 
     } catch (error) {
@@ -886,6 +854,7 @@ export async function saveAndRestartServer() {
 
         
     } finally {
+        isTransitioning = false;
         // 重啟流程結束後，依實際狀態恢復電源按鈕
         try {
             const response = await fetch("/api/server/status?force=1",{ cache: "no-store" });
@@ -911,4 +880,5 @@ export async function saveAndRestartServer() {
 
 
 }
+
 

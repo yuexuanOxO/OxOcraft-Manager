@@ -11,3 +11,7 @@ dist/
 backend/instance/*.db
 backend/credentials/google_token*
 Test_tools
+
+# 本機伺服器的 Java 執行檔路徑
+data/java_runtime.json
+data/java_runtime.tmp

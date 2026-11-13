@@ -5,6 +5,7 @@ import threading
 import json
 import socket
 from pathlib import Path
+from backend import java_runtime
 from backend.death_record.death_rules import parse_death_message, location_pattern
 from backend.server_monitor import append_log_line, clear_log_cache
 from backend.paths import SERVER_JAR_PATH, CONFIG_PATH, MC_ROOT, SERVER_PROPERTIES_PATH
@@ -37,6 +38,9 @@ from backend.db import (
 SERVER_ROOT = MC_ROOT
 
 server_process: subprocess.Popen | None = None
+_launch_lock = threading.RLock()
+_output_finished = threading.Event()
+_output_finished.set()
 
 # 暫存等待座標回來的死亡事件
 pending_deaths: dict[str, dict] = {}
@@ -313,13 +317,40 @@ def send_command(cmd: str) -> None:
         server_process.stdin.flush()
 
 
-def handle_server_output(process=None, startup_logs=None) -> None:
+def _read_server_output(process, startup_logs, attempt) -> None:
+    try:
+        handle_server_output(process, startup_logs, attempt)
+    except Exception as error:
+        # 繼續讀取，避免解析器異常使 Java 的輸出管線塞滿。
+        print("[ServerStartup] 輸出處理異常：", error)
+        for line in process.stdout:
+            with _start_output_lock:
+                startup_logs.append(line.rstrip("\r\n"))
+        code = process.wait()
+        if server_process is process:
+            if not java_runtime.get_attempt().get("ready"):
+                failure = classify_server_start_failure(startup_logs, code)
+                failure.update(read_start_failure_log(startup_logs))
+                failure.update(java_runtime.fail_attempt(attempt["attempt_id"]))
+                record_server_start_failure(failure)
+            set_server_runtime_state("offline")
+    finally:
+        if process.stdout:
+            process.stdout.close()
+        if process.stdin and process.poll() is not None:
+            process.stdin.close()
+        _output_finished.set()
+
+
+def handle_server_output(process=None, startup_logs=None, attempt=None) -> None:
     global server_process, pending_deaths
 
     process = process if process is not None else server_process
 
     if not process or not process.stdout:
         return
+
+    attempt = attempt or java_runtime.get_attempt()
 
     if startup_logs is None:
         startup_logs = _current_start_output
@@ -354,6 +385,7 @@ def handle_server_output(process=None, startup_logs=None) -> None:
                     process.poll(),
                 )
                 failure.update(read_start_failure_log(startup_logs))
+                failure.update(java_runtime.fail_attempt(attempt["attempt_id"]))
                 record_server_start_failure(failure)
 
             # 偵測 ops.json 載入異常
@@ -371,6 +403,8 @@ def handle_server_output(process=None, startup_logs=None) -> None:
 
         if "Done (" in line and "For help, type" in line:
             reached_ready = True
+            java_runtime.ready_attempt(attempt["attempt_id"])
+            clear_server_start_failure()
             print("[Runtime Debug] Detected server ready from log.")
 
             try:
@@ -519,6 +553,7 @@ def handle_server_output(process=None, startup_logs=None) -> None:
 
         failure.update(read_start_failure_log(startup_logs))
 
+        failure.update(java_runtime.fail_attempt(attempt["attempt_id"]))
         record_server_start_failure(failure)
 
         print(
@@ -533,7 +568,8 @@ def handle_server_output(process=None, startup_logs=None) -> None:
     except Exception as error:
         print("[PlayerIdentity] mark all offline failed:", error)
 
-    set_server_runtime_state("offline")
+    if server_process is process:
+        set_server_runtime_state("offline")
 
 
 def get_local_ipv4_addresses() -> set[str]:
@@ -587,8 +623,37 @@ def validate_server_bind_ip(server_ip: str) -> tuple[bool, str]:
         return False, f"檢查 server-ip 時發生錯誤：{error}"
 
 
+def can_retry_java() -> bool:
+    return not is_server_running() and _output_finished.is_set()
+
+
+def wait_for_start_output(timeout: float = 3) -> bool:
+    return _output_finished.wait(timeout)
+
+
 def start_server(
     allow_invalid_ops: bool = False,
+    java_candidate_id: str | None = None,
+    retry_attempt_id: str | None = None,
+) -> tuple[bool, str]:
+    # 包含自動備份等其他呼叫端，皆由相同鎖防止重複啟動。
+    with _launch_lock:
+        if not can_retry_java():
+            return False, "原程序仍在執行或整理輸出，請稍後再試。"
+        try:
+            java_path = (
+                java_runtime.resolve_retry_java(java_candidate_id, retry_attempt_id)
+                if java_candidate_id else java_runtime.get_default_java()
+            )
+        except (OSError, ValueError, TypeError, AttributeError) as error:
+            return False, f"無法取得 Java 啟動設定：{error}"
+        return _start_server_impl(allow_invalid_ops, java_path, bool(java_candidate_id))
+
+
+def _start_server_impl(
+    allow_invalid_ops: bool,
+    java_path: str,
+    selected_java: bool,
 ) -> tuple[bool, str]:
     global server_process, _current_start_output
 
@@ -726,8 +791,9 @@ def start_server(
     lock_current_world_path()
 
 
+    attempt = java_runtime.begin_attempt(java_path, selected_java)
     command = [
-        "java",
+        java_path,
         "-jar",
         "server.jar",
         "nogui",
@@ -751,6 +817,7 @@ def start_server(
             errors="replace",
         )
 
+        _output_finished.clear()
         print("[Runtime Debug] server process started:", server_process.pid)
 
         if SERVER_PROPERTIES_PATH.exists():
@@ -760,8 +827,8 @@ def start_server(
                 print("[ServerStartup] 無法保存設定快照：", error)
 
         threading.Thread(
-            target=handle_server_output,
-            args=(server_process, startup_logs),
+            target=_read_server_output,
+            args=(server_process, startup_logs, attempt),
             daemon=True,
         ).start()
         return True, "伺服器啟動成功"
@@ -780,7 +847,9 @@ def start_server(
             "exit_code": None,
             **read_start_failure_log(startup_logs),
         }
+        failure.update(java_runtime.fail_attempt(attempt["attempt_id"]))
         record_server_start_failure(failure)
+        _output_finished.set()
         set_server_runtime_state("offline")
         return False, f"伺服器啟動失敗：{error}"
 
@@ -858,4 +927,5 @@ def get_current_level_name() -> str:
     lock_current_world_path()
 
     return CURRENT_LEVEL_NAME or ""
+
 

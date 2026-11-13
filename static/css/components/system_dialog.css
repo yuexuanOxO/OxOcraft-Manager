@@ -406,3 +406,29 @@
     flex: 0 0 auto;
     flex-wrap: wrap;
 }
+
+
+.system-dialog-java {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 24px;
+    max-width: min(620px, calc(100vw - 110px));
+}
+
+.system-dialog-java select {
+    width: 100%;
+    min-width: 0;
+    padding: 10px;
+    background: #202020;
+    border: 3px solid #555;
+    color: #fff;
+    font: inherit;
+    font-size: 18px;
+}
+
+.system-dialog-java-path {
+    color: #ccc;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+    user-select: text;
+}

@@ -306,3 +306,69 @@ export function showLogInfo({
 
     return result;
 }
+
+
+export async function showJavaSelection(loadOptions) {
+    const result = showConfirm({
+        title: "選擇其他 Java 重試",
+        message: "正在掃描本機 Java，請稍候……",
+        confirmText: "使用此版本開啟",
+        cancelText: "取消",
+        closeOnBackdrop: false,
+    });
+    const confirmBtn = document.getElementById("systemDialogConfirmBtn");
+    const message = document.getElementById("systemDialogMessage");
+    const actions = document.querySelector("#systemDialog .system-dialog-actions");
+    confirmBtn.disabled = true;
+    const container = document.createElement("div");
+    container.className = "system-dialog-java system-dialog-extra";
+    const label = document.createElement("label");
+    label.textContent = "Java 版本";
+    const select = document.createElement("select");
+    select.id = "systemDialogJavaSelect";
+    label.htmlFor = select.id;
+    const path = document.createElement("div");
+    path.className = "system-dialog-java-path";
+    container.append(label, select, path);
+    actions.before(container);
+    let options = [];
+    let attemptId = null;
+    // 取消後掃描回應不得覆寫下一個視窗。
+    let active = true;
+    result.then(() => {
+        active = false;
+        confirmBtn.disabled = false;
+    });
+    loadOptions().then(data => {
+        if (!active) return;
+        if (!data.success) throw new Error(data.message || "無法掃描 Java。");
+        options = data.options || [];
+        attemptId = data.attempt_id;
+        message.textContent = options.length
+            ? "請選擇要使用的 Java。更換版本不一定能解決本次錯誤。"
+            : "沒有找到可執行的 Java，請安裝 Java 後再試。";
+        for (const item of options) {
+            const option = document.createElement("option");
+            option.value = item.id;
+            option.textContent = `Java ${item.version}`
+                + (item.last_failed ? "（上次開啟失敗）" : "")
+                + (item.is_default ? "［目前預設］" : "")
+                + (item.vendor ? ` — ${item.vendor}` : "");
+            select.append(option);
+        }
+        select.value = (options.find(item => !item.last_failed) || options[0])?.id || "";
+        const updatePath = () => {
+            path.textContent = options.find(item => item.id === select.value)?.path || "";
+        };
+        select.addEventListener("change", updatePath);
+        updatePath();
+        confirmBtn.disabled = !options.length;
+    }).catch(error => {
+        if (active) message.textContent = error.message || "掃描 Java 失敗。";
+    });
+    const confirmed = await result;
+    // closeDialog 會移除元素，但選取值仍可讀取。
+    return confirmed && select.value
+        ? { java_candidate_id: select.value, retry_attempt_id: attemptId }
+        : null;
+}

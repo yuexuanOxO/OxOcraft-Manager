@@ -1,4 +1,5 @@
 import queue
+from backend import java_runtime
 from dataclasses import asdict
 from backend.management_api.state import get_management_state
 from backend.server_setup import get_server_setup_status
@@ -124,6 +125,8 @@ def api_server_start():
         }), 409
 
     data = request.get_json(silent=True) or {}
+    if not isinstance(data, dict):
+        return jsonify(success=False, message="請求資料格式錯誤。"), 400
 
     confirm_ops_error = (
         data.get("confirm_ops_error") is True
@@ -132,6 +135,13 @@ def api_server_start():
     confirm_whitelist_error = (
         data.get("confirm_whitelist_error") is True
     )
+
+    if (not isinstance(data, dict)
+            or (data.get("java_candidate_id") is not None
+                and not isinstance(data["java_candidate_id"], str))
+            or (data.get("retry_attempt_id") is not None
+                and not isinstance(data["retry_attempt_id"], str))):
+        return jsonify(success=False, message="Java 選擇資料格式錯誤。"), 400
 
     # 只在準備啟動 Minecraft 時執行檢查
     try:
@@ -182,14 +192,24 @@ def api_server_start():
         }), 409
 
     # 通過檢查或獲得使用者確認，才開始啟動
+    before_attempt_id = java_runtime.get_attempt().get("attempt_id")
     success, message = start_server(
-        allow_invalid_ops=confirm_ops_error
+        allow_invalid_ops=confirm_ops_error,
+        java_candidate_id=data.get("java_candidate_id"),
+        retry_attempt_id=data.get("retry_attempt_id"),
     )
 
+    attempt = java_runtime.get_attempt()
+    failure = (
+        get_server_start_failure()
+        if not success and attempt.get("attempt_id") != before_attempt_id
+        else None
+    )
     return jsonify({
         "success": success,
         "message": message,
-        "failure": get_server_start_failure() if not success else None,
+        "failure": failure,
+        "attempt": attempt if success else None,
     }), 200 if success else 400
 
 
@@ -308,3 +328,42 @@ def api_server_start_diagnostics():
 
 
 
+
+
+
+@server_bp.route("/api/server/java-options")
+def api_java_options():
+    from backend.server_runtime import can_retry_java, wait_for_start_output
+
+    failure = get_server_start_failure()
+    if not failure:
+        return jsonify(success=False, message="目前沒有啟動失敗紀錄。"), 409
+    # 致命錯誤可能先於程序結束出現；必須等原程序及讀取執行緒結束。
+    wait_for_start_output()
+    if not can_retry_java():
+        return jsonify(success=False, message="原 Minecraft 程序仍在執行，暫時無法更換 Java。請先確認程序已停止。"), 409
+    attempt_id = java_runtime.get_attempt().get("attempt_id")
+    try:
+        options = java_runtime.scan_java_versions()
+        if java_runtime.get_attempt().get("attempt_id") != attempt_id or not can_retry_java():
+            return jsonify(success=False, message="啟動狀態已改變，請重新操作。"), 409
+        response = jsonify(success=True, options=options, attempt_id=attempt_id)
+        response.headers["Cache-Control"] = "no-store"
+        return response
+    except Exception as error:
+        return jsonify(success=False, message=f"掃描 Java 失敗：{error}"), 500
+
+
+@server_bp.route("/api/server/java-default", methods=["POST"])
+def api_java_default():
+    from backend.server_runtime import is_server_running
+    data = request.get_json(silent=True) or {}
+    if not isinstance(data, dict):
+        return jsonify(success=False, message="請求資料格式錯誤。"), 400
+    if not is_server_running():
+        return jsonify(success=False, message="伺服器已停止，無法確認本次啟動成功。"), 409
+    try:
+        path = java_runtime.save_successful_java(data.get("attempt_id"))
+        return jsonify(success=True, java_path=path)
+    except (OSError, ValueError, TypeError, AttributeError) as error:
+        return jsonify(success=False, message=f"儲存預設 Java 失敗：{error}"), 400

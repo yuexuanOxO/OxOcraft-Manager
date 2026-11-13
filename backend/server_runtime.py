@@ -50,7 +50,8 @@ _runtime_state_lock = threading.Lock()
 # Minecraft 啟動失敗紀錄
 _start_failure_lock = threading.Lock()
 _last_start_failure = None
-_current_start_log_before = None
+_start_output_lock = threading.Lock()
+_current_start_output: list[str] = []
 
 
 # Minecraft 啟動警告紀錄
@@ -108,58 +109,25 @@ def record_server_start_failure(
         _last_start_failure = dict(failure)
 
 
-def get_latest_log_signature():
-    try:
-        stat = (SERVER_ROOT / "logs" / "latest.log").stat()
-        return (
-            stat.st_ino,
-            stat.st_size,
-            stat.st_mtime_ns,
-            stat.st_ctime_ns,
-        )
-    except OSError:
-        return None
-
-
-def read_start_failure_log(before_signature) -> dict:
-    path = SERVER_ROOT / "logs" / "latest.log"
-    signature = get_latest_log_signature()
-
-    if signature is None:
-        return {
-            "log": "",
-            "log_note": "本次啟動未產生 latest.log。",
-        }
-
-    if signature == before_signature:
-        return {
-            "log": "",
-            "log_note": (
-                "latest.log 未更新，"
-                "為避免顯示舊紀錄，本次不載入。"
-            ),
-        }
-
-    try:
-        content = path.read_text(
-            encoding="utf-8",
-            errors="replace",
+def read_start_failure_log(process_output: list[str] | None = None) -> dict:
+    # 僅使用本次 Java 程序的 stdout / stderr，不讀取 latest.log。
+    with _start_output_lock:
+        lines = list(
+            _current_start_output
+            if process_output is None
+            else process_output
         )
 
-        return {
-            "log": content,
-            "log_note": (
-                ""
-                if content.strip()
-                else "本次 latest.log 沒有內容。"
-            ),
-        }
-
-    except OSError as error:
-        return {
-            "log": "",
-            "log_note": f"無法讀取 latest.log：{error}",
-        }
+    content = "\n".join(lines)
+    return {
+        "log": content,
+        "log_note": (
+            "以下為本次 Java 啟動程序的直接輸出（stdout／stderr）。"
+            if content.strip()
+            else "本次 Java 啟動程序沒有可用的輸出。"
+        ),
+        "log_source": "process_output",
+    }
 
 
 def get_server_start_diagnostics() -> dict:
@@ -176,13 +144,13 @@ def get_server_start_diagnostics() -> dict:
             if running else
             "Minecraft 程序已停止，以下為本次啟動日誌。"
         ),
-        **read_start_failure_log(_current_start_log_before),
+        **read_start_failure_log(),
     }
 
 
 def classify_server_start_failure(
     log_lines: list[str],
-    exit_code: int,
+    exit_code: int | None,
 ) -> dict:
     log_text = "\n".join(log_lines)
 
@@ -237,10 +205,12 @@ def classify_server_start_failure(
         "error_code": "server_exited_before_ready",
         "title": "伺服器啟動失敗",
         "message": (
-            "Minecraft 尚未完成啟動就已停止。\n"
-            f"程序退出代碼：{exit_code}\n\n"
-            "目前無法確認具體原因，"
-            "請查看伺服器 Log。"
+            ("Minecraft 尚未完成啟動就已停止。\n"
+             f"程序退出代碼：{exit_code}\n"
+             if exit_code is not None else
+             "Minecraft 啟動時發生致命錯誤，程序可能仍在結束中。\n")
+            +
+            "目前無法確認具體原因，請查看伺服器 Log。"
         ),
         "file": None,
         "exit_code": exit_code,
@@ -343,30 +313,28 @@ def send_command(cmd: str) -> None:
         server_process.stdin.flush()
 
 
-def handle_server_output(log_before=None) -> None:
+def handle_server_output(process=None, startup_logs=None) -> None:
     global server_process, pending_deaths
 
-    process = server_process
+    process = process if process is not None else server_process
 
     if not process or not process.stdout:
         return
 
-    startup_logs = []
+    if startup_logs is None:
+        startup_logs = _current_start_output
     reached_ready = False
     startup_warning_recorded = False
     startup_failed = False
 
     for line in process.stdout:
-        line = line.strip()
+        line = line.rstrip("\r\n")
         print(line)
         append_log_line(line)
 
         if not reached_ready:
-            startup_logs.append(line)
-
-            # 只保留啟動階段最近的 Log
-            if len(startup_logs) > 300:
-                startup_logs.pop(0)
+            with _start_output_lock:
+                startup_logs.append(line)
 
             # 致命啟動錯誤不必等到 JVM 完全退出才通知前端。
             if any(marker in line for marker in (
@@ -385,7 +353,7 @@ def handle_server_output(log_before=None) -> None:
                     startup_logs,
                     process.poll(),
                 )
-                failure.update(read_start_failure_log(log_before))
+                failure.update(read_start_failure_log(startup_logs))
                 record_server_start_failure(failure)
 
             # 偵測 ops.json 載入異常
@@ -549,7 +517,7 @@ def handle_server_output(log_before=None) -> None:
             exit_code,
         )
 
-        failure.update(read_start_failure_log(log_before))
+        failure.update(read_start_failure_log(startup_logs))
 
         record_server_start_failure(failure)
 
@@ -622,10 +590,12 @@ def validate_server_bind_ip(server_ip: str) -> tuple[bool, str]:
 def start_server(
     allow_invalid_ops: bool = False,
 ) -> tuple[bool, str]:
-    global server_process, _current_start_log_before
+    global server_process, _current_start_output
 
     if is_server_running():
         return False, "伺服器已經在執行中"
+
+    clear_server_start_failure()
 
     if not SERVER_JAR_PATH.exists():
         return False, f"找不到 server.jar：{SERVER_JAR_PATH}"
@@ -764,8 +734,9 @@ def start_server(
     ]
 
     try:
-        log_before = get_latest_log_signature()
-        _current_start_log_before = log_before
+        with _start_output_lock:
+            _current_start_output = []
+        startup_logs = _current_start_output
 
         clear_log_cache()
         server_process = subprocess.Popen(
@@ -783,15 +754,33 @@ def start_server(
         print("[Runtime Debug] server process started:", server_process.pid)
 
         if SERVER_PROPERTIES_PATH.exists():
-            save_effective_settings_snapshot()
+            try:
+                save_effective_settings_snapshot()
+            except Exception as error:
+                print("[ServerStartup] 無法保存設定快照：", error)
 
         threading.Thread(
             target=handle_server_output,
-            args=(log_before,),
+            args=(server_process, startup_logs),
             daemon=True,
         ).start()
         return True, "伺服器啟動成功"
     except Exception as error:
+        error_output = (
+            f"執行指令：{subprocess.list2cmdline(command)}\n"
+            f"工作目錄：{SERVER_ROOT}\n\n"
+            f"{type(error).__name__}: {error}"
+        )
+        with _start_output_lock:
+            startup_logs.append(error_output)
+        failure = {
+            "error_code": "server_launch_error",
+            "title": "伺服器啟動指令執行失敗",
+            "message": "啟動程序時發生錯誤，請查看下方輸出。",
+            "exit_code": None,
+            **read_start_failure_log(startup_logs),
+        }
+        record_server_start_failure(failure)
         set_server_runtime_state("offline")
         return False, f"伺服器啟動失敗：{error}"
 
@@ -869,3 +858,4 @@ def get_current_level_name() -> str:
     lock_current_world_path()
 
     return CURRENT_LEVEL_NAME or ""
+

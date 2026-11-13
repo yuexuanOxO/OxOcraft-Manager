@@ -189,6 +189,7 @@ def api_server_start():
     return jsonify({
         "success": success,
         "message": message,
+        "failure": get_server_start_failure() if not success else None,
     }), 200 if success else 400
 
 
@@ -303,6 +304,7 @@ def api_server_start_diagnostics():
     })
     response.headers["Cache-Control"] = "no-store"
     return response
+
 
 
 

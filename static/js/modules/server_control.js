@@ -272,13 +272,17 @@ async function toggleServer() {
         }
 
         if (!data.success) {
-            await showInfo({
-                title: data.start_blocked ? "無法開啟伺服器": "操作失敗",
-                message:data.message || "未知錯誤",
-                confirmText: "關閉",
-                variant: data.start_blocked ? "error": "warning",
-            });
+            if (data.failure) {
+                await showServerStartupFailure(data.failure);
+            } else {
+                await showInfo({
+                    title: data.start_blocked ? "無法開啟伺服器": "操作失敗",
+                    message:data.message || "未知錯誤",
+                    confirmText: "關閉",
+                    variant: data.start_blocked ? "error": "warning",
+                });
 
+            }
             isTransitioning = false;
             setPowerButtonLoading(false);
             updateStatus();
@@ -319,6 +323,14 @@ async function toggleServer() {
             await updateStatus();
 
             if (targetOnline) {
+                if (!startupFailure) {
+                    try {
+                        const diagnostics = await fetchStartupJson("/api/server/start-diagnostics");
+                        startupFailure = diagnostics.failure;
+                    } catch (error) {
+                        console.error("讀取啟動輸出失敗:", error);
+                    }
+                }
                 await showServerStartupFailure(
                     startupFailure || {
                         title: "伺服器未完成啟動",
@@ -327,11 +339,11 @@ async function toggleServer() {
                 );
             } else {
                 await showInfo({
-                    title: "伺服器關閉逾時",
-                    message: "尚未確認關閉完成，請查看目前伺服器狀態。",
-                    confirmText: "關閉",
-                    variant: "warning",
-                });
+                        title: "伺服器關閉逾時",
+                        message: "尚未確認關閉完成，請查看目前伺服器狀態。",
+                        confirmText: "關閉",
+                        variant: "warning",
+                    });
             }
         } else if (targetOnline && setupStage === "need_first_run") {
             await fetch("/api/server/sync-rcon", {
@@ -723,6 +735,9 @@ async function waitForFirstRunFilesGenerated(timeoutMs = 30000, intervalMs = 100
                 return true;
             }
 
+            const failureData = await fetchStartupJson("/api/server/start-failure");
+            if (failureData.failure) return false;
+
         } catch (error) {
             console.error("等待初次啟動檔案產生時發生錯誤:", error);
         }
@@ -813,17 +828,21 @@ export async function saveAndRestartServer() {
         }
 
         if (!data.success) {
-            await showInfo({
-                title: data.start_blocked
-                    ? "無法開啟伺服器"
-                    : "啟動伺服器失敗",
-
-                message:
-                    data.message || "未知錯誤",
-
-                confirmText: "關閉",
-                variant: "error",
-            });
+            if (data.failure) {
+                await showServerStartupFailure(data.failure);
+            } else {
+                await showInfo({
+                    title: data.start_blocked
+                        ? "無法開啟伺服器"
+                        : "啟動伺服器失敗",
+    
+                    message:
+                        data.message || "未知錯誤",
+    
+                    confirmText: "關閉",
+                    variant: "error",
+                });
+            }
             return;
         }
 
@@ -841,10 +860,10 @@ export async function saveAndRestartServer() {
                 );
             } else {
                 await showInfo({
-                    title: "重新啟動完成",
-                    message:
-                        "設定已套用，伺服器已重新啟動。",
-                });
+                        title: "重新啟動完成",
+                        message:
+                            "設定已套用，伺服器已重新啟動。",
+                    });
             }
         } else {
             if (startResult.failure) {
@@ -853,11 +872,11 @@ export async function saveAndRestartServer() {
                 );
             } else {
                 await showInfo({
-                    title: "伺服器啟動逾時",
-                    message: "尚未確認啟動完成，請查看目前伺服器狀態。",
-                    confirmText: "關閉",
-                    variant: "warning",
-                });
+                        title: "伺服器啟動逾時",
+                        message: "尚未確認啟動完成，請查看目前伺服器狀態。",
+                        confirmText: "關閉",
+                        variant: "warning",
+                    });
             }
         }
 
@@ -892,3 +911,4 @@ export async function saveAndRestartServer() {
 
 
 }
+

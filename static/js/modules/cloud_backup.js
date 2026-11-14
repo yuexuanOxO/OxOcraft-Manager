@@ -1,3 +1,4 @@
+import { showInfo } from "./system_dialog.js";
 import { getUiSessionUrl } from "./ui_session.js";
 
 import {
@@ -202,6 +203,11 @@ async function uploadLatestBackupToGoogleDrive() {
         if (!data.success) {
             cloudUploadActionPending = false;
             updateCloudUploadButtonAvailability();
+            await showInfo({
+                title: "無法上傳備份",
+                message: data.message || "上傳失敗，請稍後再試。",
+                variant: "error",
+            });
             return;
         }
 
@@ -306,4 +312,5 @@ function renderCloudQuota(quota) {
     bar.classList.toggle("warning", percent >= 70 && percent < 90);
     bar.classList.toggle("danger", percent >= 90);
 }
+
 

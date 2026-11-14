@@ -233,6 +233,11 @@ def get_backup_zip_from_file(
             "指定檔案不是 ZIP 備份檔"
         )
 
+    from backend.backup_service import is_valid_world_backup_zip
+
+    if not is_valid_world_backup_zip(backup_path):
+        raise ValueError("此檔案不是有效的地圖備份ZIP無法上傳。")
+
     file_stem = backup_path.stem
 
     if "_backup_" in file_stem:
@@ -636,19 +641,13 @@ def api_google_upload_latest():
             "message": "請先選擇要上傳的 ZIP 備份檔"
         }), 400
 
-    backup_path = Path(
-        backup_file
-    )
-
-    file_stem = backup_path.stem
-
-    if "_backup_" in file_stem:
-        map_name = file_stem.split(
-            "_backup_",
-            1
-        )[0]
-    else:
-        map_name = file_stem
+    try:
+        backup_path, map_name = get_backup_zip_from_file(backup_file)
+    except (OSError, ValueError) as error:
+        return jsonify({
+            "success": False,
+            "message": str(error),
+        }), 400
 
     timestamp = time.strftime(
         "%Y%m%d_%H%M%S"
@@ -695,5 +694,6 @@ def api_google_cancel_upload():
         "success": True,
         "message": "已送出取消雲端上傳請求"
     })
+
 
 

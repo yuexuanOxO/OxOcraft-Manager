@@ -15,9 +15,7 @@ death_bp = Blueprint("death", __name__)
 @death_bp.route("/api/deaths")
 def api_deaths():
     try:
-        players = get_recent_player_deaths_grouped(
-            limit_per_player=5
-        )
+        players = get_recent_player_deaths_grouped()
 
         for player in players:
             player_uuid = str(

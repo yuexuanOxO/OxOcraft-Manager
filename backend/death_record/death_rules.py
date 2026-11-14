@@ -1,7 +1,7 @@
 import re
 
 
-LOG_PREFIX = r"\]: "
+LOG_PREFIX = r"\]: (?:System chat: )?"
 
 PLAYER = r"(?P<player>\S+)"
 KILLER = r"(?P<killer>.+?)"

@@ -16,6 +16,8 @@ BAN_HISTORY_TRIM_TO = 200
 IP_BAN_HISTORY_LIMIT = 300
 IP_BAN_HISTORY_TRIM_TO = 200
 
+PLAYER_DEATH_LIMIT = 4
+
 
 def get_connection() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
@@ -254,6 +256,8 @@ def init_db() -> None:
 
 
 
+        _trim_player_deaths(conn)
+
         conn.execute("""DELETE FROM invalid_player_json_identities""") #刪除暫存錯誤玩家資料表
 
 
@@ -306,68 +310,56 @@ def insert_player_death(
             raw_log,
         ))
 
-        # 只保留最新 10 筆
-        conn.execute("""
-            DELETE FROM player_deaths
-            WHERE id NOT IN (
-                SELECT id
-                FROM player_deaths
-                ORDER BY death_time DESC, id DESC
-                LIMIT 10
-            )
-        """)
+        _trim_player_deaths(conn)
 
         conn.commit()
 
 
+def _trim_player_deaths(conn: sqlite3.Connection) -> None:
+    # 有 UUID 以 UUID 識別；缺少 UUID 的舊紀錄以玩家名稱識別。
+    conn.execute("""
+        DELETE FROM player_deaths
+        WHERE id IN (
+            SELECT id FROM (
+                SELECT id, ROW_NUMBER() OVER (
+                    PARTITION BY
+                        NULLIF(TRIM(player_uuid), ''),
+                        CASE WHEN NULLIF(TRIM(player_uuid), '') IS NULL
+                            THEN player_name ELSE '' END
+                    ORDER BY death_time DESC, id DESC
+                ) AS death_rank
+                FROM player_deaths
+            )
+            WHERE death_rank > ?
+        )
+    """, (PLAYER_DEATH_LIMIT,))
+
+
 def get_recent_player_deaths_grouped(
-    limit_per_player: int = 5
+    limit_per_player: int = PLAYER_DEATH_LIMIT,
 ) -> list[dict]:
-
+    limit = max(0, min(int(limit_per_player), PLAYER_DEATH_LIMIT))
     with get_connection() as conn:
-
-        players = conn.execute("""
-            SELECT
-                player_uuid,
-                player_name,
-                MAX(death_time) AS latest_death_time,
-                MAX(id) AS latest_id
-            FROM player_deaths
-            GROUP BY
-                player_uuid,
-                player_name
-            ORDER BY
-                latest_death_time DESC,
-                latest_id DESC
+        rows = conn.execute("""
+            SELECT * FROM player_deaths
+            ORDER BY death_time DESC, id DESC
         """).fetchall()
 
-        result = []
-
-        for player_row in players:
-            player_uuid = player_row["player_uuid"]
-            player_name = player_row["player_name"]
-
-            death_rows = conn.execute("""
-                SELECT *
-                FROM player_deaths
-                WHERE player_uuid = ?
-                ORDER BY death_time DESC, id DESC
-                LIMIT ?
-            """, (
-                player_uuid,
-                limit_per_player,
-            )).fetchall()
-
-            result.append({
-                "player_uuid": player_uuid,
-                "player_name": player_name,
-                "deaths": [
-                    dict(row)
-                    for row in death_rows
-                ],
-            })
-
-    return result
+    players = {}
+    for row in rows:
+        death = dict(row)
+        player_uuid = str(death["player_uuid"] or "").strip()
+        key = ("uuid", player_uuid) if player_uuid else ("name", death["player_name"])
+        if key not in players:
+            # 已依時間排序，採用該 UUID 最新紀錄中的名稱。
+            players[key] = {
+                "player_uuid": player_uuid or None,
+                "player_name": death["player_name"],
+                "deaths": [],
+            }
+        if len(players[key]["deaths"]) < limit:
+            players[key]["deaths"].append(death)
+    return list(players.values())
 
 
 def insert_backup_record(

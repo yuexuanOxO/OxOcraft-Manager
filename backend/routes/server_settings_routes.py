@@ -1,3 +1,4 @@
+from backend import java_runtime
 from flask import Blueprint, jsonify, request, send_file
 from PIL import Image
 from werkzeug.utils import secure_filename
@@ -8,6 +9,7 @@ from backend.paths import SERVER_PROPERTIES_PATH,MC_ROOT,STATIC_DIR
 from backend.config_files import (
     load_or_create_config,
     save_config,
+    update_config,
     generate_rcon_password,
     generate_management_secret,
 )
@@ -147,11 +149,13 @@ def api_get_runtime_config():
             "config": {
                 "java_xms": config.get("java_xms", "1G"),
                 "java_xmx": config.get("java_xmx", "4G"),
+                "java_executable": java_runtime.get_default_java(),
 
                 "rcon.password": config.get("rcon_password", ""),
                 "rcon.port": str(config.get("rcon_port", 25575)),
                 "enable-rcon": "true",
-            }
+            },
+            "effective_java_executable": java_runtime.get_java_for_snapshot(),
         })
 
     except Exception as error:
@@ -164,6 +168,8 @@ def api_get_runtime_config():
 @settings_bp.route("/api/server/runtime-config", methods=["POST"])
 def api_update_runtime_config():
     data = request.get_json(silent=True) or {}
+    if not isinstance(data, dict):
+        return jsonify(success=False, message="請求資料格式錯誤"), 400
     updates = data.get("config", {})
 
     if not isinstance(updates, dict):
@@ -173,18 +179,21 @@ def api_update_runtime_config():
         }), 400
 
     try:
-        config = load_or_create_config()
-
+        changes = {}
         for key in ["java_xms", "java_xmx"]:
             if key in updates:
-                config[key] = str(updates[key])
-
-        save_config(config)
+                changes[key] = str(updates[key])
+        if "java_executable" in updates:
+            changes["java_executable"] = java_runtime.validate_default_java(updates["java_executable"])
+        update_config(changes)
 
         return jsonify({
             "success": True,
-            "message": "啟動記憶體設定已儲存"
+            "message": "Java 啟動設定已儲存"
         })
+
+    except ValueError as error:
+        return jsonify(success=False, message=str(error)), 400
 
     except Exception as error:
         return jsonify({
@@ -406,3 +415,14 @@ def api_sync_effective_settings():
             "success": False,
             "message": str(error),
         }), 500
+
+
+@settings_bp.route("/api/server/java-settings-options")
+def api_java_settings_options():
+    try:
+        options = java_runtime.scan_java_versions()
+        response = jsonify(success=True, options=options)
+        response.headers["Cache-Control"] = "no-store"
+        return response
+    except Exception as error:
+        return jsonify(success=False, message=f"掃描 Java 失敗：{error}"), 500

@@ -9,5 +9,6 @@
     "auto_backup_frequency": "daily",
     "auto_backup_start_at": "2026-08-26T18:17",
     "auto_backup_next_run_at": "",
-    "auto_backup_upload_cloud": true
+    "auto_backup_upload_cloud": true,
+    "java_executable": "C:\\Program Files\\Eclipse Adoptium\\jdk-25.0.4.101-hotspot\\bin\\java.exe"
 }

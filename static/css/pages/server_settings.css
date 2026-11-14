@@ -737,3 +737,53 @@
 
     z-index: 2;
 }
+
+
+.setting-java-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.setting-java-controls .setting-input {
+    min-width: 0;
+    flex: 1;
+}
+
+.setting-java-rescan {
+    flex-shrink: 0;
+    padding: 8px 10px;
+    border: 2px solid #555;
+    background: #303030;
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
+}
+
+.setting-java-rescan:disabled {
+    opacity: .5;
+    cursor: wait;
+}
+
+.setting-java-path,
+.setting-java-status {
+    margin-top: 6px;
+    font-size: 14px;
+    color: #aaa;
+    overflow-wrap: anywhere;
+}
+
+/* 固定保留右側「待套用」的位置 */
+.setting-java-controls {
+    position: relative;
+    box-sizing: border-box;
+    padding-right: 90px;
+}
+
+.setting-java-controls .setting-dirty-badge {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+}

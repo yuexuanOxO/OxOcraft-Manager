@@ -1,9 +1,8 @@
-"""失敗後才掃描 Java；選擇、嘗試紀錄及預設路徑集中於此。"""
+"""Java 掃描、選擇及嘗試紀錄；預設路徑統一保存於 config.json。"""
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
-import json
 import os
 from pathlib import Path
 import re
@@ -12,9 +11,8 @@ import subprocess
 import threading
 import uuid
 
-from backend.paths import APP_DATA_DIR, MC_ROOT
+from backend.config_files import load_or_create_config, update_config
 
-_SETTINGS_PATH = APP_DATA_DIR / "java_runtime.json"
 _lock = threading.RLock()
 _scan_lock = threading.Lock()
 _attempt: dict = {}
@@ -27,14 +25,31 @@ def path_key(path: str) -> str:
 
 
 def get_default_java() -> str:
-    with _lock:
-        if not _SETTINGS_PATH.exists():
-            return "java"
-        data = json.loads(_SETTINGS_PATH.read_text(encoding="utf-8"))
-        value = data.get("servers", {}).get(path_key(str(MC_ROOT)), "java")
-        if not isinstance(value, str) or not value.strip():
-            raise ValueError("預設 Java 路徑格式錯誤。")
+    value = load_or_create_config().get("java_executable", "java")
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError("預設 Java 路徑格式錯誤。")
+    return value
+
+
+def validate_default_java(value: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError("預設 Java 路徑格式錯誤。")
+    if value == "java" or value == get_default_java():
         return value
+    with _lock:
+        for candidate in _candidates.values():
+            if candidate["path"] == value and Path(value).is_file():
+                return value
+    raise ValueError("所選 Java 未經掃描確認或已不存在，請重新掃描。")
+
+
+def get_java_for_snapshot() -> str:
+    # 運行中修改預設，不代表當前 JVM 已切換。
+    from backend.server_runtime import is_server_running
+    attempt = get_attempt()
+    if is_server_running() and attempt:
+        return attempt.get("launch_java", attempt["java_path"])
+    return get_default_java()
 
 
 def begin_attempt(java_path: str, selected: bool) -> dict:
@@ -45,6 +60,7 @@ def begin_attempt(java_path: str, selected: bool) -> dict:
         _attempt = {
             "attempt_id": uuid.uuid4().hex,
             "java_path": resolved,
+            "launch_java": java_path,
             "path_key": path_key(resolved),
             "selected": selected,
             "ready": False,
@@ -237,10 +253,5 @@ def save_successful_java(attempt_id: str) -> str:
         path = _attempt["java_path"]
         if not Path(path).is_file():
             raise ValueError("本次使用的 Java 路徑已不存在。")
-        data = json.loads(_SETTINGS_PATH.read_text(encoding="utf-8")) if _SETTINGS_PATH.exists() else {}
-        data.setdefault("servers", {})[path_key(str(MC_ROOT))] = path
-        _SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
-        temporary = _SETTINGS_PATH.with_suffix(".tmp")
-        temporary.write_text(json.dumps(data, ensure_ascii=False, indent=4), encoding="utf-8")
-        os.replace(temporary, _SETTINGS_PATH)
+        update_config({"java_executable": path})
         return path

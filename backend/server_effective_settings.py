@@ -1,4 +1,5 @@
 import json
+from backend.java_runtime import get_java_for_snapshot
 from datetime import datetime
 from backend.config_files import load_or_create_config
 from backend.server_settings.server_properties import (
@@ -53,6 +54,7 @@ def build_effective_settings_snapshot() -> dict:
         "runtime_config": {
             "java_xms": config.get("java_xms", "1G"),
             "java_xmx": config.get("java_xmx", "4G"),
+            "java_executable": get_java_for_snapshot(),
         },
     }
 

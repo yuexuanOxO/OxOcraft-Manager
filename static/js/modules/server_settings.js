@@ -25,12 +25,18 @@ let pendingServerIconFile = null;
 let pendingServerIconPreviewUrl = null;
 let serverIconNeedsRestart = false;
 const SERVER_SETTINGS_BUSY_MIN_MS = 1000;
+let serverJavaOptions = [];
+let serverJavaScanning = false;
+let serverJavaScanComplete = false;
+let serverJavaScanMessage = "";
+let serverJavaScanRequest = 0;
+let serverJavaScanController = null;
 
 const SERVER_SETTING_GROUPS = [
     {
         key: "java",
         label: "Java",
-        description: "伺服器啟動時使用的 Java 記憶體設定。"
+        description: "伺服器啟動時使用的 Java 版本與記憶體設定。"
     },
     {
         key: "general",
@@ -442,6 +448,12 @@ export async function loadServerSettings() {
     if (!body) return;
 
     body.innerHTML = "<div class='settings-placeholder'>讀取中...</div>";
+    serverJavaScanController?.abort();
+    serverJavaScanRequest++;
+    serverJavaOptions = [];
+    serverJavaScanning = false;
+    serverJavaScanComplete = false;
+    serverJavaScanMessage = "";
 
     try {
         const response = await fetch("/api/server/properties", { cache: "no-store" });
@@ -454,6 +466,9 @@ export async function loadServerSettings() {
 
         const runtimeResponse = await fetch("/api/server/runtime-config", { cache: "no-store" });
         const runtimeData = await runtimeResponse.json();
+        if (!runtimeResponse.ok || !runtimeData.success) {
+            throw new Error(runtimeData.message || "讀取 Java 設定失敗");
+        }
 
         serverSettingsState = data.properties || {};
 
@@ -466,6 +481,7 @@ export async function loadServerSettings() {
             };
         }
 
+        serverSettingsState.java_executable ??= "java";
         serverSettingsSavedState = structuredClone(serverSettingsState);
 
         const effectiveResponse = await fetch("/api/server/effective-settings", { cache: "no-store" });
@@ -482,15 +498,100 @@ export async function loadServerSettings() {
             serverSettingsEffectiveState = structuredClone(serverSettingsState);
         }
 
+        // 舊版快照可能沒有 Java 路徑；使用後端提供的當前執行值。
+        serverSettingsEffectiveState.java_executable =
+            runtimeData.effective_java_executable
+            ?? serverSettingsEffectiveState.java_executable
+            ?? serverSettingsState.java_executable;
+
         // 更新最近修改時間
         updateServerSettingsModifiedTime(data.modified_comment);
 
         renderServerSettings();
         updateServerSettingsStatusCard();
+        void refreshServerJavaOptions();
 
     } catch (error) {
         body.innerHTML = "<div class='settings-placeholder'>讀取失敗，請查看 console。</div>";
         console.error("讀取 server.properties 失敗:", error);
+    }
+}
+
+
+function updateServerJavaChoices() {
+    const select = document.getElementById("serverJavaExecutable");
+    if (!select) return;
+    const current = serverSettingsState.java_executable || "java";
+    const choices = [];
+    for (const item of serverJavaOptions) {
+        choices.push({
+            // 舊設定為 java 時，以實際 PATH 版本呈現，保留原值避免誤標待套用。
+            value: serverSettingsSavedState.java_executable === "java" && item.is_default
+                ? "java" : item.path,
+            label: `Java ${item.version}`
+                + (item.last_failed ? "（上次開啟失敗）" : "")
+                + (item.vendor ? ` — ${item.vendor}` : ""),
+        });
+    }
+    if (!choices.some(item => item.value === current)) {
+        choices.push({
+            value: current,
+            label: serverJavaScanComplete
+                ? "目前使用的 Java（未偵測到）"
+                : "正在確認目前使用的 Java……",
+        });
+    }
+    select.replaceChildren();
+    for (const item of choices) {
+        const option = document.createElement("option");
+        option.value = item.value;
+        option.textContent = item.label;
+        select.append(option);
+    }
+    select.value = current;
+    const currentJava = serverJavaOptions.find(item =>
+        current === "java" ? item.is_default : item.path === current
+    );
+    select.title = currentJava?.path || (current === "java" ? "" : current);
+    document.getElementById("serverJavaPath").textContent = "";
+    const status = document.getElementById("serverJavaScanStatus");
+    status.textContent = serverJavaScanning ? "正在掃描本機 Java……" : serverJavaScanMessage;
+}
+
+
+async function refreshServerJavaOptions() {
+    if (serverJavaScanning) return;
+    const requestId = ++serverJavaScanRequest;
+    const controller = new AbortController();
+    serverJavaScanController = controller;
+    const timer = setTimeout(() => controller.abort(), 45000);
+    serverJavaScanning = true;
+    serverJavaScanMessage = "";
+    updateServerJavaChoices();
+    try {
+        const response = await fetch("/api/server/java-settings-options", {
+            cache: "no-store", signal: controller.signal,
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || "掃描 Java 失敗。");
+        if (requestId !== serverJavaScanRequest) return;
+        serverJavaOptions = data.options || [];
+        serverJavaScanComplete = true;
+        serverJavaScanMessage = serverJavaOptions.length
+            ? `找到 ${serverJavaOptions.length} 個 Java 版本`
+            : "找到 0 個 Java 版本";
+    } catch (error) {
+        if (requestId !== serverJavaScanRequest) return;
+        serverJavaScanMessage = error.name === "AbortError"
+            ? "掃描逾時，請重新開啟設定頁。"
+            : `${error.message} 請重新開啟設定頁。`;
+    } finally {
+        clearTimeout(timer);
+        if (requestId === serverJavaScanRequest) {
+            serverJavaScanning = false;
+            serverJavaScanController = null;
+            updateServerJavaChoices();
+        }
     }
 }
 
@@ -620,7 +721,31 @@ function renderServerSettings() {
         const valueWrap = document.createElement("div");
         valueWrap.className = "setting-value";
 
-        if (field.type === "boolean") {
+        if (field.type === "java-runtime") {
+            const controls = document.createElement("div");
+            controls.className = "setting-java-controls";
+            const select = document.createElement("select");
+            select.id = "serverJavaExecutable";
+            select.className = "setting-input";
+            select.dataset.key = field.key;
+            select.disabled = isLocked;
+            select.addEventListener("change", () => {
+                serverSettingsState[field.key] = select.value;
+                updateServerJavaChoices();
+                syncDirtyBadge(controls, field.key);
+                updateServerSettingsStatusCard();
+            });
+            controls.append(select);
+            const path = document.createElement("div");
+            path.id = "serverJavaPath";
+            path.className = "setting-java-path";
+            const status = document.createElement("div");
+            status.id = "serverJavaScanStatus";
+            status.className = "setting-java-status";
+            status.setAttribute("role", "status");
+            valueWrap.append(controls, path, status);
+            syncDirtyBadge(controls, field.key);
+        } else if (field.type === "boolean") {
             const boolWrap = document.createElement("div");
             boolWrap.className = "setting-bool-wrap";
 
@@ -913,6 +1038,7 @@ function renderServerSettings() {
             body.appendChild(row);
         }
     }
+    updateServerJavaChoices();
 }
 
 
@@ -1060,7 +1186,7 @@ export async function saveServerSettings(showAlert = true) {
             !runtimeData.success
         ) {
             await showInfo({
-                title: "記憶體設定儲存失敗",
+                title: "Java 設定儲存失敗",
                 message:
                     runtimeData.message ||
                     "未知錯誤",
@@ -1625,8 +1751,17 @@ function updateServerSettingsDirtyList() {
                     ? serverSettingsState[key] ?? "無"
                     : serverSettingsSavedState[key] ?? "無";
 
-            div.textContent =
-                `▸ ${field?.label || key} (${key})：${oldValue} > ${newValue}`;
+            if (key === "java_executable") {
+                const java = serverJavaOptions.find(item =>
+                    newValue === "java" ? item.is_default : item.path === newValue
+                );
+                const version = java ? `Java ${java.version}` : "指定的 Java（未掃描到）";
+                div.textContent = `▸ ${field?.label || key}：${version}`;
+                div.title = String(newValue);
+            } else {
+                div.textContent =
+                    `▸ ${field?.label || key} (${key})：${oldValue} > ${newValue}`;
+            }
         }
 
         list.appendChild(div);

@@ -1,5 +1,14 @@
 [
   {
+    "key": "java_executable",
+    "group": "java",
+    "label": "預設開啟使用的 Java",
+    "type": "java-runtime",
+    "default": "java",
+    "source": "config",
+    "description": "選擇啟動伺服器使用的 Java。選單會在開啟設定頁時重新掃描。\n儲存後於下次啟動使用；運行中的伺服器需要重新啟動才會切換。\n系統預設（java）表示使用 PATH 中的 Java。"
+  },
+  {
     "key": "java_xms",
     "group": "java",
     "label": "伺服器可用初始記憶體",

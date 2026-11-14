@@ -14,10 +14,20 @@ import {
 
 
 let selectedCloudBackupFile = "";
+let cloudUploadActionPending = false;
+
+
+function updateCloudUploadButtonAvailability() {
+    const btn = document.getElementById("cloudUploadLatestBtn");
+    if (!btn) return;
+    btn.disabled = cloudUploadActionPending
+        || (btn.dataset.mode !== "cancel" && !selectedCloudBackupFile);
+}
 
 
 export function initCloudBackup() {
     setupCloudBackupFolderPicker();
+    updateCloudUploadButtonAvailability();
 
     document.getElementById("cloudUploadLatestBtn")
         ?.addEventListener("click", uploadLatestBackupToGoogleDrive);
@@ -65,6 +75,7 @@ function setupCloudBackupFolderPicker() {
 
             } finally {
                 selectBtn.disabled = false;
+                updateCloudUploadButtonAvailability();
             }
         });
     }
@@ -72,6 +83,7 @@ function setupCloudBackupFolderPicker() {
     if (clearBtn) {
         clearBtn.addEventListener("click", () => {
             selectedCloudBackupFile = "";
+            updateCloudUploadButtonAvailability();
 
             if (text) {
                 updateDefaultCloudBackupFolderText();
@@ -170,9 +182,9 @@ async function uploadLatestBackupToGoogleDrive() {
     }
 
 
-    if (btn) {
-        btn.disabled = true;
-    }
+    if (!selectedCloudBackupFile || cloudUploadActionPending) return;
+    cloudUploadActionPending = true;
+    updateCloudUploadButtonAvailability();
 
     try {
         const response = await fetch("/api/cloud/google/upload-latest", {
@@ -188,18 +200,21 @@ async function uploadLatestBackupToGoogleDrive() {
         const data = await response.json();
 
         if (!data.success) {
-            if (btn) btn.disabled = false;
+            cloudUploadActionPending = false;
+            updateCloudUploadButtonAvailability();
             return;
         }
 
     } catch (error) {
         console.error("Google Drive 上傳失敗:", error);
-        if (btn) btn.disabled = false;
+        cloudUploadActionPending = false;
+        updateCloudUploadButtonAvailability();
     }
 }
 
 
 export function setCloudUploadRunning(isRunning) {
+    cloudUploadActionPending = false;
     const btn = document.getElementById("cloudUploadLatestBtn");
     if (!btn) return;
 
@@ -210,7 +225,7 @@ export function setCloudUploadRunning(isRunning) {
     } else {
         btn.textContent = "上傳ZIP備份";
         btn.dataset.mode = "start";
-        btn.disabled = false;
+        updateCloudUploadButtonAvailability();
     }
 }
 
@@ -243,9 +258,7 @@ export async function cancelGoogleDriveUpload() {
         console.error("取消 Google Drive 上傳失敗:", error);
 
     } finally {
-        if (btn) {
-            btn.disabled = false;
-        }
+        updateCloudUploadButtonAvailability();
     }
 }
 
@@ -293,3 +306,4 @@ function renderCloudQuota(quota) {
     bar.classList.toggle("warning", percent >= 70 && percent < 90);
     bar.classList.toggle("danger", percent >= 90);
 }
+

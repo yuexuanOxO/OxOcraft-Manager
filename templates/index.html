@@ -927,6 +927,22 @@
 
                     </div>
 
+                    <div id="serverResources" class="server-resources is-disabled" aria-disabled="true">
+                        <div class="server-resource" title="Minecraft Java 程序的 CPU 使用率（所有可用 CPU 合計為 100%）">
+                            <span class="server-resource-icon" aria-hidden="true"><!-- CPU icon：32 × 32 --></span>
+                            <div class="server-resource-text">
+                                <span class="server-resource-label">CPU使用率</span>
+                                <span id="serverCpuUsage" class="server-resource-value">--</span>
+                            </div>
+                        </div>
+                        <div class="server-resource" title="Java 堆積記憶體：實際使用量／本次啟動上限">
+                            <span class="server-resource-icon" aria-hidden="true"><!-- 記憶體 icon：32 × 32 --></span>
+                            <div class="server-resource-text">
+                                <span class="server-resource-label">記憶體使用率</span>
+                                <span id="serverMemoryUsage" class="server-resource-value">--</span>
+                            </div>
+                        </div>
+                    </div>
                     <button id="powerBtn" class="power-btn">⏻</button>
                 </div>
 
@@ -961,3 +977,4 @@
     <script type="module" src="{{ url_for('static', filename='js/modules/ui_session.js') }}"></script>
 </body>
 </html>
+

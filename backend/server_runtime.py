@@ -855,6 +855,17 @@ def _start_server_impl(
     if not bind_ip_ok:
         return False, bind_ip_message
 
+    try:
+        runtime_config = load_runtime_config()
+        memory_args = []
+        for key, flag, default in (("java_xms", "-Xms", "1G"), ("java_xmx", "-Xmx", "4G")):
+            value = str(runtime_config.get(key, default)).strip()
+            if not re.fullmatch(r"[1-9][0-9]*[kKmMgG]?", value):
+                return False, f"Java 記憶體設定格式錯誤：{key}={value}"
+            memory_args.append(flag + value)
+    except (OSError, ValueError, TypeError, AttributeError) as error:
+        return False, f"無法讀取 Java 記憶體設定：{error}"
+
     clear_server_start_failure()
     clear_server_start_warning()
 
@@ -867,8 +878,11 @@ def _start_server_impl(
 
 
     attempt = java_runtime.begin_attempt(java_path, selected_java)
+    from backend.server_resources import prepare_resource_agent, bind_resource_process
     command = [
         java_path,
+        *memory_args,
+        *prepare_resource_agent(attempt["attempt_id"]),
         "-jar",
         "server.jar",
         "nogui",
@@ -892,6 +906,7 @@ def _start_server_impl(
             errors="replace",
         )
 
+        bind_resource_process(server_process)
         _output_finished.clear()
         print("[Runtime Debug] server process started:", server_process.pid)
 
@@ -1002,6 +1017,7 @@ def get_current_level_name() -> str:
     lock_current_world_path()
 
     return CURRENT_LEVEL_NAME or ""
+
 
 
 

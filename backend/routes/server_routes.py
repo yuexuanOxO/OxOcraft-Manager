@@ -237,6 +237,15 @@ def api_server_status():
     return build_server_status_response()
 
 
+@server_bp.route("/api/server/resources")
+def api_server_resources():
+    from backend.server_resources import get_server_resources
+
+    response = jsonify(get_server_resources())
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 @server_bp.route("/api/server/start-failure")
 def api_server_start_failure():
     response = jsonify({
@@ -386,4 +395,3 @@ def api_java_default():
         return jsonify(success=True, java_path=path)
     except (OSError, ValueError, TypeError, AttributeError) as error:
         return jsonify(success=False, message=f"儲存預設 Java 失敗：{error}"), 400
-

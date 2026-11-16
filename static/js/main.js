@@ -31,7 +31,10 @@ function setupGlobalImageDragBlocker() {
 }
 
 
+import { initServerResources } from "./modules/server_resources.js";
+
 export function initApp() {
+    initServerResources();
     initPlayerPermissionState();
     initPlayerWhitelistState();
     initPlayerListMenu();
@@ -58,3 +61,4 @@ export function initApp() {
     setupGlobalImageDragBlocker();
     
 }
+

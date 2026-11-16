@@ -36,6 +36,7 @@ for path in Path("static").rglob("*"):
 
 
 datas = [
+    ("backend/resource_agent/oxo-resource-agent.jar", "backend/resource_agent"),
     ("templates", "templates"),
 
     # Bundle static files except per-user runtime config.
@@ -128,3 +129,4 @@ coll = COLLECT(
     upx_exclude=[],
     name="OxOcraft-Manager",
 )
+

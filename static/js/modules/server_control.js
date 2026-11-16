@@ -697,7 +697,13 @@ async function ensureEulaAcceptedBeforeStart() {
         }
 
         if (data.stage === "missing_server_jar") {
-            alert(data.message);
+            await showInfo({
+                title: "找不到 server.jar",
+                message: data.message
+                    || "請確認 server.jar 已放在 Minecraft server 資料夾中。",
+                confirmText: "關閉",
+                variant: "error",
+            });
             return false;
         }
 

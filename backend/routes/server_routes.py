@@ -1,4 +1,5 @@
 import queue
+import re
 from backend import java_runtime
 from dataclasses import asdict
 from backend.management_api.state import get_management_state
@@ -336,18 +337,36 @@ def api_java_options():
     from backend.server_runtime import can_retry_java, wait_for_start_output
 
     failure = get_server_start_failure()
-    if not failure:
-        return jsonify(success=False, message="目前沒有啟動失敗紀錄。"), 409
+    if not failure or not failure.get("java_retry_allowed"):
+        return jsonify(success=False, message="本次錯誤不需要自動切換 Java，請查看啟動日誌。"), 409
     # 致命錯誤可能先於程序結束出現；必須等原程序及讀取執行緒結束。
     wait_for_start_output()
     if not can_retry_java():
         return jsonify(success=False, message="原 Minecraft 程序仍在執行，暫時無法更換 Java。請先確認程序已停止。"), 409
-    attempt_id = java_runtime.get_attempt().get("attempt_id")
+    attempt_id = failure.get("attempt_id")
+    if not attempt_id or java_runtime.get_attempt().get("attempt_id") != attempt_id:
+        return jsonify(success=False, message="啟動狀態已改變，請重新操作。"), 409
     try:
         options = java_runtime.scan_java_versions()
         if java_runtime.get_attempt().get("attempt_id") != attempt_id or not can_retry_java():
             return jsonify(success=False, message="啟動狀態已改變，請重新操作。"), 409
-        response = jsonify(success=True, options=options, attempt_id=attempt_id)
+        required_java = failure.get("required_java_version")
+        for option in options:
+            # 同時支援 Java 8 的 1.8.0_xxx 與 17 / 25.0.x 格式。
+            parts = option["version"].split(".")
+            version_text = parts[1] if parts[0] == "1" and len(parts) > 1 else parts[0]
+            major = re.match(r"^(\d+)", version_text)
+            version = int(major.group(1)) if major else None
+            option["java_major"] = version
+            option["meets_java_requirement"] = (
+                version >= required_java
+                if version is not None and required_java is not None else None
+            )
+        response = jsonify(
+            success=True, options=options, attempt_id=attempt_id,
+            required_java_version=required_java,
+            current_java_version=failure.get("current_java_version"),
+        )
         response.headers["Cache-Control"] = "no-store"
         return response
     except Exception as error:
@@ -367,3 +386,4 @@ def api_java_default():
         return jsonify(success=True, java_path=path)
     except (OSError, ValueError, TypeError, AttributeError) as error:
         return jsonify(success=False, message=f"儲存預設 Java 失敗：{error}"), 400
+

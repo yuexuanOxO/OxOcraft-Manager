@@ -223,6 +223,9 @@ async function runServerStartFlow(setupStage = "ready") {
             title: "伺服器未完成啟動",
             message: "尚未取得啟動失敗紀錄。",
         });
+        if (result.failure?.java_retry_allowed !== true) {
+            return result;
+        }
         const selected = await showJavaSelection(async () => {
             const controller = new AbortController();
             const timer = setTimeout(() => controller.abort(), 45000);
@@ -880,5 +883,6 @@ export async function saveAndRestartServer() {
 
 
 }
+
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import subprocess
 import threading
 import json
@@ -152,11 +153,85 @@ def get_server_start_diagnostics() -> dict:
     }
 
 
+def classify_java_version_failure(log_text: str, exit_code: int | None) -> dict | None:
+    error = re.search(
+        r"(?:java\.lang\.)?UnsupportedClassVersionError\b[^\r\n]*",
+        log_text,
+    )
+    if not error:
+        return None
+
+    detail = error.group(0)
+    required = re.search(
+        r"class file version\s+(\d+)(?:\.(\d+))?", detail, re.I
+    )
+    if not required:
+        required = re.search(
+            r"Unsupported major\.minor version\s+(\d+)(?:\.(\d+))?",
+            detail, re.I,
+        )
+    current = re.search(
+        r"only recognizes class file versions up to\s+(\d+)(?:\.(\d+))?",
+        detail, re.I,
+    )
+
+    def java_version(match):
+        # 現代 Java：class file major = Java 版本 + 44。
+        # 早期 JDK 的命名不同，無法套用時不猜測。
+        if match and int(match.group(1)) >= 49:
+            return int(match.group(1)) - 44
+        return None
+
+    required_java = java_version(required)
+    current_java = java_version(current)
+    preview = bool(
+        required and required.group(2) == "65535"
+        or "preview features" in detail.lower()
+    )
+    if preview:
+        # Preview class 必須使用同一發行版且啟用預覽功能；換更新版本不一定有用。
+        message = "此程式使用 Java 預覽功能，不能套用一般的最低版本建議。"
+        if required_java:
+            message += f"\n需要對應的 Java {required_java}，並確認啟動參數包含 --enable-preview。"
+        else:
+            message += "\n請確認對應 Java 發行版與 --enable-preview 啟動參數。"
+        message += "\n請查看下方日誌；本次不自動開啟版本切換視窗。"
+    else:
+        message = (
+            "此次啟動失敗的原因為 "
+            "Java版本與伺服器要求不符。"
+        )
+
+        if current_java:
+            message += f"\n目前使用：Java {current_java}"
+
+        if required_java:
+            message += (
+                f"\n伺服器需求：Java {required_java} 或以上版本"
+            )
+
+        message += "\n請選擇符合需求的 Java 版本重新啟動。"
+    return {
+        "error_code": "java_preview_features" if preview else "java_version_incompatible",
+        "title": "Java 預覽功能不相容" if preview else "Java 版本不相容",
+        "message": message,
+        "file": None,
+        "exit_code": exit_code,
+        "java_retry_allowed": not preview,
+        "required_java_version": required_java,
+        "current_java_version": current_java,
+        "java_preview": preview,
+    }
+
+
 def classify_server_start_failure(
     log_lines: list[str],
     exit_code: int | None,
 ) -> dict:
     log_text = "\n".join(log_lines)
+    java_failure = classify_java_version_failure(log_text, exit_code)
+    if java_failure:
+        return java_failure
 
     # JSON 載入錯誤類型
     json_error_types = [
@@ -927,5 +1002,6 @@ def get_current_level_name() -> str:
     lock_current_world_path()
 
     return CURRENT_LEVEL_NAME or ""
+
 
 

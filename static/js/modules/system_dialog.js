@@ -344,19 +344,34 @@ export async function showJavaSelection(loadOptions) {
         if (!data.success) throw new Error(data.message || "無法掃描 Java。");
         options = data.options || [];
         attemptId = data.attempt_id;
+        const requirement = data.required_java_version
+            ? `伺服器需要 Java ${data.required_java_version} 或以上版本，請選擇符合需求的版本。`
+            : "請選擇其他 Java 版本重試。";
+        const hasSuitable = options.some(item => item.meets_java_requirement === true);
         message.textContent = options.length
-            ? "請選擇要使用的 Java。更換版本不一定能解決本次錯誤。"
-            : "沒有找到可執行的 Java，請安裝 Java 後再試。";
+            ? requirement + (data.required_java_version && !hasSuitable
+                ? "\n尚未找到符合需求的版本，請安裝後再試。" : "")
+            : requirement + "\n沒有找到可執行的 Java，請安裝後再試。";
         for (const item of options) {
             const option = document.createElement("option");
             option.value = item.id;
             option.textContent = `Java ${item.version}`
+                + (item.meets_java_requirement === true ? "（符合版本需求）" : "")
+                + (item.meets_java_requirement === false ? "（版本不足）" : "")
                 + (item.last_failed ? "（上次開啟失敗）" : "")
                 + (item.is_default ? "［目前預設］" : "")
                 + (item.vendor ? ` — ${item.vendor}` : "");
             select.append(option);
         }
-        select.value = (options.find(item => !item.last_failed) || options[0])?.id || "";
+        const suitable = options
+            .filter(item => item.meets_java_requirement === true)
+            .sort((a, b) => a.java_major - b.java_major);
+        select.value = (
+            suitable.find(item => !item.last_failed)
+            || suitable[0]
+            || options.find(item => !item.last_failed)
+            || options[0]
+        )?.id || "";
         const updatePath = () => {
             path.textContent = options.find(item => item.id === select.value)?.path || "";
         };
@@ -372,3 +387,4 @@ export async function showJavaSelection(loadOptions) {
         ? { java_candidate_id: select.value, retry_attempt_id: attemptId }
         : null;
 }
+

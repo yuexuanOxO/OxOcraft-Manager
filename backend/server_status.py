@@ -198,6 +198,29 @@ def get_offline_default_skin_name(player_uuid: str) -> str:
 
 
 def get_server_query_status(host: str | None = None) -> dict:
+    from backend import server_runtime
+    from backend.external_server import detect_external_server
+
+    process = server_runtime.server_process
+    managed = process is not None and process.poll() is None
+    probe_host = host or get_current_server_host()
+    external = detect_external_server(probe_host, get_current_server_port(), managed)
+    if external:
+        return {
+            "online": False,
+            "state": "external",
+            "message": "伺服器由其他方式啟動，OxOcraft-Manager 無法介入管理",
+            "status_source": "external_process",
+            "external_server": True,
+        }
+    if not managed:
+        if is_backup_state_active():
+            return {"online": False, "state": "backuping", "message": "備份中"}
+        return {"online": False, "state": "offline", "message": "伺服器離線"}
+    return _get_managed_server_query_status(host)
+
+
+def _get_managed_server_query_status(host: str | None = None) -> dict:
     if is_backup_state_active():
         return {
             "online": False,
@@ -390,3 +413,4 @@ def get_current_rcon_port() -> int:
         return CURRENT_RCON_PORT
 
     return load_rcon_port_from_properties()
+

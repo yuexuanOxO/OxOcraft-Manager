@@ -1,9 +1,11 @@
 import { scrollLogToBottom } from "./log_console.js";
 
+let externalServer = false;
 let commandHistory = [];
 let commandHistoryIndex = -1;
 
 async function sendCommand() {
+    if (externalServer) return;
     const input = document.getElementById("commandInput");
     const button = document.getElementById("sendCommandBtn");
     const command = input.value.trim();
@@ -41,13 +43,20 @@ async function sendCommand() {
         console.error("送出指令失敗:", error);
         alert("送出指令失敗，請查看 console。");
     } finally {
-        input.disabled = false;
-        button.disabled = false;
-        input.focus();
+        input.disabled = externalServer;
+        button.disabled = externalServer;
+        if (!externalServer) input.focus();
     }
 }
 
 export function initCommandConsole() {
+    window.addEventListener("server-status-changed", event => {
+        externalServer = event.detail?.state === "external";
+        const input = document.getElementById("commandInput");
+        const button = document.getElementById("sendCommandBtn");
+        if (input) input.disabled = externalServer;
+        if (button) button.disabled = externalServer;
+    });
     const input = document.getElementById("commandInput");
     const button = document.getElementById("sendCommandBtn");
 

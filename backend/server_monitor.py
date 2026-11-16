@@ -135,6 +135,9 @@ def attach_effective_online_mode(
 
 
 def get_poll_interval(state: str) -> float:
+    if state == "external":
+        return 1.0
+
     if state == "ready":
         return 2.0
 
@@ -336,4 +339,5 @@ def get_status_publish_key(data: dict) -> dict:
         }
 
     return data
+
 

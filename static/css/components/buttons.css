@@ -103,3 +103,9 @@
     opacity:.35;
     cursor:not-allowed;
 }
+
+/* External servers are visible but are not controlled by this Manager. */
+.power-btn.external,
+.power-btn.external.offline,
+.power-btn.external.online { color: #888; }
+.status-light.external { filter: grayscale(1); }

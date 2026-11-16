@@ -735,6 +735,11 @@ def _start_server_impl(
     if is_server_running():
         return False, "伺服器已經在執行中"
 
+    from backend.external_server import port_is_open
+    from backend.server_status import load_server_host_from_properties, load_server_port_from_properties
+    if port_is_open(load_server_host_from_properties(), load_server_port_from_properties()):
+        return False, "伺服器連接埠已被使用。若已手動啟動 Minecraft，請先關閉，再從 OxOcraft-Manager 啟動。"
+
     clear_server_start_failure()
 
     if not SERVER_JAR_PATH.exists():
@@ -1017,6 +1022,7 @@ def get_current_level_name() -> str:
     lock_current_world_path()
 
     return CURRENT_LEVEL_NAME or ""
+
 
 
 

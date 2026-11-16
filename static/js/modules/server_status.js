@@ -1,4 +1,18 @@
 import { showOfflineCat } from "./log_console.js";
+import { showInfo, closeSystemDialog } from "./system_dialog.js";
+
+let externalServerDetected = false;
+
+export function showExternalServerNotice() {
+    closeSystemDialog();
+    return showInfo({
+        title: "伺服器由其他方式啟動",
+        message: "目前偵測到伺服器已從外部開啟，OxOcraft-Manager 無法介入管理。\n若要使用 OxOcraft-Manager 管理伺服器，請先關閉目前的伺服器，再從此頁面啟動。",
+        variant: "error",
+        confirmText: "關閉",
+    });
+}
+
 
 import {
     getPlayerAvatarUrl
@@ -304,6 +318,20 @@ export function applyServerStatusPayload(payload) {
     renderServerAuthMode(data);
     renderServerVersion(data);
 
+    if (data.state === "external" && !externalServerDetected) {
+        externalServerDetected = true;
+        showExternalServerNotice();
+    } else if (data.state === "offline" && externalServerDetected) {
+        externalServerDetected = false;
+        closeSystemDialog();
+        showInfo({
+            title: "外部伺服器已關閉",
+            message: "外部伺服器已關閉，現在可以從此頁面啟動並管理伺服器。",
+            confirmText: "確定",
+        });
+    }
+
+
     const isFirstStatus = !hasReceivedFirstStatus;
     hasReceivedFirstStatus = true;
 
@@ -340,7 +368,18 @@ export function applyServerStatusPayload(payload) {
 
     if (!statusLight || !statusText) return;
 
-    if (data.state === "ready") {
+    powerBtn?.classList.toggle("external", data.state === "external");
+    statusLight.classList.toggle("external", data.state === "external");
+
+    if (data.state === "external") {
+        statusLight.classList.remove("online", "offline", "starting");
+        setStatusLightImage(statusLight, "offline");
+        statusText.textContent = "外部開啟中";
+        if (powerBtn) {
+            powerBtn.disabled = false;
+            powerBtn.classList.remove("loading");
+        }
+    } else if (data.state === "ready") {
         statusLight.classList.remove("offline", "starting");
         setStatusLightImage(statusLight, "online");
         statusText.textContent = "在線";

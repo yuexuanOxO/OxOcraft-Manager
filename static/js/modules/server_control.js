@@ -1,3 +1,4 @@
+import { showExternalServerNotice } from "./server_status.js";
 import {
     updateStatus
 } from "./server_status.js";
@@ -283,6 +284,10 @@ async function toggleServer() {
         const statusRes = await fetch("/api/server/query-status", { cache: "no-store" });
         const statusPayload = await statusRes.json();
         const statusData = statusPayload.data || statusPayload;
+        if (statusData.state === "external") {
+            await showExternalServerNotice();
+            return;
+        }
 
         let url = "";
         let targetOnline = false;
@@ -889,6 +894,7 @@ export async function saveAndRestartServer() {
 
 
 }
+
 
 
 

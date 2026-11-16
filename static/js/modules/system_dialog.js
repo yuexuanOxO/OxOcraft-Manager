@@ -82,7 +82,13 @@ function closeDialog(result) {
     }
 
     allowBackdropClose = true;
+    confirmBtn && (confirmBtn.disabled = false);
 
+}
+
+
+export function closeSystemDialog() {
+    closeDialog(false);
 }
 
 
@@ -96,6 +102,8 @@ export function showConfirm({
     variant = "",
     closeOnBackdrop = true
 }) {
+
+    closeDialog(false);
 
     return new Promise((resolve) => {
 
@@ -166,6 +174,8 @@ export async function showHelp({
     sections = [],
     confirmText = "關閉"
 }) {
+
+    closeDialog(false);
 
     return new Promise((resolve) => {
 
@@ -387,4 +397,5 @@ export async function showJavaSelection(loadOptions) {
         ? { java_candidate_id: select.value, retry_attempt_id: attemptId }
         : null;
 }
+
 

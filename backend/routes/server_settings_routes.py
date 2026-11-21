@@ -1,7 +1,6 @@
 from backend import java_runtime
 from flask import Blueprint, jsonify, request, send_file
-from PIL import Image
-from werkzeug.utils import secure_filename
+from PIL import Image, UnidentifiedImageError
 from backend.server_config_sync import init_rcon_config
 from backend.server_runtime import validate_server_bind_ip
 from backend.paths import SERVER_PROPERTIES_PATH,MC_ROOT,STATIC_DIR
@@ -343,21 +342,16 @@ def api_upload_server_icon():
             "message": "沒有收到圖片檔案"
         }), 400
 
-    filename = secure_filename(upload_file.filename or "")
-    lower_name = filename.lower()
-
-    if not (
-        lower_name.endswith(".png")
-        or lower_name.endswith(".jpg")
-        or lower_name.endswith(".jpeg")
-    ):
+    try:
+        with Image.open(upload_file.stream, formats=("PNG", "JPEG")) as source:
+            image = source.convert("RGBA")
+    except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError):
         return jsonify({
             "success": False,
-            "message": "目前只支援 PNG / JPG 圖片"
+            "message": "無法讀取圖片，請選擇有效的PNG或JPG圖片。"
         }), 400
 
     try:
-        image = Image.open(upload_file.stream).convert("RGBA")
 
         width, height = image.size
 

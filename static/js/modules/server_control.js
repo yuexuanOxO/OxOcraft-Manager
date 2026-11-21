@@ -214,9 +214,6 @@ async function runServerStartFlow(setupStage = "ready") {
             result = await waitForServerStartup();
         }
         if (result.ready) {
-            if (javaOptions.java_candidate_id) {
-                await offerDefaultJava(data.attempt);
-            }
             return result;
         }
         // 先保留並顯示這次輸出，關閉後才顯示 Java 選擇視窗。
@@ -242,32 +239,6 @@ async function runServerStartFlow(setupStage = "ready") {
         if (!selected) return { ready: false, cancelled: true };
         javaOptions = selected;
         // 每次重試重新走原有 JSON 啟動檢查與使用者確認。
-    }
-}
-
-
-async function offerDefaultJava(attempt) {
-    if (!attempt?.attempt_id) return;
-    const save = await showConfirm({
-        title: "將此 Java 設為預設？",
-        message: "伺服器已成功啟動。\n是否將本次使用的 Java 設為此伺服器的預設開啟版本？\n\n"
-            + attempt.java_path,
-        confirmText: "設為預設",
-        cancelText: "僅本次使用",
-        closeOnBackdrop: false,
-    });
-    if (!save) return;
-    try {
-        const response = await fetch("/api/server/java-default", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ attempt_id: attempt.attempt_id }),
-        });
-        const data = await response.json();
-        if (!data.success) throw new Error(data.message || "儲存失敗");
-        await showInfo({ title: "預設 Java 已儲存", message: "之後將使用此 Java 開啟伺服器。" });
-    } catch (error) {
-        await showInfo({ title: "無法儲存預設 Java", message: error.message, variant: "error" });
     }
 }
 

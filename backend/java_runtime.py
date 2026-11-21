@@ -95,6 +95,13 @@ def ready_attempt(attempt_id: str, *, initialized_only: bool = False) -> None:
             for candidate in _candidates.values():
                 if _attempt["path_key"] in candidate["aliases"]:
                     _failed_paths.difference_update(candidate["aliases"])
+            if _attempt["selected"] and not _attempt.get("default_saved"):
+                try:
+                    update_config({"java_executable": _attempt["java_path"]})
+                except (OSError, ValueError, TypeError, AttributeError) as error:
+                    print(f"[Java] 本次 Java 已成功執行，但無法儲存為預設：{error}")
+                else:
+                    _attempt["default_saved"] = True
 
 
 def _registry_homes() -> list[str]:
@@ -243,15 +250,3 @@ def resolve_retry_java(candidate_id: str, attempt_id: str) -> str:
         if not candidate or not Path(candidate["path"]).is_file():
             raise ValueError("所選 Java 已不存在，請重新掃描。")
         return candidate["path"]
-
-
-def save_successful_java(attempt_id: str) -> str:
-    with _lock:
-        if (_attempt.get("attempt_id") != attempt_id
-                or not _attempt.get("ready") or not _attempt.get("selected")):
-            raise ValueError("只能將本次已成功啟動的 Java 設為預設。")
-        path = _attempt["java_path"]
-        if not Path(path).is_file():
-            raise ValueError("本次使用的 Java 路徑已不存在。")
-        update_config({"java_executable": path})
-        return path

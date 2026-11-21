@@ -380,18 +380,3 @@ def api_java_options():
         return response
     except Exception as error:
         return jsonify(success=False, message=f"掃描 Java 失敗：{error}"), 500
-
-
-@server_bp.route("/api/server/java-default", methods=["POST"])
-def api_java_default():
-    from backend.server_runtime import is_server_running
-    data = request.get_json(silent=True) or {}
-    if not isinstance(data, dict):
-        return jsonify(success=False, message="請求資料格式錯誤。"), 400
-    if not is_server_running():
-        return jsonify(success=False, message="伺服器已停止，無法確認本次啟動成功。"), 409
-    try:
-        path = java_runtime.save_successful_java(data.get("attempt_id"))
-        return jsonify(success=True, java_path=path)
-    except (OSError, ValueError, TypeError, AttributeError) as error:
-        return jsonify(success=False, message=f"儲存預設 Java 失敗：{error}"), 400

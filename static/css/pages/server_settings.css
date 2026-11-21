@@ -173,7 +173,9 @@
 }
 
 .setting-label{
-    width: 240px;
+    flex: 0 0 calc(240px - var(--label-indent, 0px));
+    min-width: 0;
+    overflow-wrap: anywhere;
     color: white;
 }
 
@@ -497,9 +499,49 @@
     gap: 10px;
 }
 
-.setting-password-wrap .setting-input {
-    width: 220px;
-    flex: none;
+.setting-value {
+    min-width: 0;
+}
+
+.setting-value .setting-input {
+    width: var(--field-width, 100%);
+    min-width: 0;
+    max-width: 100%;
+    flex: 0 1 auto;
+}
+
+/* 一般數字欄位；下方可依參數個別指定 */
+.setting-value :where(input[type="number"]) { --field-width: 100px; }
+
+/* Java 記憶體：GB 仍顯示在輸入框右側 */
+.setting-value [data-key="java_xms"] { --field-width: 40px; }
+.setting-value [data-key="java_xmx"] { --field-width: 40px; }
+
+/* 一般與網路 */
+.setting-value [data-key="motd"]         { --field-width: 100%; }
+.setting-value [data-key="max-players"]  { --field-width: 80px; }
+.setting-value [data-key="server-ip"]    { --field-width: 250px; }
+.setting-value [data-key="server-port"]  { --field-width: 110px; }
+.setting-value [data-key="query.port"]   { --field-width: 110px; }
+.setting-value [data-key="rcon.port"]    { --field-width: 110px; }
+.setting-value [data-key="rcon.password"] { --field-width: 100%; }
+
+/* 世界與遊戲設定 */
+.setting-value [data-key="level-name"] { --field-width: 220px; }
+.setting-value [data-key="level-seed"] { --field-width: 220px; }
+.setting-value [data-key="difficulty"] { --field-width: 180px; }
+.setting-value [data-key="gamemode"]   { --field-width: 215px; }
+
+/* 權限與管理介面 */
+.setting-value [data-key="op-permission-level"]       { --field-width: 250px; }
+.setting-value [data-key="function-permission-level"] { --field-width: 250px; }
+.setting-value [data-key="management-server-host"]    { --field-width: 250px; }
+.setting-value [data-key="management-server-port"]    { --field-width: 110px; }
+
+/* 欄位縮小時，保留密碼按鈕和 GB 單位的空間 */
+.setting-password-wrap > button,
+.setting-inline-wrap > span {
+    flex-shrink: 0;
 }
 
 .setting-password-toggle{
@@ -720,7 +762,12 @@
     position: relative;
     margin-left: 0;
     padding-left: 24px;
+    --label-indent: 24px;
     border-left: none;
+}
+
+.setting-children > .setting-child-row {
+    --label-indent: 58px; /* 外層縮排 34px + 子列縮排 24px */
 }
 
 .setting-child-row::before{

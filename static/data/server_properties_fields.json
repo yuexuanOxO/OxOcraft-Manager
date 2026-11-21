@@ -586,7 +586,7 @@
   {
     "key": "management-server-tls-enabled",
     "group": "advanced",
-    "label": "啟用管理協定 TLS",
+    "label": "啟用管理協定TLS",
     "type": "boolean",
     "isChild": true,
     "default": "false",
@@ -601,7 +601,7 @@
   {
     "key": "management-server-tls-keystore",
     "group": "advanced",
-    "label": "管理協定 TLS 金鑰庫",
+    "label": "管理協定TLS金鑰庫",
     "type": "text",
     "isChild": true,
     "default": "",
@@ -616,7 +616,7 @@
   {
     "key": "management-server-tls-keystore-password",
     "group": "advanced",
-    "label": "管理協定 TLS 金鑰庫密碼",
+    "label": "管理協定TLS金鑰庫密碼",
     "type": "text",
     "isChild": true,
     "default": "",

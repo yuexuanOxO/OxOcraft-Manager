@@ -1715,6 +1715,16 @@ function updateServerSettingsStatusSummary() {
 }
 
 
+export function markServerIconAppliedAfterStart() {
+    if (!serverIconNeedsRestart) return;
+
+    serverIconNeedsRestart = false;
+    updateServerSettingsStatusSummary();
+    updateServerSettingsDirtyList();
+    updateServerSettingsFooterMode();
+}
+
+
 function updateServerSettingsDirtyList() {
     const list = document.getElementById("settingsDirtyList");
 
@@ -1752,8 +1762,9 @@ function updateServerSettingsDirtyList() {
         div.className =
             "settings-dirty-item";
 
-        div.textContent =
-            "▸ 伺服器圖示：已選擇新圖片";
+        div.textContent = pendingServerIconFile
+            ? "▸ 伺服器圖示：已選擇新圖片"
+            : "▸ 伺服器圖示：已儲存，等待重新啟動";
 
         list.appendChild(div);
     }

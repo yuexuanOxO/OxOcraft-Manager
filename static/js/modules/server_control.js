@@ -6,6 +6,7 @@ import {
 import {
     saveServerSettings,
     updateServerSettingsFooterMode,
+    markServerIconAppliedAfterStart,
     loadServerSettings
 } from "./server_settings.js";
 
@@ -214,6 +215,7 @@ async function runServerStartFlow(setupStage = "ready") {
             result = await waitForServerStartup();
         }
         if (result.ready) {
+            markServerIconAppliedAfterStart();
             return result;
         }
         // 先保留並顯示這次輸出，關閉後才顯示 Java 選擇視窗。

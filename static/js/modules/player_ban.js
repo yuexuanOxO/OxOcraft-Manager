@@ -579,8 +579,8 @@ function updateBanTabs() {
     if (addBtn) {
         addBtn.textContent =
             currentBanTab === "ips"
-                ? "+ 新增IP到黑名單"
-                : "+ 新增玩家到黑名單";
+                ? "+ 新增IP"
+                : "+ 新增玩家";
     }
 }
 

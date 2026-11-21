@@ -79,6 +79,18 @@ export function initWorldSettings() {
     modal.addEventListener(
         "click",
         event => {
+            const openMenu = modal.querySelector(
+                ".world-settings-world-item-menu:not(.hidden)"
+            );
+
+            if (openMenu && !openMenu.parentElement.contains(event.target)) {
+                closeWorldItemMenu(openMenu);
+
+                if (event.target === modal) {
+                    return;
+                }
+            }
+
             if (event.target !== modal) {
                 return;
             }
@@ -88,8 +100,17 @@ export function initWorldSettings() {
             modal.classList.add(
                 "hidden"
             );
-        }
+        },
+        true
     );
+}
+
+
+function closeWorldItemMenu(menu) {
+    menu.classList.add("hidden");
+    menu.parentElement
+        .querySelector(".world-settings-world-item-more-button")
+        ?.setAttribute("aria-expanded", "false");
 }
 
 
@@ -1674,34 +1695,11 @@ function renderWorldArchiveList(
                         "hidden"
                     );
 
-                document
-                    .querySelectorAll(
-                        ".world-settings-world-item-menu"
-                    )
+                archiveList
+                    .querySelectorAll(".world-settings-world-item-menu:not(.hidden)")
                     .forEach(otherMenu => {
-                        if (
-                            otherMenu
-                            !== menu
-                        ) {
-                            otherMenu.classList.add(
-                                "hidden"
-                            );
-                        }
-                    });
-
-                document
-                    .querySelectorAll(
-                        ".world-settings-world-item-more-button"
-                    )
-                    .forEach(otherButton => {
-                        if (
-                            otherButton
-                            !== moreButton
-                        ) {
-                            otherButton.setAttribute(
-                                "aria-expanded",
-                                "false"
-                            );
+                        if (otherMenu !== menu) {
+                            closeWorldItemMenu(otherMenu);
                         }
                     });
 
@@ -1722,14 +1720,7 @@ function renderWorldArchiveList(
             async event => {
                 event.stopPropagation();
 
-                menu.classList.add(
-                    "hidden"
-                );
-
-                moreButton.setAttribute(
-                    "aria-expanded",
-                    "false"
-                );
+                closeWorldItemMenu(menu);
 
                 await openWorldFolder(
                     world,
@@ -1743,14 +1734,7 @@ function renderWorldArchiveList(
             async event => {
                 event.stopPropagation();
 
-                menu.classList.add(
-                    "hidden"
-                );
-
-                moreButton.setAttribute(
-                    "aria-expanded",
-                    "false"
-                );
+                closeWorldItemMenu(menu);
 
                 await deleteWorld(
                     world,

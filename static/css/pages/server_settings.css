@@ -787,3 +787,10 @@
     top: 50%;
     transform: translateY(-50%);
 }
+
+/* Let the wrapper receive hover events when the control itself is disabled. */
+.setting-bool-wrap[data-mc-tooltip] > button.locked:disabled,
+.setting-inline-wrap[data-mc-tooltip] > input.locked:disabled,
+.setting-password-wrap[data-mc-tooltip] > input.locked:disabled {
+    pointer-events: none;
+}

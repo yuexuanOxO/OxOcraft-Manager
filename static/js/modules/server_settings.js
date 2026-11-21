@@ -552,7 +552,7 @@ function updateServerJavaChoices() {
     const currentJava = serverJavaOptions.find(item =>
         current === "java" ? item.is_default : item.path === current
     );
-    select.title = currentJava?.path || (current === "java" ? "" : current);
+    select.dataset.mcTooltip = currentJava?.path || (current === "java" ? "" : current);
     document.getElementById("serverJavaPath").textContent = "";
     const status = document.getElementById("serverJavaScanStatus");
     status.textContent = serverJavaScanning ? "正在掃描本機 Java……" : serverJavaScanMessage;
@@ -757,7 +757,7 @@ function renderServerSettings() {
             if (isLocked) {
                 btn.disabled = true;
                 btn.classList.add("locked");
-                btn.title = lockedReason;
+                boolWrap.dataset.mcTooltip = lockedReason;
             }
 
             const value = String(serverSettingsState[field.key] || "false").toLowerCase();
@@ -831,7 +831,6 @@ function renderServerSettings() {
             if (isLocked) {
                 input.disabled = true;
                 input.classList.add("locked");
-                input.title = lockedReason;
             }
 
             const isPasswordField =
@@ -861,6 +860,7 @@ function renderServerSettings() {
             if (isMaskedField) {
                 const passwordWrap = document.createElement("div");
                 passwordWrap.className = "setting-password-wrap";
+                if (isLocked) passwordWrap.dataset.mcTooltip = lockedReason;
 
                 input.addEventListener("input", () => {
                     serverSettingsState[field.key] = input.value;
@@ -872,11 +872,12 @@ function renderServerSettings() {
                 toggleBtn.type = "button";
                 toggleBtn.className = "setting-password-toggle";
                 toggleBtn.innerHTML = `<img src="/static/icons/server_settings/eye_16.png" alt="toggle-password">`;
-                toggleBtn.title =
+                toggleBtn.dataset.mcTooltip =
                     field.key === "level-seed"
                         ? "顯示/隱藏種子碼"
                         : "顯示/隱藏密碼";
 
+                toggleBtn.setAttribute("aria-label", toggleBtn.dataset.mcTooltip);
                 toggleBtn.addEventListener("click",() => {
                     const isHidden =　input.type === "password";
                     input.type =isHidden? "text": "password";
@@ -898,12 +899,13 @@ function renderServerSettings() {
                     regenBtn.innerHTML =
                         `<img src="/static/icons/server_settings/refresh_16.png" alt="refresh">`;
 
-                    regenBtn.title =
+                    regenBtn.dataset.mcTooltip =
                         field.key
                             === "management-server-secret"
                             ? "重新生成管理協定密鑰"
                             : "重新生成 RCON 密碼";
 
+                    regenBtn.setAttribute("aria-label", regenBtn.dataset.mcTooltip);
                     regenBtn.addEventListener(
                         "click",
                         async () => {
@@ -1005,6 +1007,7 @@ function renderServerSettings() {
             } else {
                 const inputWrap = document.createElement("div");
                 inputWrap.className = "setting-inline-wrap";
+                if (isLocked) inputWrap.dataset.mcTooltip = lockedReason;
 
                 input.addEventListener("input", () => {
                     serverSettingsState[field.key] = input.value;
@@ -1757,7 +1760,7 @@ function updateServerSettingsDirtyList() {
                 );
                 const version = java ? `Java ${java.version}` : "指定的 Java（未掃描到）";
                 div.textContent = `▸ ${field?.label || key}：${version}`;
-                div.title = String(newValue);
+                div.dataset.mcTooltip = String(newValue);
             } else {
                 div.textContent =
                     `▸ ${field?.label || key} (${key})：${oldValue} > ${newValue}`;

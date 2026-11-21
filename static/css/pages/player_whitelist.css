@@ -430,7 +430,7 @@
 .add-whitelist-player-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
 }
 
 .add-whitelist-player-title {
@@ -1098,4 +1098,54 @@
 .player-whitelist-file-link:disabled {
     opacity: 0.6;
     cursor: wait;
+}
+
+/* 白名單候選清單：加入與刪除按鈕 */
+:is(.whitelist-candidate-add-btn, .whitelist-candidate-delete-btn) {
+    --btn-bg: #426d32;
+    --btn-hover: #4e7e3b;
+    --btn-pressed: #365b29;
+    --btn-border: #76a05d;
+    --btn-light: #8bb373;
+    --btn-shadow: #294820;
+
+    box-sizing: border-box;
+    padding: 0;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid var(--btn-border);
+    border-radius: 4px;
+    background: var(--btn-bg);
+    color: #fff;
+    text-shadow: 1px 1px 0 var(--btn-shadow);
+    box-shadow:
+        inset 0 1px 0 var(--btn-light),
+        inset 0 -2px 0 var(--btn-shadow);
+}
+
+.whitelist-candidate-delete-btn {
+    --btn-bg: #8b433d;
+    --btn-hover: #a34f46;
+    --btn-pressed: #753630;
+    --btn-border: #bc766d;
+    --btn-light: #c78b81;
+    --btn-shadow: #602d28;
+}
+
+:is(.whitelist-candidate-add-btn, .whitelist-candidate-delete-btn):enabled:not(.disabled):hover {
+    background: var(--btn-hover);
+}
+
+:is(.whitelist-candidate-add-btn, .whitelist-candidate-delete-btn):enabled:not(.disabled):active {
+    background: var(--btn-pressed);
+    box-shadow: inset 0 2px 0 var(--btn-shadow);
+}
+
+:is(.whitelist-candidate-add-btn, .whitelist-candidate-delete-btn):is(:disabled, .disabled) {
+    border-color: #555;
+    background: #282828;
+    color: #888;
+    text-shadow: none;
+    box-shadow: none;
+    cursor: not-allowed;
 }

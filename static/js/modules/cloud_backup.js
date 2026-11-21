@@ -1,4 +1,4 @@
-import { showInfo } from "./system_dialog.js";
+import { showInfo, showConfirm } from "./system_dialog.js";
 import { getUiSessionUrl } from "./ui_session.js";
 
 import {
@@ -163,7 +163,12 @@ export async function loadCloudStatus() {
 
 
 async function disconnectGoogleDrive() {
-    const ok = confirm("確定要解除 Google Drive 連結嗎？\n解除後將無法上傳雲端備份，直到重新連接。");
+    const ok = await showConfirm({
+        title: "解除 Google Drive 連結",
+        message: "解除後將無法上傳雲端備份，直到重新連接。確定要解除連結嗎？",
+        confirmText: "解除連結",
+        cancelText: "取消",
+    });
     if (!ok) return;
 
     await fetch("/api/cloud/google/disconnect", {

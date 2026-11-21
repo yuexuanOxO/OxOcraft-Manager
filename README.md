@@ -20,7 +20,7 @@
 
 <!-- TODO：GitHub Badges -->
 
-![Version](https://img.shields.io/badge/version-v0.11.15-blue)
+![Version](https://img.shields.io/badge/version-v0.12.04-blue)
 
 ![Status](https://img.shields.io/badge/status-Development-orange)
 
@@ -132,7 +132,7 @@ OxOcraft-Manager 將 Minecraft Server 常用的管理功能整合到同一個介
 
 ---
 
-# ⚙️ Server Settings
+# ⚙️ 伺服器設定
 
 <p align="center">
     <img src="docs/assets/readme/screenshots/03_server_settings.png" alt="Server Settings">
@@ -144,7 +144,7 @@ OxOcraft-Manager 將 Minecraft Server 常用的管理功能整合到同一個介
 
 ---
 
-# 📋 Whitelist
+# 📋 白名單
 
 <p align="center">
     <img src="docs/assets/readme/screenshots/04_whitelist.png" alt="Whitelist">
@@ -156,7 +156,7 @@ OxOcraft-Manager 將 Minecraft Server 常用的管理功能整合到同一個介
 
 ---
 
-# 🛡️ Permissions
+# 🛡️ 權限管理
 
 <p align="center">
     <img src="docs/assets/readme/screenshots/05_permissions.png" alt="Permissions">
@@ -168,7 +168,7 @@ OxOcraft-Manager 將 Minecraft Server 常用的管理功能整合到同一個介
 
 ---
 
-# 🚫 Player Ban
+# 🚫 黑名單(封鎖玩家&IP)
 
 <p align="center">
     <img src="docs/assets/readme/screenshots/06_player_ban.png" alt="Player Ban">
@@ -180,7 +180,7 @@ OxOcraft-Manager 將 Minecraft Server 常用的管理功能整合到同一個介
 
 ---
 
-# 💾 Backup
+# 💾 備份管理
 
 <p align="center">
     <img src="docs/assets/readme/screenshots/07_backup.png" alt="Backup">
@@ -190,7 +190,7 @@ OxOcraft-Manager 將 Minecraft Server 常用的管理功能整合到同一個介
 
 ---
 
-# 📖 Death Record
+# 📖 死亡紀錄
 
 <p align="center">
     <img src="docs/assets/readme/screenshots/08_death_record.png" alt="Death Record">
@@ -201,6 +201,16 @@ OxOcraft-Manager 將 Minecraft Server 常用的管理功能整合到同一個介
 讓死亡原因與相關資訊能以更直覺、更具遊戲氛圍的方式查看。
 
 
+---
+
+# 🌎 世界設定
+
+<p align="center">
+    <img src="docs/assets/readme/screenshots/09_world_settings.png" alt="Death Record">
+</p>
+
+提供伺服器可選擇開啟多個世界的選項，並單獨保留各個世界的設定參數，可在切換世界時跟著切換特定參數檔以及伺服器Icon。
+
 <!-- ========================================================= -->
 <!-- Why OxOcraft-Manager -->
 <!-- ========================================================= -->
@@ -209,7 +219,7 @@ OxOcraft-Manager 將 Minecraft Server 常用的管理功能整合到同一個介
 
 OxOcraft-Manager 最初的起點，其實來自一個很單純的問題。
 
-> **「為什麼玩了 Minecraft 十年的朋友，仍然對架設 Minecraft 伺服器不太了解？」**
+> **「為什麼玩了 Minecraft 快十年的朋友，仍然對架設 Minecraft 伺服器不太了解？」**
 
 Minecraft 已經陪伴許多玩家很多年，但真正接觸過伺服器架設的人其實並不多。
 

@@ -1922,7 +1922,7 @@ function renderSelectedWorldPreview(world) {
             "world-settings-detail-warning";
 
         warning.textContent =
-            "此世界尚未生成，啟動 Minecraft Server 後才會建立 level.dat";
+            "此世界尚未生成，啟動Minecraft伺服器後才會建立";
 
         info.appendChild(warning);
 

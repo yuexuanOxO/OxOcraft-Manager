@@ -61,3 +61,52 @@
     color: #888;
     background: rgba(136, 136, 136, 0.08);
 }
+
+/* Minecraft 風格：驗證模式與遊戲版本標籤 */
+.server-auth-mode,
+.server-version {
+    border-radius: 0;
+    border: 2px solid var(--badge-border);
+    background: var(--badge-bg);
+    color: var(--badge-text);
+    box-shadow:
+        inset 2px 2px 0 var(--badge-light),
+        inset -2px -2px 0 var(--badge-shadow);
+    padding: 3px 8px;
+    gap: 6px;
+    text-shadow: 1px 1px 0 var(--badge-shadow);
+}
+
+.server-auth-mode,
+.server-version {
+    --badge-border: #191919;
+    --badge-bg: #3a3a3a;
+    --badge-text: #f1e7ce;
+    --badge-light: #767676;
+    --badge-shadow: #262626;
+}
+
+.server-auth-mode.premium {
+    --badge-border: #14220f;
+    --badge-bg: #294420;
+    --badge-text: #9cde72;
+    --badge-light: #678d4b;
+    --badge-shadow: #1b3015;
+    background: var(--badge-bg);
+    color: var(--badge-text);
+}
+
+.server-auth-mode.premium::before {
+    content: "";
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+    background: currentColor;
+    clip-path: polygon(
+        0 43%, 29% 43%, 29% 57%, 43% 57%,
+        43% 43%, 57% 43%, 57% 29%, 71% 29%,
+        71% 14%, 100% 14%, 100% 43%, 86% 43%,
+        86% 57%, 71% 57%, 71% 71%, 57% 71%,
+        57% 86%, 29% 86%, 29% 71%, 14% 71%, 14% 57%, 0 57%
+    );
+}

@@ -36,16 +36,20 @@
 
 .server-resource-text {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    align-items: baseline;
+    gap: 4px;
+    font-size: 16px;
     line-height: 1.2;
     white-space: nowrap;
 }
 
-.server-resource-label { font-size: 10px; }
-.server-resource-value { font-size: 14px; font-variant-numeric: tabular-nums; }
-.server-resource:first-child .server-resource-value { min-width: 5ch; }
-.server-resource:last-child .server-resource-value { min-width: 19ch; }
+.server-resource-value {
+    font-variant-numeric: tabular-nums;
+}
+
+#serverCpuUsage {
+    min-width: 6ch;
+}
 
 .server-resources.is-disabled {
     color: #888;

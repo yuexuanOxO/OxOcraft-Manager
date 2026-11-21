@@ -71,6 +71,14 @@ const SERVER_SETTING_GROUPS = [
 ];
 
 
+const memoryKeys = ["java_xms", "java_xmx"];
+
+function normalizeMemoryFields(state) {
+    for (const key of memoryKeys) {
+        if (state[key] != null) state[key] = String(state[key]).replace(/^(\d+)g$/i, "$1");
+    }
+}
+
 export function initServerSettings() {
     setupServerSettingsModal();
     setupServerSettingSearch();
@@ -481,6 +489,7 @@ export async function loadServerSettings() {
             };
         }
 
+        normalizeMemoryFields(serverSettingsState);
         serverSettingsState.java_executable ??= "java";
         serverSettingsSavedState = structuredClone(serverSettingsState);
 
@@ -494,6 +503,7 @@ export async function loadServerSettings() {
                 ...(snapshot.properties || {}),
                 ...(snapshot.runtime_config || {})
             };
+            normalizeMemoryFields(serverSettingsEffectiveState);
         } else {
             serverSettingsEffectiveState = structuredClone(serverSettingsState);
         }
@@ -1016,6 +1026,14 @@ function renderServerSettings() {
                 });
 
                 inputWrap.appendChild(input);
+                if (memoryKeys.includes(field.key)) {
+                    input.min = "1";
+                    input.step = "1";
+                    input.setAttribute("aria-label", field.label + "（G）");
+                    const unit = document.createElement("span");
+                    unit.textContent = "GB";
+                    inputWrap.appendChild(unit);
+                }
                 syncDirtyBadge(inputWrap, field.key);
 
                 valueWrap.appendChild(inputWrap);
@@ -1107,6 +1125,16 @@ function setupServerSettingSearch(){
 export async function saveServerSettings(showAlert = true) {
     const applyBtn =
         document.getElementById("serverSettingsApplyBtn");
+
+    const [xms, xmx] = memoryKeys.map(key => serverSettingsState[key]);
+    if (![xms, xmx].every(value => /^[1-9]\d*$/.test(value)) || Number(xms) > Number(xmx)) {
+        await showInfo({
+            title: "記憶體設定錯誤",
+            message: "請輸入正整數（G），且初始記憶體不能大於最大記憶體。",
+            variant: "error"
+        });
+        return false;
+    }
 
     const propertiesPayload = {};
     const runtimeConfigPayload = {};
@@ -1297,6 +1325,7 @@ export async function saveServerSettings(showAlert = true) {
                 ...(snapshot.properties || {}),
                 ...(snapshot.runtime_config || {})
             };
+            normalizeMemoryFields(serverSettingsEffectiveState);
 
             serverIconNeedsRestart = false;
         }

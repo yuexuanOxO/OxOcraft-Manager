@@ -1,6 +1,6 @@
 {
-    "captured_at": "2026-11-21T15:54:31",
-    "properties_modified_comment": "Sat Nov 21 15:54:31 CST 2026",
+    "captured_at": "2026-11-21T16:42:27",
+    "properties_modified_comment": "Sat Nov 21 16:42:27 CST 2026",
     "properties": {
         "enable-jmx-monitoring": "false",
         "rcon.port": "25575",
@@ -69,8 +69,8 @@
         "management-server-allowed-origins": ""
     },
     "runtime_config": {
-        "java_xms": "2G",
-        "java_xmx": "4G",
+        "java_xms": 1,
+        "java_xmx": 4,
         "java_executable": "C:\\Program Files\\Eclipse Adoptium\\jdk-25.0.4.101-hotspot\\bin\\java.exe"
     }
 }

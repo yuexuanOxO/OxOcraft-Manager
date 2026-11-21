@@ -31,10 +31,22 @@ DEFAULT_CONFIG = {
     "rcon_host": "127.0.0.1",
     "rcon_port": 25575,
     "rcon_password": generate_rcon_password(),
-    "java_xms": "2G",
-    "java_xmx": "4G",
+    "java_xms": 2,
+    "java_xmx": 4,
     "java_executable": "java",
 }
+
+def memory_gb_pair(config):
+    values = []
+    for key in ("java_xms", "java_xmx"):
+        raw = str(config.get(key, DEFAULT_CONFIG[key])).strip()
+        if not re.fullmatch(r"[1-9][0-9]*[gG]?", raw):
+            raise ValueError("初始與最大記憶體請填寫正整數，單位為 G。")
+        values.append(int(raw.rstrip("gG")))
+    if values[0] > values[1]:
+        raise ValueError("初始記憶體不能大於最大記憶體。")
+    return values
+
 
 def _legacy_java_default() -> str:
     # 只在 config.json 尚未有此欄位時讀取舊設定，不刪除舊檔。

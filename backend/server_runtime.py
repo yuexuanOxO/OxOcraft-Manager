@@ -6,6 +6,7 @@ import threading
 import json
 import socket
 from pathlib import Path
+from backend.config_files import memory_gb_pair
 from backend import java_runtime
 from backend.server_setup import get_server_setup_status
 from backend.death_record.death_rules import parse_death_message, location_pattern
@@ -883,12 +884,8 @@ def _start_server_impl(
 
     try:
         runtime_config = load_runtime_config()
-        memory_args = []
-        for key, flag, default in (("java_xms", "-Xms", "1G"), ("java_xmx", "-Xmx", "4G")):
-            value = str(runtime_config.get(key, default)).strip()
-            if not re.fullmatch(r"[1-9][0-9]*[kKmMgG]?", value):
-                return False, f"Java 記憶體設定格式錯誤：{key}={value}"
-            memory_args.append(flag + value)
+        xms, xmx = memory_gb_pair(runtime_config)
+        memory_args = [f"-Xms{xms}G", f"-Xmx{xmx}G"]
     except (OSError, ValueError, TypeError, AttributeError) as error:
         return False, f"無法讀取 Java 記憶體設定：{error}"
 

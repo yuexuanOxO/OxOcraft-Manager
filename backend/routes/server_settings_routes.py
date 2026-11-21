@@ -6,6 +6,7 @@ from backend.server_runtime import validate_server_bind_ip
 from backend.paths import SERVER_PROPERTIES_PATH,MC_ROOT,STATIC_DIR
 
 from backend.config_files import (
+    memory_gb_pair,
     load_or_create_config,
     save_config,
     update_config,
@@ -179,9 +180,9 @@ def api_update_runtime_config():
 
     try:
         changes = {}
-        for key in ["java_xms", "java_xmx"]:
-            if key in updates:
-                changes[key] = str(updates[key])
+        if "java_xms" in updates or "java_xmx" in updates:
+            xms, xmx = memory_gb_pair({**load_or_create_config(), **updates})
+            changes.update(java_xms=xms, java_xmx=xmx)
         if "java_executable" in updates:
             changes["java_executable"] = java_runtime.validate_default_java(updates["java_executable"])
         update_config(changes)

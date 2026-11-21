@@ -12,19 +12,19 @@
     "key": "java_xms",
     "group": "java",
     "label": "伺服器可用初始記憶體",
-    "type": "text",
-    "default": "2G",
+    "type": "number",
+    "default": "2",
     "source": "config",
-    "description": "Java 啟動時預先配置的記憶體，例如 512M、1G。"
+    "description": "Java 啟動時預先配置的記憶體，單位為 G，請輸入正整數。"
   },
   {
     "key": "java_xmx",
     "group": "java",
     "label": "伺服器可用最大記憶體",
-    "type": "text",
-    "default": "4G",
+    "type": "number",
+    "default": "4",
     "source": "config",
-    "description": "Minecraft Server可使用的最大記憶體，例如 2G、4G、8G。"
+    "description": "Minecraft Server可使用的最大記憶體，單位為 G，請輸入正整數。"
   },
   {
     "key": "server-port",

@@ -341,10 +341,10 @@ function updateAutoBackupTaskButton() {
 
     if (autoBackupState.enabled && autoBackupState.nextRunAt) {
         btn.classList.remove("hidden");
-        btn.title = `自動備份已啟用\n下次備份時間：${formatAutoBackupTime(autoBackupState.nextRunAt)}`;
+        btn.dataset.mcTooltip = `自動備份已啟用\n下次備份時間：${formatAutoBackupTime(autoBackupState.nextRunAt)}`;
     } else {
         btn.classList.add("hidden");
-        btn.title = "自動備份未啟用";
+        btn.dataset.mcTooltip = "自動備份未啟用";
     }
 }
 

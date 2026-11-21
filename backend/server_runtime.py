@@ -7,6 +7,7 @@ import json
 import socket
 from pathlib import Path
 from backend import java_runtime
+from backend.server_setup import get_server_setup_status
 from backend.death_record.death_rules import parse_death_message, location_pattern
 from backend.server_monitor import append_log_line, clear_log_cache
 from backend.paths import SERVER_JAR_PATH, CONFIG_PATH, MC_ROOT, SERVER_PROPERTIES_PATH
@@ -392,6 +393,24 @@ def send_command(cmd: str) -> None:
         server_process.stdin.flush()
 
 
+def _complete_first_run(process, attempt, startup_logs, exit_code):
+    if (not attempt.get("first_run") or exit_code != 0
+            or server_process is not process or get_server_runtime_state() == "stopping"
+            or get_server_start_failure()):
+        return False
+    stage = get_server_setup_status()["stage"]
+    # The UI may already have accepted the newly generated EULA before EOF.
+    if stage != "need_accept_eula" and not (stage == "ready" and any(
+        "agree to the eula" in line.lower() for line in startup_logs
+    )):
+        return False
+    if classify_java_version_failure("\n".join(startup_logs), exit_code):
+        return False
+    # Initialization succeeded, but this was never an online server.
+    java_runtime.ready_attempt(attempt["attempt_id"], initialized_only=True)
+    return True
+
+
 def _read_server_output(process, startup_logs, attempt) -> None:
     try:
         handle_server_output(process, startup_logs, attempt)
@@ -403,7 +422,8 @@ def _read_server_output(process, startup_logs, attempt) -> None:
                 startup_logs.append(line.rstrip("\r\n"))
         code = process.wait()
         if server_process is process:
-            if not java_runtime.get_attempt().get("ready"):
+            if (not java_runtime.get_attempt().get("ready")
+                    and not _complete_first_run(process, attempt, startup_logs, code)):
                 failure = classify_server_start_failure(startup_logs, code)
                 failure.update(read_start_failure_log(startup_logs))
                 failure.update(java_runtime.fail_attempt(attempt["attempt_id"]))
@@ -620,6 +640,7 @@ def handle_server_output(process=None, startup_logs=None, attempt=None) -> None:
         not reached_ready
         and get_server_runtime_state() != "stopping"
         and server_process is process
+        and not _complete_first_run(process, attempt, startup_logs, exit_code)
     ):
         failure = classify_server_start_failure(
             startup_logs,
@@ -883,6 +904,7 @@ def _start_server_impl(
 
 
     attempt = java_runtime.begin_attempt(java_path, selected_java)
+    attempt["first_run"] = get_server_setup_status()["stage"] == "need_first_run"
     from backend.server_resources import prepare_resource_agent, bind_resource_process
     command = [
         java_path,

@@ -86,10 +86,10 @@ def fail_attempt(attempt_id: str) -> dict:
         }
 
 
-def ready_attempt(attempt_id: str) -> None:
+def ready_attempt(attempt_id: str, *, initialized_only: bool = False) -> None:
     with _lock:
         if _attempt.get("attempt_id") == attempt_id:
-            _attempt.update(ready=True, failed=False)
+            _attempt.update(ready=not initialized_only, failed=False)
             # 成功後不再標記此路徑為上次失敗。
             _failed_paths.discard(_attempt["path_key"])
             for candidate in _candidates.values():

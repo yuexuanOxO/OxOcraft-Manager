@@ -407,7 +407,7 @@ async function resetServerSettingsToDefault() {
 
     serverSettingFields.forEach((field) => {
 
-        if (field.default === undefined) {
+        if (field.source === "config" || field.default === undefined) {
             return;
         }
 

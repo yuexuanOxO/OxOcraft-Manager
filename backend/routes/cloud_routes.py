@@ -5,7 +5,7 @@ import threading
 import time
 
 from backend.notification_service import create_notification
-from flask import Blueprint, jsonify, redirect, request, session
+from flask import Blueprint, jsonify, redirect, render_template, request, session
 from pathlib import Path
 from backend.server_monitor import publish_event
 from google_auth_oauthlib.flow import Flow
@@ -496,25 +496,37 @@ def api_google_login():
 
 @cloud_bp.route("/api/cloud/google/callback")
 def api_google_callback():
+    state = session.get("google_oauth_state")
+    if not state or state != request.args.get("state"):
+        return render_template("cloud_login_result.html", message="連接要求已失效，請回到備份管理重新連接。"), 400
+    session.pop("google_oauth_state")
+    verifier = session.pop("google_code_verifier", None)
+    if request.args.get("error"):
+        return render_template("cloud_login_result.html", message="未完成 Google 授權。你可以關閉這個分頁並重新連接。")
 
-    flow = Flow.from_client_secrets_file(
-        str(CLIENT_SECRET_FILE),
-        scopes=SCOPES,
-        state=session.get("google_oauth_state")
-    )
 
-    flow.redirect_uri = REDIRECT_URI
-    flow.code_verifier = session.get("google_code_verifier")
+    try:
+        flow = Flow.from_client_secrets_file(
+            str(CLIENT_SECRET_FILE),
+            scopes=SCOPES,
+            state=state
+        )
 
-    flow.fetch_token(
-        authorization_response=request.url,
-        include_client_id=True
-    )
+        flow.redirect_uri = REDIRECT_URI
+        flow.code_verifier = verifier
 
-    creds = flow.credentials
-    save_token(creds)
+        flow.fetch_token(
+            authorization_response=request.url,
+            include_client_id=True
+        )
 
-    return redirect("/")
+        creds = flow.credentials
+        save_token(creds)
+    except Exception:
+        return render_template("cloud_login_result.html", message="無法完成 Google 帳號連接，請回到備份管理重試。"), 502
+
+    publish_event("cloud_account_connected", {})
+    return render_template("cloud_login_result.html", connected=True, message="Google Drive 已連接。你可以關閉這個分頁，回到備份管理。")
 
 
 @cloud_bp.route("/api/cloud/google/status")

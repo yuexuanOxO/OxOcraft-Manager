@@ -18,6 +18,7 @@ import {
 } from "./backup.js";
 
 import {
+    loadCloudStatus,
     renderCloudUploadProgress,
     setCloudUploadRunning
 } from "./cloud_backup.js";
@@ -308,6 +309,10 @@ export function initServerEvents() {
 
         const btn = document.getElementById("cloudUploadLatestBtn");
         if (btn) btn.disabled = false;
+    });
+
+    serverEvents.addEventListener("cloud_account_connected", () => {
+        loadCloudStatus().catch(error => console.error("更新雲端備份狀態失敗:", error));
     });
 
     serverEvents.addEventListener("cloud_upload_failed", (event) => {

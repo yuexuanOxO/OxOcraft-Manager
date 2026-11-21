@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Google Drive 連接結果｜OxOcraft-Manager</title>
+    <style>
+        :root { color-scheme: dark; }
+        body { margin: 3rem auto; max-width: 36rem; padding: 1rem; font-family: system-ui, sans-serif; }
+    </style>
+</head>
+<body>
+    <h1>Google Drive 帳號連接</h1>
+    <p>{{ message }}</p>
+    {% if connected %}<script>window.close();</script>{% endif %}
+</body>
+</html>

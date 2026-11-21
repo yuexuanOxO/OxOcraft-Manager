@@ -35,7 +35,7 @@ export function initCloudBackup() {
 
     document.getElementById("cloudConnectBtn")
         ?.addEventListener("click", () => {
-            window.location.href = getUiSessionUrl("/api/cloud/google/login");
+            window.open(getUiSessionUrl("/api/cloud/google/login"), "_blank", "popup,width=640,height=760,noopener,noreferrer");
         });
 }
 

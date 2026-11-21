@@ -1348,8 +1348,11 @@
     margin-top: 4px;
 }
 
-.add-op-confirm-btn {
-    min-width: 180px;
+#confirmAddOpPlayerBtn {
+    min-width: 0;
+    width: 172px;
+    height: 38px;
+    padding-block: 0;
 }
 
 .add-op-bypass-help {

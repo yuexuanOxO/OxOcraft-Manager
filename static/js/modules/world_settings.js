@@ -2593,7 +2593,7 @@ function appendSeedDetail(
             alt=""
         >`;
 
-    toggleButton.title = "顯示種子碼";
+    toggleButton.dataset.mcTooltip = "顯示種子碼";
     toggleButton.setAttribute(
         "aria-label",
         "顯示種子碼"
@@ -2613,7 +2613,8 @@ function appendSeedDetail(
             alt=""
         >
     `;
-    copyButton.title = "複製種子碼";
+    copyButton.dataset.mcTooltip = "複製種子碼";
+    copyButton.setAttribute("aria-label", copyButton.dataset.mcTooltip);
 
     if (!seedValue) {
         value.textContent = "無法讀取";
@@ -2634,14 +2635,14 @@ function appendSeedDetail(
                 isRevealed
             );
 
-            toggleButton.title =
+            toggleButton.dataset.mcTooltip =
                 isRevealed
                     ? "隱藏種子碼"
                     : "顯示種子碼";
 
             toggleButton.setAttribute(
                 "aria-label",
-                toggleButton.title
+                toggleButton.dataset.mcTooltip
             );
         };
 

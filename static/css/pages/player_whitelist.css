@@ -269,18 +269,7 @@
 }
 
 .player-whitelist-action.whitelisted {
-
     padding: 0;
-
-    border-color: #b85c5c;
-    color: #ff9c9c;
-
-}
-
-.player-whitelist-action.whitelisted:hover {
-
-    background: #422e2e;
-
 }
 
 .player-whitelist-action.normal {
@@ -531,32 +520,6 @@
 
 }
 
-.whitelist-candidate-add-btn {
-    width: 42px;
-    height: 42px;
-    flex-shrink: 0;
-    border: 1px solid #6c8f52;
-    border-radius: 6px;
-    background: #303030;
-    color: #a9e28a;
-    font-size: 26px;
-      
-    cursor: pointer;
-    line-height: 1;
-}
-
-.whitelist-candidate-add-btn:hover {
-    background: #35422e;
-}
-
-.whitelist-candidate-add-btn.disabled,
-.whitelist-candidate-add-btn:disabled {
-    border-color: #555;
-    color: #777;
-    cursor: not-allowed;
-    background: #282828;
-}
-
 .whitelist-candidate-actions {
     display: flex;
     align-items: center;
@@ -564,21 +527,61 @@
     flex-shrink: 0;
 }
 
-.whitelist-candidate-delete-btn {
+/* 白名單候選清單：加入與刪除按鈕 */
+:is(.whitelist-candidate-add-btn, .whitelist-candidate-delete-btn) {
+    --btn-bg: #426d32;
+    --btn-hover: #4e7e3b;
+    --btn-pressed: #365b29;
+    --btn-border: #76a05d;
+    --btn-light: #8bb373;
+    --btn-shadow: #294820;
+
     width: 42px;
     height: 42px;
-    border: 1px solid #b85c5c;
-    border-radius: 6px;
-    background: #303030;
-    color: #ff9c9c;
-    font-size: 22px;
-      
-    cursor: pointer;
     line-height: 1;
+    cursor: pointer;
+    box-sizing: border-box;
+    padding: 0;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid var(--btn-border);
+    border-radius: 4px;
+    background: var(--btn-bg);
+    color: #fff;
+    text-shadow: 1px 1px 0 var(--btn-shadow);
+    box-shadow:
+        inset 0 1px 0 var(--btn-light),
+        inset 0 -2px 0 var(--btn-shadow);
 }
 
-.whitelist-candidate-delete-btn:hover {
-    background: #422e2e;
+.whitelist-candidate-add-btn { font-size: 26px; flex-shrink: 0; }
+
+.whitelist-candidate-delete-btn {
+    font-size: 22px;
+    --btn-bg: #8b433d;
+    --btn-hover: #a34f46;
+    --btn-pressed: #753630;
+    --btn-border: #bc766d;
+    --btn-light: #c78b81;
+    --btn-shadow: #602d28;
+}
+
+:is(.whitelist-candidate-add-btn, .whitelist-candidate-delete-btn):enabled:not(.disabled):hover {
+    background: var(--btn-hover);
+}
+
+:is(.whitelist-candidate-add-btn, .whitelist-candidate-delete-btn):enabled:not(.disabled):active {
+    background: var(--btn-pressed);
+    box-shadow: inset 0 2px 0 var(--btn-shadow);
+}
+
+:is(.whitelist-candidate-add-btn, .whitelist-candidate-delete-btn):is(:disabled, .disabled) {
+    border-color: #555;
+    background: #282828;
+    color: #888;
+    text-shadow: none;
+    box-shadow: none;
+    cursor: not-allowed;
 }
 
 .player-whitelist-setting-hint {
@@ -1100,48 +1103,33 @@
     cursor: wait;
 }
 
-/* 白名單候選清單：加入與刪除按鈕 */
-:is(.whitelist-candidate-add-btn, .whitelist-candidate-delete-btn) {
-    --btn-bg: #426d32;
-    --btn-hover: #4e7e3b;
-    --btn-pressed: #365b29;
-    --btn-border: #76a05d;
-    --btn-light: #8bb373;
-    --btn-shadow: #294820;
-
+/* 清單及新增管理員操作按鈕 */
+:is(.player-whitelist-action.whitelisted) {
+    --action-bg: #8b433d;
+    --action-hover: #a34f46;
+    --action-pressed: #753630;
+    --action-border: #bc766d;
+    --action-light: #c78b81;
+    --action-shadow: #602d28;
     box-sizing: border-box;
-    padding: 0;
-    display: inline-grid;
-    place-items: center;
-    border: 1px solid var(--btn-border);
+    border: 1px solid var(--action-border);
     border-radius: 4px;
-    background: var(--btn-bg);
+    background: var(--action-bg);
     color: #fff;
-    text-shadow: 1px 1px 0 var(--btn-shadow);
-    box-shadow:
-        inset 0 1px 0 var(--btn-light),
-        inset 0 -2px 0 var(--btn-shadow);
+    text-shadow: 1px 1px 0 var(--action-shadow);
+    box-shadow: inset 0 1px 0 var(--action-light), inset 0 -2px 0 var(--action-shadow);
 }
 
-.whitelist-candidate-delete-btn {
-    --btn-bg: #8b433d;
-    --btn-hover: #a34f46;
-    --btn-pressed: #753630;
-    --btn-border: #bc766d;
-    --btn-light: #c78b81;
-    --btn-shadow: #602d28;
+.player-whitelist-action.whitelisted:enabled:not(.disabled):hover {
+    background: var(--action-hover);
 }
 
-:is(.whitelist-candidate-add-btn, .whitelist-candidate-delete-btn):enabled:not(.disabled):hover {
-    background: var(--btn-hover);
+.player-whitelist-action.whitelisted:enabled:not(.disabled):active {
+    background: var(--action-pressed);
+    box-shadow: inset 0 2px 0 var(--action-shadow);
 }
 
-:is(.whitelist-candidate-add-btn, .whitelist-candidate-delete-btn):enabled:not(.disabled):active {
-    background: var(--btn-pressed);
-    box-shadow: inset 0 2px 0 var(--btn-shadow);
-}
-
-:is(.whitelist-candidate-add-btn, .whitelist-candidate-delete-btn):is(:disabled, .disabled) {
+.player-whitelist-action.whitelisted:is(:disabled, .disabled) {
     border-color: #555;
     background: #282828;
     color: #888;

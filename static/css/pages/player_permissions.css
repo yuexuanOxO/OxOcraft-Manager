@@ -594,8 +594,7 @@
 }
 
 .player-permission-action:disabled,
-.player-permission-add-open-btn:disabled,
-.op-candidate-add-btn:disabled {
+.player-permission-add-open-btn:disabled {
     opacity: 0.45;
     cursor: not-allowed;
     filter: grayscale(35%);
@@ -762,49 +761,12 @@
     flex-shrink: 0;
 }
 
-.op-candidate-add-btn {
-    width: 42px;
-    height: 42px;
-    flex-shrink: 0;
-    border: 1px solid #6c8f52;
-    border-radius: 6px;
-    background: #303030;
-    color: #a9e28a;
-    font-size: 26px;
-      
-    cursor: pointer;
-    line-height: 1;
-}
-
-.op-candidate-add-btn:hover {
-    background: #35422e;
-}
-
-.op-candidate-add-btn.disabled,
-.op-candidate-add-btn:disabled {
+.op-candidate-add-btn.disabled {
     border-color: #555;
     color: #777;
     cursor: not-allowed;
     background: #282828;
 }
-
-.op-candidate-delete-btn {
-    width: 42px;
-    height: 42px;
-    border: 1px solid #b85c5c;
-    border-radius: 6px;
-    background: #303030;
-    color: #ff9c9c;
-    font-size: 22px;
-      
-    cursor: pointer;
-    line-height: 1;
-}
-
-.op-candidate-delete-btn:hover {
-    background: #422e2e;
-}
-
 
 .player-permission-uuid-type {
     padding: 3px 7px;
@@ -916,8 +878,7 @@
 
 .player-permission-add-open-btn:disabled,
 .player-permission-refresh-btn:disabled,
-.player-permission-action:disabled,
-.op-candidate-add-btn:disabled {
+.player-permission-action:disabled {
 
     opacity: 0.45;
     cursor: not-allowed;
@@ -1928,11 +1889,6 @@
     filter: grayscale(100%);
 }
 
-.op-candidate-delete-btn {
-    width: 42px;
-    height: 42px;
-}
-
 .player-permission-card.online-edit-locked {
     position: relative;
     opacity: 0.55;
@@ -2062,4 +2018,72 @@
 
 .player-permission-card.player-permission-entry-duplicate.disabled {
     opacity: 1;
+}
+.op-candidate-add-btn, .op-candidate-delete-btn {
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    flex-shrink: 0;
+    line-height: 1;
+    display: inline-grid;
+    place-items: center;
+    cursor: pointer;
+}
+.op-candidate-add-btn { font-size: 26px; }
+.op-candidate-delete-btn { font-size: 22px; }
+
+/* 清單及新增管理員操作按鈕 */
+:is(.player-permission-action.player-permission-remove-btn, .op-candidate-delete-btn, .op-candidate-add-btn), #confirmAddOpPlayerBtn {
+    box-sizing: border-box;
+    border: 1px solid var(--action-border);
+    border-radius: 4px;
+    background: var(--action-bg);
+    color: #fff;
+    text-shadow: 1px 1px 0 var(--action-shadow);
+    box-shadow: inset 0 1px 0 var(--action-light), inset 0 -2px 0 var(--action-shadow);
+}
+
+.player-permission-action.player-permission-remove-btn:enabled:not(.disabled):hover,
+.op-candidate-delete-btn:enabled:not(.disabled):hover,
+.op-candidate-add-btn:enabled:not(.disabled):hover,
+#confirmAddOpPlayerBtn:enabled:not(.disabled):hover {
+    background: var(--action-hover);
+}
+
+.player-permission-action.player-permission-remove-btn:enabled:not(.disabled):active,
+.op-candidate-delete-btn:enabled:not(.disabled):active,
+.op-candidate-add-btn:enabled:not(.disabled):active,
+#confirmAddOpPlayerBtn:enabled:not(.disabled):active {
+    background: var(--action-pressed);
+    box-shadow: inset 0 2px 0 var(--action-shadow);
+}
+
+.player-permission-action.player-permission-remove-btn:is(:disabled, .disabled),
+.op-candidate-delete-btn:is(:disabled, .disabled),
+.op-candidate-add-btn:is(:disabled, .disabled),
+#confirmAddOpPlayerBtn:is(:disabled, .disabled) {
+    border-color: #555;
+    background: #282828;
+    color: #888;
+    text-shadow: none;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+.op-candidate-add-btn, #confirmAddOpPlayerBtn {
+    --action-bg: #426d32;
+    --action-hover: #4e7e3b;
+    --action-pressed: #365b29;
+    --action-border: #76a05d;
+    --action-light: #8bb373;
+    --action-shadow: #294820;
+}
+
+.player-permission-action.player-permission-remove-btn, .op-candidate-delete-btn {
+    --action-bg: #8b433d;
+    --action-hover: #a34f46;
+    --action-pressed: #753630;
+    --action-border: #bc766d;
+    --action-light: #c78b81;
+    --action-shadow: #602d28;
 }

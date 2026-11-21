@@ -1,3 +1,11 @@
+# Check before importing routes or starting any application services.
+if __name__ == "__main__":
+    from backend.single_instance import claim_instance, show_duplicate_notice
+
+    if not claim_instance():
+        show_duplicate_notice()
+        raise SystemExit(1)
+
 import threading
 import webbrowser
 
